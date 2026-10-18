@@ -12,6 +12,8 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
+    "@fontsource/ibm-plex-mono": "^5.1.0",
+    "@fontsource/saira-semi-condensed": "^5.1.0",
     "astronomy-engine": "2.1.19",
     "d3-celestial": "0.7.35",
     "wrangler": "4.147.0"

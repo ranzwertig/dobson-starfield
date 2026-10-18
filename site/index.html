@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenigo – push-to for your telescope</title>
+<meta name="description" content="Zenigo turns your phone into a push-to system for a Dobsonian telescope: it recognises the stars in the camera image and shows how far to turn and tilt to reach your target. Free, in the browser, works offline.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Zenigo – push-to for your telescope">
+<meta property="og:description" content="Your phone recognises the stars and shows your Dobson the way. Free, in the browser, works offline.">
+<meta property="og:image" content="/app/icons/icon-512.png">
+<script>
+  // Started from the home screen: go straight to the app
+  if (navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) location.replace("/app/");
+</script>
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="wrap top">
+  <a class="brand" href="/"><img src="/app/logo.svg" alt=""><span>zeni<span>go</span></span></a>
+  <a class="open" href="/app/">Open Zenigo</a>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Your phone shows your telescope the way.</h1>
+      <p class="lead">Mount the phone on the tube. Zenigo recognises the stars in the camera image and tells you how far to turn and tilt the Dobson until your target is in the eyepiece.</p>
+      <div class="cta">
+        <a class="open" href="/app/">Open Zenigo</a>
+        <a class="open ghost" href="#how">How it works</a>
+      </div>
+      <p class="note-small">Free. Runs in the browser on iPhone and Android, no account, no download.</p>
+    </div>
+    <figure class="chart">
+      <!--HERO-->
+      <div class="hud" aria-hidden="true">
+        <div class="cell">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20a12 12 0 0 1 22-6.5"/><path d="M31 6v8h-8"/><ellipse cx="20" cy="31" rx="13" ry="3.5" stroke-width="1.4" opacity=".55"/></svg>
+          <div><b>14.2°</b><small>turn right</small></div>
+        </div>
+        <div class="cell">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
+          <div><b>9.6°</b><small>tilt down</small></div>
+        </div>
+      </div>
+      <figcaption class="caption">The orange crosshair is where the telescope points, the red ring is your target: here the Andromeda Galaxy.</figcaption>
+    </figure>
+  </div>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li>
+          <h3>Mount the phone on the tube</h3>
+          <p>Any holder that keeps the phone steady and its camera looking along the tube will do. Centre a bright star in the eyepiece once and tap it on screen, so Zenigo knows where the telescope points relative to the camera.</p>
+        </li>
+        <li>
+          <h3>Tap Locate</h3>
+          <p>The app takes a short exposure, finds the stars in it and matches them against a star catalogue. That is plate solving, and it takes about a second.</p>
+        </li>
+        <li>
+          <h3>Follow the arrows</h3>
+          <p>Pick a target. The numbers at the top tell you how many degrees to turn and tilt. The motion sensor keeps them up to date while you push.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>What’s in it</h2>
+      <dl class="features">
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Precise, without extra hardware</dt>
+          <dd>No encoders, no Wi-Fi box. The position comes from the stars themselves, accurate to a fraction of a degree.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg>Sky map that follows the phone</dt>
+          <dd>Without the camera you get a star map. Turn on Align and it moves with the phone, roughly by compass or precisely after a solve.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9.5" ry="4"/></svg>Planets, Moon and 110 Messier objects</dt>
+          <dd>Plus the named bright stars. Tap anything on the map for its details and links to SEDS, NASA, In-The-Sky and Wikipedia.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Show only what you need</dt>
+          <dd>Filter the map to the solar system, deep-sky classes or what the naked eye sees.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/></svg>Works without signal</dt>
+          <dd>Add it to your home screen once. At a dark site it starts and solves without any connection.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Everything stays on your phone</dt>
+          <dd>Camera images, location and motion data are processed in the browser and never uploaded. No account, no tracking.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="sun" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+        <div>
+          <h2>Pointing at the Sun</h2>
+          <p>Zenigo can guide you to the Sun, for example on a cloudy day. Never look at the Sun through a telescope or finder without a certified solar filter covering the front of the telescope. It causes instant, permanent eye damage. Cover or remove the finder as well.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap install">
+      <div>
+        <h2>Put it on your home screen</h2>
+        <p class="muted">Zenigo is a web app. Installed, it opens full screen like any other app and works offline.</p>
+        <a class="open" href="/app/">Open Zenigo</a>
+      </div>
+      <div>
+        <h3>iPhone</h3>
+        <ol>
+          <li>Open Zenigo in Safari.</li>
+          <li>Tap the share button, then “Add to Home Screen”.</li>
+        </ol>
+        <h3>Android</h3>
+        <ol>
+          <li>Open Zenigo in Chrome.</li>
+          <li>Tap the menu, then “Install app” or “Add to Home screen”.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <!--YEAR--> Christian Ranz</span>
+    <nav aria-label="Legal">
+      <a href="/imprint/">Imprint</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

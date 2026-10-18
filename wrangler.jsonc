@@ -1,6 +1,7 @@
 {
-  // Statische Seite: Cloudflare liefert dist/ direkt aus, ohne Worker-Code.
-  // "build" sorgt dafür, dass wrangler deploy/dev vorher npm run build ausführt.
+  // Static site: Cloudflare serves dist/ directly, without Worker code.
+  // "build" makes wrangler deploy/dev run npm run build first.
+  // Website at /, app at /app/, unknown paths get dist/404.html.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dobson-starfield",
   "compatibility_date": "2026-10-01",
@@ -9,6 +10,6 @@
   },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "404-page"
   }
 }

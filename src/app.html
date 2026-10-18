@@ -1,9 +1,7 @@
 <title>Zenigo</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0a0c0f">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+/*__FONTS__*/
 /* Layout: single-screen app for the phone at the telescope. Narrow header; below it the sky image with overlay fills all space.
    Degree readouts as HUD at the top of the image, key functions as round buttons bottom right, capture button fixed at the bottom.
    Everything else lives in the menu. Dark and red-light friendly. */
@@ -110,6 +108,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .update .ico svg { width: 24px; height: 24px; }
 .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .links .btn { flex: 1 1 0; justify-content: center; text-decoration: none; white-space: nowrap; }
+.legal-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; }
+.legal-links a { color: var(--accent); }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 12px; }
 .presets .chip.sel { border-color: var(--accent); color: var(--accent); }
 .ftog { display: flex !important; align-items: center; gap: 12px; padding: 4px 0; cursor: pointer; color: var(--fg) !important; font-size: 15px !important; }
@@ -369,6 +369,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <p class="note" id="howto">
       Mount the phone firmly and parallel to the tube, start the camera (button at the bottom right), then tap <b>Locate</b>. The first time, the app measures your camera’s field of view and remembers it. Then centre a bright star in the eyepiece, tap <b>Eyepiece point</b> and tap the same star in the image. From then on the numbers at the top tell you where to push the Dobson. Stars, planets and Messier objects in the image can be tapped for details. <b>Continuous</b> keeps updating the position. Without camera or photo you see a sky map: drag to look around, pinch to zoom, or turn on <b>Align</b> to let it follow the phone.
     </p>
+    <p class="note legal-links"><a href="/">About Zenigo</a> <a href="/imprint/">Imprint</a> <a href="/privacy/">Privacy</a> <a href="mailto:zenigo@christianranz.com">Contact</a></p>
   </div>
 </div>
 

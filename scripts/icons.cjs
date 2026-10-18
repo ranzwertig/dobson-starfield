@@ -1,9 +1,9 @@
-// Renders the PNG app icons from public/logo.svg (needs Playwright with Chromium):
+// Renders the PNG app icons from public/app/logo.svg (needs Playwright with Chromium):
 //   node scripts/icons.cjs
 // The PNGs are checked in, so this only has to run after the logo changes.
 const fs = require('fs'), path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
-const dir = path.join(__dirname, '..', 'public');
+const dir = path.join(__dirname, '..', 'public', 'app');
 const svg = fs.readFileSync(path.join(dir, 'logo.svg'), 'utf8');
 // full-bleed variant (maskable / Apple): square background, artwork scaled into the safe zone
 const bleed = k => svg.replace(/rx="112"/, 'rx="0"').replace('<g transform="translate(-22 6)">', `<g transform="translate(256 256) scale(${k}) translate(-256 -256) translate(-22 6)">`)

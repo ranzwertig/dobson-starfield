@@ -6,7 +6,7 @@ Push-to for your telescope.
 
 A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 430 KB. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
+Everything runs locally in the browser: no server, no sign-in. The website lives at `/` (landing page, `/privacy/`, `/imprint/`), the app at `/app/` as a single HTML file of roughly 470 KB. Fonts are self-hosted, so no page contacts third parties. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
 
 ## Usage
 
@@ -43,11 +43,14 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 |---|---|
 | `src/app.html` | UI, camera, overlay, sky map, navigation |
 | `src/solver.js` | star detection and plate solver (also usable in Node) |
-| `src/sw.js` | service worker for offline use and update notices (version set by the build) |
-| `public/` | static files copied to `dist/`: logo (`logo.svg`), web app manifest, icons, `robots.txt` |
-| `scripts/icons.cjs` | renders the PNG icons from `public/logo.svg` (needs Playwright; only after logo changes) |
+| `src/sw.js` | service worker of the app (`/app/sw.js`): offline use and update notices, version set by the build |
+| `src/sw-root.js` | retires the old service worker at `/sw.js` from when the app lived at `/` |
+| `site/` | website: landing page, privacy policy, imprint, 404 page, `site.css` |
+| `scripts/hero.mjs` | draws the landing page star chart from the catalogue at build time |
+| `public/` | static files copied to `dist/`: `app/` logo, web app manifest and icons, `robots.txt` |
+| `scripts/icons.cjs` | renders the PNG icons from `public/app/logo.svg` (needs Playwright; only after logo changes) |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6, names, designations, Messier objects, constellation lines |
-| `scripts/build.mjs` | builds `dist/index.html` with Astronomy Engine, catalogue and solver inlined |
+| `scripts/build.mjs` | builds the website and `dist/app/index.html` with Astronomy Engine, catalogue and solver inlined, copies the fonts |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
 | `test/synthetic.cjs` | synthetic star fields with a known solution |
 | `test/photo.cjs` | solves a real photo |
@@ -60,7 +63,7 @@ Node 20 or newer.
 
 ```bash
 npm install
-npm run build        # -> dist/index.html, dist/sw.js + files from public/
+npm run build        # -> dist/: website, app/, fonts/
 npm test             # synthetic star fields
 npm run dev          # local server via wrangler dev
 npm run deploy       # manual deploy (otherwise on push to main)
