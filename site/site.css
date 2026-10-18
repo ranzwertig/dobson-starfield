@@ -170,3 +170,10 @@ footer a:hover { color: var(--amber); }
   .cell small { font-size: 12px; }
   .sun { grid-template-columns: 1fr; }
 }
+
+/* links to other websites are marked */
+.doc a[href^="http"]::after, .legal a[href^="http"]::after, footer a[href^="http"]::after {
+  content: ""; display: inline-block; width: .72em; height: .72em; margin-left: .22em; vertical-align: .02em; background: currentColor;
+  -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg>') center / contain no-repeat;
+          mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg>') center / contain no-repeat;
+}

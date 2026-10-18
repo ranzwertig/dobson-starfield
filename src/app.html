@@ -265,6 +265,27 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .menu-item:hover { background: var(--raise); }
 a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .lbl-sub { text-transform: none; letter-spacing: 0; margin-left: 6px; }
+.menu-item .ext, .links .ext { width: 15px; height: 15px; color: var(--muted); flex: none; }
+.tn-sec { display: grid; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.tn-sec h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tn-times { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.tn-times div { background: var(--raise); border-radius: 9px; padding: 7px 4px; }
+.tn-times b { display: block; font-family: var(--font-num); font-size: 16px; font-weight: 500; }
+.tn-times small { color: var(--muted); font-size: 12px; }
+.tn-bar { position: relative; height: 26px; border-radius: 7px; overflow: hidden; background: linear-gradient(90deg, #4a5a86, #1d2440 12%, #1d2440 88%, #4a5a86); }
+.tn-bar .dark { position: absolute; top: 0; bottom: 0; background: #05070d; }
+.tn-bar .moon { position: absolute; top: 9px; height: 8px; border-radius: 4px; background: #e8e3c8; opacity: .85; }
+.tn-bar .now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--target); }
+.tn-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.tn-legend i { display: inline-block; width: 12px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+.tn-moon { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; }
+.tn-moon svg { width: 54px; height: 54px; }
+.tn-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; text-align: left; width: 100%; background: none; border: 0; border-radius: 9px; padding: 8px 6px; cursor: pointer; color: inherit; font: inherit; }
+.tn-row:hover { background: var(--raise); }
+.tn-row b { font-weight: 600; }
+.tn-row small { color: var(--muted); font-size: 13px; grid-column: 1; }
+.tn-row .tn-alt { grid-row: 1 / span 2; grid-column: 2; font-family: var(--font-num); font-size: 15px; color: var(--accent); }
+.tn-note { color: var(--muted); font-size: 13.5px; margin: 0; }
 .note a { color: var(--accent); }
 .menu-item svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
 .menu-item span { flex: 1; }
@@ -404,15 +425,17 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="label">Position</div>
     <div class="readout" id="readout"></div>
-    <div class="label">Tonight’s conditions <span class="lbl-sub" id="wxLoc"></span></div>
+    <div class="label">Tonight <span class="lbl-sub" id="wxLoc"></span></div>
     <div class="menu-list">
-      <a class="menu-item" id="wxSeeing" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9c3-2 5-2 8 0s5 2 8 0"/><path d="M3 14c3-2 5-2 8 0s5 2 8 0"/><path d="M17.5 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" fill="currentColor"/></svg><span>Seeing forecast</span><em>meteoblue</em></a>
-      <a class="menu-item" id="wxClouds" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z"/></svg><span>Clouds and darkness</span><em>Clear Outside</em></a>
+      <button class="menu-item" id="btnTonight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Darkness, Moon and what’s up</span><em>calculated here</em></button>
+      <a class="menu-item" id="wxSeeing" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9c3-2 5-2 8 0s5 2 8 0"/><path d="M3 14c3-2 5-2 8 0s5 2 8 0"/><path d="M17.5 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" fill="currentColor"/></svg><span>Seeing and clouds</span><em>meteoblue</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
+      <a class="menu-item" id="wxLight" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="10" r="5"/><path d="M10 19h4M10.5 22h3M12 1.5v1.5M3.5 10H5M19 10h1.5"/></svg><span>Light pollution at your site</span><em>lightpollutionmap.info</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
+      <a class="menu-item" id="wxSat" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="9.5" y="9.5" width="5" height="5" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M3 8l5-5M16 21l5-5"/></svg><span>ISS and satellite passes</span><em>Heavens-Above</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
     </div>
     <div class="label">Help</div>
     <div class="menu-list">
-      <a class="menu-item" href="/getting-started/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4"/></svg><span>Getting started</span><em>first night, step by step</em></a>
-      <a class="menu-item" href="/help/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Help</span><em>every button and setting</em></a>
+      <a class="menu-item" href="/getting-started/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4"/></svg><span>Getting started</span><em>first night, step by step</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
+      <a class="menu-item" href="/help/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Help</span><em>every button and setting</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
     </div>
     <p class="note legal-links"><a href="/" target="_blank" rel="noopener">About Zenigo</a> <a href="/imprint/" target="_blank" rel="noopener">Imprint</a> <a href="/privacy/" target="_blank" rel="noopener">Privacy</a> <a href="mailto:zenigo@christianranz.com">Contact</a></p>
   </div>
@@ -483,6 +506,13 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg></span><span class="flab">Planetary nebulae<small>Ring, Dumbbell, …</small></span><input type="checkbox" data-show="pn"></label>
     </fieldset>
     <p class="note">The selected target is always shown. “Find target” still searches everything.</p>
+  </div>
+</div>
+
+<div class="sheet tall" id="tonightSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="tonightTitle">
+    <div class="grab"><h2 id="tonightTitle"><span>Tonight</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div id="tonightBody"></div>
   </div>
 </div>
 
@@ -1839,14 +1869,127 @@ function syncQuick() {
   const src = $("camSel"), dst = $("qCam");
   if (src) { dst.innerHTML = src.innerHTML; dst.value = src.value; }
 }
-// Weather links for the current location (opened from the menu)
+// Links for the current location (opened from the menu): one source per topic
+function heavensTz() {
+  // Heavens-Above takes a time zone abbreviation; derive it from the device's standard offset, otherwise UTC
+  const jan = -new Date(new Date().getFullYear(), 0, 1).getTimezoneOffset(), zone = (Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+  if (/^Europe\//.test(zone)) return { 0: "GMT", 60: "CET", 120: "EET" }[jan] || "UCT";
+  if (/^America\//.test(zone)) return { [-300]: "EST", [-360]: "CST", [-420]: "MST", [-480]: "PST" }[jan] || "UCT";
+  return "UCT";
+}
 function syncWeatherLinks() {
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
-  const c = la.toFixed(3) + "N" + lo.toFixed(3) + "E";   // meteoblue: signed values, south and west negative
-  $("wxSeeing").href = "https://www.meteoblue.com/en/weather/outdoorsports/seeing/" + c;
-  $("wxClouds").href = "https://clearoutside.com/forecast/" + la.toFixed(2) + "/" + lo.toFixed(2);
+  $("wxSeeing").href = "https://www.meteoblue.com/en/weather/outdoorsports/seeing/" + la.toFixed(3) + "N" + lo.toFixed(3) + "E";   // signed values
+  $("wxLight").href = "https://www.lightpollutionmap.info/#zoom=10.00&lat=" + la.toFixed(4) + "&lon=" + lo.toFixed(4) + "&layers=B0FFFFFFFTFFFFFFFFFF";
+  $("wxSat").href = "https://www.heavens-above.com/PassSummary.aspx?satid=25544&lat=" + la.toFixed(3) + "&lng=" + lo.toFixed(3) + "&loc=Zenigo&alt=0&tz=" + heavensTz();
   $("wxLoc").textContent = "for " + Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
 }
+
+/* ---------------- Tonight: darkness, Moon, planets, best deep-sky objects (computed locally) ---------------- */
+function tonightData() {
+  const obs = observer(), now = new Date(), T = d => A.MakeTime(d);
+  const sunAlt = d => horiz(targetById("Sun").vec(T(d)), T(d)).alt;
+  const dateOf = t => t ? t.date : null;
+  // the night ahead (or the current one if it is already dark)
+  let darkLimit = -18, dusk, dawn;
+  const before = new Date(now.getTime() - 18 * 3600e3);   // already dark: look back for the start of this night
+  const findWindow = lim => {
+    const alt = sunAlt(now);
+    const d1 = dateOf(A.SearchAltitude(A.Body.Sun, obs, -1, T(alt > lim ? now : before), 1.2, lim));
+    const d2 = d1 && dateOf(A.SearchAltitude(A.Body.Sun, obs, +1, T(d1), 1, lim));
+    return d1 && d2 ? [d1, d2] : null;
+  };
+  let w = findWindow(-18);
+  if (!w) { darkLimit = -12; w = findWindow(-12); }
+  if (w) { dusk = w[0]; dawn = w[1]; }
+  const ref = dusk || now;
+  const sunset = dateOf(A.SearchRiseSet(A.Body.Sun, obs, -1, T(sunAlt(now) > 0 ? now : before), 1.2));
+  const sunrise = dateOf(A.SearchRiseSet(A.Body.Sun, obs, +1, T(dawn || ref), 1.2));
+  const start = sunset || now, end = sunrise || new Date(start.getTime() + 12 * 3600e3);
+  // samples every 10 minutes from sunset (or now) to sunrise
+  const step = 10 * 60e3, samples = [];
+  for (let t = start.getTime(); t <= end.getTime(); t += step) {
+    const d = new Date(t), at = T(d), rot = A.Rotation_EQJ_HOR(at, obs);
+    const alt = v => { const r = A.RotateVector(rot, new A.Vector(v[0], v[1], v[2], at)); const h = A.HorizonFromVector(r, "normal"); return [h.lat, h.lon]; };
+    const sa = sunAlt(d);
+    samples.push({ d, alt, sun: sa, dark: sa <= darkLimit + 0.01, moon: alt(targetById("Moon").vec(at))[0] });
+  }
+  const best = (vecAt, onlyDark, sunMax = 90) => {
+    let m = null;
+    for (const sm of samples) { if (onlyDark && !sm.dark) continue; if (sm.sun > sunMax) continue; const [a, az] = sm.alt(vecAt(sm.d)); if (!m || a > m.alt) m = { alt: a, az, d: sm.d }; }
+    return m;
+  };
+  // Moon
+  const phase = A.MoonPhase(T(ref)), illum = A.Illumination(A.Body.Moon, T(ref)).phase_fraction;
+  const moonRise = dateOf(A.SearchRiseSet(A.Body.Moon, obs, +1, T(new Date(start.getTime() - 2 * 3600e3)), 1));
+  const moonSet = dateOf(A.SearchRiseSet(A.Body.Moon, obs, -1, T(new Date(start.getTime() - 2 * 3600e3)), 1));
+  const darkS = samples.filter(x => x.dark), moonFree = darkS.filter(x => x.moon < 0).length * 10;
+  // planets: best altitude between sunset and sunrise
+  const planets = PLANETS.filter(([, en]) => en !== "Sun" && en !== "Moon").map(([de, en]) => {
+    const T0 = targetById(en), b = best(d => T0.vec(T(d)), false, en === "Venus" || en === "Mercury" ? -3 : -6);   // visible once the sky has darkened
+    const mag = A.Illumination(A.Body[en], T(b ? b.d : ref)).mag;
+    return { de, en, b, mag };
+  }).filter(p => p.b && p.b.alt > 8).sort((a, b) => a.mag - b.mag);
+  // deep-sky: brightest Messier objects that climb above 30° in darkness, preferably without the Moon
+  const dso = darkS.length ? MESSIER.filter(m => m[3] != null && m[3] <= 8.5).map(row => {
+    const v = Solver.radec2v(row[1], row[2]); return { row, b: best(() => v, true) };
+  }).filter(x => x.b && x.b.alt > 30).sort((a, b) => a.row[3] - b.row[3]).slice(0, 10) : [];
+  return { now, sunset, dusk, dawn, sunrise, darkLimit, start, end, samples, phase, illum, moonRise, moonSet, moonFree, planets, dso };
+}
+function showTonight() {
+  const t = tonightData(), box = $("tonightBody"); box.textContent = "";
+  const fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  const dir = az => compass(az).replace("north", "N").replace("south", "S").replace("east", "E").replace("west", "W").replace(/-/g, "");
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const esc = x => String(x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  // darkness
+  const s1 = el("section", "tn-sec"); s1.append(el("h3", "", t.darkLimit === -18 ? "Darkness" : "Darkness (no full darkness tonight)"));
+  const times = el("div", "tn-times");
+  [["Sunset", t.sunset], [t.darkLimit === -18 ? "Dark from" : "Darkest from", t.dusk], ["Dark until", t.dawn], ["Sunrise", t.sunrise]]
+    .forEach(([k, v]) => times.append(el("div", "", "<b>" + fmt(v) + "</b><small>" + k + "</small>")));
+  s1.append(times);
+  // timeline: sunset .. sunrise, dark part, Moon above the horizon
+  const span = t.end - t.start, pct = d => Math.max(0, Math.min(100, (d - t.start) / span * 100));
+  const bar = el("div", "tn-bar");
+  if (t.dawn) { const dk = el("div", "dark"); dk.style.left = pct(t.dusk || t.start) + "%"; dk.style.width = (pct(t.dawn) - pct(t.dusk || t.start)) + "%"; bar.append(dk); }
+  let run = null; t.samples.forEach((x, i) => {
+    const up = x.moon > 0, last = i === t.samples.length - 1;
+    if (up && run == null) run = x.d;
+    if (run != null && (!up || last)) { const m = el("div", "moon"); m.style.left = pct(run) + "%"; m.style.width = Math.max(0.8, pct(x.d) - pct(run)) + "%"; bar.append(m); run = null; }
+  });
+  if (t.now > t.start && t.now < t.end) { const n = el("div", "now"); n.style.left = pct(t.now) + "%"; bar.append(n); }
+  s1.append(bar);
+  s1.append(el("div", "tn-legend", '<span><i style="background:#05070d;border:1px solid var(--line)"></i>' + (t.darkLimit === -18 ? "astronomical darkness" : "nautical darkness") + '</span><span><i style="background:#e8e3c8"></i>Moon above the horizon</span><span><i style="background:var(--target)"></i>now</span>'));
+  s1.append(el("p", "tn-note", t.dawn ? "Dark and moonless for " + (t.moonFree >= 60 ? Math.floor(t.moonFree / 60) + " h " + (t.moonFree % 60 ? t.moonFree % 60 + " min" : "") : t.moonFree + " min") + " tonight." : "The Sun doesn’t get far enough below the horizon tonight."));
+  box.append(s1);
+  // Moon
+  const s2 = el("section", "tn-sec"); s2.append(el("h3", "", "Moon"));
+  const k = t.illum, waxing = t.phase < 180, r = 24, cx = 27, cy = 27, ex = Math.abs(1 - 2 * k) * r;
+  // lit part: half disc on the lit side plus/minus an ellipse
+  const lit = waxing ? 1 : 0, sweep = k > 0.5 ? (waxing ? 1 : 0) : (waxing ? 0 : 1);   // terminator bulges into the dark side when gibbous
+  const moonSvg = `<svg viewBox="0 0 54 54"><circle cx="${cx}" cy="${cy}" r="${r}" fill="#2a3048"/><path fill="#e8e3c8" d="M${cx} ${cy - r}A${r} ${r} 0 0 ${lit} ${cx} ${cy + r}A${ex.toFixed(2)} ${r} 0 0 ${sweep} ${cx} ${cy - r}Z"/></svg>`;
+  const name = t.phase < 10 || t.phase > 350 ? "New Moon" : t.phase < 80 ? "Waxing crescent" : t.phase < 100 ? "First quarter" : t.phase < 170 ? "Waxing gibbous" : t.phase < 190 ? "Full Moon" : t.phase < 260 ? "Waning gibbous" : t.phase < 280 ? "Last quarter" : "Waning crescent";
+  s2.append(el("div", "tn-moon", moonSvg + "<div><b>" + name + "</b>, " + Math.round(k * 100) + " % lit<br><small class=\"tn-note\">Rises " + fmt(t.moonRise) + " · sets " + fmt(t.moonSet) + "</small></div>"));
+  box.append(s2);
+  // planets
+  const s3 = el("section", "tn-sec"); s3.append(el("h3", "", "Planets"));
+  if (!t.planets.length) s3.append(el("p", "tn-note", "No planet gets higher than 8° tonight."));
+  t.planets.forEach(p => {
+    const b = el("button", "tn-row", "<b>" + esc(p.de) + "</b><span class=\"tn-alt\">" + Math.round(p.b.alt) + "°</span><small>highest at " + fmt(p.b.d) + " in the " + dir(p.b.az) + " · " + p.mag.toFixed(1) + " mag</small>");
+    b.onclick = () => showInfo(planetObj(p.de, p.en)); s3.append(b);
+  });
+  box.append(s3);
+  // deep sky
+  const s4 = el("section", "tn-sec"); s4.append(el("h3", "", "Best deep-sky objects"));
+  if (!t.dso.length) s4.append(el("p", "tn-note", t.dawn ? "No bright Messier object climbs above 30° in darkness tonight." : "Not dark enough tonight for deep-sky objects."));
+  t.dso.forEach(({ row, b: bb }) => {
+    const b = el("button", "tn-row", "<b>" + esc(row[0] + (row[4] ? " · " + row[4] : "")) + "</b><span class=\"tn-alt\">" + Math.round(bb.alt) + "°</span><small>" + esc(row[5] || "") + " · " + row[3] + " mag · highest at " + fmt(bb.d) + " in the " + dir(bb.az) + "</small>");
+    b.onclick = () => showInfo(messierObj(row)); s4.append(b);
+  });
+  box.append(s4);
+  box.append(el("p", "tn-note", "For " + $("wxLoc").textContent.replace(/^for /, "") + ", times in your phone’s time zone. Tap an object for details or to make it your target."));
+}
+$("btnTonight").onclick = () => { syncWeatherLinks(); showTonight(); openSheet("tonightSheet"); };
 $("fabQuick").onclick = () => { syncQuick(); listCameras().then(syncQuick); openSheet("quickSheet"); };
 document.querySelectorAll("[data-pointer]").forEach(b => b.onclick = () => { setPointer(b.dataset.pointer); syncQuick(); });
 $("qLat").onchange = () => { $("lat").value = $("qLat").value; $("lat").onchange(); syncQuick(); };
