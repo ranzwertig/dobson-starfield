@@ -4,7 +4,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: Ein-Bildschirm-App fürs Handy am Teleskop — oben Himmelsbild mit Overlay, unten Zielführung und Bedienung. Dunkel und rotlichttauglich. */
+/* Layout: Ein-Bildschirm-App fürs Handy am Teleskop. Schmale Kopfzeile, darunter füllt das Himmelsbild mit Overlay den ganzen Platz.
+   Gradzahlen als HUD oben im Bild, wichtige Funktionen als runde Knöpfe unten rechts, Aufnahme-Knopf fest am unteren Rand.
+   Alles andere steckt im Menü. Dunkel und rotlichttauglich. */
 :root {
   --bg: #0a0c0f;
   --panel: #11151a;
@@ -16,6 +18,7 @@
   --target: #ff6a5c;     /* Ziel */
   --ok: #7cd39a;         /* erkannte Übereinstimmungen */
   --sky: #9fb4ff;        /* Sternbilder */
+  --glass: rgba(12, 15, 19, .78);
   --font-ui: "Saira Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
   --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   color-scheme: dark;
@@ -26,180 +29,239 @@ html.red { filter: grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightne
 body { font-family: var(--font-ui); font-size: 15px; overflow: hidden; }
 button, input, select { font: inherit; color: inherit; }
 .app { height: 100%; display: flex; flex-direction: column; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Kopfzeile */
 header.bar {
-  display: flex; align-items: center; gap: 10px;
-  padding-block: 8px;
+  display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box;
+  padding-block: 4px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  border-bottom: 1px solid var(--line);
+  padding-right: max(10px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--panel);
 }
-.brand { font-weight: 700; letter-spacing: .02em; font-size: 17px; }
-.brand small { font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; margin-left: 6px; }
+.brand { font-weight: 700; letter-spacing: .02em; font-size: 16px; white-space: nowrap; }
 .status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
 .status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .dot.ok { background: var(--ok); } .dot.busy { background: var(--accent); animation: pulse 1s infinite; } .dot.bad { background: var(--target); }
 @keyframes pulse { 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } }
-.iconbtn { background: none; border: 1px solid var(--line); border-radius: 8px; width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; flex: none; }
-.iconbtn:focus-visible, .btn:focus-visible, .chip:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.iconbtn { background: none; border: 0; border-radius: 8px; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; flex: none; }
+.iconbtn svg { width: 22px; height: 22px; }
 
-.stage { position: relative; flex: 1 1 52%; min-height: 200px; background: #000; overflow: hidden; touch-action: manipulation; }
+/* Bild / Karte */
+.stage { position: relative; flex: 1 1 auto; min-height: 0; background: #000; overflow: hidden; touch-action: manipulation; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .stage video { display: none; }
-.stage .tag {
-  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); top: 10px;
-  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
-  background: rgba(10,12,15,.7); padding: 3px 8px; border-radius: 4px;
+.tag {
+  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: 10px; max-width: 55%;
+  font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  background: var(--glass); padding: 3px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.stage .hint {
-  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); max-width: calc(100% - 32px);
-  background: rgba(17,21,26,.92); border: 1px solid var(--accent); color: var(--fg);
-  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center;
-}
-.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
 .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
 
-.panel {
-  flex: 1 1 48%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
-  padding-block: 12px 14px;
+/* Gradzahlen oben im Bild */
+.hud {
+  position: absolute; top: 8px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
+}
+.hcell {
+  background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
+  display: flex; align-items: center; gap: 8px; min-width: 0; backdrop-filter: blur(4px);
+}
+.hcell svg { width: 30px; height: 30px; flex: none; color: var(--accent); transition: transform .3s; }
+.hcell .v { font-family: var(--font-num); font-size: 22px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.hcell .w { font-size: 13px; color: var(--muted); line-height: 1.15; }
+.htotal {
+  grid-column: 1 / -1; justify-self: center; max-width: 100%; box-sizing: border-box;
+  background: var(--glass); border-radius: 99px; padding: 3px 12px; font-size: 13px; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; cursor: pointer; border: 0;
+}
+.htotal strong { color: var(--fg); font-weight: 600; }
+.hud.hit .hcell { border-color: var(--ok); }
+.hud.hit .htotal strong { color: var(--ok); }
+.hud.stale { opacity: .55; }
+.hud.idle .hcell { display: none; }
+
+.hint {
+  position: absolute; left: 50%; top: 104px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
+  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
+}
+
+/* Runde Knöpfe unten rechts */
+.fabs {
+  position: absolute; right: max(10px, env(safe-area-inset-right, 0px)); bottom: 14px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.fab {
+  width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass);
+  display: grid; place-items: center; cursor: pointer; padding: 0; position: relative; backdrop-filter: blur(4px);
+}
+.fab svg { width: 22px; height: 22px; }
+.fab small {
+  position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+  font-size: 12px; white-space: nowrap; color: var(--fg); background: var(--glass); padding: 2px 7px; border-radius: 5px;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.fabs.labels .fab small { opacity: 1; }
+.fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
+
+/* Fester Aufnahme-Knopf unten */
+.dock {
+  background: var(--panel); border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  background: var(--panel); border-top: 1px solid var(--line);
 }
-.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.controls .btn { justify-content: center; padding-inline: 8px; white-space: nowrap; }
-.controls .primary { grid-column: span 2; }
+.shoot {
+  width: 100%; border: 0; border-radius: 12px; padding: 14px 16px; cursor: pointer;
+  background: var(--accent); color: #17110a; font-weight: 700; font-size: 17px; letter-spacing: .02em;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.shoot svg { width: 22px; height: 22px; }
+.shoot:disabled { opacity: .55; cursor: default; }
+
+/* Blätter: Menü, Zielsuche, Einstellungen */
 .btn {
   border: 1px solid var(--line); background: var(--raise); border-radius: 9px; padding: 9px 13px;
   cursor: pointer; font-weight: 600; letter-spacing: .02em; display: inline-flex; align-items: center; gap: 7px;
 }
-.btn.primary { background: var(--accent); color: #17110a; border-color: var(--accent); }
-.btn.on { border-color: var(--accent); color: var(--accent); }
-.btn:disabled { opacity: .45; cursor: default; }
-.btn svg, .iconbtn svg { width: 18px; height: 18px; }
-
-.target { display: grid; gap: 8px; }
-.label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.search { position: relative; }
-.search input {
-  width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
-  padding: 10px 12px; font-size: 16px;
-}
-.results {
-  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; max-height: 260px; overflow-y: auto;
-  background: var(--raise); border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
-}
-.results button { display: flex; width: 100%; gap: 10px; align-items: baseline; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 12px; cursor: pointer; }
-.results button:hover, .results button:focus-visible { background: var(--line); outline: none; }
-.results b { font-weight: 600; }
-.results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
-.results .grp { padding: 6px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
-.chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 4px 11px; font-size: 13px; cursor: pointer; }
-.chip.sel { border-color: var(--target); color: var(--target); }
-.chip.below { opacity: .45; }
-
-.guide { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.gcell { background: var(--raise); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; min-width: 0; }
-.gcell svg { width: 38px; height: 38px; flex: none; color: var(--accent); transition: transform .3s; }
-.gcell .v { font-family: var(--font-num); font-size: 24px; font-weight: 500; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.gcell .w { font-size: 14px; color: var(--muted); }
-.guide .total { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 14px; color: var(--muted); }
-.guide .total strong { color: var(--fg); font-weight: 600; }
-.guide.hit .gcell { border-color: var(--ok); }
-.guide.hit .total strong { color: var(--ok); }
-.guide.stale { opacity: .55; }
-
-.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px 14px; font-size: 13px; }
-.readout div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; min-width: 0; }
-.readout span:first-child { color: var(--muted); }
-.readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; }
-.note b { color: var(--fg); font-weight: 600; }
-
-.sheet {
-  position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center;
-}
+.btn svg { width: 18px; height: 18px; }
+.sheet { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
 .sheet .inner {
   width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px 14px 0 0; display: grid; gap: 14px;
-  padding-block: 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-radius: 14px 14px 0 0; display: grid; gap: 14px; align-content: start; box-sizing: border-box;
+  padding-block: 12px calc(18px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
+.sheet.tall .inner { height: 88%; }
 .sheet h2 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; }
 .sheet fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; display: grid; gap: 10px; }
-.sheet legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.sheet legend, .label { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.label { padding: 0; }
+.menu-list { display: grid; gap: 2px; }
+.menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: none; border: 0; border-radius: 9px;
+  padding: 12px 10px; cursor: pointer; font-size: 16px;
+}
+.menu-item:hover { background: var(--raise); }
+.menu-item svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
+.menu-item span { flex: 1; }
+.menu-item em { font-style: normal; color: var(--muted); font-size: 13px; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .row label { flex: 1 1 120px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
 .row input[type=number], .row input[type=text], .row select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; }
 .row input[type=range] { width: 100%; accent-color: var(--accent); }
-.check { display: flex !important; grid-auto-flow: column; align-items: center; gap: 8px !important; color: var(--fg) !important; font-size: 15px !important; flex: 1 1 100% !important; }
+.check { display: flex !important; align-items: center; gap: 8px !important; color: var(--fg) !important; font-size: 15px !important; flex: 1 1 100% !important; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
 .camctl:empty::after { content: "Diese Kamera bietet keine manuelle Belichtung an. Mehr Bilder stapeln hilft trotzdem."; font-size: 13px; color: var(--muted); }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px 14px; font-size: 13px; }
+.readout div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; min-width: 0; }
+.readout span:first-child { color: var(--muted); }
+.readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.readout:empty::after { content: "Noch keine Position bestimmt."; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; margin: 0; }
+.note b { color: var(--fg); font-weight: 600; }
+
+/* Zielsuche */
+.search input {
+  width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  padding: 11px 12px; font-size: 16px;
+}
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
+.chip.sel { border-color: var(--target); color: var(--target); }
+.chip.below { opacity: .45; }
+.results { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.results button { display: flex; width: 100%; gap: 10px; align-items: baseline; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 11px 12px; cursor: pointer; }
+.results button:last-child { border-bottom: 0; }
+.results button:hover, .results button:focus-visible { background: var(--raise); outline: none; }
+.results b { font-weight: 600; }
+.results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.results .grp { padding: 7px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
 </style>
 
 <div class="app">
   <header class="bar">
     <div class="brand">Dobson-Lotse</div>
     <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Bereit</span></div>
-    <button class="iconbtn" id="btnSettings" aria-label="Einstellungen">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>
+    <button class="iconbtn" id="btnMenu" aria-label="Menü">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
   </header>
 
-  <div class="stage" id="stage">
+  <main class="stage" id="stage">
     <video id="video" playsinline muted></video>
     <canvas id="view"></canvas>
-    <div class="tag" id="srcTag">Beispielbild (simuliert)</div>
-    <div class="hint" id="hint" hidden></div>
-    <div class="progress"><i id="prog"></i></div>
-  </div>
 
-  <div class="panel">
-    <div class="controls">
-      <button class="btn" id="btnCam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>Kamera</button>
-      <button class="btn" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg>Foto</button>
-      <button class="btn" id="btnTele" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>Okular</button>
-      <button class="btn primary" id="btnSolve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Position bestimmen</button>
-      <button class="btn" id="btnAuto" aria-pressed="false">Dauernd</button>
-      <input type="file" id="fileIn" accept="image/*" hidden>
-    </div>
-
-    <div class="target">
-      <div class="label">Ziel</div>
-      <div class="search">
-        <input id="q" type="text" placeholder="Suchen: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Ziel suchen">
-        <div class="results" id="results" hidden></div>
-      </div>
-      <div class="chips" id="chips"></div>
-    </div>
-
-    <div class="guide" id="guide">
-      <div class="gcell">
-        <svg id="azArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20a12 12 0 0 1 22-6.5"/><path d="M31 6v8h-8"/><ellipse cx="20" cy="31" rx="13" ry="3.5" stroke-width="1.4" opacity=".55"/></svg>
+    <div class="hud idle" id="guide">
+      <div class="hcell">
+        <svg id="azArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20a12 12 0 0 1 22-6.5"/><path d="M31 6v8h-8"/><ellipse cx="20" cy="31" rx="13" ry="3.5" stroke-width="1.4" opacity=".55"/></svg>
         <div><div class="v" id="azV">–</div><div class="w" id="azW">Azimut</div></div>
       </div>
-      <div class="gcell">
-        <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
+      <div class="hcell">
+        <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
         <div><div class="v" id="altV">–</div><div class="w" id="altW">Höhe</div></div>
       </div>
-      <div class="total"><strong id="totalTxt">Noch keine Position</strong><span id="totalSub"></span></div>
+      <button class="htotal" id="hudTarget" aria-label="Ziel ändern"><strong id="totalTxt">Noch keine Position</strong> <span id="totalSub"></span></button>
     </div>
 
+    <div class="hint" id="hint" hidden></div>
+    <div class="tag" id="srcTag">Beispielbild (simuliert)</div>
+
+    <div class="fabs" id="fabs">
+      <button class="fab" id="fabSearch" aria-label="Ziel suchen"><small>Ziel suchen</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
+      <button class="fab" id="btnTele" aria-pressed="false" aria-label="Okular-Punkt setzen"><small>Okular-Punkt</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></button>
+      <button class="fab" id="btnAuto" aria-pressed="false" aria-label="Dauerbetrieb"><small>Dauernd</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg></button>
+      <button class="fab" id="btnCam" aria-label="Kamera an/aus"><small>Kamera</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+  </main>
+
+  <footer class="dock">
+    <button class="shoot" id="btnSolve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Position bestimmen</button>
+  </footer>
+  <input type="file" id="fileIn" accept="image/*" hidden>
+</div>
+
+<div class="sheet" id="menu" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <h2 id="menuTitle">Menü <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <div class="menu-list">
+      <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Foto aus der Galerie lösen</span></button>
+      <button class="menu-item" id="btnRed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><span>Rotlicht</span><em id="redState">aus</em></button>
+      <button class="menu-item" id="btnLabels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M4 12h16M4 18h7"/></svg><span>Knopf-Beschriftungen</span><em id="labelState">an</em></button>
+      <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Einstellungen</span></button>
+    </div>
+    <div class="label">Position</div>
     <div class="readout" id="readout"></div>
+    <div class="label">So geht’s</div>
     <p class="note" id="howto">
-      <b>So geht’s:</b> Handy fest und parallel zum Tubus montieren, Kamera starten, „Position bestimmen“. Beim ersten Mal sucht die App das Bildfeld deiner Kamera (dauert bis zu einer Minute) und merkt es sich. Danach einen hellen Stern im Okular zentrieren, „Okular“ drücken und denselben Stern im Bild antippen. Ab dann zeigen die Pfeile, wohin du den Dobson schieben musst.
+      Handy fest und parallel zum Tubus montieren, Kamera starten (Knopf rechts unten), dann <b>Position bestimmen</b>. Beim ersten Mal sucht die App das Bildfeld deiner Kamera und merkt es sich. Danach einen hellen Stern im Okular zentrieren, <b>Okular-Punkt</b> drücken und denselben Stern im Bild antippen. Ab dann zeigen die Gradzahlen oben, wohin du den Dobson schieben musst. Mit <b>Dauernd</b> aktualisiert sich die Position laufend.
     </p>
+  </div>
+</div>
+
+<div class="sheet tall" id="searchSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+    <h2 id="searchTitle">Ziel wählen <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <div class="search"><input id="q" type="text" placeholder="Suchen: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Ziel suchen"></div>
+    <div class="chips" id="chips"></div>
+    <div class="results" id="results"></div>
   </div>
 </div>
 
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h2 id="setTitle">Einstellungen <button class="iconbtn" id="btnClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <h2 id="setTitle">Einstellungen <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
     <fieldset>
       <legend>Standort</legend>
       <div class="row">
@@ -214,7 +276,7 @@ header.bar {
         <label>Bildfeld, lange Seite (°)<input type="number" id="fov" step="0.1" placeholder="unbekannt"></label>
         <button class="btn" id="btnFovReset">Neu ermitteln</button>
       </div>
-      <div class="note">Wird beim ersten erfolgreichen Lösen automatisch gemessen. Typisch für Handy-Hauptkameras: 60–75°. Bei Fotos aus der Galerie sucht die App das Bildfeld jedes Mal neu, weil Objektiv und Ausschnitt verschieden sein können.</div>
+      <p class="note">Wird beim ersten erfolgreichen Lösen automatisch gemessen. Typisch für Handy-Hauptkameras: 60–75°. Bei Fotos aus der Galerie sucht die App das Bildfeld jedes Mal neu, weil Objektiv und Ausschnitt verschieden sein können.</p>
       <div class="row"><label>Suchbereich min / max (°)<input type="text" id="fovRange" value="25-85"></label></div>
     </fieldset>
     <fieldset>
@@ -228,6 +290,7 @@ header.bar {
     <fieldset>
       <legend>Anzeige</legend>
       <div class="row">
+        <label class="check"><input type="checkbox" id="optFill"> Bild auf ganze Fläche vergrößern</label>
         <label class="check"><input type="checkbox" id="optLines"> Sternbildlinien</label>
         <label class="check"><input type="checkbox" id="optNames"> Sternnamen und Messier-Objekte</label>
         <label class="check"><input type="checkbox" id="optDet"> Erkannte Lichtpunkte markieren</label>
@@ -235,11 +298,11 @@ header.bar {
       </div>
     </fieldset>
     <fieldset>
-      <legend>Teleskop-Punkt</legend>
-      <div class="note" id="teleInfo"></div>
+      <legend>Okular-Punkt</legend>
+      <p class="note" id="teleInfo"></p>
       <div class="row"><button class="btn" id="btnTeleReset">Auf Bildmitte zurücksetzen</button></div>
     </fieldset>
-    <div class="note">Sternkatalog: Hipparcos/Yale bis 6 mag aus d3-celestial (BSD). Planeten und Mond: Astronomy Engine (MIT). Alles läuft lokal im Browser.</div>
+    <p class="note">Sternkatalog: Hipparcos/Yale bis 6 mag aus d3-celestial (BSD). Planeten und Mond: Astronomy Engine (MIT). Alles läuft lokal im Browser.</p>
   </div>
 </div>
 
@@ -253,7 +316,7 @@ const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 Solver.setCatalog(STARS);
 
 /* ---------------- Einstellungen ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, tele: { u: 0, v: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, fabLabels: true, tele: { u: 0, v: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 cfg.fov.demo = 60;
@@ -514,7 +577,7 @@ function renderChips() {
     const b = document.createElement("button"); b.className = "chip" + (cfg.target === id ? " sel" : "") + (alt < 0 ? " below" : "");
     b.textContent = T.name;
     b.title = alt < 0 ? "Unter dem Horizont" : "Höhe " + alt.toFixed(0) + "°";
-    b.onclick = () => selectTarget(id); box.append(b);
+    b.onclick = () => { selectTarget(id); closeSheet("searchSheet"); }; box.append(b);
   });
 }
 function showResults() {
@@ -534,10 +597,9 @@ function showResults() {
     const n = document.createElement("b"); n.textContent = T.name;
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "unter Hor." : alt.toFixed(0) + "°";
-    b.append(n, s, a); b.onclick = () => { selectTarget(T.id); $("q").value = ""; box.hidden = true; };
+    b.append(n, s, a); b.onclick = () => { selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
     box.append(b);
   });
-  box.hidden = false;
 }
 function selectTarget(id) { cfg.target = id; save(); renderChips(); updateGuide(); renderReadout(); }
 
@@ -555,7 +617,7 @@ function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) *
 let lastGuide = null;
 function updateGuide() {
   const T = targetById(cfg.target), tv = teleVec(), t = A.MakeTime(new Date());
-  const g = $("guide"); g.classList.remove("hit", "stale");
+  const g = $("guide"); g.classList.remove("hit", "stale"); g.classList.toggle("idle", !teleVec());
   if (!T) return;
   const tgt = T.vec(t), th = horiz(tgt, t);
   if (!tv) {
@@ -608,7 +670,7 @@ function draw() {
   if (st.source === "video" && st.stream && video.videoWidth) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
   else if (st.frame) { src = st.frame.canvas; sw = src.width; sh = src.height; }
   if (src) {
-    const sc = Math.min(W / sw, H / sh), dw = sw * sc, dh = sh * sc, ox = (W - dw) / 2, oy = (H - dh) / 2;
+    const sc = (cfg.fill ? Math.max : Math.min)(W / sw, H / sh), dw = sw * sc, dh = sh * sc, ox = (W - dw) / 2, oy = (H - dh) / 2;
     vctx.drawImage(src, ox, oy, dw, dh);
     const ref = st.sol || st.frame || { w: sw, h: sh };
     const k = dw / ref.w;
@@ -618,6 +680,10 @@ function draw() {
   requestAnimationFrame(draw);
 }
 const P = (x, y) => [fit.ox + x * fit.sc, fit.oy + y * fit.sc];
+function overlayInsets(dpr) {
+  const sr = view.getBoundingClientRect(), hud = $("guide").getBoundingClientRect(), fb = $("fabs").getBoundingClientRect();
+  return { top: Math.max(30 * dpr, (hud.bottom - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr) };
+}
 let placed = [];
 function label(c, txt, x, y) {   // Beschriftung nur zeichnen, wenn sie nichts überdeckt
   const w = c.measureText(txt).width, h = parseFloat(c.font) * 1.1, r = [x, y - h / 2, x + w, y + h / 2];
@@ -679,8 +745,10 @@ function drawOverlay(dpr) {
     const p = Solver.skyToPix(sol, T.vec(t));
     c.strokeStyle = col("--target"); c.fillStyle = col("--target"); c.lineWidth = 2.5 * dpr;
     const cw = view.width, ch = view.height, m = 30 * dpr;
+    // freie Fläche für Pfeil und Hinweisschild: nicht unter HUD (oben) und Knöpfen (rechts unten)
+    const ins = overlayInsets(dpr), mT = ins.top, mR = ins.right;
     let ex, ey, inside = false;
-    if (p && p.z > 0.05) { [ex, ey] = P(p.x, p.y); inside = ex > m && ey > m && ex < cw - m && ey < ch - m; }
+    if (p && p.z > 0.05) { [ex, ey] = P(p.x, p.y); inside = ex > m && ey > mT && ex < cw - m && ey < ch - m; }
     else {
       const cv = Solver.mulT(sol.R, T.vec(t)); const dx = cv[0], dy = cv[1], n = Math.hypot(dx, dy) || 1;
       ex = tx + dx / n * 1e4; ey = ty + dy / n * 1e4;
@@ -692,7 +760,7 @@ function drawOverlay(dpr) {
     // Pfeil vom Fadenkreuz Richtung Ziel, am Bildrand gekappt
     const dx = ex - tx, dy = ey - ty, d = Math.hypot(dx, dy);
     if (d > 40 * dpr) {
-      let k = 1; const bx = dx > 0 ? (cw - m - tx) / dx : dx < 0 ? (m - tx) / dx : Infinity, by = dy > 0 ? (ch - m - ty) / dy : dy < 0 ? (m - ty) / dy : Infinity;
+      let k = 1; const bx = dx > 0 ? (cw - mR - tx) / dx : dx < 0 ? (m - tx) / dx : Infinity, by = dy > 0 ? (ch - m - ty) / dy : dy < 0 ? (mT - ty) / dy : Infinity;
       k = Math.min(1, bx, by) * (inside ? 1 - 24 * dpr / d : 1);
       const x2 = tx + dx * k, y2 = ty + dy * k, a = Math.atan2(dy, dx);
       const x1 = tx + dx / d * 26 * dpr, y1 = ty + dy / d * 26 * dpr;
@@ -703,7 +771,7 @@ function drawOverlay(dpr) {
         const txt = T.name + " · " + fmtDeg(sep, 0) + " außerhalb";
         c.font = `600 ${13 * dpr}px ${col("--font-ui")}`;
         const tw = c.measureText(txt).width, ph = 22 * dpr, pw = tw + 16 * dpr;
-        const bx = Math.min(cw - pw - 6 * dpr, Math.max(6 * dpr, x2 - pw / 2)), by = Math.min(ch - ph - 6 * dpr, Math.max(6 * dpr, y2 + (dy > 0 ? -ph - 18 * dpr : 16 * dpr)));
+        const bx = Math.min(cw - mR - pw, Math.max(6 * dpr, x2 - pw / 2)), by = Math.min(ch - ph - 6 * dpr, Math.max(mT, y2 + (dy > 0 ? -ph - 18 * dpr : 16 * dpr)));
         c.fillStyle = "rgba(10,12,15,.85)"; c.strokeStyle = col("--target"); c.lineWidth = 1.2 * dpr;
         c.beginPath(); c.roundRect ? c.roundRect(bx, by, pw, ph, 6 * dpr) : c.rect(bx, by, pw, ph); c.fill(); c.stroke();
         c.fillStyle = col("--target"); c.textBaseline = "middle"; c.fillText(txt, bx + 8 * dpr, by + ph / 2);
@@ -741,15 +809,28 @@ function syncSettings() {
   $("fovRange").value = cfg.fovRange;
   $("stack").value = cfg.stack; $("stackV").textContent = cfg.stack;
   $("sigma").value = cfg.sigma; $("sigV").textContent = cfg.sigma <= 4 ? "hoch" : cfg.sigma >= 7 ? "niedrig" : "mittel";
+  $("optFill").checked = cfg.fill; $("redState").textContent = cfg.red ? "an" : "aus"; $("labelState").textContent = cfg.fabLabels ? "an" : "aus";
+  $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optLines").checked = cfg.lines; $("optNames").checked = cfg.names; $("optDet").checked = cfg.det; $("optRed").checked = cfg.red;
   document.documentElement.classList.toggle("red", cfg.red);
   const off = Math.hypot(cfg.tele.u, cfg.tele.v);
   $("teleInfo").textContent = off < 1e-4 ? "Das Teleskop zeigt laut Einstellung auf die Bildmitte der Kamera." :
     "Versatz zur Bildmitte: " + (cfg.tele.u * 100).toFixed(1) + " % / " + (cfg.tele.v * 100).toFixed(1) + " % der Bildbreite" + (st.sol ? " (≈ " + fmtDeg(Math.atan(off * Math.max(st.sol.w, st.sol.h) / st.sol.f) * R2D) + ")" : "") + ".";
 }
-$("btnSettings").onclick = () => { syncSettings(); $("sheet").hidden = false; };
-$("btnClose").onclick = () => $("sheet").hidden = true;
-$("sheet").addEventListener("click", e => { if (e.target === $("sheet")) $("sheet").hidden = true; });
+/* ---------------- Blätter: Menü, Zielsuche, Einstellungen ---------------- */
+function openSheet(id) { document.querySelectorAll(".sheet").forEach(x => x.hidden = x.id !== id); }
+function closeSheet(id) { $(id).hidden = true; }
+document.querySelectorAll(".sheet").forEach(sh => {
+  sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) sh.hidden = true; });
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".sheet").forEach(x => x.hidden = true); });
+$("btnMenu").onclick = () => { renderReadout(); syncSettings(); openSheet("menu"); };
+$("btnSettings").onclick = () => { syncSettings(); openSheet("sheet"); };
+const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
+$("fabSearch").onclick = openSearch;
+$("hudTarget").onclick = openSearch;
+$("btnRed").onclick = () => { cfg.red = !cfg.red; save(); syncSettings(); };
+$("btnLabels").onclick = () => { cfg.fabLabels = !cfg.fabLabels; save(); syncSettings(); };
 $("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("lon").onchange = () => { cfg.lon = +$("lon").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("btnGps").onclick = () => {
@@ -762,12 +843,12 @@ $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSetting
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
-[["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
+[["optFill", "fill"], ["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
 $("btnTeleReset").onclick = () => { cfg.tele = { u: 0, v: 0 }; save(); syncSettings(); updateGuide(); };
 
 /* ---------------- Bedienung ---------------- */
 $("btnCam").onclick = startCamera;
-$("btnPhoto").onclick = () => $("fileIn").click();
+$("btnPhoto").onclick = () => { closeSheet("menu"); $("fileIn").click(); };
 $("fileIn").onchange = async () => {
   const f = $("fileIn").files[0]; if (!f) return;
   try {
@@ -781,10 +862,8 @@ $("fileIn").onchange = async () => {
 $("btnSolve").onclick = solveNow;
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Dauerbetrieb braucht die Live-Kamera.", 3000); return; } setAuto(!st.auto); };
 $("btnTele").onclick = () => { if (!st.sol && !st.frame) return; setTeleMode(!st.teleMode); };
-$("q").addEventListener("focus", showResults);
 $("q").addEventListener("input", showResults);
-$("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("results").querySelector("button"); b && b.click(); } if (e.key === "Escape") $("results").hidden = true; });
-document.addEventListener("click", e => { if (!e.target.closest(".search")) $("results").hidden = true; });
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("results").querySelector("button"); b && b.click(); } });
 
 window.addEventListener("resize", resize);
 resize(); syncSettings(); renderChips();

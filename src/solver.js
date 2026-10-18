@@ -108,8 +108,38 @@ const Solver = (() => {
 
   /* ---------- Sternerkennung ---------- */
   // gray: Float32Array (w*h), returns [{x,y,flux,peak}]
-  function detectStars(gray, w, h, opts = {}) {
+  // Helle, einfarbige Rahmen (weiße Passepartouts) erkennen und mit dem angrenzenden Bildinhalt füllen,
+  // damit sie Hintergrundschätzung und Sternsuche am Rand nicht stören.
+  function trimFrame(gray, w, h) {
+    // Zeile/Spalte gilt als Rahmen, wenn fast alle Pixel denselben Wert haben (robust gegen einzelne Ausreißer)
+    const flat = (get, n) => {
+      const v = []; for (let i = 0; i < n; i += 3) v.push(get(i));
+      const srt = v.slice().sort((a, b) => a - b), med = srt[srt.length >> 1];
+      // nur helle Rahmen (Passepartout); ein gleichmäßig dunkler Himmel darf nicht als Rahmen gelten
+      if (med < 200) return false;
+      let off = 0; for (const x of v) if (Math.abs(x - med) > 12) off++;
+      return off < 0.03 * v.length;
+    };
+    const row = y => flat(x => gray[y * w + x], w), col = x => flat(y => gray[y * w + x], h);
+    let t = 0, b = 0, l = 0, r = 0;
+    while (t < h * 0.2 && row(t)) t++;
+    while (b < h * 0.2 && row(h - 1 - b)) b++;
+    while (l < w * 0.2 && col(l)) l++;
+    while (r < w * 0.2 && col(w - 1 - r)) r++;
+    if (!(t || b || l || r)) return { gray, box: [0, 0, w, h] };
+    // ein paar Pixel Sicherheitsabstand für die Kante des Rahmens
+    const pad = 3; t = t ? t + pad : 0; b = b ? b + pad : 0; l = l ? l + pad : 0; r = r ? r + pad : 0;
+    const g = new Float32Array(gray);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const yy = Math.min(h - 1 - b, Math.max(t, y)), xx = Math.min(w - 1 - r, Math.max(l, x));
+      if (yy !== y || xx !== x) g[y * w + x] = gray[yy * w + xx];
+    }
+    return { gray: g, box: [l, t, w - r, h - b] };
+  }
+
+  function detectStars(gray0, w, h, opts = {}) {
     const B = opts.block || 32, k = opts.sigma || 5, maxStars = opts.maxStars || 80;
+    const { gray, box } = trimFrame(gray0, w, h);
     const bw = Math.ceil(w / B), bh = Math.ceil(h / B), bgB = new Float32Array(bw * bh), sdB = new Float32Array(bw * bh);
     const tmp = [];
     for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
@@ -145,7 +175,7 @@ const Solver = (() => {
         const u = v; sf += u; sx += u * px; sy += u * py; sxx += u * px * px; syy += u * py * py; sxy += u * px * py;
         if (v > peak) peak = v;
         if (px < minx) minx = px; if (px > maxx) maxx = px; if (py < miny) miny = py; if (py > maxy) maxy = py;
-        if (px <= m || py <= m || px >= w - m - 1 || py >= h - m - 1) touches = true;
+        if (px <= box[0] + m || py <= box[1] + m || px >= box[2] - m - 1 || py >= box[3] - m - 1) touches = true;
         const nb = [i - 1, i + 1, i - w, i + w];
         for (const j of nb) if (!lab[j] && res[j] >= thr(j)) { lab[j] = L; stack.push(j); }
       }
