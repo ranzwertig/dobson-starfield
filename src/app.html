@@ -347,6 +347,12 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row"><label>Search range min / max (°)<input type="text" id="fovRange" value="25-85"></label></div>
     </fieldset>
     <fieldset>
+      <legend>Compass</legend>
+      <p class="note" id="compassCalInfo"></p>
+      <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
+      <p class="note">Each camera solve with the motion sensor on compares the compass with the exact solved direction. The difference is applied in compass mode, before the first solve of a session.</p>
+    </fieldset>
+    <fieldset>
       <legend>Capture</legend>
       <div class="row">
         <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="24" step="1"></label>
@@ -387,7 +393,7 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, fabLabels: true, map: true, tele: { u: 0, v: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { u: 0, v: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 cfg.fov.demo = 60;
@@ -419,7 +425,8 @@ try {
         const gray = new Float32Array(m.gray);
         const stars = Solver.detectStars(gray, m.w, m.h, { sigma: m.sigma });
         self.postMessage({ id: m.id, type: "stars", stars });
-        const sol = Solver.solve(stars, { w: m.w, h: m.h, fov: m.fov, fovMin: m.fovMin, fovMax: m.fovMax, fovGuess: m.fovGuess, timeBudget: m.budget,
+        let sol = m.near ? Solver.solveNear(stars, m.near) : null;
+        if (!sol || !sol.ok) sol = Solver.solve(stars, { w: m.w, h: m.h, fov: m.fov, fovMin: m.fovMin, fovMax: m.fovMax, fovGuess: m.fovGuess, timeBudget: m.budget,
           onProgress: p => self.postMessage({ id: m.id, type: "progress", p }) });
         self.postMessage({ id: m.id, type: "done", stars, sol });
       } catch (err) { self.postMessage({ id: m.id, type: "done", stars: [], sol: { ok: false, reason: String(err) } }); }
@@ -435,12 +442,13 @@ function runSolve(gray, w, h, opts, onMsg) {
     const msg = Object.assign({ id, w, h, sigma: cfg.sigma }, opts);
     if (worker) {
       jobs[id] = d => { onMsg && onMsg(d); if (d.type === "done") { delete jobs[id]; resolve(d); } };
-      msg.gray = gray.buffer; worker.postMessage(msg, [gray.buffer]);
+      const g = gray.slice(); msg.gray = g.buffer; worker.postMessage(msg, [g.buffer]);   // copy: the frame stays usable for re-solving
     } else {
       setTimeout(() => {
         const stars = Solver.detectStars(gray, w, h, { sigma: cfg.sigma });
         onMsg && onMsg({ type: "stars", stars });
-        const sol = Solver.solve(stars, Object.assign({ w, h }, opts));
+        let sol = opts.near ? Solver.solveNear(stars, opts.near) : null;
+        if (!sol || !sol.ok) sol = Solver.solve(stars, Object.assign({ w, h }, opts));
         resolve({ stars, sol });
       }, 30);
     }
@@ -557,8 +565,17 @@ async function solveNow() {
     let [lo, hi] = (cfg.fovRange || "25-85").split(/[-–,; ]+/).map(Number);
     if (isPhoto) { lo = Math.min(lo || 25, 12); hi = Math.max(hi || 85, 90); }
     const opts = { budget: known ? 4000 : 90000 };
-    if (known) opts.fov = hfovFromLong(known, fr.w, fr.h);
-    else {   // values refer to the long image side, the solver works with the image width
+    if (known) {
+      opts.fov = hfovFromLong(known, fr.w, fr.h);
+      // Fast path: predict the orientation from the last solve (plus the gyroscope since then) and only verify it
+      const b = st.base, age = b ? Date.now() - b.at : Infinity;
+      if (b && b.sol.w === fr.w && b.sol.h === fr.h && age < (b.dev && devAtCapture ? 180000 : 15000)) {
+        let R = b.sol.R;
+        if (b.dev && devAtCapture) { const C = camAxes(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(C)), tr3(b.dev)), devAtCapture), C); }
+        const s0 = b.sol;
+        opts.near = { R, f: s0.f, k1: s0.k1, poly: s0.poly, w: s0.w, h: s0.h, cx: s0.cx, cy: s0.cy, fov: s0.fov, fovV: s0.fovV };
+      }
+    } else {   // values refer to the long image side, the solver works with the image width
       const conv = fl => hfovFromLong(fl, fr.w, fr.h);
       opts.fovMin = conv(lo || 25); opts.fovMax = conv(hi || 85); opts.fovGuess = conv((isPhoto && cfg.fov.photo) || 66);
     }
@@ -577,7 +594,9 @@ async function solveNow() {
     const sol = res.sol;
     if (sol && sol.ok) {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
-      st.base = st.source === "video" ? { sol, dev: devAtCapture } : null;
+      st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
+      if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
+      if (sol.near) { setStatus("Tracked · " + sol.nMatch + " stars · " + Math.max(1, Math.round(sol.ms)) + " ms", "ok"); updateGuide(); renderReadout(); return; }
       if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
       else if (!known) { cfg.fov[key] = +longFromSol(sol).toFixed(2); save(); syncSettings(); hint("Field of view found: " + cfg.fov[key].toFixed(1) + "° (saved).", 5000); }
       else if (Math.abs(longFromSol(sol) - known) > 0.05) { cfg.fov[key] = +(0.8 * known + 0.2 * longFromSol(sol)).toFixed(3); save(); }
@@ -593,7 +612,7 @@ async function solveNow() {
     updateGuide(); renderReadout();
   } finally {
     st.busy = false; $("btnSolve").disabled = false;
-    if (st.auto && st.stream) setTimeout(solveNow, 400);
+    if (st.auto && st.stream) setTimeout(solveNow, st.sol && st.sol.near ? 150 : 400);
   }
 }
 function setAuto(on) {
@@ -779,8 +798,30 @@ function feedAbs(mAbs) {
     const k = sens.offN < 20 ? 0.3 : 0.02;                         // settle quickly at first, calm afterwards
     sens.off = [sens.off[0] * (1 - k) + c * k, sens.off[1] * (1 - k) + s * k]; sens.offN++;
   }
-  const a = Math.atan2(sens.off[1], sens.off[0]), ca = Math.cos(a), sa = Math.sin(a);
-  sens.abs = mm3([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1]], sens.rel);   // smoothed gyro orientation, rotated to north
+  setAbs();
+}
+// gyro orientation rotated to north: filtered compass offset plus the correction learned from plate solves
+function setAbs() {
+  const a = Math.atan2(sens.off[1], sens.off[0]) + (+cfg.compassCal || 0) * D2R, ca = Math.cos(a), sa = Math.sin(a);
+  sens.abs = mm3([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1]], sens.rel);
+}
+// After a camera solve: compare the solved orientation with the compass and remember the difference
+function calibrateCompass(sol, dev) {
+  if (!sens.off || !(sens.offN > 5)) return;
+  const t = A.MakeTime(new Date()), rot = A.Rotation_HOR_EQJ(t, observer()).rot;
+  const E2H = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]];
+  // true north-referenced device orientation = (H2E·E2H)ᵀ · R · Cᵀ
+  const Atrue = mm3(mm3(tr3(E2H), rot), mm3(sol.R, tr3(camAxes())));
+  const M = mm3(Atrue, tr3(dev)), trueOff = Math.atan2(M[1][0], M[0][0]);
+  const d = ((trueOff - Math.atan2(sens.off[1], sens.off[0])) * R2D + 540) % 360 - 180;
+  const prev = +cfg.compassCal || 0, k = cfg.compassCalN ? 0.5 : 1;
+  const nd = prev + ((((d - prev) + 540) % 360) - 180) * k;
+  cfg.compassCal = +(((nd + 540) % 360) - 180).toFixed(2); cfg.compassCalN = (cfg.compassCalN || 0) + 1; save();
+  syncCompassCal();
+}
+function syncCompassCal() {
+  const el = $("compassCalInfo"); if (!el) return;
+  el.textContent = cfg.compassCalN ? "Compass correction: " + (cfg.compassCal > 0 ? "+" : "") + (+cfg.compassCal).toFixed(1) + "° (learned from " + cfg.compassCalN + " solve" + (cfg.compassCalN > 1 ? "s" : "") + ")" : "Compass correction: not calibrated yet (solve once with the motion sensor on)";
 }
 function onOrientation(e, absolute) {
   if (e.alpha == null || e.beta == null || e.gamma == null) return;
@@ -790,7 +831,7 @@ function onOrientation(e, absolute) {
     feedRel(m);
     // iOS only provides the compass as webkitCompassHeading (clockwise from north)
     if (typeof e.webkitCompassHeading === "number" && !sens.hasAbsEvent) feedAbs(devMatrix(360 - e.webkitCompassHeading, e.beta, e.gamma));
-    else if (sens.rel && sens.off) { const a = Math.atan2(sens.off[1], sens.off[0]), ca = Math.cos(a), sa = Math.sin(a); sens.abs = mm3([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1]], sens.rel); }
+    else if (sens.rel && sens.off) setAbs();
   }
   if (absolute) sens.hasAbsEvent = true;
   if (st.sensor && !sens.raf) sens.raf = requestAnimationFrame(() => { sens.raf = 0; sensorUpdate(); });
@@ -810,7 +851,7 @@ async function setSensor(on) {
     setTimeout(() => { if (st.sensor && !sens.rel && !sens.abs) hint("This device provides no orientation data (no sensor, or only available over HTTPS).", 5000); }, 1500);
   }
   st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
-  if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise.", 5000);
+  if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (cfg.compassCalN ? "Compass mode, corrected by " + (+cfg.compassCal).toFixed(1) + "° from earlier solves. “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and calibrates the compass."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
   sensorUpdate();
 }
@@ -1303,6 +1344,16 @@ $("btnGps").onclick = () => {
 $("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey()] = v > 1 ? v : null; save(); };
 $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSettings(); hint("The field of view will be measured again on the next solve.", 3000); };
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
+$("btnCompassReset").onclick = () => { cfg.compassCal = 0; cfg.compassCalN = 0; save(); syncCompassCal(); if (sens.off && sens.rel) setAbs(); };
+syncCompassCal();
+// Offline use: register the service worker (only where the build provides sw.js, i.e. not in the dev preview)
+if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.href)) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").then(r => {
+    if (!navigator.serviceWorker.controller) r.addEventListener("updatefound", () => {
+      const nw = r.installing; nw && nw.addEventListener("statechange", () => { if (nw.state === "activated") hint("Ready for offline use. Add the app to your home screen to start it without signal.", 6000); });
+    });
+  }).catch(() => {}));
+}
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 [["optFill", "fill"], ["optMap", "map"], ["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });

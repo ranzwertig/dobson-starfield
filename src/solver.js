@@ -235,7 +235,7 @@ const Solver = (() => {
       // Brightness rank correlation: brighter image points should be brighter catalog stars
       ref.rho = rankCorr(ref.matches.map(mm => stars.find(q => q.x === mm.x && q.y === mm.y).flux), ref.matches.map(mm => -CAT.mag[mm.cat]));
       // Real solutions fit to about 1 pixel; chance matches in star-rich regions are clearly worse
-      const rmsMax = Math.max(0.03, (ref.poly ? 2.0 : 2.5) * pxDeg);
+      const rmsMax = Math.max(0.02, 1.6 * pxDeg);
       if (opts.debug) opts.debug(ref, best);
       // Without a known field of view there are many more chances for false matches -> require more stars
       if (!known && (ref.nMatch < 10 || ref.strict < 8)) { lastReason = 'Too few reliable stars (' + ref.nMatch + ')'; return null; }
@@ -245,6 +245,25 @@ const Solver = (() => {
       return ref;
     };
     const done = ref => { ref.ms = performance.now() - t0; ref.tried = tried; ref.ok = true; return ref; };
+    // Unknown field of view: scale-free search in a few bands first (fast), then the step-by-step search as a fallback
+    if (!known && !opts.noBands) {
+      const lo = opts.fovMin || 25, hi = opts.fovMax || 85, guess = Math.min(hi, Math.max(lo, opts.fovGuess || 62));
+      const bands = [], ratio = 1.45;
+      for (let a = lo; a < hi; a *= ratio) bands.push([a, Math.min(hi, a * ratio * 1.04)]);
+      bands.sort((p, q) => Math.abs(Math.log(Math.sqrt(p[0] * p[1]) / guess)) - Math.abs(Math.log(Math.sqrt(q[0] * q[1]) / guess)));
+      for (let bi = 0; bi < bands.length * 2; bi++) {
+        if (performance.now() - t0 > budget) break;
+        const band = bands[bi % bands.length], cap = bi < bands.length ? 4000 : 8000;
+        if (opts.onProgress) opts.onProgress({ fov: Math.sqrt(band[0] * band[1]), step: bi + 1, of: bands.length * 2 });
+        const r = trySolveBand(stars, w, h, cx, cy, band[0], band[1], t0, budget, performance.now() + cap);
+        tried++;
+        if (!r || !r.accepted) continue;
+        if (r.confident) { const ok = validate(r); if (ok) return done(ok); }
+        else cands.push(r);
+      }
+      cands.sort((p, q) => q.score - p.score);
+      for (const c of cands.splice(0, 3)) { const ok = validate(c); if (ok) return done(ok); }
+    }
     // With unknown field of view: first a quick pass with little time per step, then a thorough one
     const passes = known ? [Infinity] : [120, 600, Infinity];
     for (let pi = 0; pi < passes.length; pi++) {
@@ -332,6 +351,87 @@ const Solver = (() => {
       best.accepted = best.score >= need;
       if (best.score >= Math.max(need + 2, Math.ceil(0.3 * M))) best.confident = true;
       best.hyp = hyp; best.vMag = vMag;
+    }
+    return best;
+  }
+
+  // Scale-free search over a band of fields of view [fovLo, fovHi]: image triangles are compared by the
+  // RATIOS of their sides, so a single pass covers the whole band instead of one pass per field-of-view step.
+  function trySolveBand(stars, w, h, cx, cy, fovLo, fovHi, t0, budget, stepEnd) {
+    const fovMid = Math.sqrt(fovLo * fovHi), fMid = (w / 2) / Math.tan(fovMid / 2 * D2R);
+    const diagHi = 2 * Math.atan(Math.hypot(w, h) / 2 / ((w / 2) / Math.tan(fovHi / 2 * D2R))) * R2D;
+    const N = Math.min(stars.length, 8), M = Math.min(stars.length, 40);
+    const fieldArea = fovMid * fovMid * h / w;
+    let triMag = 3.5; while (triMag < 6.0 && countBrighter(triMag) * fieldArea / 41253 < 3 * N) triMag += 0.25;
+    const sepSteps = [20, 30, 45, 65, 90, 120]; const maxSepQ = sepSteps.find(x => x >= diagHi) || 120;
+    const idx = getIndex(triMag, maxSepQ);
+    const cvMid = stars.slice(0, M).map(s => camVec(s, cx, cy, fMid));
+    const kLo = Math.tan(fovLo / 2 * D2R) / Math.tan(fovMid / 2 * D2R), kHi = Math.tan(fovHi / 2 * D2R) / Math.tan(fovMid / 2 * D2R);
+    const tris = [];
+    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) for (let k = j + 1; k < N; k++) tris.push([i, j, k]);
+    tris.sort((a, b) => (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2]));
+    const extra = [...Array(Math.min(stars.length, N + 4)).keys()];   // candidates for the 4th/5th star
+    const need4 = stars.length >= 7 ? 2 : 1;
+    const vMagFor = fov => { const area = fov * fov * h / w; let m = 3.0; while (m < 6.5 && countBrighter(m) * area / 41253 < 1.3 * M) m += 0.25; return m; };
+    let best = null, hyp = 0;
+    for (const [i, j, k] of tris) {
+      const now = performance.now(); if (now - t0 > budget || now > stepEnd) break;
+      // longest side first, so the ratios are well conditioned
+      let a = i, b = j, c = k; const sides = () => [angDeg(cvMid[a], cvMid[b]), angDeg(cvMid[a], cvMid[c]), angDeg(cvMid[b], cvMid[c])];
+      let [dab, dac, dbc] = sides();
+      if (dac > dab && dac >= dbc) { [b, c] = [c, b]; [dab, dac, dbc] = sides(); }
+      else if (dbc > dab && dbc > dac) { [a, c] = [c, a]; [dab, dac, dbc] = sides(); }
+      if (dac < 0.12 * dab || dbc < 0.12 * dab) continue;           // too flat / degenerate
+      const rac = dac / dab, rbc = dbc / dab, chir = Math.sign(det3(cvMid[a], cvMid[b], cvMid[c]));
+      const sLo = dab * kLo * 0.97, sHi = Math.min(idx.maxSep, dab * kHi * 1.03);
+      if (sLo > idx.maxSep) continue;
+      for (let p = lowerBound(idx.P.s, sLo); p < idx.P.s.length && idx.P.s[p] <= sHi; p++) {
+        const sAB = idx.P.s[p], tol = 0.018 * sAB + 0.06, eAC = sAB * rac, eBC = sAB * rbc;
+        const cBClo = Math.cos(Math.max(0, eBC - tol) * D2R), cBChi = Math.cos(Math.min(180, eBC + tol) * D2R);
+        for (let o = 0; o < 2; o++) {
+          const A = o ? idx.P.b[p] : idx.P.a[p], B = o ? idx.P.a[p] : idx.P.b[p], vB = CAT.v[B];
+          const L = idx.NB.get(A); if (!L) continue;
+          for (let q = lowerBound(L.s, eAC - tol); q < L.s.length && L.s[q] <= eAC + tol; q++) {
+            const C = L.id[q]; if (C === B) continue;
+            const dBC = dot(vB, CAT.v[C]); if (dBC > cBClo || dBC < cBChi) continue;   // same as |angle(B,C) - eBC| <= tol, without acos
+            if (Math.sign(det3(CAT.v[A], CAT.v[B], CAT.v[C])) !== chir) continue;
+            // 4th star as a cheap filter: one of the next bright image stars must also have a partner at the right distances
+            let found = 0, tried4 = 0;
+            for (const d of extra) {
+              if (d === a || d === b || d === c) continue;
+              if (++tried4 > 4) break;
+              const eAD = sAB * angDeg(cvMid[a], cvMid[d]) / dab, eBD = sAB * angDeg(cvMid[b], cvMid[d]) / dab, t4 = 0.022 * sAB + 0.08;
+              for (let u = lowerBound(L.s, eAD - t4); u < L.s.length && L.s[u] <= eAD + t4; u++) {
+                const D = L.id[u]; if (D === B || D === C) continue;
+                if (Math.abs(angDeg(CAT.v[B], CAT.v[D]) - eBD) <= t4) { found++; break; }
+              }
+              if (found >= need4) break;
+            }
+            if (found < need4) continue;
+            hyp++;
+            // scale -> focal length estimate for this hypothesis
+            const fEst = fMid * dab / sAB, fovEst = 2 * Math.atan(w / 2 / fEst) * R2D;
+            if (fovEst < fovLo * 0.95 || fovEst > fovHi * 1.05) continue;
+            const cv = stars.slice(0, M).map(s => camVec(s, cx, cy, fEst));
+            const R = fitRotation([cv[a], cv[b], cv[c]], [CAT.v[A], CAT.v[B], CAT.v[C]]);
+            const vMag = vMagFor(fovEst), minSc = Math.min(7, 4 + (M >> 3));
+            let sc = verify(R, cv, Math.max(0.35, 0.012 * fovEst), vMag, Math.max(minSc, best ? Math.min(best.score, minSc + 4) : 0));
+            if (sc.score < minSc) continue;
+            const qf = quickFit(stars, sc.matches, cx, cy, fEst);
+            const cv2 = stars.slice(0, M).map(s => camVec(s, cx, cy, qf.f));
+            const fov2 = 2 * Math.atan(w / 2 / qf.f) * R2D;
+            sc = verify(qf.R, cv2, Math.max(0.15, 5 * fov2 / w), vMag);
+            if (!best || sc.score > best.score) best = { R: qf.R, f: qf.f, fov: fov2, score: sc.score, matches: sc.matches, vMag };
+          }
+        }
+      }
+      if (best && best.score >= Math.max(8, Math.min(14, 0.45 * M))) { best.confident = true; break; }
+    }
+    if (best) {
+      const need = M >= 12 ? 6 : Math.max(4, Math.ceil(M * 0.5));
+      best.accepted = best.score >= need;
+      if (best.score >= Math.max(need + 2, Math.ceil(0.3 * M))) best.confident = true;
+      best.hyp = hyp;
     }
     return best;
   }
@@ -465,6 +565,49 @@ const Solver = (() => {
     return { R, f, k1, poly, fov, fovV: 2 * Math.atan(h / 2 / f) * R2D, w, h, cx, cy, center, rms: fin.rms, nMatch: matches.length, matches: matches.map(([m, c]) => ({ x: stars[m].x, y: stars[m].y, cat: c })) };
   }
 
+  /* ---------- Fast continuous mode: verify a predicted orientation instead of searching ---------- */
+  // prior: a previous solution (same camera, same image size) with R replaced by the predicted orientation.
+  // Matches the detected stars with shrinking radii; camera model (f, distortion) stays fixed.
+  function solveNear(stars, prior, opts = {}) {
+    if (!CAT) throw new Error('Catalogue missing');
+    const t0 = performance.now();
+    const fail = reason => ({ ok: false, reason, near: true, ms: performance.now() - t0 });
+    if (!prior || !prior.R || !prior.f) return fail('No previous solution');
+    if (stars.length < 5) return fail('Too few stars detected (' + stars.length + ')');
+    const { w, h, cx, cy, f } = prior, md = { cx, cy, f, k1: prior.k1 || 0, poly: prior.poly || null };
+    const pxDeg = prior.fov / w, M = Math.min(stars.length, 60);
+    const cv = stars.slice(0, M).map(s => camVecModel(s, md));
+    const maxMag = Math.min(6, Math.max(4.5, opts.maxMag || 5.5));
+    const med = a => { const t = a.slice().sort((x, y) => x - y); return t[t.length >> 1] || 0; };
+    let R = prior.R, matches = [];
+    const start = Math.min(1.9, Math.max(0.3, opts.radius || 1.9));
+    const radii = [start, start * 0.45, Math.max(0.12, start * 0.2), Math.max(3 * pxDeg, 0.04)];
+    for (const r of radii) {
+      for (let it = 0; it < 3; it++) {
+        const nm = verify(R, cv, r, maxMag).matches;
+        if (nm.length < 4) return fail('Too few stars near the prediction (' + nm.length + ')');
+        let mm = nm;
+        // drop outliers relative to the median error before fitting
+        const res = nm.map(([m, c]) => angDeg(mul(R, cv[m]), CAT.v[c])), lim = Math.max(2 * pxDeg, 3 * med(res));
+        const keep = nm.filter((_, i) => res[i] <= lim); if (keep.length >= 4) mm = keep;
+        R = fitRotation(mm.map(([m]) => cv[m]), mm.map(([, c]) => CAT.v[c]));
+        const same = matches.length === mm.length && mm.every((x, i) => x[0] === matches[i][0] && x[1] === matches[i][1]);
+        matches = mm; if (same) break;
+      }
+    }
+    let e = 0; for (const [m, c] of matches) { const d = angDeg(mul(R, cv[m]), CAT.v[c]); e += d * d; }
+    const rms = Math.sqrt(e / matches.length);
+    const need = Math.max(6, Math.ceil(0.2 * Math.min(M, 40)));
+    if (matches.length < need) return fail('Too few matching stars (' + matches.length + ')');
+    if (rms > Math.max(0.02, 2 * pxDeg)) return fail('Prediction did not fit (rms ' + rms.toFixed(2) + '°)');
+    const center = v2radec(mul(R, camVecModel({ x: cx, y: cy }, md)));
+    return {
+      ok: true, near: true, R, f, k1: md.k1, poly: md.poly, fov: prior.fov, fovV: prior.fovV, w, h, cx, cy, center, rms,
+      nMatch: matches.length, strict: matches.length, matches: matches.map(([m, c]) => ({ x: stars[m].x, y: stars[m].y, cat: c })),
+      tried: 1, ms: performance.now() - t0
+    };
+  }
+
   /* ---------- Projection sky <-> image for a solution ---------- */
   function skyToPix(sol, v) {
     const c = mulT(sol.R, v); if (c[2] <= 0.05) return null;
@@ -480,6 +623,6 @@ const Solver = (() => {
   }
   function pixToSky(sol, x, y) { return mul(sol.R, camVecModel({ x, y }, sol)); }
 
-  return { setCatalog, detectStars, solve, skyToPix, pixToSky, radec2v, v2radec, angDeg, fitRotation, mul, mulT, get cat() { return CAT; } };
+  return { setCatalog, detectStars, solve, solveNear, skyToPix, pixToSky, radec2v, v2radec, angDeg, fitRotation, mul, mulT, get cat() { return CAT; } };
 })();
 if (typeof module !== 'undefined') module.exports = Solver;

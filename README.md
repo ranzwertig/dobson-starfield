@@ -2,18 +2,18 @@
 
 A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 415 KB.
+Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 430 KB. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal.
 
 ## Usage
 
 1. Serve the app over HTTPS; browsers only allow camera, GPS and motion sensors there. The repo is connected to Cloudflare: every push to `main` builds and deploys automatically (`npx wrangler deploy` runs `npm run build` first, see `wrangler.jsonc`).
 2. Mount the phone firmly and parallel to the tube, start the camera and tap **Locate**. The first time, the app measures the camera's field of view and remembers it.
 3. Centre a bright star in the eyepiece, tap **Eyepiece point** and tap the same star in the image. Now the app knows the offset between phone and telescope.
-4. Choose a target (Sun, Moon, planets, Messier objects, bright stars) and follow the arrows, with **Continuous** for live updates.
+4. Choose a target (Sun, Moon, planets, Messier objects, bright stars) and follow the arrows, with **Continuous** for live updates. After the first solve, Continuous only checks the predicted orientation (from the last solve plus the gyroscope) against the stars, which takes milliseconds; it falls back to a full search when the prediction does not fit.
 
 **Solve a photo from the gallery** (menu) solves saved sky photos, which is handy for testing.
 
-Without camera or photo the app shows a **sky map** from the catalogue: drag to look around, pinch (or mouse wheel, double tap) to zoom. **Align** makes the map follow the phone: before the first solve roughly via the compass (often 10° or more off near metal), after a camera solve precisely via the gyroscope, relative to the last solve. Solved images can be zoomed and panned too. Stars, Messier objects, the Moon, planets and the Sun can be tapped for an info sheet with a Wikipedia link.
+Without camera or photo the app shows a **sky map** from the catalogue: drag to look around, pinch (or mouse wheel, double tap) to zoom. **Align** makes the map follow the phone: before the first solve roughly via the compass (often 10° or more off near metal), after a camera solve precisely via the gyroscope, relative to the last solve. Every camera solve with Align on also calibrates the compass: the difference between compass and solved direction is saved and applied in compass mode next time (Settings → Compass shows and resets it). Solved images can be zoomed and panned too. Stars, Messier objects, the Moon, planets and the Sun can be tapped for an info sheet with a Wikipedia link.
 
 ### The Sun
 
@@ -25,11 +25,12 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 2. **Star detection** (`detectStars`): background and noise are estimated per block via median/MAD, then connected blobs above 5σ are collected. Hot pixels, elongated or ragged blobs, blobs in textured foreground, gaps in foliage and bright picture frames are rejected. Positions come from the intensity-weighted centroid.
 3. **Pinhole camera model:** pixel → unit vector via the focal length in pixels.
 4. **Matching:** triangles of the brightest image stars are looked up by their angular side lengths in a catalogue pair index (binary search plus neighbour lists, handedness checked). For each hit the rotation is computed with Horn's quaternion method and verified against all image stars.
-5. **Unknown field of view:** search over 12–90° in 2.5 % steps, in three passes with increasing time per step. The limiting magnitude of the index adapts to the field of view.
-6. **Refinement:** focal length, radial distortion and, with enough stars, a polynomial correction (like SIP) by least squares, with outlier rejection.
-7. **Guarding against false matches:** residuals below about 2 px, a cross-check of the brightest stars, rank correlation of brightness, and at least 10 matching stars when the field of view is unknown.
-8. **Navigation:** [Astronomy Engine](https://github.com/cosinekitty/astronomy) converts from J2000 to the horizon frame (including precession, nutation, refraction) and provides positions of the Sun, Moon and planets.
-9. **Motion sensors:** movement comes from the relative orientation (gyroscope), smoothed with quaternions and with jumps rejected; the compass only contributes a slowly filtered north offset.
+5. **Unknown field of view:** a scale-free search first: triangles are compared by their side ratios within a few field-of-view bands, and a hypothesis has to be confirmed by further image stars before it is verified. Only if that fails, the search steps through 12–90° in 2.5 % steps. The limiting magnitude of the index adapts to the field of view.
+6. **Continuous mode:** with a recent solution, the orientation is predicted (last solve plus gyroscope rotation since then) and the detected stars are matched with shrinking search radii; the camera model stays fixed. No triangle search is needed.
+7. **Refinement:** focal length, radial distortion and, with enough stars, a polynomial correction (like SIP) by least squares, with outlier rejection.
+8. **Guarding against false matches:** residuals below about 1.6 px, a cross-check of the brightest stars, rank correlation of brightness, and at least 10 matching stars when the field of view is unknown.
+9. **Navigation:** [Astronomy Engine](https://github.com/cosinekitty/astronomy) converts from J2000 to the horizon frame (including precession, nutation, refraction) and provides positions of the Sun, Moon and planets.
+10. **Motion sensors:** movement comes from the relative orientation (gyroscope), smoothed with quaternions and with jumps rejected; the compass only contributes a slowly filtered north offset, corrected by the calibration learned from plate solves.
 
 ## Layout
 
@@ -37,7 +38,8 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 |---|---|
 | `src/app.html` | UI, camera, overlay, sky map, navigation |
 | `src/solver.js` | star detection and plate solver (also usable in Node) |
-| `public/` | static extras copied to `dist/` (`robots.txt`) |
+| `src/sw.js` | service worker for offline use (version set by the build) |
+| `public/` | static files copied to `dist/`: web app manifest, icons, `robots.txt` |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6, names, designations, Messier objects, constellation lines |
 | `scripts/build.mjs` | builds `dist/index.html` with Astronomy Engine, catalogue and solver inlined |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
@@ -52,7 +54,7 @@ Node 20 or newer.
 
 ```bash
 npm install
-npm run build        # -> dist/index.html + dist/robots.txt
+npm run build        # -> dist/index.html, dist/sw.js + files from public/
 npm test             # synthetic star fields
 npm run dev          # local server via wrangler dev
 npm run deploy       # manual deploy (otherwise on push to main)
@@ -69,7 +71,7 @@ npm run test:photo -- /tmp/photo
 
 - Not yet tested under a real sky with the live camera. Whether the browser's video exposure catches enough stars depends heavily on the phone.
 - Without a known field of view the app needs at least 10 matching stars, so very sparse images are rejected rather than solved wrongly.
-- Narrow fields far from the starting value (66°) can take up to about 40 seconds on the first solve.
+- The first solve with an unknown field of view usually takes 0.3–3 s, narrow fields (around 20°) up to about 10 s.
 - The catalogue goes to magnitude 6, so fields narrower than about 10° (through a finder or eyepiece) cannot be solved.
 
 ## Third-party code and data
