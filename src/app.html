@@ -29,8 +29,10 @@ html.red { filter: grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightne
 body { font-family: var(--font-ui); font-size: 15px; overflow: hidden; }
 button, input, select { font: inherit; color: inherit; }
 .app { height: 100%; display: flex; flex-direction: column; }
-/* Top inset of the system status bar */
+/* Top inset of the status bar. In the installed iPhone app iOS blurs a band below the status bar,
+   so the top controls move below it (class set by script, the display-mode media query is unreliable there) */
 :root { --safe-top: env(safe-area-inset-top, 0px); }
+html.ios-app { --safe-top: calc(env(safe-area-inset-top, 0px) + 30px); }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Status badge bottom left */
@@ -430,6 +432,8 @@ a.btn { text-decoration: none; color: var(--fg); }
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
+// Installed on the iPhone home screen: mark it, so the top controls keep clear of the blurred band below the status bar
+if (navigator.standalone === true) document.documentElement.classList.add("ios-app");
 const A = Astronomy;
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 Solver.setCatalog(STARS);
