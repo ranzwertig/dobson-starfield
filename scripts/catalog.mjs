@@ -22,13 +22,13 @@ for (const f of ld('stars.6.json').features) {
 }
 rows.sort((a, b) => a[2] - b[2]);
 const stars = [], labels = {};
-// Designations for tappable stars down to mag 5.5: [proper name, Bayer, Flamsteed, constellation]
+// Designations for tappable stars down to mag 5.5: [proper name, Bayer, Flamsteed, constellation, HIP]
 const info = {};
 rows.forEach(([a, d, m, hid], i) => {
   stars.push(a, d, m);
   const n = names[hid];
   if (!n) return;
-  if (m <= 5.5 && (n.name || n.bayer || n.flam) && /^[A-Z][a-zA-Z]{2}$/.test(n.c)) info[i] = [n.name || '', n.bayer || '', n.flam || '', n.c];
+  if (m <= 5.5 && (n.name || n.bayer || n.flam) && /^[A-Z][a-zA-Z]{2}$/.test(n.c)) info[i] = [n.name || '', n.bayer || '', n.flam || '', n.c, +hid];   // + Hipparcos number
   if (n.name && m < 4.5) labels[i] = n.name;
   else if (n.bayer && m < 3.6) labels[i] = n.bayer + ' ' + n.c;
 });

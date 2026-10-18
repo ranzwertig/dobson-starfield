@@ -108,6 +108,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 @keyframes upd-in { from { opacity: 0; transform: translateY(-10px); } }
 .update .ico { width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--accent); }
 .update .ico svg { width: 24px; height: 24px; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.links .btn { flex: 1 1 0; justify-content: center; text-decoration: none; white-space: nowrap; }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 12px; }
 .presets .chip.sel { border-color: var(--accent); color: var(--accent); }
 .ftog { display: flex !important; align-items: center; gap: 12px; padding: 4px 0; cursor: pointer; color: var(--fg) !important; font-size: 15px !important; }
@@ -387,8 +389,8 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="facts" id="infoFacts"></div>
     <div class="actions">
       <button class="btn primary" id="infoTarget">Set as target</button>
-      <a class="btn" id="infoLink" href="#" target="_blank" rel="noopener noreferrer">More info ↗</a>
     </div>
+    <div class="links" id="infoLinks"></div>
   </div>
 </div>
 
@@ -1539,26 +1541,33 @@ const GEN = { And: "Andromedae", Ant: "Antliae", Aps: "Apodis", Aql: "Aquilae", 
   Peg: "Pegasi", Per: "Persei", Phe: "Phoenicis", Pic: "Pictoris", PsA: "Piscis Austrini", Psc: "Piscium", Pup: "Puppis", Pyx: "Pyxidis", Ret: "Reticuli", Scl: "Sculptoris",
   Sco: "Scorpii", Sct: "Scuti", Ser: "Serpentis", Sex: "Sextantis", Sge: "Sagittae", Sgr: "Sagittarii", Tau: "Tauri", Tel: "Telescopii", TrA: "Trianguli Australis", Tri: "Trianguli",
   Tuc: "Tucanae", UMa: "Ursae Majoris", UMi: "Ursae Minoris", Vel: "Velorum", Vir: "Virginis", Vol: "Volantis", Vul: "Vulpeculae" };
+// External sources per object type: the most useful first
+const NASA = { Sun: "sun", Moon: "moon", Jupiter: "jupiter", Saturn: "saturn", Mars: "mars", Venus: "venus", Mercury: "mercury", Uranus: "uranus", Neptune: "neptune" };
 const PLANET_WIKI = { Sun: "Sun", Moon: "Moon", Jupiter: "Jupiter", Saturn: "Saturn", Mars: "Mars", Venus: "Venus", Mercury: "Mercury_(planet)", Uranus: "Uranus", Neptune: "Neptune" };
 const wikiSearch = q => "https://en.wikipedia.org/w/index.php?go=Go&search=" + encodeURIComponent(q);
 const greekLatin = b => b.replace(/^([α-ω])(\d*)$/, (_, g, n) => (GREEK[g] || g) + n);
 
 // Describe an object from catalog index / Messier / planet
 function starObj(k) {
-  const inf = STARINFO[k] || ["", "", "", ""], [nm, bay, fl, c] = inf, mag = STARS[3 * k + 2];
+  const inf = STARINFO[k] || ["", "", "", "", 0], [nm, bay, fl, c, hip] = inf, mag = STARS[3 * k + 2];
   const desig = bay ? bay + " " + c : fl ? fl + " " + c : "";
   const query = bay && GEN[c] ? greekLatin(bay) + " " + GEN[c] : fl && GEN[c] ? fl + " " + GEN[c] : nm;
   return { id: "S" + k, kind: "star", name: nm || desig || "Star", desig: nm ? desig : "", mag,
-    vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]), link: query ? wikiSearch(query) : null };
+    vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]),
+    links: [query && ["Wikipedia", wikiSearch(query)], hip && ["SIMBAD", "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=" + encodeURIComponent("HIP " + hip)]].filter(Boolean) };
 }
 function messierObj(row) {
   const [id, ra, dec, mag, nm, typ, desig] = row;
   return { id, kind: "dso", name: nm ? id + " · " + nm : id, desig: [typ, desig].filter(Boolean).join(" · "), mag,
-    vec: () => Solver.radec2v(ra, dec), link: "https://en.wikipedia.org/wiki/Messier_" + id.slice(1) };
+    vec: () => Solver.radec2v(ra, dec),
+    links: [["SEDS", "http://www.messier.seds.org/m/m" + id.slice(1).padStart(3, "0") + ".html"],
+      ["In-The-Sky", "https://in-the-sky.org/data/object.php?id=" + id],
+      ["Wikipedia", "https://en.wikipedia.org/wiki/Messier_" + id.slice(1)]] };
 }
 function planetObj(de, en) {
   return { id: en, kind: "planet", name: de, desig: en === "Moon" ? "Earth’s moon" : en === "Sun" ? "Our star" : "Planet", body: en,
-    vec: targetById(en).vec, link: "https://en.wikipedia.org/wiki/" + PLANET_WIKI[en] };
+    vec: targetById(en).vec,
+    links: [["NASA", "https://science.nasa.gov/" + NASA[en] + "/"], ["Wikipedia", "https://en.wikipedia.org/wiki/" + PLANET_WIKI[en]]] };
 }
 function pickAt(clientX, clientY, pointsOnly) {
   const sol = st.sol; if (!sol) return null;
@@ -1599,7 +1608,12 @@ function showInfo(o) {
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
   const box = $("infoFacts"); box.textContent = "";
   facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; const a = document.createElement("div"); a.className = "k"; a.textContent = k; const b = document.createElement("div"); b.className = "v"; b.textContent = val; d.append(a, b); box.append(d); });
-  const ln = $("infoLink"); if (o.link) { ln.href = o.link; ln.hidden = false; } else ln.hidden = true;
+  const lb = $("infoLinks"); lb.textContent = "";
+  (o.links || []).forEach(([label, url]) => {
+    const a = document.createElement("a"); a.className = "btn"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.textContent = label + " ↗"; lb.append(a);
+  });
+  lb.hidden = !lb.childElementCount;
   $("infoWarn").hidden = o.body !== "Sun";
   const isTarget = cfg.target === o.id;
   $("infoTarget").textContent = isTarget ? "Already the target" : "Set as target"; $("infoTarget").disabled = isTarget;
