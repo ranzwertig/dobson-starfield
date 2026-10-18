@@ -149,6 +149,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .fab.shoot { width: 64px; height: 64px; background: var(--accent); border-color: var(--accent); color: #17110a; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
 .fab.shoot svg { width: 28px; height: 28px; }
 .fab.shoot:disabled { opacity: .6; cursor: default; }
+/* Unavailable right now: dimmed; a tap explains why instead of doing nothing */
+.fab[aria-disabled="true"], .btn[aria-disabled="true"] { opacity: .38; cursor: not-allowed; box-shadow: none; }
+.fab.shoot[aria-disabled="true"] { opacity: .5; }
 .fab.shoot small { font-weight: 600; }
 
 /* Landscape / short screens: more compact buttons, labels off, HUD not full width */
@@ -1135,8 +1138,34 @@ function frameSig(W, H) {
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
+// Buttons that cannot work in the current state are marked unavailable, with the reason shown on tap
+function setAvail(id, ok, why) {
+  const b = $(id); if (!b) return;
+  const v = ok ? "false" : "true"; if (b.getAttribute("aria-disabled") !== v) b.setAttribute("aria-disabled", v);
+  if (b.dataset.why !== why) b.dataset.why = why;
+}
+function updateAvailability() {
+  const hasCam = isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const hasOri = isSecureContext && typeof DeviceOrientationEvent !== "undefined";
+  setAvail("btnTele", st.teleMode || teleModeAllowed(), st.solMode === "compass"
+    ? "Eyepiece point needs a precise position: tap “Locate” first (the compass is too rough)."
+    : "Eyepiece point needs a solved camera image: tap “Locate” first.");
+  setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
+  setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
+  setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo"), !hasOri
+    ? "This device or page provides no orientation sensor (needs HTTPS)."
+    : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
+  setAvail("btnSolve", !st.busy && (hasCam || st.source === "photo"), st.busy ? "Already solving …" : "No camera on this page: solve a photo from the menu instead.");
+  setAvail("btnTeleReset", Math.hypot(+cfg.tele.x || 0, +cfg.tele.y || 0) > 1e-5, "The telescope is already set to the image centre.");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest('[aria-disabled="true"]'); if (!b) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (b.dataset.why) hint(b.dataset.why, 4000);
+}, true);
 function draw() {
   requestAnimationFrame(draw);
+  updateAvailability();
   const W = view.width, H = view.height, dpr = W / Math.max(1, view.clientWidth);
   let src = null, sw = 0, sh = 0;
   const liveVideo = st.source === "video" && st.stream && video.videoWidth;
