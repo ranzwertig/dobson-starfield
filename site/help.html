@@ -23,6 +23,7 @@
     <a href="#targets">Targets and object details</a>
     <a href="#filter">Filter</a>
     <a href="#compass">Compass correction</a>
+    <a href="#top-edge">Without camera: top edge</a>
     <a href="#settings">Settings</a>
     <a href="#sun">Observing the Sun</a>
     <a href="#offline">Offline and updates</a>
@@ -127,9 +128,21 @@
       <li>While a correction is active, “Compass corrected −12.3°” is shown at the bottom left. Its ✕ removes the correction, and the compass is used as it is again. Settings → Compass offers the same.</li>
     </ul>
     <p>The correction only matters before the first locate. After a locate the position comes from the stars.</p>
+    <p><b>Aligning on a star by hand:</b> in compass mode, aim the telescope (or the top of the phone) at a bright star or planet, tap it on the map and choose <b>I’m pointing at it</b>. The app sets the compass correction so that the direction matches. This works without camera and is the best way to make <a href="#top-edge">top edge mode</a> accurate. If the altitude differs a lot as well, the location is probably wrong.</p>
+
+    <h2 id="top-edge">Without camera: top edge</h2>
+    <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Pointing → Top edge</b>. The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction, with the back of the phone as “up”.</p>
+    <ul>
+      <li>Align switches on automatically; the position comes from compass and motion sensor only.</li>
+      <li>Locate, Camera, Continuous and Eyepiece point are not available in this mode.</li>
+      <li>The compass is often several degrees off. Align once on a bright star with <b>I’m pointing at it</b> (see <a href="#compass">Compass correction</a>); the gyroscope then keeps the direction steady for a while.</li>
+      <li>Expect an accuracy of one to a few degrees: enough with a finder or a low-power eyepiece, not for small objects at high magnification.</li>
+    </ul>
 
     <h2 id="settings">Settings</h2>
     <dl class="ref">
+      <dt>Pointing</dt>
+      <dd>Whether the back camera looks along the telescope (default, needed for Locate) or the <a href="#top-edge">top edge of the phone</a> points along it.</dd>
       <dt>Location</dt>
       <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows.</dd>
       <dt id="camera">Camera</dt>

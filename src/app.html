@@ -412,6 +412,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="facts" id="infoFacts"></div>
     <div class="actions">
       <button class="btn primary" id="infoTarget">Set as target</button>
+      <button class="btn" id="infoSync" hidden>I’m pointing at it</button>
     </div>
     <div class="links" id="infoLinks"></div>
   </div>
@@ -473,6 +474,14 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label>Longitude (°E)<input type="number" id="lon" step="0.01"></label>
         <button class="btn" id="btnGps">GPS</button>
       </div>
+    </fieldset>
+    <fieldset>
+      <legend>Pointing</legend>
+      <div class="row">
+        <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
+        <label class="check"><input type="radio" name="pointer" value="top"> Top edge: the top of the phone points along the telescope</label>
+      </div>
+      <p class="note">Use “Top edge” without camera, for example with the phone strapped along the tube or held like a pointer. Position then comes from compass and motion sensor only (Locate is not available); to make it more accurate, point at a bright star and choose “I’m pointing at it” in its details.</p>
     </fieldset>
     <fieldset>
       <legend>Camera</legend>
@@ -880,7 +889,8 @@ function selectTarget(id, confirmed) {
 /* ---------------- Telescope direction + guidance ---------------- */
 // The eyepiece point is stored as a direction in the camera frame (tangent of the angles right/down of the image
 // centre), so it stays valid for any image size, zoom level and for the sky map in tracking mode.
-function teleCam() { const x = +cfg.tele.x || 0, y = +cfg.tele.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
+const topMode = () => cfg.pointer === "top";
+function teleCam() { if (topMode()) return [0, 0, 1]; const x = +cfg.tele.x || 0, y = +cfg.tele.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
 function telePix(sol) {
   const p = Solver.skyToPix(sol, Solver.mul(sol.R, teleCam()));
   return p || { x: sol.cx + sol.f * (+cfg.tele.x || 0), y: sol.cy + sol.f * (+cfg.tele.y || 0) };
@@ -950,6 +960,8 @@ function devMatrix(a, b, g) {   // W3C: R = Rz(alpha)·Rx(beta)·Ry(gamma), devi
   return mm3(mm3([[cA, -sA, 0], [sA, cA, 0], [0, 0, 1]], [[1, 0, 0], [0, cB, -sB], [0, sB, cB]]), [[cG, 0, sG], [0, 1, 0], [-sG, 0, cG]]);
 }
 function camAxes() {             // camera axes (x right, y down, z view direction) in device frame, depending on screen rotation
+  // Pointer mode: the top edge of the phone points at the sky (no camera); map "up" is the back of the phone
+  if (topMode()) return [[1, 0, 0], [0, 0, 1], [0, -1, 0]];
   const th = ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R, c = Math.cos(th), s = Math.sin(th);
   return [[c, -s, 0], [-s, -c, 0], [0, 0, -1]];
 }
@@ -1209,7 +1221,7 @@ function drawHorizon(c, sol, dpr, t, col) {
 }
 function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
-  const how = st.solMode === "compass" ? " · compass" : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
+  const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
   const txt = m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
 }
 
@@ -1299,6 +1311,8 @@ function updateAvailability() {
   setAvail("btnTele", st.teleMode || teleModeAllowed(), st.solMode === "compass"
     ? "Eyepiece point needs a precise position: tap “Locate” first (the compass is too rough)."
     : "Eyepiece point needs a solved camera image: tap “Locate” first.");
+  const topWhy = "Not available while the top edge of the phone is the pointer (Settings → Pointing).";
+  if (topMode()) { ["btnTele", "btnAuto", "btnCam", "btnSolve"].forEach(id => setAvail(id, false, topWhy)); setAvail("btnSensor", hasOri, "This device or page provides no orientation sensor (needs HTTPS)."); setAvail("btnTeleReset", false, topWhy); return; }
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
   setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo" && !(st.extCam && st.stream)), !hasOri
@@ -1541,7 +1555,8 @@ function syncSettings() {
   $("sigma").value = cfg.sigma; $("sigV").textContent = cfg.sigma <= 4 ? "high" : cfg.sigma >= 7 ? "low" : "medium";
   $("optFill").checked = cfg.fill; $("redState").textContent = cfg.red ? "on" : "off"; $("labelState").textContent = cfg.fabLabels ? "on" : "off";
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
-  $("optDet").checked = cfg.det; $("optRed").checked = cfg.red;
+  $("optDet").checked = cfg.det;
+  document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red;
   document.documentElement.classList.toggle("red", cfg.red);
   const tx = +cfg.tele.x || 0, ty = +cfg.tele.y || 0;
   $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? "The telescope is set to point at the centre of the camera image." :
@@ -1705,6 +1720,17 @@ function showInfo(o) {
   $("infoWarn").hidden = o.body !== "Sun";
   const isTarget = cfg.target === o.id;
   $("infoTarget").textContent = isTarget ? "Already the target" : "Set as target"; $("infoTarget").disabled = isTarget;
+  // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
+  $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
+  $("infoSync").onclick = () => {
+    const t = skyNow().t, tv = teleVec(); if (!tv) return;
+    const want = horiz(o.vec(t), t), have = horiz(tv, t);
+    const d = ((want.az - have.az) + 540) % 360 - 180;
+    // the compass correction rotates the view clockwise in azimuth for negative values (east of north is positive az)
+    setCompassCal(+((((+cfg.compassCal || 0) - d) + 540) % 360 - 180).toFixed(1));
+    closeSheet("infoSheet");
+    hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
+  };
   $("infoTarget").onclick = () => {
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
     selectTarget(o.id); closeSheet("infoSheet");
@@ -1730,6 +1756,17 @@ $("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey
 $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSettings(); hint("The field of view will be measured again on the next solve.", 3000); };
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
 $("btnCompassReset").onclick = () => setCompassCal(0);
+document.querySelectorAll('input[name="pointer"]').forEach(r => r.onchange = () => setPointer(r.value));
+function setPointer(v) {
+  cfg.pointer = v === "top" ? "top" : "camera"; save();
+  if (topMode()) {
+    if (st.stream) stopCamera(); else if (st.source !== "map") showMap();
+    st.base = null; setAuto(false);
+    if (!st.sensor) setSensor(true);
+    hint("Top edge mode: point the top of the phone at the sky. Compass and motion sensor show where it points.", 6000);
+  } else hint("Camera mode: Locate makes the position exact.", 3000);
+  lastSig = []; sensorUpdate(); updateGuide(); syncSettings();
+}
 /* ---------------- Filter ---------------- */
 const same = (a, b) => Object.keys(SHOW_DEF).every(k => a[k] === b[k]);
 function presetOf(show) { return Object.keys(PRESETS).find(k => same(show, PRESETS[k].show)) || null; }
