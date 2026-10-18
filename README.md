@@ -2,11 +2,11 @@
 
 Web-App, die über die Handykamera feststellt, wohin ein Dobson-Teleskop zeigt, und dann mit Azimut-/Höhenpfeilen zum gewünschten Objekt führt. Das Handy wird parallel zum Tubus montiert. Die App erkennt die Sterne im Kamerabild, vergleicht sie mit einem Sternkatalog (Plate Solving) und rechnet die Richtung über Uhrzeit und Standort in Höhe/Azimut um.
 
-Alles läuft lokal im Browser: kein Server, keine Anmeldung. Die fertige App ist eine einzige HTML-Datei von etwa 310 KB.
+Alles läuft lokal im Browser: kein Server, keine Anmeldung. Die fertige App ist eine einzige HTML-Datei von etwa 315 KB.
 
 ## Benutzen
 
-1. `dist/index.html` über HTTPS ausliefern (z. B. Cloudflare Pages: Build-Befehl leer, Ausgabeverzeichnis `dist`). Kamera und GPS gibt der Browser nur über HTTPS frei.
+1. Die App über HTTPS ausliefern, Kamera und GPS gibt der Browser nur so frei. Das Repo ist mit Cloudflare verbunden: Jeder Push auf `main` baut und deployt automatisch (`npx wrangler deploy` führt vorher `npm run build` aus, siehe `wrangler.jsonc`).
 2. Handy fest und parallel zum Tubus montieren, Kamera starten, **Position bestimmen**. Beim ersten Mal sucht die App das Bildfeld der Kamera und merkt es sich.
 3. Einen hellen Stern im Okular zentrieren, **Okular** drücken und denselben Stern im Bild antippen. Damit kennt die App den Versatz zwischen Handy und Teleskop.
 4. Ziel wählen (Messier-Objekte, helle Sterne, Mond, Planeten) und mit **Dauernd** den Pfeilen folgen.
@@ -30,30 +30,32 @@ Alles läuft lokal im Browser: kein Server, keine Anmeldung. Die fertige App ist
 |---|---|
 | `src/app.html` | Oberfläche, Kamera, Overlay, Navigation |
 | `src/solver.js` | Sternerkennung und Plate Solver (auch unter Node nutzbar) |
-| `src/data.js` | Sternkatalog bis 6 mag, Sternnamen, Messier-Objekte, Sternbildlinien (generiert) |
-| `vendor/astronomy.browser.min.js` | Astronomy Engine 2.1.19 |
-| `scripts/build.py` | baut `dist/index.html` |
-| `scripts/prep_catalog.py` | erzeugt `src/data.js` aus d3-celestial |
-| `scripts/image_to_f32.py` | wandelt ein Foto für `test/photo.js` um |
-| `test/synthetic.js` | synthetische Sternfelder mit bekannter Lösung |
-| `test/photo.js` | löst ein echtes Foto |
+| `public/` | statische Zusatzdateien, werden nach `dist/` kopiert (`robots.txt`) |
+| `scripts/catalog.mjs` | erzeugt `src/data.js` aus d3-celestial: Sterne bis 6 mag, Namen, Messier, Sternbildlinien |
+| `scripts/build.mjs` | baut `dist/index.html` mit Astronomy Engine, Katalog und Solver inline |
+| `scripts/image_to_f32.py` | wandelt ein Foto für `test/photo.cjs` um |
+| `test/synthetic.cjs` | synthetische Sternfelder mit bekannter Lösung |
+| `test/photo.cjs` | löst ein echtes Foto |
+
+`dist/` und `src/data.js` werden beim Bauen erzeugt und nicht eingecheckt.
 
 ## Bauen und testen
 
-```bash
-python3 scripts/build.py            # -> dist/index.html
-node test/synthetic.js 21 4         # Seed, Anzahl pro Fall
+Node 20 oder neuer.
 
-pip install pillow numpy
-python3 scripts/image_to_f32.py foto.jpg /tmp/foto
-node test/photo.js /tmp/foto
+```bash
+npm install
+npm run build        # -> dist/index.html + dist/robots.txt
+npm test             # synthetische Sternfelder
+npm run dev          # lokal mit wrangler dev
+npm run deploy       # manuell deployen (sonst per Push auf main)
 ```
 
-Katalog neu erzeugen:
+Echtes Foto testen (braucht Python mit Pillow und NumPy):
 
 ```bash
-npm pack d3-celestial@0.7.35 && tar xzf d3-celestial-0.7.35.tgz
-python3 scripts/prep_catalog.py package/data src/data.js
+python3 scripts/image_to_f32.py foto.jpg /tmp/foto
+npm run test:photo -- /tmp/foto
 ```
 
 ## Bekannte Grenzen

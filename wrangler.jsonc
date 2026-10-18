@@ -1,8 +1,12 @@
 {
-  // Statische Seite: Cloudflare liefert dist/ direkt aus, ohne Worker-Code
+  // Statische Seite: Cloudflare liefert dist/ direkt aus, ohne Worker-Code.
+  // "build" sorgt dafür, dass wrangler deploy/dev vorher npm run build ausführt.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dobson-starfield",
   "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "npm run build"
+  },
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"

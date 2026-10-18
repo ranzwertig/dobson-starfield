@@ -1,0 +1,22 @@
+{
+  "name": "dobson-starfield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dobson-Lotse: Plate-Solving-Web-App zur Teleskop-Navigation",
+  "scripts": {
+    "catalog": "node scripts/catalog.mjs",
+    "build": "node scripts/catalog.mjs && node scripts/build.mjs",
+    "test": "npm run catalog && node test/synthetic.cjs 21 2",
+    "test:photo": "node test/photo.cjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "astronomy-engine": "2.1.19",
+    "d3-celestial": "0.7.35",
+    "wrangler": "4.147.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
