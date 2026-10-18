@@ -29,6 +29,13 @@ html.red { filter: grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightne
 body { font-family: var(--font-ui); font-size: 15px; overflow: hidden; }
 button, input, select { font: inherit; color: inherit; }
 .app { height: 100%; display: flex; flex-direction: column; }
+/* Top inset; in the installed app a bit more, because iOS blurs the area just below the status bar */
+:root { --safe-top: env(safe-area-inset-top, 0px); }
+@media (display-mode: standalone) {
+  :root { --safe-top: calc(env(safe-area-inset-top, 0px) + 10px); }
+  /* iOS 26 home screen apps size the page too short and leave a black bar at the bottom: use the full screen height */
+  .app { position: fixed; top: 0; left: 0; right: 0; height: var(--app-h, 100lvh); }
+}
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Status badge bottom left */
@@ -62,7 +69,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Degree readouts at the top of the image */
 .hud {
-  position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px));
+  position: absolute; top: max(8px, var(--safe-top)); left: max(8px, env(safe-area-inset-left, 0px));
   right: calc(max(8px, env(safe-area-inset-right, 0px)) + 54px);
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
@@ -85,14 +92,14 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.idle .hcell { display: none; }
 
 .hint {
-  position: absolute; left: 50%; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  position: absolute; left: 50%; top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
-.notices { position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices { position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
-.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, env(safe-area-inset-top, 0px)) + 168px); }
+.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 168px); }
 .update {
   display: flex; align-items: center; gap: 10px; box-sizing: border-box;
   background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
@@ -133,7 +140,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
 
 /* Menu button top right, capture button as a large round button at the bottom of the stack */
-.menu-fab { position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: 46px; height: 46px; }
+.menu-fab { position: absolute; top: max(8px, var(--safe-top)); right: max(8px, env(safe-area-inset-right, 0px)); width: 46px; height: 46px; }
 .fab.shoot { width: 64px; height: 64px; background: var(--accent); border-color: var(--accent); color: #17110a; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
 .fab.shoot svg { width: 28px; height: 28px; }
 .fab.shoot:disabled { opacity: .6; cursor: default; }
@@ -163,6 +170,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   background: rgba(0,0,0,0); transition: background .3s ease;
 }
 .sheet.open { background: rgba(0,0,0,.5); }
+@media (display-mode: standalone) { .sheet { bottom: auto; height: var(--app-h, 100lvh); } }
 .sheet .inner {
   width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; overscroll-behavior: contain;
   background: var(--panel); border: 1px solid var(--line); border-bottom: 0;
@@ -428,6 +436,25 @@ a.btn { text-decoration: none; color: var(--fg); }
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
+// Installed on the iPhone home screen: work around iOS 26 viewport bugs (page too short -> black bar at the bottom,
+// safe-area-inset-top sometimes reported as 0 -> controls under the status bar)
+(function fixStandaloneViewport() {
+  const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  if (!standalone || !/iPhone|iPod/.test(navigator.userAgent)) return;
+  const root = document.documentElement;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;height:env(safe-area-inset-top,0px)";
+  const apply = () => {
+    const portrait = matchMedia("(orientation: portrait)").matches;
+    const screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+    root.style.setProperty("--app-h", Math.max(innerHeight, screenH) + "px");
+    if (!probe.isConnected) document.body.append(probe);
+    if (portrait && probe.offsetHeight === 0) root.style.setProperty("--safe-top", "60px");   // inset missing: status bar + blur
+    else root.style.removeProperty("--safe-top");
+  };
+  addEventListener("resize", apply); addEventListener("orientationchange", () => setTimeout(apply, 300));
+  if (document.body) apply(); else addEventListener("DOMContentLoaded", apply);
+})();
 const A = Astronomy;
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 Solver.setCatalog(STARS);
