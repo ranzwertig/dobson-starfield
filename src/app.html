@@ -1,4 +1,4 @@
-<title>Dobson Pilot</title>
+<title>Zenigo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0a0c0f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,6 +89,23 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
+
+.update {
+  position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); margin-inline: auto; max-width: 440px;
+  display: flex; align-items: center; gap: 10px; box-sizing: border-box;
+  background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.5); font-size: 14px; animation: upd-in .35s ease-out;
+}
+.update img { border-radius: 7px; flex: none; }
+.update span { flex: 1; min-width: 0; }
+.update .btn { padding: 7px 14px; white-space: nowrap; }
+@keyframes upd-in { from { opacity: 0; transform: translateY(-10px); } }
+.update:not([hidden]) + .hint { top: calc(max(8px, env(safe-area-inset-top, 0px)) + 160px); }
+@media (prefers-reduced-motion: reduce) { .update { animation: none; } }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand img { border-radius: 8px; }
+.brand b { font-weight: 600; font-size: 21px; letter-spacing: .3px; }
+.brand b i { font-style: normal; color: var(--accent); }
 
 /* Round buttons bottom right */
 .fabs {
@@ -239,6 +256,12 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
     </div>
 
+    <div class="update" id="updateBar" role="status" hidden>
+      <img src="logo.svg" alt="" width="28" height="28">
+      <span>A new version of Zenigo is available.</span>
+      <button class="btn primary" id="btnUpdate">Update</button>
+      <button class="iconbtn" id="btnUpdateLater" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
     <div class="hint" id="hint" hidden></div>
     <div class="corner">
       <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
@@ -270,7 +293,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="menu" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
-    <div class="grab"><h2 id="menuTitle"><span>Menu</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="menuTitle"><span class="brand"><img src="logo.svg" alt="" width="30" height="30"><b>zeni<i>go</i></b></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Solve a photo from the gallery</span></button>
       <button class="menu-item" id="btnMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg><span>Show sky map</span></button>
@@ -1346,12 +1369,30 @@ $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSetting
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
 $("btnCompassReset").onclick = () => { cfg.compassCal = 0; cfg.compassCalN = 0; save(); syncCompassCal(); if (sens.off && sens.rel) setAbs(); };
 syncCompassCal();
-// Offline use: register the service worker (only where the build provides sw.js, i.e. not in the dev preview)
+// Offline use and updates: the service worker serves the cached app; a new version waits until "Update" is tapped
 if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.href)) {
+  let reloading = false;
+  const showUpdate = w => {
+    if (!w) return;
+    const bar = $("updateBar"); bar.hidden = false;
+    $("btnUpdate").onclick = () => { $("btnUpdate").disabled = true; $("btnUpdate").textContent = "Updating …"; w.postMessage({ type: "SKIP_WAITING" }); };
+    $("btnUpdateLater").onclick = () => { bar.hidden = true; };
+  };
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (reloading || !st.hadController) return; reloading = true; location.reload(); });
+  st.hadController = !!navigator.serviceWorker.controller;
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").then(r => {
-    if (!navigator.serviceWorker.controller) r.addEventListener("updatefound", () => {
-      const nw = r.installing; nw && nw.addEventListener("statechange", () => { if (nw.state === "activated") hint("Ready for offline use. Add the app to your home screen to start it without signal.", 6000); });
+    if (r.waiting && navigator.serviceWorker.controller) showUpdate(r.waiting);
+    r.addEventListener("updatefound", () => {
+      const nw = r.installing; if (!nw) return;
+      nw.addEventListener("statechange", () => {
+        if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdate(nw);
+        if (nw.state === "activated" && !st.hadController) { st.hadController = true; hint("Ready for offline use. Add Zenigo to your home screen to start it without signal.", 6000); }
+      });
     });
+    // look for new versions when the app comes back to the foreground, and hourly
+    const check = () => { if (navigator.onLine) r.update().catch(() => {}); };
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+    setInterval(check, 3600e3);
   }).catch(() => {}));
 }
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };

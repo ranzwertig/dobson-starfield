@@ -2,7 +2,7 @@
   "name": "dobson-starfield",
   "version": "0.1.0",
   "private": true,
-  "description": "Dobson Pilot: plate-solving web app for push-to telescope navigation",
+  "description": "Zenigo: plate-solving web app for push-to telescope navigation",
   "scripts": {
     "catalog": "node scripts/catalog.mjs",
     "build": "node scripts/catalog.mjs && node scripts/build.mjs",

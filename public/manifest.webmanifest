@@ -1,7 +1,7 @@
 {
-  "name": "Dobson Pilot",
-  "short_name": "Dobson Pilot",
-  "description": "Plate-solving push-to navigation for Dobsonian telescopes",
+  "name": "Zenigo",
+  "short_name": "Zenigo",
+  "description": "Push-to for your telescope: plate solving with the phone camera",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
@@ -9,6 +9,7 @@
   "background_color": "#0a0c0f",
   "theme_color": "#0a0c0f",
   "icons": [
+    { "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }

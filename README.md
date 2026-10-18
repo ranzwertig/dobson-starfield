@@ -1,8 +1,12 @@
-# Dobson Pilot
+<p align="center"><img src="public/logo.svg" width="120" alt="Zenigo logo"></p>
+
+# Zenigo
+
+Push-to for your telescope.
 
 A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 430 KB. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal.
+Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 430 KB. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
 
 ## Usage
 
@@ -38,8 +42,9 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 |---|---|
 | `src/app.html` | UI, camera, overlay, sky map, navigation |
 | `src/solver.js` | star detection and plate solver (also usable in Node) |
-| `src/sw.js` | service worker for offline use (version set by the build) |
-| `public/` | static files copied to `dist/`: web app manifest, icons, `robots.txt` |
+| `src/sw.js` | service worker for offline use and update notices (version set by the build) |
+| `public/` | static files copied to `dist/`: logo (`logo.svg`), web app manifest, icons, `robots.txt` |
+| `scripts/icons.cjs` | renders the PNG icons from `public/logo.svg` (needs Playwright; only after logo changes) |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6, names, designations, Messier objects, constellation lines |
 | `scripts/build.mjs` | builds `dist/index.html` with Astronomy Engine, catalogue and solver inlined |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
