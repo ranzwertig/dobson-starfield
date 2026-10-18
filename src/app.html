@@ -825,22 +825,47 @@ function feedRel(m) {
     if (sens.pend && qAng(sens.pend, q) < 4) sens.pendN++; else { sens.pend = q; sens.pendN = 1; }
     if (sens.pendN < 4) return;
     sens.raw = q; sens.pend = null; sens.pendN = 0;
-  } else { sens.pend = null; sens.pendN = 0; sens.raw = qBlend(sens.raw, q, jump < 0.3 ? 0.25 : 0.6); }
+  } else {
+    // One-euro filter: strong smoothing while still (sensor noise), little lag while moving. Time-based and continuous,
+    // so the map moves evenly instead of alternating between lagging and catching up.
+    sens.pend = null; sens.pendN = 0;
+    const now = performance.now(), dt = Math.max(0.004, Math.min(0.2, (now - (sens.relT || now - 16)) / 1000)); sens.relT = now;
+    const ka = s => 1 / (1 + 1 / (2 * Math.PI * s * dt));
+    sens.speed = (sens.speed || 0) + ka(1) * (jump / dt - (sens.speed || 0));      // °/s, smoothed
+    sens.raw = qBlend(sens.raw, q, ka(1.2 + 0.1 * sens.speed));
+  }
   sens.rel = q2m(sens.raw);
 }
 // Compass: only estimate the heading (rotation about the vertical) between gyro orientation and north, heavily filtered.
 // Time-based (event rates differ between phones): settles within ~1 s, then follows with a 4 s time constant, so the
 // usual compass noise of a few degrees no longer shakes the map. Short disturbances (>20°) are ignored, lasting ones accepted.
+// Pointing steeply up or down the compass heading is poorly defined (and phones switch the reference axis there):
+// the offset is then held and the gyroscope alone carries the orientation.
+function camElev() { const v = Solver.mul(sens.rel, Solver.mul(camAxes(), [0, 0, 1])); return Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D; }
 function feedAbs(mAbs) {
   if (!sens.rel) return;
-  const M = mm3(mAbs, tr3(sens.rel)), off = Math.atan2(M[1][0], M[0][0]), now = performance.now();
+  const M = mm3(mAbs, tr3(sens.rel));
+  feedOff(Math.atan2(M[1][0], M[0][0]));
+}
+// iOS: webkitCompassHeading is the heading of the back camera while the phone is held upright
+function feedHeading(e) {
+  if (!sens.rel || !(e.webkitCompassAccuracy >= 0)) return;
+  // upright: heading of the back camera; lying flat: heading of the top edge (only used to get a first value)
+  let v = Solver.mul(sens.rel, [0, 0, -1]);
+  if (Math.abs(v[2]) > 0.77) { if (sens.off) return; v = Solver.mul(sens.rel, [0, 1, 0]); if (Math.abs(v[2]) > 0.5) return; }
+  const azRel = Math.atan2(v[0], v[1]);                                                     // clockwise from the gyro's "north"
+  feedOff(azRel - e.webkitCompassHeading * D2R);
+}
+function feedOff(off) {
+  const now = performance.now();
   if (!sens.off) { sens.off = [Math.cos(off), Math.sin(off)]; sens.offN = 1; sens.offT = now; sens.offStart = now; setAbs(); return; }
   const dt = Math.min(0.5, (now - sens.offT) / 1000); sens.offT = now;
+  if (Math.abs(camElev()) > 50) { sens.outSince = 0; return; }   // steep: hold the offset
   const cur = Math.atan2(sens.off[1], sens.off[0]), d = ((off - cur) * R2D + 540) % 360 - 180;
   const settling = now - sens.offStart < 1200;
   if (Math.abs(d) > 20 && !settling) {
     if (!sens.outSince) sens.outSince = now;
-    if (now - sens.outSince < 1500) return;          // ignore short disturbances (metal, a quick jerk)
+    if (now - sens.outSince < 2500) return;          // ignore short disturbances (metal, a quick jerk)
     sens.offStart = now;                              // lasting change: settle quickly to the new heading
   }
   sens.outSince = 0;
@@ -894,8 +919,8 @@ function onOrientation(e, absolute) {
   else {
     feedRel(m);
     // iOS only provides the compass as webkitCompassHeading (clockwise from north)
-    if (typeof e.webkitCompassHeading === "number" && !sens.hasAbsEvent) feedAbs(devMatrix(360 - e.webkitCompassHeading, e.beta, e.gamma));
-    else if (sens.rel && sens.off) setAbs();
+    if (typeof e.webkitCompassHeading === "number" && !sens.hasAbsEvent) feedHeading(e);
+    if (sens.rel && sens.off) setAbs();
   }
   if (absolute) sens.hasAbsEvent = true;
   if (st.sensor && !sens.raf) sens.raf = requestAnimationFrame(() => { sens.raf = 0; sensorUpdate(); });
@@ -915,10 +940,19 @@ async function setSensor(on) {
     setTimeout(() => { if (st.sensor && !sens.rel && !sens.abs) hint("This device provides no orientation data (no sensor, or only available over HTTPS).", 5000); }, 1500);
   }
   st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
+  // Pointing up, the phone lies flat and the system may rotate the screen: keep the current orientation while aligning
+  try { if (on) await screen.orientation.lock(screen.orientation.type); else screen.orientation.unlock(); sens.locked = on; } catch (e) { sens.locked = false; }
   if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
   sensorUpdate();
 }
+// If the screen still rotates while aligning, suggest the system rotation lock (once per session)
+const onScreenTurn = () => {
+  if (!st.sensor || sens.locked || sens.turnHinted) return;
+  sens.turnHinted = true;
+  hint("The screen rotated. Turn on your phone’s rotation lock: pointing up, the phone lies flat and the view would otherwise flip.", 8000);
+};
+if (screen.orientation) screen.orientation.addEventListener("change", onScreenTurn); else addEventListener("orientationchange", onScreenTurn);
 // Camera model for the compass view without a solution
 function approxCamera() {
   if (st.source === "map") { const W = view.width, H = view.height, f = (W / 2) / Math.tan(st.mapView.fov / 2 * D2R);
