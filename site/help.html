@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help – Zenigo</title>
+<meta name="description" content="Everything about Zenigo: the screen, every button, sky map and Align, plate solving, eyepiece point, compass correction, filter, settings, troubleshooting and FAQ.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap docwrap">
+  <nav class="toc" aria-label="Contents">
+    <a href="#screen">The screen</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#modes">Sky map, camera and Align</a>
+    <a href="#solving">How locating works</a>
+    <a href="#eyepiece">Eyepiece point</a>
+    <a href="#targets">Targets and object details</a>
+    <a href="#filter">Filter</a>
+    <a href="#compass">Compass correction</a>
+    <a href="#settings">Settings</a>
+    <a href="#sun">Observing the Sun</a>
+    <a href="#offline">Offline and updates</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="#faq">Questions</a>
+  </nav>
+
+  <article class="doc">
+    <h1>Help</h1>
+    <p class="intro">This page explains every part of Zenigo. New here? <a href="/getting-started/">Getting started</a> walks you through the first night step by step.</p>
+
+    <h2 id="screen">The screen</h2>
+    <dl class="ref">
+      <dt>Directions at the top</dt>
+      <dd>How many degrees to <b>turn</b> the telescope left or right (azimuth) and to <b>tilt</b> it up or down (altitude) to reach the target. The line below shows the distance to the target and where the position comes from. Tap that line to choose another target. Before the first locate it shows how high the target stands and in which direction.</dd>
+      <dt>Map or image</dt>
+      <dd>The camera image or the star map, with stars, constellation lines, names, Messier objects, planets and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image.</dd>
+      <dt>Menu (top right)</dt>
+      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, red light, button labels, filter, settings, the current position and links to this help.</dd>
+      <dt>Status (bottom left)</dt>
+      <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a> or a <a href="#filter">filter</a>. Their ✕ switches them off.</dd>
+      <dt>Gestures</dt>
+      <dd>Pinch or double-tap to zoom, drag to pan or, on the free sky map, to look around. Tap a star, planet or Messier object for its details.</dd>
+    </dl>
+
+    <h2 id="buttons">Buttons</h2>
+    <p>The round buttons on the right. A dimmed button can’t be used right now; tap it to see why.</p>
+    <dl class="ref icons">
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>Find target</dt>
+      <dd>Choose what you want to look at: quick picks, a list of what is well placed now (higher than 15°), or search by name, Messier number or star name.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Filter</dt>
+      <dd>Choose what the map shows. Lights up while a filter is active. See <a href="#filter">Filter</a>.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>Eyepiece point</dt>
+      <dd>Tell the app where the telescope points relative to the camera. Available after a locate. See <a href="#eyepiece">Eyepiece point</a>.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg>Continuous</dt>
+      <dd>Locates again and again by itself while the camera runs. After the first solve each further one only checks the predicted position, which takes a few milliseconds. Needs the live camera.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Align</dt>
+      <dd>Lets the map and the directions follow the phone’s movement. See <a href="#modes">Sky map, camera and Align</a>. On iPhone the first tap asks for permission to use the motion sensors.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>Camera</dt>
+      <dd>Switches the live camera on or off. Off, you see the sky map.</dd>
+      <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Locate</dt>
+      <dd>The large orange button. Starts the camera if needed, captures a few frames and works out exactly where the camera points (<a href="#solving">plate solving</a>). With a gallery photo loaded it solves the photo.</dd>
+    </dl>
+
+    <h2 id="modes">Sky map, camera and Align</h2>
+    <p>Zenigo knows four ways of working out where you are looking. The status at the bottom left always shows which one is active.</p>
+    <dl class="ref">
+      <dt>Free sky map</dt>
+      <dd>Without camera and without Align you see the sky above your location as a map. Drag to look around, pinch to zoom. Handy for planning.</dd>
+      <dt>Compass</dt>
+      <dd>With Align on but before any locate, the map follows the phone using compass and motion sensor. Good for rough orientation, for example at dusk or through clouds, but often 10° or more off because the telescope’s metal disturbs the compass. A <a href="#compass">compass correction</a> improves this.</dd>
+      <dt>Located</dt>
+      <dd>After a successful Locate the position comes from the stars themselves and is accurate to a fraction of a degree.</dd>
+      <dt>Motion sensor</dt>
+      <dd>With Align on after a locate, the gyroscope carries the exact position along while you push. It stays accurate for minutes; tap Locate again now and then, or use Continuous.</dd>
+    </dl>
+    <p>Pointing more than about 50° up, the compass is unreliable, so the app keeps its last good value and relies on the gyroscope. Near the zenith a Dobson needs large azimuth turns for small movements on the sky; the app points that out.</p>
+
+    <h2 id="solving">How locating works</h2>
+    <p>Locate averages several camera frames, finds the points of light and compares their pattern with a catalogue of about 5,000 stars down to magnitude 6. That works anywhere in the sky and doesn’t need the compass or the location; the location is only used to convert the result into directions for your telescope.</p>
+    <ul>
+      <li>The first locate also measures the camera’s field of view and saves it. It takes up to about ten seconds, later ones about a second.</li>
+      <li>It needs around ten stars in the image. Fields narrower than about 10° can’t be solved, so it does not work through the finder or the eyepiece.</li>
+      <li>Trees, houses and clouds are ignored as far as possible, but the more open sky, the better.</li>
+      <li>Gallery photos can be solved too (menu → Solve a photo from the gallery). Their field of view is searched every time.</li>
+    </ul>
+
+    <h2 id="eyepiece">Eyepiece point</h2>
+    <p>The phone never sits exactly parallel to the tube. The eyepiece point stores the offset between camera and telescope, so the crosshair and the directions refer to the telescope.</p>
+    <ol>
+      <li>Centre a bright star in a low-power eyepiece by hand.</li>
+      <li>Tap <b>Locate</b>.</li>
+      <li>Tap <b>Eyepiece point</b>, then the same star on the screen. The tap snaps to the nearest star and confirms it by name.</li>
+    </ol>
+    <p>Tap the button again to cancel. Settings shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre. Set it again whenever the holder has moved.</p>
+
+    <h2 id="targets">Targets and object details</h2>
+    <p>Targets are the Sun, the Moon, the planets, all 110 Messier objects and the bright named stars. Tap any object on the map for its details: brightness, distance (Moon and planets), altitude and azimuth right now, coordinates and the distance from the eyepiece. <b>Set as target</b> makes it your target.</p>
+    <p>The buttons at the bottom open good sources in a new tab:</p>
+    <ul>
+      <li>Messier objects: <b>SEDS</b> Messier Database (data, photos, observing notes), <b>In-The-Sky</b> (visibility and finder charts), Wikipedia</li>
+      <li>Sun, Moon and planets: <b>NASA</b> Science, Wikipedia</li>
+      <li>Stars: Wikipedia and <b>SIMBAD</b> (the professional star database)</li>
+    </ul>
+
+    <h2 id="filter">Filter</h2>
+    <p>The Filter button chooses what the map shows. Presets:</p>
+    <dl class="ref">
+      <dt>Everything</dt><dd>All stars, names, constellation lines, planets and Messier objects.</dd>
+      <dt>Solar system</dt><dd>Only Sun, Moon and planets.</dd>
+      <dt>Deep sky</dt><dd>All Messier objects, stars down to magnitude 5 for orientation, no planets.</dd>
+      <dt>Naked eye</dt><dd>Stars down to magnitude 5, constellations and planets.</dd>
+    </dl>
+    <p>Below the presets you can switch individual classes: Sun/Moon/planets, stars with a slider for the faintest magnitude, star names, constellation lines, and the Messier classes galaxies, globular clusters, open clusters, nebulae and planetary nebulae. Each class has its usual chart symbol: ellipse for galaxies, circle with a cross for globular clusters, dashed circle for open clusters, square for nebulae, circle with a dot for planetary nebulae.</p>
+    <p>Your target is always shown, and Find target always searches everything. While a filter is active it is shown at the bottom left; ✕ shows everything again.</p>
+
+    <h2 id="compass">Compass correction</h2>
+    <p>The phone’s compass is often several degrees off, especially near the metal of a telescope. After a locate with Align on, Zenigo compares the compass with the exact direction from the stars. If they differ by more than about 1.5°, it asks: “The compass is −12.3° off. Correct it?”</p>
+    <ul>
+      <li><b>Correct</b> saves the measured value and uses it in compass mode from now on.</li>
+      <li><b>✕</b> dismisses the question. It only comes back if the measured error changes by more than 3°.</li>
+      <li>While a correction is active, “Compass corrected −12.3°” is shown at the bottom left. Its ✕ removes the correction, and the compass is used as it is again. Settings → Compass offers the same.</li>
+    </ul>
+    <p>The correction only matters before the first locate. After a locate the position comes from the stars.</p>
+
+    <h2 id="settings">Settings</h2>
+    <dl class="ref">
+      <dt>Location</dt>
+      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows.</dd>
+      <dt id="field-of-view">Camera field of view</dt>
+      <dd>The angle the camera covers along the long side of the image, measured on the first successful locate (typically 60–75° for main cameras). <b>Measure again</b> if you switch camera or zoom. The search range limits where the measurement looks.</dd>
+      <dt>Compass</dt>
+      <dd>Shows and removes the <a href="#compass">compass correction</a>.</dd>
+      <dt>Capture</dt>
+      <dd><b>Frames to stack</b>: how many video frames are averaged per locate; more frames show fainter stars but take longer and blur if the telescope moves. <b>Sensitivity</b>: how faint a point of light may be to count as a star; higher finds more stars but also more noise. If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well.</dd>
+      <dt>Display</dt>
+      <dd>Fill the screen with the image (or show it whole), mark the detected points of light, red light.</dd>
+      <dt>Eyepiece point</dt>
+      <dd>Shows the stored offset and resets it to the image centre.</dd>
+    </dl>
+    <p>In the menu: <b>Red light</b> tints the whole app red to keep your eyes dark-adapted, <b>Button labels</b> shows or hides the names next to the buttons, <b>Show sky map</b> switches from camera or photo back to the map.</p>
+
+    <h2 id="sun">Observing the Sun</h2>
+    <div class="warnbox">
+      <p><b>Never look at the Sun through a telescope or finder without a certified solar filter covering the front of the telescope.</b> Focused sunlight blinds instantly and permanently, a single glance is enough.</p>
+    </div>
+    <p>Choosing the Sun as a target first asks you to confirm that a certified full-aperture filter (ISO 12312-2 or solar film) sits on the front of the telescope, that the finder is covered or removed and that children are supervised. Locate doesn’t work in daylight, so guidance to the Sun relies on compass and motion sensor. To aim without looking, turn the tube until its shadow is as small and round as possible.</p>
+
+    <h2 id="offline">Offline and updates</h2>
+    <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue, calculations and solving all run on the phone. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <dl class="ref trouble">
+      <dt>“Only a few stars detected”</dt>
+      <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in Settings → Capture. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
+      <dt>“Field of view not found” or “No match”</dt>
+      <dd>Get more open sky into the image. If you changed camera or zoom, tap Measure again in Settings. A wrong search range can also prevent the first measurement.</dd>
+      <dt>The directions are off although the map looks right</dt>
+      <dd>Check the location in Settings, and set the <a href="#eyepiece">eyepiece point</a> again. It is wrong as soon as the holder has moved.</dd>
+      <dt>Compass mode is far off</dt>
+      <dd>Normal near a metal tube. Accept the <a href="#compass">compass correction</a> after a locate, or move the phone away from metal. Locating makes it exact anyway.</dd>
+      <dt>The view flips or rotates when pointing high</dt>
+      <dd>Turn on the phone’s rotation lock (iPhone: Control Centre; Android: quick settings). Lying flat, the phone can’t tell portrait from landscape.</dd>
+      <dt>The map jumps or shakes</dt>
+      <dd>Strong magnetic disturbances or fast jerks. After a locate the gyroscope takes over and the view becomes calm.</dd>
+      <dt>Camera not available</dt>
+      <dd>The app needs permission to use the camera. iPhone: Settings → Safari → Camera (for the installed app: Settings → Apps → Safari, or remove and re-add the app). Android: long-press the app icon → App info → Permissions.</dd>
+      <dt>“This device provides no orientation data”</dt>
+      <dd>The motion sensors are blocked or missing. On iPhone allow motion access when Align asks, or in Settings → Safari → Motion &amp; Orientation Access.</dd>
+      <dt>The app shows an old version</dt>
+      <dd>Tap Update when the message appears, or close the app completely and open it again.</dd>
+    </dl>
+
+    <h2 id="faq">Questions</h2>
+    <dl class="ref">
+      <dt>Does it cost anything?</dt><dd>No. Zenigo is free, without account and without ads.</dd>
+      <dt>Which phones work?</dt><dd>Current iPhones and Android phones with Safari or Chrome. The camera has to show a few stars in a short exposure, which most phones from the last few years manage.</dd>
+      <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
+      <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
+      <dt>What happens to my data?</dt><dd>Camera images, location and sensor data stay on your phone and are never uploaded. Details in the <a href="/privacy/">privacy policy</a>.</dd>
+      <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>
+    </dl>
+  </article>
+</main>
+
+<!--FOOTER-->
+</body>
+</html>

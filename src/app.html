@@ -227,6 +227,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   padding: 12px 10px; cursor: pointer; font-size: 16px;
 }
 .menu-item:hover { background: var(--raise); }
+a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
+.note a { color: var(--accent); }
 .menu-item svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
 .menu-item span { flex: 1; }
 .menu-item em { font-style: normal; color: var(--muted); font-size: 13px; }
@@ -365,11 +367,12 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="label">Position</div>
     <div class="readout" id="readout"></div>
-    <div class="label">How to use</div>
-    <p class="note" id="howto">
-      Mount the phone firmly and parallel to the tube, start the camera (button at the bottom right), then tap <b>Locate</b>. The first time, the app measures your camera’s field of view and remembers it. Then centre a bright star in the eyepiece, tap <b>Eyepiece point</b> and tap the same star in the image. From then on the numbers at the top tell you where to push the Dobson. Stars, planets and Messier objects in the image can be tapped for details. <b>Continuous</b> keeps updating the position. Without camera or photo you see a sky map: drag to look around, pinch to zoom, or turn on <b>Align</b> to let it follow the phone.
-    </p>
-    <p class="note legal-links"><a href="/">About Zenigo</a> <a href="/imprint/">Imprint</a> <a href="/privacy/">Privacy</a> <a href="mailto:zenigo@christianranz.com">Contact</a></p>
+    <div class="label">Help</div>
+    <div class="menu-list">
+      <a class="menu-item" href="/getting-started/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4"/></svg><span>Getting started</span><em>first night, step by step</em></a>
+      <a class="menu-item" href="/help/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Help</span><em>every button and setting</em></a>
+    </div>
+    <p class="note legal-links"><a href="/" target="_blank" rel="noopener">About Zenigo</a> <a href="/imprint/" target="_blank" rel="noopener">Imprint</a> <a href="/privacy/" target="_blank" rel="noopener">Privacy</a> <a href="mailto:zenigo@christianranz.com">Contact</a></p>
   </div>
 </div>
 
@@ -404,6 +407,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <li>The finder scope is covered or removed.</li>
       <li>Children are supervised the whole time.</li>
     </ul>
+    <p class="note"><a href="/help/#sun" target="_blank" rel="noopener">More about observing the Sun safely</a></p>
     <p class="note"><b>Aiming without looking:</b> turn the tube until its shadow on the ground is as small and round as possible. Then it points straight at the Sun. On cloudy days the arrows use compass and motion sensor, so expect a few degrees of error.</p>
     <div class="actions">
       <button class="btn" data-close>Cancel</button>
@@ -442,6 +446,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="grab"><h2 id="setTitle"><span>Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset>
       <legend>Location</legend>
       <div class="row">

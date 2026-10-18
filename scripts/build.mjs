@@ -70,9 +70,11 @@ write('dist/sw.js', read('src/sw-root.js'));
 const ctx = {}; vm.createContext(ctx); vm.runInContext(data.replace(/^const (\w+)=/gm, 'globalThis.$1='), ctx);
 const hero = heroSvg(ctx);
 const year = new Date().getFullYear();
-const pages = { 'index.html': 'dist/index.html', 'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
+const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
+  'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
+const header = read('site/_header.html'), footer = read('site/_footer.html');
 for (const [src, dst] of Object.entries(pages)) {
-  write(dst, read('site/' + src).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)));
+  write(dst, read('site/' + src).replace('<!--HEADER-->', () => header).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 

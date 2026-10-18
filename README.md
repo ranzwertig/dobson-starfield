@@ -6,7 +6,7 @@ Push-to for your telescope.
 
 A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Everything runs locally in the browser: no server, no sign-in. The website lives at `/` (landing page, `/privacy/`, `/imprint/`), the app at `/app/` as a single HTML file of roughly 470 KB. Fonts are self-hosted, so no page contacts third parties. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
+Everything runs locally in the browser: no server, no sign-in. The website lives at `/` (landing page, `/getting-started/`, `/help/`, `/privacy/`, `/imprint/`), the app at `/app/` as a single HTML file of roughly 470 KB. Fonts are self-hosted, so no page contacts third parties. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
 
 ## Usage
 
@@ -45,7 +45,7 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 | `src/solver.js` | star detection and plate solver (also usable in Node) |
 | `src/sw.js` | service worker of the app (`/app/sw.js`): offline use and update notices, version set by the build |
 | `src/sw-root.js` | retires the old service worker at `/sw.js` from when the app lived at `/` |
-| `site/` | website: landing page, privacy policy, imprint, 404 page, `site.css` |
+| `site/` | website: landing page, getting started, help, privacy policy, imprint, 404 page, shared `_header.html`/`_footer.html`, `site.css` |
 | `scripts/hero.mjs` | draws the landing page star chart from the catalogue at build time |
 | `public/` | static files copied to `dist/`: `app/` logo, web app manifest and icons, `robots.txt` |
 | `scripts/icons.cjs` | renders the PNG icons from `public/app/logo.svg` (needs Playwright; only after logo changes) |

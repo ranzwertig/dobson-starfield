@@ -71,6 +71,7 @@ p { margin: 0 0 14px; }
 .steps li { counter-increment: s; position: relative; padding-top: 64px; }
 .steps li::before { content: counter(s); position: absolute; top: 0; left: 0; font: 700 56px/1 var(--ui); color: var(--amber); }
 .steps p { color: #c3cad6; }
+.more { margin: 34px 0 0; color: var(--mist); }
 
 .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 56px; margin: 0; }
 .features dt { font-weight: 600; font-size: 21px; display: flex; gap: 12px; align-items: center; }
@@ -93,6 +94,49 @@ footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
 footer a { color: var(--star); text-decoration: none; }
 footer a:hover { color: var(--amber); }
 
+/* header navigation */
+.topnav { display: flex; align-items: center; gap: 22px; }
+.topnav > a:not(.open) { color: var(--star); text-decoration: none; font-weight: 500; }
+.topnav > a:not(.open):hover { color: var(--amber); }
+
+/* documentation pages: getting started, help */
+.doc { max-width: 720px; padding: 30px 0 80px; min-width: 0; }
+.doc h1 { font-size: clamp(38px, 5vw, 56px); line-height: 1; margin: 0 0 14px; }
+.doc .intro { font-size: 20px; color: #c9d0dc; margin-bottom: 34px; }
+.doc h2 { font-size: 28px; margin: 52px 0 14px; scroll-margin-top: 20px; }
+.doc p, .doc li, .doc dd { color: #ccd3de; }
+.doc ul, .doc ol { padding-left: 22px; }
+.doc li { margin-bottom: 6px; }
+.doc b { color: var(--star); font-weight: 600; }
+.c-amber { color: var(--amber); } .c-coral { color: var(--coral); }
+.tip { border-left: 3px solid var(--amber); padding: 4px 0 4px 16px; color: var(--mist) !important; }
+.warnbox { border: 1px solid rgba(255, 106, 92, .5); background: rgba(255, 106, 92, .07); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; }
+.warnbox p { margin: 0; color: var(--star); }
+
+/* numbered guide: the steps really are a sequence */
+.guide { list-style: none; padding: 0 !important; margin: 0; counter-reset: g; }
+.guide > li { counter-increment: g; position: relative; padding: 0 0 22px 64px; margin: 0 0 22px; border-bottom: 1px solid var(--line); }
+.guide > li::before { content: counter(g); position: absolute; left: 0; top: -6px; font: 700 48px/1 var(--ui); color: var(--amber); }
+.guide > li h2 { margin: 0 0 10px; font-size: 26px; }
+.guide .sub { padding-left: 22px; }
+.after h2 { margin-top: 40px; }
+.check { list-style: none; padding: 0 !important; }
+.check li { position: relative; padding-left: 30px; }
+.check li::before { content: ""; position: absolute; left: 2px; top: .35em; width: 14px; height: 14px; border: 2px solid var(--amber); border-radius: 4px; }
+
+/* reference lists in the help */
+.ref { margin: 0; }
+.ref dt { font-weight: 600; font-size: 19px; color: var(--star); margin-top: 18px; display: flex; align-items: center; gap: 10px; scroll-margin-top: 20px; }
+.ref dd { margin: 4px 0 0; }
+.ref.icons dt svg { width: 22px; height: 22px; color: var(--amber); flex: none; }
+.ref.icons dd { margin-left: 32px; }
+.trouble dt { color: var(--amber); }
+
+.docwrap { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; align-items: start; }
+.toc { position: sticky; top: 20px; display: grid; gap: 2px; padding: 34px 0; }
+.toc a { color: var(--mist); text-decoration: none; padding: 5px 0 5px 12px; border-left: 2px solid var(--line); font-size: 16px; }
+.toc a:hover { color: var(--star); border-left-color: var(--amber); }
+
 /* legal pages */
 .legal { max-width: 720px; padding: 30px 0 70px; }
 .legal h1 { font-size: clamp(36px, 5vw, 52px); margin-bottom: 10px; }
@@ -104,6 +148,9 @@ footer a:hover { color: var(--amber); }
 .stamp { color: var(--mist); font-size: 15px; }
 
 @media (max-width: 860px) {
+  .docwrap { grid-template-columns: 1fr; gap: 0; }
+  .toc { position: static; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 20px 0 0; }
+  .topnav > a:not(.open) { display: none; }
   .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 16px; }
   .steps { grid-template-columns: 1fr; gap: 26px; }
   .steps li { padding: 0 0 0 58px; }
@@ -112,6 +159,8 @@ footer a:hover { color: var(--amber); }
   section { padding: 48px 0; }
 }
 @media (max-width: 520px) {
+  .guide > li { padding-left: 46px; }
+  .guide > li::before { font-size: 38px; }
   body { font-size: 17px; }
   .wrap { padding-inline: 16px; }
   .top .open { padding: 8px 14px; font-size: 16px; }
