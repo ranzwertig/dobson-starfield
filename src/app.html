@@ -1,0 +1,797 @@
+<title>Dobson-Lotse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0a0c0f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Ein-Bildschirm-App fürs Handy am Teleskop — oben Himmelsbild mit Overlay, unten Zielführung und Bedienung. Dunkel und rotlichttauglich. */
+:root {
+  --bg: #0a0c0f;
+  --panel: #11151a;
+  --raise: #181d24;
+  --line: #252c35;
+  --fg: #d9dee4;
+  --muted: #8693a1;
+  --accent: #f0a845;     /* Bernstein: Teleskop, Bedienelemente */
+  --target: #ff6a5c;     /* Ziel */
+  --ok: #7cd39a;         /* erkannte Übereinstimmungen */
+  --sky: #9fb4ff;        /* Sternbilder */
+  --font-ui: "Saira Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; background: var(--bg); color: var(--fg); }
+html.red { filter: grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightness(.72); }
+body { font-family: var(--font-ui); font-size: 15px; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+.app { height: 100%; display: flex; flex-direction: column; }
+
+header.bar {
+  display: flex; align-items: center; gap: 10px;
+  padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; letter-spacing: .02em; font-size: 17px; }
+.brand small { font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; margin-left: 6px; }
+.status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
+.status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ok { background: var(--ok); } .dot.busy { background: var(--accent); animation: pulse 1s infinite; } .dot.bad { background: var(--target); }
+@keyframes pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } }
+.iconbtn { background: none; border: 1px solid var(--line); border-radius: 8px; width: 36px; height: 36px; display: grid; place-items: center; cursor: pointer; flex: none; }
+.iconbtn:focus-visible, .btn:focus-visible, .chip:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stage { position: relative; flex: 1 1 52%; min-height: 200px; background: #000; overflow: hidden; touch-action: manipulation; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage video { display: none; }
+.stage .tag {
+  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); top: 10px;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  background: rgba(10,12,15,.7); padding: 3px 8px; border-radius: 4px;
+}
+.stage .hint {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); max-width: calc(100% - 32px);
+  background: rgba(17,21,26,.92); border: 1px solid var(--accent); color: var(--fg);
+  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center;
+}
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+.panel {
+  flex: 1 1 48%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  padding-block: 12px 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--panel); border-top: 1px solid var(--line);
+}
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.controls .btn { justify-content: center; padding-inline: 8px; white-space: nowrap; }
+.controls .primary { grid-column: span 2; }
+.btn {
+  border: 1px solid var(--line); background: var(--raise); border-radius: 9px; padding: 9px 13px;
+  cursor: pointer; font-weight: 600; letter-spacing: .02em; display: inline-flex; align-items: center; gap: 7px;
+}
+.btn.primary { background: var(--accent); color: #17110a; border-color: var(--accent); }
+.btn.on { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn svg, .iconbtn svg { width: 18px; height: 18px; }
+
+.target { display: grid; gap: 8px; }
+.label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.search { position: relative; }
+.search input {
+  width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  padding: 10px 12px; font-size: 16px;
+}
+.results {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; max-height: 260px; overflow-y: auto;
+  background: var(--raise); border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+.results button { display: flex; width: 100%; gap: 10px; align-items: baseline; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 12px; cursor: pointer; }
+.results button:hover, .results button:focus-visible { background: var(--line); outline: none; }
+.results b { font-weight: 600; }
+.results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.results .grp { padding: 6px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 4px 11px; font-size: 13px; cursor: pointer; }
+.chip.sel { border-color: var(--target); color: var(--target); }
+.chip.below { opacity: .45; }
+
+.guide { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gcell { background: var(--raise); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; min-width: 0; }
+.gcell svg { width: 38px; height: 38px; flex: none; color: var(--accent); transition: transform .3s; }
+.gcell .v { font-family: var(--font-num); font-size: 24px; font-weight: 500; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.gcell .w { font-size: 14px; color: var(--muted); }
+.guide .total { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; font-size: 14px; color: var(--muted); }
+.guide .total strong { color: var(--fg); font-weight: 600; }
+.guide.hit .gcell { border-color: var(--ok); }
+.guide.hit .total strong { color: var(--ok); }
+.guide.stale { opacity: .55; }
+
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px 14px; font-size: 13px; }
+.readout div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; min-width: 0; }
+.readout span:first-child { color: var(--muted); }
+.readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; }
+.note b { color: var(--fg); font-weight: 600; }
+
+.sheet {
+  position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center;
+}
+.sheet .inner {
+  width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px 14px 0 0; display: grid; gap: 14px;
+  padding-block: 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sheet h2 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; }
+.sheet fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; display: grid; gap: 10px; }
+.sheet legend { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row label { flex: 1 1 120px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+.row input[type=number], .row input[type=text], .row select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; }
+.row input[type=range] { width: 100%; accent-color: var(--accent); }
+.check { display: flex !important; grid-auto-flow: column; align-items: center; gap: 8px !important; color: var(--fg) !important; font-size: 15px !important; flex: 1 1 100% !important; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.camctl:empty::after { content: "Diese Kamera bietet keine manuelle Belichtung an. Mehr Bilder stapeln hilft trotzdem."; font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">Dobson-Lotse</div>
+    <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Bereit</span></div>
+    <button class="iconbtn" id="btnSettings" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>
+    </button>
+  </header>
+
+  <div class="stage" id="stage">
+    <video id="video" playsinline muted></video>
+    <canvas id="view"></canvas>
+    <div class="tag" id="srcTag">Beispielbild (simuliert)</div>
+    <div class="hint" id="hint" hidden></div>
+    <div class="progress"><i id="prog"></i></div>
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <button class="btn" id="btnCam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>Kamera</button>
+      <button class="btn" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg>Foto</button>
+      <button class="btn" id="btnTele" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>Okular</button>
+      <button class="btn primary" id="btnSolve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Position bestimmen</button>
+      <button class="btn" id="btnAuto" aria-pressed="false">Dauernd</button>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+    </div>
+
+    <div class="target">
+      <div class="label">Ziel</div>
+      <div class="search">
+        <input id="q" type="text" placeholder="Suchen: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Ziel suchen">
+        <div class="results" id="results" hidden></div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="guide" id="guide">
+      <div class="gcell">
+        <svg id="azArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20a12 12 0 0 1 22-6.5"/><path d="M31 6v8h-8"/><ellipse cx="20" cy="31" rx="13" ry="3.5" stroke-width="1.4" opacity=".55"/></svg>
+        <div><div class="v" id="azV">–</div><div class="w" id="azW">Azimut</div></div>
+      </div>
+      <div class="gcell">
+        <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
+        <div><div class="v" id="altV">–</div><div class="w" id="altW">Höhe</div></div>
+      </div>
+      <div class="total"><strong id="totalTxt">Noch keine Position</strong><span id="totalSub"></span></div>
+    </div>
+
+    <div class="readout" id="readout"></div>
+    <p class="note" id="howto">
+      <b>So geht’s:</b> Handy fest und parallel zum Tubus montieren, Kamera starten, „Position bestimmen“. Beim ersten Mal sucht die App das Bildfeld deiner Kamera (dauert bis zu einer Minute) und merkt es sich. Danach einen hellen Stern im Okular zentrieren, „Okular“ drücken und denselben Stern im Bild antippen. Ab dann zeigen die Pfeile, wohin du den Dobson schieben musst.
+    </p>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <h2 id="setTitle">Einstellungen <button class="iconbtn" id="btnClose" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <fieldset>
+      <legend>Standort</legend>
+      <div class="row">
+        <label>Breite (°N)<input type="number" id="lat" step="0.01"></label>
+        <label>Länge (°O)<input type="number" id="lon" step="0.01"></label>
+        <button class="btn" id="btnGps">GPS</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Bildfeld der Kamera</legend>
+      <div class="row">
+        <label>Bildfeld, lange Seite (°)<input type="number" id="fov" step="0.1" placeholder="unbekannt"></label>
+        <button class="btn" id="btnFovReset">Neu ermitteln</button>
+      </div>
+      <div class="note">Wird beim ersten erfolgreichen Lösen automatisch gemessen. Typisch für Handy-Hauptkameras: 60–75°. Bei Fotos aus der Galerie sucht die App das Bildfeld jedes Mal neu, weil Objektiv und Ausschnitt verschieden sein können.</div>
+      <div class="row"><label>Suchbereich min / max (°)<input type="text" id="fovRange" value="25-85"></label></div>
+    </fieldset>
+    <fieldset>
+      <legend>Aufnahme</legend>
+      <div class="row">
+        <label>Bilder stapeln: <span id="stackV"></span><input type="range" id="stack" min="1" max="24" step="1"></label>
+        <label>Empfindlichkeit: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
+      </div>
+      <div class="row camctl" id="camctl"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Anzeige</legend>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="optLines"> Sternbildlinien</label>
+        <label class="check"><input type="checkbox" id="optNames"> Sternnamen und Messier-Objekte</label>
+        <label class="check"><input type="checkbox" id="optDet"> Erkannte Lichtpunkte markieren</label>
+        <label class="check"><input type="checkbox" id="optRed"> Rotlicht (schont die Dunkeladaption)</label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Teleskop-Punkt</legend>
+      <div class="note" id="teleInfo"></div>
+      <div class="row"><button class="btn" id="btnTeleReset">Auf Bildmitte zurücksetzen</button></div>
+    </fieldset>
+    <div class="note">Sternkatalog: Hipparcos/Yale bis 6 mag aus d3-celestial (BSD). Planeten und Mond: Astronomy Engine (MIT). Alles läuft lokal im Browser.</div>
+  </div>
+</div>
+
+<script>/*__ASTRONOMY__*/</script>
+<script id="core">/*__CORE__*/</script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const A = Astronomy;
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+Solver.setCatalog(STARS);
+
+/* ---------------- Einstellungen ---------------- */
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, tele: { u: 0, v: 0 }, target: "M31" };
+let cfg = DEF;
+try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
+cfg.fov.demo = 60;
+function save() { try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} }
+
+/* ---------------- Zustand ---------------- */
+const st = {
+  source: "demo",           // demo | video | photo
+  frame: null,              // Canvas des zuletzt gelösten/geladenen Bildes
+  sol: null, solAt: 0, stars: [],
+  busy: false, auto: false, teleMode: false,
+  stream: null, track: null,
+};
+const view = $("view"), vctx = view.getContext("2d"), video = $("video");
+
+function setStatus(text, kind) { $("statusText").textContent = text; $("dot").className = "dot" + (kind ? " " + kind : ""); }
+function hint(text, ms) { const h = $("hint"); if (!text) { h.hidden = true; return; } h.textContent = text; h.hidden = false; clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.hidden = true, ms); }
+
+/* ---------------- Rechenkern im Worker ---------------- */
+let worker = null, jobId = 0; const jobs = {};
+try {
+  const src = $("core").textContent + `
+    Solver.setCatalog(STARS);
+    self.onmessage = e => {
+      const m = e.data;
+      try {
+        const gray = new Float32Array(m.gray);
+        const stars = Solver.detectStars(gray, m.w, m.h, { sigma: m.sigma });
+        self.postMessage({ id: m.id, type: "stars", stars });
+        const sol = Solver.solve(stars, { w: m.w, h: m.h, fov: m.fov, fovMin: m.fovMin, fovMax: m.fovMax, fovGuess: m.fovGuess, timeBudget: m.budget,
+          onProgress: p => self.postMessage({ id: m.id, type: "progress", p }) });
+        self.postMessage({ id: m.id, type: "done", stars, sol });
+      } catch (err) { self.postMessage({ id: m.id, type: "done", stars: [], sol: { ok: false, reason: String(err) } }); }
+    };`;
+  worker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+  worker.onmessage = e => { const j = jobs[e.data.id]; if (j) j(e.data); };
+  worker.onerror = () => { worker = null; };
+} catch (e) { worker = null; }
+
+function runSolve(gray, w, h, opts, onMsg) {
+  return new Promise(resolve => {
+    const id = ++jobId;
+    const msg = Object.assign({ id, w, h, sigma: cfg.sigma }, opts);
+    if (worker) {
+      jobs[id] = d => { onMsg && onMsg(d); if (d.type === "done") { delete jobs[id]; resolve(d); } };
+      msg.gray = gray.buffer; worker.postMessage(msg, [gray.buffer]);
+    } else {
+      setTimeout(() => {
+        const stars = Solver.detectStars(gray, w, h, { sigma: cfg.sigma });
+        onMsg && onMsg({ type: "stars", stars });
+        const sol = Solver.solve(stars, Object.assign({ w, h }, opts));
+        resolve({ stars, sol });
+      }, 30);
+    }
+  });
+}
+
+/* ---------------- Bildquellen ---------------- */
+const MAXLONG = 1280;
+function toGray(ctx, w, h, acc) {
+  const d = ctx.getImageData(0, 0, w, h).data;
+  for (let i = 0, j = 0; j < w * h; i += 4, j++) acc[j] += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+}
+function sizeFor(sw, sh, maxLong) { const k = Math.min(1, maxLong / Math.max(sw, sh)); return [Math.round(sw * k), Math.round(sh * k)]; }
+
+async function captureVideo() {
+  const [w, h] = sizeFor(video.videoWidth, video.videoHeight, MAXLONG);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  const acc = new Float32Array(w * h), n = Math.max(1, cfg.stack | 0);
+  for (let k = 0; k < n; k++) {
+    await new Promise(r => video.requestVideoFrameCallback ? video.requestVideoFrameCallback(() => r()) : setTimeout(r, 70));
+    ctx.drawImage(video, 0, 0, w, h); toGray(ctx, w, h, acc);
+  }
+  for (let i = 0; i < acc.length; i++) acc[i] /= n;
+  // gestapeltes Bild für die Anzeige behalten (aufgehellt)
+  const img = ctx.createImageData(w, h); let mx = 1; for (let i = 0; i < acc.length; i += 7) if (acc[i] > mx) mx = acc[i];
+  for (let j = 0, i = 0; j < acc.length; j++, i += 4) { const v = Math.min(255, acc[j] * 1.6); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  ctx.putImageData(img, 0, 0);
+  return { gray: acc, w, h, canvas: c };
+}
+function imageToFrame(src, sw, sh, maxLong) {
+  const [w, h] = sizeFor(sw, sh, maxLong);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.imageSmoothingQuality = "high"; ctx.drawImage(src, 0, 0, w, h);
+  const acc = new Float32Array(w * h); toGray(ctx, w, h, acc);
+  return { gray: acc, w, h, canvas: c };
+}
+
+/* Beispielbild: simulierter Himmel um Kassiopeia und Andromeda */
+function makeDemo() {
+  const w = 1280, h = 720, fov = 60, f = (w / 2) / Math.tan(fov / 2 * D2R);
+  // Blickrichtung: etwas neben M31, damit die Pfeile gleich etwas zu tun haben
+  const t = A.MakeTime(new Date()), obs = observer(), toEqj = A.Rotation_HOR_EQJ(t, obs);
+  const m31 = horiz(Solver.radec2v(10.68, 41.27), t);
+  const alt = m31.alt > 20 ? Math.min(70, m31.alt - 6) : 45, az = m31.alt > 20 ? m31.az - 24 : 60;
+  const hv = A.VectorFromHorizon(new A.Spherical(alt, az, 1), t, "normal"), zv = A.RotateVector(toEqj, new A.Vector(0, 0, 1, t));
+  const ev = A.RotateVector(toEqj, hv);
+  let z = [ev.x, ev.y, ev.z]; const nz = Math.hypot(...z); z = z.map(q => q / nz);
+  const zen = [zv.x, zv.y, zv.z], kd = zen[0] * z[0] + zen[1] * z[1] + zen[2] * z[2];
+  let up = zen.map((q, i) => q - kd * z[i]); const nu = Math.hypot(...up); up = up.map(q => q / nu);
+  const y = up.map(q => -q);                                   // Bild-y zeigt nach unten
+  const x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
+  const sol = { R: [[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]], f, cx: w / 2, cy: h / 2 };
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const ctx = c.getContext("2d", { willReadFrequently: true });
+  const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#07090f"); g.addColorStop(1, "#1d1a1c");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h), d = img.data;
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < d.length; i += 4) { const n = (rnd() + rnd() + rnd() - 1.5) * 9; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+  const cat = Solver.cat;
+  for (let i = 0; i < cat.n; i++) {
+    if (cat.mag[i] > 4.9) continue;
+    const p = Solver.skyToPix(sol, cat.v[i]); if (!p || p.x < 3 || p.y < 3 || p.x > w - 4 || p.y > h - 4) continue;
+    const fl = 2600 * Math.pow(10, -0.4 * (cat.mag[i] - 1)), sg = 1.3;
+    for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
+      const X = Math.round(p.x) + dx, Y = Math.round(p.y) + dy, r2 = (X + .5 - p.x) ** 2 + (Y + .5 - p.y) ** 2;
+      const v = fl * Math.exp(-r2 / (2 * sg * sg)) / (2 * Math.PI * sg * sg), k = (Y * w + X) * 4;
+      d[k] += v; d[k + 1] += v * 0.97; d[k + 2] += v * 1.05;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const acc = new Float32Array(w * h); toGray(ctx, w, h, acc);
+  return { gray: acc, w, h, canvas: c };
+}
+
+/* ---------------- Kamera ---------------- */
+async function startCamera() {
+  if (st.stream) { stopCamera(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    st.stream = stream; st.track = stream.getVideoTracks()[0];
+    video.srcObject = stream; await video.play();
+    st.source = "video"; st.sol = null; st.stars = []; $("srcTag").textContent = "Live-Kamera";
+    $("btnCam").classList.add("on");
+    try { await navigator.wakeLock?.request("screen"); } catch (e) {}
+    buildCamControls();
+    setStatus(cfg.fov.video ? "Kamera läuft" : "Kamera läuft · Bildfeld noch unbekannt", "");
+    hint("Teleskop auf ein Stück Himmel mit mehreren hellen Sternen richten, dann „Position bestimmen“.", 6000);
+  } catch (e) {
+    const name = e && e.name;
+    hint(name === "NotAllowedError" || name === "SecurityError"
+      ? "Kein Kamerazugriff auf dieser Seite. Lege die Datei auf einen eigenen HTTPS-Server (z. B. Cloudflare Pages) oder nutze „Foto“ mit einem Himmelsfoto."
+      : "Kamera ließ sich nicht starten (" + (name || e) + ").", 9000);
+  }
+}
+function stopCamera() {
+  st.stream?.getTracks().forEach(t => t.stop()); st.stream = null; st.track = null; video.srcObject = null;
+  $("btnCam").classList.remove("on"); setAuto(false);
+  if (st.source === "video") { st.source = st.frame ? "frozen" : "demo"; $("srcTag").textContent = "Letztes Kamerabild"; }
+}
+function buildCamControls() {
+  const box = $("camctl"); box.textContent = "";
+  const t = st.track; if (!t || !t.getCapabilities) return;
+  const caps = t.getCapabilities(), sets = t.getSettings();
+  const add = (key, label, fmt, before) => {
+    const c = caps[key]; if (!c || typeof c.max !== "number") return;
+    const lab = document.createElement("label"); const span = document.createElement("span"); const inp = document.createElement("input");
+    inp.type = "range"; inp.id = "cam-" + key; inp.min = c.min; inp.max = c.max; inp.step = c.step || (c.max - c.min) / 100; inp.value = sets[key] ?? c.max;
+    const upd = () => span.textContent = label + ": " + fmt(+inp.value); upd();
+    inp.oninput = upd;
+    inp.onchange = async () => { const adv = Object.assign({}, before || {}); adv[key] = +inp.value; try { await t.applyConstraints({ advanced: [adv] }); } catch (e) { hint("Kamera lehnt die Einstellung ab.", 3000); } };
+    lab.append(span, inp); box.append(lab);
+  };
+  if (caps.exposureMode?.includes("manual")) add("exposureTime", "Belichtung", v => (v / 10).toFixed(0) + " ms", { exposureMode: "manual" });
+  add("iso", "ISO", v => v.toFixed(0), caps.exposureMode?.includes("manual") ? { exposureMode: "manual" } : null);
+  add("exposureCompensation", "Belichtungskorrektur", v => v.toFixed(1) + " EV");
+  if (caps.focusMode?.includes("manual")) add("focusDistance", "Fokus", v => v.toFixed(2), { focusMode: "manual" });
+  add("zoom", "Zoom", v => v.toFixed(1) + "×");
+}
+
+/* ---------------- Lösen ---------------- */
+function fovKey() { return st.source === "video" ? "video" : st.source === "demo" ? "demo" : "photo"; }
+function hfovFromLong(fl, w, h) { if (!fl) return null; const L = Math.max(w, h), f = (L / 2) / Math.tan(fl / 2 * D2R); return 2 * Math.atan(w / 2 / f) * R2D; }
+function longFromSol(sol) { const L = Math.max(sol.w, sol.h); return 2 * Math.atan(L / 2 / sol.f) * R2D; }
+
+async function solveNow() {
+  if (st.busy) return;
+  st.busy = true; $("btnSolve").disabled = true;
+  try {
+    let fr;
+    if (st.source === "video" && st.stream) { setStatus("Nehme " + cfg.stack + " Bilder auf …", "busy"); fr = await captureVideo(); }
+    else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
+    else return;
+    const key = fovKey(), isPhoto = key === "photo";
+    // Fotos aus der Galerie haben jeweils eigenes Bildfeld (anderes Objektiv, Ausschnitt) -> immer suchen
+    const known = isPhoto ? null : cfg.fov[key];
+    let [lo, hi] = (cfg.fovRange || "25-85").split(/[-–,; ]+/).map(Number);
+    if (isPhoto) { lo = Math.min(lo || 25, 12); hi = Math.max(hi || 85, 90); }
+    const opts = { budget: known ? 4000 : 90000 };
+    if (known) opts.fov = hfovFromLong(known, fr.w, fr.h);
+    else {   // Werte gelten für die lange Bildseite, der Solver rechnet mit der Bildbreite
+      const conv = fl => hfovFromLong(fl, fr.w, fr.h);
+      opts.fovMin = conv(lo || 25); opts.fovMax = conv(hi || 85); opts.fovGuess = conv((isPhoto && cfg.fov.photo) || 66);
+    }
+    setStatus(known ? "Vergleiche mit Sternkarte …" : isPhoto ? "Suche Bildfeld des Fotos …" : "Suche Bildfeld der Kamera …", "busy");
+    const res = await runSolve(fr.gray, fr.w, fr.h, opts, d => {
+      if (d.type === "stars") { st.stars = d.stars; st.pendingFrame = fr; }
+      if (d.type === "progress" && !known) {
+        const fl = 2 * Math.atan(Math.max(fr.w, fr.h) / 2 / ((fr.w / 2) / Math.tan(d.p.fov / 2 * D2R))) * R2D;
+        $("prog").style.width = (100 * d.p.step / d.p.of).toFixed(0) + "%";
+        setStatus("Suche Bildfeld … " + fl.toFixed(0) + "°", "busy");
+      }
+    });
+    $("prog").style.width = "0";
+    st.frame = fr;
+    st.stars = res.stars;
+    const sol = res.sol;
+    if (sol && sol.ok) {
+      st.sol = sol; st.solAt = Date.now(); st.solFrame = fr;
+      if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
+      else if (!known) { cfg.fov[key] = +longFromSol(sol).toFixed(2); save(); syncSettings(); hint("Bildfeld gefunden: " + cfg.fov[key].toFixed(1) + "° (gespeichert).", 5000); }
+      else if (Math.abs(longFromSol(sol) - known) > 0.05) { cfg.fov[key] = +(0.8 * known + 0.2 * longFromSol(sol)).toFixed(3); save(); }
+      setStatus("Gelöst · " + sol.nMatch + " Sterne · " + (sol.ms / 1000).toFixed(1) + " s", "ok");
+    } else {
+      if (st.source !== "video" || !st.auto) st.sol = null;
+      const n = res.stars.length;
+      setStatus(n < 6 ? "Nur " + n + " Sterne erkannt" : (sol?.reason || "Nicht gelöst"), "bad");
+      if (!st.auto) hint(n < 6
+        ? "Zu wenige Sterne im Bild. Länger belichten, mehr Bilder stapeln oder die Empfindlichkeit erhöhen."
+        : known ? "Keine Übereinstimmung. Wenn sich Zoom oder Kamera geändert haben, das Bildfeld in den Einstellungen neu ermitteln." : "Bildfeld nicht gefunden. Mehr Himmel ins Bild nehmen oder den Suchbereich anpassen.", 7000);
+    }
+    updateGuide(); renderReadout();
+  } finally {
+    st.busy = false; $("btnSolve").disabled = false;
+    if (st.auto && st.stream) setTimeout(solveNow, 400);
+  }
+}
+function setAuto(on) {
+  st.auto = on; $("btnAuto").classList.toggle("on", on); $("btnAuto").setAttribute("aria-pressed", on);
+  if (on && !st.busy) solveNow();
+}
+
+/* ---------------- Himmel / Ziele ---------------- */
+function observer() { return new A.Observer(+cfg.lat || 0, +cfg.lon || 0, 400); }
+function horiz(vec, t) {
+  const R = A.Rotation_EQJ_HOR(t, observer());
+  const v = A.RotateVector(R, new A.Vector(vec[0], vec[1], vec[2], t));
+  const s = A.HorizonFromVector(v, "normal"); return { alt: s.lat, az: s.lon };
+}
+const PLANETS = [["Mond", "Moon"], ["Jupiter", "Jupiter"], ["Saturn", "Saturn"], ["Mars", "Mars"], ["Venus", "Venus"], ["Merkur", "Mercury"], ["Uranus", "Uranus"], ["Neptun", "Neptune"]];
+const TARGETS = [];
+PLANETS.forEach(([de, en]) => TARGETS.push({ id: en, name: de, sub: en === "Moon" ? "Erdtrabant" : "Planet", kind: "planet",
+  vec: t => { const e = A.Equator(A.Body[en], t, observer(), false, true); return Solver.radec2v(e.ra * 15, e.dec); } }));
+MESSIER.forEach(([id, ra, dec, mag, nm, typ, desig]) => TARGETS.push({ id, name: id, sub: [nm, typ, desig, mag != null ? mag + " mag" : ""].filter(Boolean).join(" · "), kind: "dso", mag, ra, dec, vec: () => Solver.radec2v(ra, dec) }));
+Object.entries(STARLABELS).forEach(([i, nm]) => { const k = +i; if (STARS[3 * k + 2] > 3.2) return;
+  TARGETS.push({ id: "S" + k, name: nm, sub: "Stern · " + STARS[3 * k + 2].toFixed(1) + " mag", kind: "star", mag: STARS[3 * k + 2], vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]) }); });
+const QUICK = ["Moon", "Jupiter", "Saturn", "M31", "M45", "M42", "M13", "M57", "M44", "M27"];
+function targetById(id) { return TARGETS.find(t => t.id === id); }
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
+
+function renderChips() {
+  const t = A.MakeTime(new Date()), box = $("chips"); box.textContent = "";
+  QUICK.forEach(id => {
+    const T = targetById(id); if (!T) return;
+    const alt = horiz(T.vec(t), t).alt;
+    const b = document.createElement("button"); b.className = "chip" + (cfg.target === id ? " sel" : "") + (alt < 0 ? " below" : "");
+    b.textContent = T.name;
+    b.title = alt < 0 ? "Unter dem Horizont" : "Höhe " + alt.toFixed(0) + "°";
+    b.onclick = () => selectTarget(id); box.append(b);
+  });
+}
+function showResults() {
+  const q = norm($("q").value), box = $("results"), t = A.MakeTime(new Date());
+  box.textContent = "";
+  let list;
+  if (!q) {
+    list = TARGETS.filter(T => T.kind === "planet" || (T.kind === "dso" && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => x.alt > 15)
+      .sort((a, b) => (a.T.kind === "planet" ? -10 : a.T.mag) - (b.T.kind === "planet" ? -10 : b.T.mag)).slice(0, 25);
+    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Jetzt gut sichtbar (über 15°)"; box.append(g);
+  } else {
+    list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).slice(0, 30).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
+    if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nichts gefunden"; box.append(g); }
+  }
+  list.forEach(({ T, alt }) => {
+    const b = document.createElement("button");
+    const n = document.createElement("b"); n.textContent = T.name;
+    const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
+    const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "unter Hor." : alt.toFixed(0) + "°";
+    b.append(n, s, a); b.onclick = () => { selectTarget(T.id); $("q").value = ""; box.hidden = true; };
+    box.append(b);
+  });
+  box.hidden = false;
+}
+function selectTarget(id) { cfg.target = id; save(); renderChips(); updateGuide(); renderReadout(); }
+
+/* ---------------- Teleskop-Richtung + Führung ---------------- */
+function teleCam(sol) {
+  const L = Math.max(sol.w, sol.h), x = cfg.tele.u * L, y = cfg.tele.v * L, n = Math.hypot(x, y, sol.f);
+  return [x / n, y / n, sol.f / n];
+}
+function telePix(sol) { const L = Math.max(sol.w, sol.h); return { x: sol.cx + cfg.tele.u * L, y: sol.cy + cfg.tele.v * L }; }
+function teleVec() { if (!st.sol) return null; const p = telePix(st.sol); return Solver.pixToSky(st.sol, p.x, p.y); }
+const fmtDeg = (v, d = 1) => v.toFixed(d).replace(".", ",") + "°";
+function fmtRA(ra) { const T = Math.round(ra / 15 * 3600) % 86400, H = Math.floor(T / 3600), M = Math.floor(T / 60) % 60, S = T % 60; return `${String(H).padStart(2, "0")}h ${String(M).padStart(2, "0")}m ${String(S).padStart(2, "0")}s`; }
+function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) * 60), D = Math.floor(T / 60), M = T % 60; return `${s}${D}° ${String(M).padStart(2, "0")}′`; }
+
+let lastGuide = null;
+function updateGuide() {
+  const T = targetById(cfg.target), tv = teleVec(), t = A.MakeTime(new Date());
+  const g = $("guide"); g.classList.remove("hit", "stale");
+  if (!T) return;
+  const tgt = T.vec(t), th = horiz(tgt, t);
+  if (!tv) {
+    $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimut"; $("altW").textContent = "Höhe";
+    $("totalTxt").textContent = T.name + (th.alt < 0 ? " ist unter dem Horizont" : " steht " + fmtDeg(th.alt, 0) + " hoch, Richtung " + compass(th.az));
+    $("totalSub").textContent = "Position bestimmen, dann zeigen die Pfeile den Weg.";
+    lastGuide = null; return;
+  }
+  const ph = horiz(tv, t);
+  let dAz = th.az - ph.az; dAz = ((dAz + 540) % 360) - 180;
+  const dAlt = th.alt - ph.alt, sep = Solver.angDeg(tv, tgt);
+  $("azV").textContent = fmtDeg(Math.abs(dAz));
+  $("azW").textContent = Math.abs(dAz) < 0.1 ? "Azimut passt" : dAz > 0 ? "nach rechts drehen" : "nach links drehen";
+  $("altV").textContent = fmtDeg(Math.abs(dAlt));
+  $("altW").textContent = Math.abs(dAlt) < 0.1 ? "Höhe passt" : dAlt > 0 ? "höher kippen" : "tiefer kippen";
+  $("azArrow").style.transform = dAz < 0 ? "scaleX(-1)" : "";
+  $("altArrow").style.transform = dAlt < 0 ? "scaleY(-1)" : "";
+  const hit = sep < 0.4;
+  g.classList.toggle("hit", hit);
+  g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video");
+  $("totalTxt").textContent = th.alt < 0 ? T.name + " ist gerade unter dem Horizont" : hit ? T.name + " sollte im Okular sein" : "Noch " + fmtDeg(sep) + " bis " + T.name;
+  const age = Math.round((Date.now() - st.solAt) / 1000);
+  $("totalSub").textContent = (ph.alt > 80 ? "Nahe am Zenit: kleine Schübe ändern den Azimut stark. " : "") + (st.source === "video" ? "Stand vor " + age + " s" : "");
+  lastGuide = { ph, th, sep };
+}
+function compass(az) { return ["Nord", "Nordost", "Ost", "Südost", "Süd", "Südwest", "West", "Nordwest"][Math.round(az / 45) % 8]; }
+
+function renderReadout() {
+  const r = $("readout"); r.textContent = "";
+  const add = (k, v) => { const d = document.createElement("div"); const a = document.createElement("span"); a.textContent = k; const b = document.createElement("span"); b.textContent = v; d.append(a, b); r.append(d); };
+  const t = A.MakeTime(new Date()), tv = teleVec();
+  if (tv) {
+    const rd = Solver.v2radec(tv), h = horiz(tv, t);
+    add("Teleskop RA", fmtRA(rd.ra)); add("Teleskop Dek", fmtDec(rd.dec));
+    add("Höhe", fmtDeg(h.alt)); add("Azimut", fmtDeg(h.az) + " " + ["N", "NO", "O", "SO", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]);
+  }
+  const T = targetById(cfg.target);
+  if (T) { const rd = Solver.v2radec(T.vec(t)); add(T.name + " RA", fmtRA(rd.ra)); add(T.name + " Dek", fmtDec(rd.dec)); }
+  if (st.sol) { add("Bildfeld", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); add("Genauigkeit", "±" + (st.sol.rms * 60).toFixed(1).replace(".", ",") + "′ · " + st.sol.nMatch + " Sterne"); }
+  else if (st.stars.length) add("Lichtpunkte erkannt", String(st.stars.length));
+}
+
+/* ---------------- Zeichnen ---------------- */
+let fit = { sc: 1, ox: 0, oy: 0, w: 1, h: 1 };
+function resize() { const r = view.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); view.width = Math.round(r.width * dpr); view.height = Math.round(r.height * dpr); }
+function draw() {
+  const W = view.width, H = view.height, dpr = W / Math.max(1, view.clientWidth);
+  vctx.setTransform(1, 0, 0, 1, 0, 0); vctx.fillStyle = "#000"; vctx.fillRect(0, 0, W, H);
+  let src = null, sw = 0, sh = 0;
+  if (st.source === "video" && st.stream && video.videoWidth) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
+  else if (st.frame) { src = st.frame.canvas; sw = src.width; sh = src.height; }
+  if (src) {
+    const sc = Math.min(W / sw, H / sh), dw = sw * sc, dh = sh * sc, ox = (W - dw) / 2, oy = (H - dh) / 2;
+    vctx.drawImage(src, ox, oy, dw, dh);
+    const ref = st.sol || st.frame || { w: sw, h: sh };
+    const k = dw / ref.w;
+    fit = { sc: k, ox, oy, w: ref.w, h: ref.h, dpr };
+    drawOverlay(dpr);
+  }
+  requestAnimationFrame(draw);
+}
+const P = (x, y) => [fit.ox + x * fit.sc, fit.oy + y * fit.sc];
+let placed = [];
+function label(c, txt, x, y) {   // Beschriftung nur zeichnen, wenn sie nichts überdeckt
+  const w = c.measureText(txt).width, h = parseFloat(c.font) * 1.1, r = [x, y - h / 2, x + w, y + h / 2];
+  if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return;
+  placed.push(r); c.fillText(txt, x, y);
+}
+function drawOverlay(dpr) {
+  const c = vctx, sol = st.sol, css = getComputedStyle(document.documentElement);
+  const col = n => css.getPropertyValue(n).trim();
+  c.lineWidth = 1.2 * dpr; c.font = `${12 * dpr}px ${col("--font-ui")}`;
+  if (cfg.det && st.stars.length) {
+    c.strokeStyle = "rgba(200,210,220,.45)";
+    st.stars.slice(0, 60).forEach(s => { const [x, y] = P(s.x, s.y); c.beginPath(); c.arc(x, y, 6 * dpr, 0, 7); c.stroke(); });
+  }
+  if (!sol) return;
+  placed = [];
+  const t = A.MakeTime(new Date()), live = st.source === "video";
+  c.globalAlpha = live && Date.now() - st.solAt > 6000 ? 0.4 : 1;
+  const inView = p => p && p.x > -50 && p.y > -50 && p.x < sol.w + 50 && p.y < sol.h + 50;
+  if (cfg.lines) {
+    c.strokeStyle = col("--sky"); c.globalAlpha *= 0.55; c.lineWidth = 1 * dpr; c.beginPath();
+    CLINES.forEach(L => { let prev = null; for (let i = 0; i < L.length; i += 2) {
+      const p = Solver.skyToPix(sol, Solver.radec2v(L[i], L[i + 1]));
+      const ok = p && p.z > 0.25;
+      if (ok && prev) { const [a, b] = P(prev.x, prev.y), [x, y] = P(p.x, p.y); c.moveTo(a, b); c.lineTo(x, y); }
+      prev = ok ? p : null; } });
+    c.stroke(); c.globalAlpha /= 0.55;
+  }
+  c.strokeStyle = col("--ok"); c.lineWidth = 1.5 * dpr;
+  sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
+  if (cfg.names) {
+    c.fillStyle = col("--fg"); c.textBaseline = "middle";
+    for (const [i, nm] of Object.entries(STARLABELS)) {
+      const k = +i; if (STARS[3 * k + 2] > 3.0) continue;
+      const p = Solver.skyToPix(sol, Solver.cat.v[k]); if (!p || p.z < 0.3 || !inView(p)) continue;
+      const [x, y] = P(p.x, p.y); label(c, nm, x + 12 * dpr, y);
+    }
+    c.strokeStyle = col("--accent"); c.fillStyle = col("--accent"); c.setLineDash([3 * dpr, 3 * dpr]);
+    MESSIER.forEach(([id, ra, dec, mag]) => {
+      if ((mag != null && mag > 9) || id === cfg.target) return;
+      const p = Solver.skyToPix(sol, Solver.radec2v(ra, dec)); if (!p || p.z < 0.3 || !inView(p)) return;
+      const [x, y] = P(p.x, p.y); c.beginPath(); c.arc(x, y, 7 * dpr, 0, 7); c.stroke(); label(c, id, x + 10 * dpr, y - 10 * dpr);
+    });
+    c.setLineDash([]);
+    PLANETS.forEach(([de, en]) => {
+      const T = targetById(en), p = Solver.skyToPix(sol, T.vec(t)); if (!p || p.z < 0.3 || !inView(p)) return;
+      const [x, y] = P(p.x, p.y); c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); label(c, de, x + 10 * dpr, y + 12 * dpr);
+    });
+  }
+  // Teleskop-Fadenkreuz
+  const tp = telePix(sol), [tx, ty] = P(tp.x, tp.y);
+  c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr;
+  c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
+  [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); });
+  c.stroke();
+  // Ziel + Pfeil
+  const T = targetById(cfg.target);
+  if (T) {
+    const p = Solver.skyToPix(sol, T.vec(t));
+    c.strokeStyle = col("--target"); c.fillStyle = col("--target"); c.lineWidth = 2.5 * dpr;
+    const cw = view.width, ch = view.height, m = 30 * dpr;
+    let ex, ey, inside = false;
+    if (p && p.z > 0.05) { [ex, ey] = P(p.x, p.y); inside = ex > m && ey > m && ex < cw - m && ey < ch - m; }
+    else {
+      const cv = Solver.mulT(sol.R, T.vec(t)); const dx = cv[0], dy = cv[1], n = Math.hypot(dx, dy) || 1;
+      ex = tx + dx / n * 1e4; ey = ty + dy / n * 1e4;
+    }
+    if (inside) {
+      c.beginPath(); c.arc(ex, ey, 20 * dpr, 0, 7); c.stroke();
+      c.font = `600 ${14 * dpr}px ${col("--font-ui")}`; c.fillText(T.name, ex + 24 * dpr, ey - 18 * dpr);
+    }
+    // Pfeil vom Fadenkreuz Richtung Ziel, am Bildrand gekappt
+    const dx = ex - tx, dy = ey - ty, d = Math.hypot(dx, dy);
+    if (d > 40 * dpr) {
+      let k = 1; const bx = dx > 0 ? (cw - m - tx) / dx : dx < 0 ? (m - tx) / dx : Infinity, by = dy > 0 ? (ch - m - ty) / dy : dy < 0 ? (m - ty) / dy : Infinity;
+      k = Math.min(1, bx, by) * (inside ? 1 - 24 * dpr / d : 1);
+      const x2 = tx + dx * k, y2 = ty + dy * k, a = Math.atan2(dy, dx);
+      const x1 = tx + dx / d * 26 * dpr, y1 = ty + dy / d * 26 * dpr;
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+      c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - 14 * dpr * Math.cos(a - 0.45), y2 - 14 * dpr * Math.sin(a - 0.45)); c.lineTo(x2 - 14 * dpr * Math.cos(a + 0.45), y2 - 14 * dpr * Math.sin(a + 0.45)); c.closePath(); c.fill();
+      if (!inside) {   // Ziel außerhalb: Hinweis-Schild am Pfeilende mit Entfernung
+        const tv = teleVec(), sep = tv ? Solver.angDeg(tv, T.vec(t)) : 0;
+        const txt = T.name + " · " + fmtDeg(sep, 0) + " außerhalb";
+        c.font = `600 ${13 * dpr}px ${col("--font-ui")}`;
+        const tw = c.measureText(txt).width, ph = 22 * dpr, pw = tw + 16 * dpr;
+        const bx = Math.min(cw - pw - 6 * dpr, Math.max(6 * dpr, x2 - pw / 2)), by = Math.min(ch - ph - 6 * dpr, Math.max(6 * dpr, y2 + (dy > 0 ? -ph - 18 * dpr : 16 * dpr)));
+        c.fillStyle = "rgba(10,12,15,.85)"; c.strokeStyle = col("--target"); c.lineWidth = 1.2 * dpr;
+        c.beginPath(); c.roundRect ? c.roundRect(bx, by, pw, ph, 6 * dpr) : c.rect(bx, by, pw, ph); c.fill(); c.stroke();
+        c.fillStyle = col("--target"); c.textBaseline = "middle"; c.fillText(txt, bx + 8 * dpr, by + ph / 2);
+      }
+    }
+  }
+  c.globalAlpha = 1;
+}
+
+/* ---------------- Teleskop-Punkt antippen ---------------- */
+view.addEventListener("click", e => {
+  if (!st.teleMode) return;
+  const ref = st.sol || st.frame; if (!ref) return;
+  const r = view.getBoundingClientRect(), dpr = view.width / r.width;
+  let x = ((e.clientX - r.left) * dpr - fit.ox) / fit.sc, y = ((e.clientY - r.top) * dpr - fit.oy) / fit.sc;
+  // auf nahen Lichtpunkt einrasten
+  let best = null, bd = 28 / fit.sc * dpr;
+  st.stars.forEach(s => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; best = s; } });
+  if (best) { x = best.x; y = best.y; }
+  const L = Math.max(ref.w, ref.h);
+  cfg.tele = { u: (x - ref.w / 2) / L, v: (y - ref.h / 2) / L }; save();
+  setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
+  hint(best ? "Teleskop-Punkt auf den Stern gesetzt." : "Teleskop-Punkt gesetzt.", 3000);
+});
+function setTeleMode(on) {
+  st.teleMode = on; $("btnTele").classList.toggle("on", on); $("btnTele").setAttribute("aria-pressed", on);
+  if (on) hint("Stern, der gerade mittig im Okular steht, im Bild antippen.");
+  else hint(null);
+}
+
+/* ---------------- Einstellungen-UI ---------------- */
+function syncSettings() {
+  $("lat").value = cfg.lat; $("lon").value = cfg.lon;
+  const k = fovKey(); $("fov").value = cfg.fov[k] ?? ""; $("fov").placeholder = "unbekannt";
+  $("fovRange").value = cfg.fovRange;
+  $("stack").value = cfg.stack; $("stackV").textContent = cfg.stack;
+  $("sigma").value = cfg.sigma; $("sigV").textContent = cfg.sigma <= 4 ? "hoch" : cfg.sigma >= 7 ? "niedrig" : "mittel";
+  $("optLines").checked = cfg.lines; $("optNames").checked = cfg.names; $("optDet").checked = cfg.det; $("optRed").checked = cfg.red;
+  document.documentElement.classList.toggle("red", cfg.red);
+  const off = Math.hypot(cfg.tele.u, cfg.tele.v);
+  $("teleInfo").textContent = off < 1e-4 ? "Das Teleskop zeigt laut Einstellung auf die Bildmitte der Kamera." :
+    "Versatz zur Bildmitte: " + (cfg.tele.u * 100).toFixed(1) + " % / " + (cfg.tele.v * 100).toFixed(1) + " % der Bildbreite" + (st.sol ? " (≈ " + fmtDeg(Math.atan(off * Math.max(st.sol.w, st.sol.h) / st.sol.f) * R2D) + ")" : "") + ".";
+}
+$("btnSettings").onclick = () => { syncSettings(); $("sheet").hidden = false; };
+$("btnClose").onclick = () => $("sheet").hidden = true;
+$("sheet").addEventListener("click", e => { if (e.target === $("sheet")) $("sheet").hidden = true; });
+$("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
+$("lon").onchange = () => { cfg.lon = +$("lon").value; save(); updateGuide(); renderChips(); renderReadout(); };
+$("btnGps").onclick = () => {
+  if (!navigator.geolocation) return hint("Kein GPS verfügbar.", 3000);
+  navigator.geolocation.getCurrentPosition(p => { cfg.lat = +p.coords.latitude.toFixed(3); cfg.lon = +p.coords.longitude.toFixed(3); save(); syncSettings(); updateGuide(); renderChips(); },
+    () => hint("Standort nicht freigegeben. Bitte Koordinaten eintragen.", 4000), { timeout: 10000 });
+};
+$("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey()] = v > 1 ? v : null; save(); };
+$("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSettings(); hint("Bildfeld wird beim nächsten Lösen neu gesucht.", 3000); };
+$("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
+$("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
+$("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
+[["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
+$("btnTeleReset").onclick = () => { cfg.tele = { u: 0, v: 0 }; save(); syncSettings(); updateGuide(); };
+
+/* ---------------- Bedienung ---------------- */
+$("btnCam").onclick = startCamera;
+$("btnPhoto").onclick = () => $("fileIn").click();
+$("fileIn").onchange = async () => {
+  const f = $("fileIn").files[0]; if (!f) return;
+  try {
+    const bmp = await createImageBitmap(f);
+    if (st.stream) stopCamera();
+    st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
+    st.source = "photo"; st.sol = null; st.stars = []; $("srcTag").textContent = "Foto: " + f.name;
+    $("fileIn").value = ""; updateGuide(); renderReadout(); solveNow();
+  } catch (e) { hint("Das Bild ließ sich nicht öffnen.", 4000); }
+};
+$("btnSolve").onclick = solveNow;
+$("btnAuto").onclick = () => { if (!st.stream) { hint("Dauerbetrieb braucht die Live-Kamera.", 3000); return; } setAuto(!st.auto); };
+$("btnTele").onclick = () => { if (!st.sol && !st.frame) return; setTeleMode(!st.teleMode); };
+$("q").addEventListener("focus", showResults);
+$("q").addEventListener("input", showResults);
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("results").querySelector("button"); b && b.click(); } if (e.key === "Escape") $("results").hidden = true; });
+document.addEventListener("click", e => { if (!e.target.closest(".search")) $("results").hidden = true; });
+
+window.addEventListener("resize", resize);
+resize(); syncSettings(); renderChips();
+st.frame = makeDemo(); st.source = "demo";
+updateGuide(); renderReadout();
+requestAnimationFrame(draw);
+setTimeout(solveNow, 200);
+setInterval(() => { updateGuide(); renderReadout(); }, 2000);
+setInterval(renderChips, 60000);
+</script>
