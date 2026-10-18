@@ -90,8 +90,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
+.notices { position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices > * { pointer-events: auto; }
+.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, env(safe-area-inset-top, 0px)) + 168px); }
 .update {
-  position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); margin-inline: auto; max-width: 440px;
   display: flex; align-items: center; gap: 10px; box-sizing: border-box;
   background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
   box-shadow: 0 8px 28px rgba(0,0,0,.5); font-size: 14px; animation: upd-in .35s ease-out;
@@ -100,7 +102,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .update span { flex: 1; min-width: 0; }
 .update .btn { padding: 7px 14px; white-space: nowrap; }
 @keyframes upd-in { from { opacity: 0; transform: translateY(-10px); } }
-.update:not([hidden]) + .hint { top: calc(max(8px, env(safe-area-inset-top, 0px)) + 160px); }
+.update .ico { width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--accent); }
+.update .ico svg { width: 24px; height: 24px; }
+.calchip { pointer-events: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--accent); background: var(--glass); border: 1px solid rgba(240,168,69,.5); padding: 2px 2px 2px 9px; border-radius: 99px; }
+.calchip svg { width: 15px; height: 15px; flex: none; }
+.calchip button { width: 28px; height: 28px; color: var(--fg); }
+.calchip button svg { width: 16px; height: 16px; }
 @media (prefers-reduced-motion: reduce) { .update { animation: none; } }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand img { border-radius: 8px; }
@@ -256,14 +263,27 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
     </div>
 
+    <div class="notices">
+    <div class="update" id="calBar" role="status" hidden>
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
+      <span id="calBarTxt"></span>
+      <button class="btn primary" id="btnCalApply">Correct</button>
+      <button class="iconbtn" id="btnCalLater" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
     <div class="update" id="updateBar" role="status" hidden>
       <img src="logo.svg" alt="" width="28" height="28">
       <span>A new version of Zenigo is available.</span>
       <button class="btn primary" id="btnUpdate">Update</button>
       <button class="iconbtn" id="btnUpdateLater" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
+    </div>
     <div class="hint" id="hint" hidden></div>
     <div class="corner">
+      <div class="calchip" id="calChip" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
+        <span id="calChipTxt"></span>
+        <button class="iconbtn" id="btnCalOff" aria-label="Remove compass correction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
       <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
       <div class="tag" id="srcTag">Sky map</div>
     </div>
@@ -373,7 +393,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <legend>Compass</legend>
       <p class="note" id="compassCalInfo"></p>
       <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
-      <p class="note">Each camera solve with the motion sensor on compares the compass with the exact solved direction. The difference is applied in compass mode, before the first solve of a session.</p>
+      <p class="note">After a camera solve with the motion sensor on, the app compares the compass with the exact solved direction and offers to correct it. The correction is used in compass mode and shown at the bottom left while active.</p>
     </fieldset>
     <fieldset>
       <legend>Capture</legend>
@@ -845,14 +865,27 @@ function calibrateCompass(sol, dev) {
   const Atrue = mm3(mm3(tr3(E2H), rot), mm3(sol.R, tr3(camAxes())));
   const M = mm3(Atrue, tr3(dev)), trueOff = Math.atan2(M[1][0], M[0][0]);
   const d = ((trueOff - Math.atan2(sens.off[1], sens.off[0])) * R2D + 540) % 360 - 180;
-  const prev = +cfg.compassCal || 0, k = cfg.compassCalN ? 0.5 : 1;
-  const nd = prev + ((((d - prev) + 540) % 360) - 180) * k;
-  cfg.compassCal = +(((nd + 540) % 360) - 180).toFixed(2); cfg.compassCalN = (cfg.compassCalN || 0) + 1; save();
-  syncCompassCal();
+  // Only suggest: the user decides whether to apply it
+  const angDiff = (x, y) => Math.abs(((x - y) + 540) % 360 - 180);
+  st.calSuggest = +d.toFixed(1);
+  if (angDiff(d, +cfg.compassCal || 0) < 1.5) { $("calBar").hidden = true; return; }        // already corrected like this
+  if (st.calDismissed != null && angDiff(d, st.calDismissed) < 3) return;                  // asked already, answer was no
+  $("calBarTxt").textContent = "The compass is " + fmtSigned(d) + " off (measured by plate solving). Correct it?";
+  $("calBar").hidden = false;
 }
+const fmtSigned = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "°";
+function setCompassCal(v) {
+  cfg.compassCal = v; delete cfg.compassCalN; save(); syncCompassCal();
+  if (sens.off && sens.rel) { setAbs(); if (st.sensor) sensorUpdate(); }
+}
+// The correction is always visible while active, and can be removed with one tap
 function syncCompassCal() {
-  const el = $("compassCalInfo"); if (!el) return;
-  el.textContent = cfg.compassCalN ? "Compass correction: " + (cfg.compassCal > 0 ? "+" : "") + (+cfg.compassCal).toFixed(1) + "° (learned from " + cfg.compassCalN + " solve" + (cfg.compassCalN > 1 ? "s" : "") + ")" : "Compass correction: not calibrated yet (solve once with the motion sensor on)";
+  const v = +cfg.compassCal || 0;
+  $("calChip").hidden = !v;
+  $("calChipTxt").textContent = "Compass corrected " + fmtSigned(v);
+  const el = $("compassCalInfo");
+  if (el) el.textContent = v ? "Compass correction: " + fmtSigned(v) + " (from plate solving)." : "No compass correction: the compass is used as it is.";
+  $("btnCompassReset").disabled = !v;
 }
 function onOrientation(e, absolute) {
   if (e.alpha == null || e.beta == null || e.gamma == null) return;
@@ -882,7 +915,7 @@ async function setSensor(on) {
     setTimeout(() => { if (st.sensor && !sens.rel && !sens.abs) hint("This device provides no orientation data (no sensor, or only available over HTTPS).", 5000); }, 1500);
   }
   st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
-  if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (cfg.compassCalN ? "Compass mode, corrected by " + (+cfg.compassCal).toFixed(1) + "° from earlier solves. “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and calibrates the compass."), 5000);
+  if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
   sensorUpdate();
 }
@@ -1415,7 +1448,10 @@ $("btnGps").onclick = () => {
 $("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey()] = v > 1 ? v : null; save(); };
 $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSettings(); hint("The field of view will be measured again on the next solve.", 3000); };
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
-$("btnCompassReset").onclick = () => { cfg.compassCal = 0; cfg.compassCalN = 0; save(); syncCompassCal(); if (sens.off && sens.rel) setAbs(); };
+$("btnCompassReset").onclick = () => setCompassCal(0);
+$("btnCalOff").onclick = () => { setCompassCal(0); hint("Compass correction removed: the compass is used as it is.", 3000); };
+$("btnCalApply").onclick = () => { setCompassCal(st.calSuggest); st.calDismissed = null; $("calBar").hidden = true; hint("Compass corrected by " + fmtSigned(st.calSuggest) + ".", 3000); };
+$("btnCalLater").onclick = () => { st.calDismissed = st.calSuggest; $("calBar").hidden = true; };
 syncCompassCal();
 // Offline use and updates: the service worker serves the cached app; a new version waits until "Update" is tapped
 if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.href)) {

@@ -17,7 +17,7 @@ Everything runs locally in the browser: no server, no sign-in. The finished app 
 
 **Solve a photo from the gallery** (menu) solves saved sky photos, which is handy for testing.
 
-Without camera or photo the app shows a **sky map** from the catalogue: drag to look around, pinch (or mouse wheel, double tap) to zoom. **Align** makes the map follow the phone: before the first solve roughly via the compass (often 10° or more off near metal), after a camera solve precisely via the gyroscope, relative to the last solve. Every camera solve with Align on also calibrates the compass: the difference between compass and solved direction is saved and applied in compass mode next time (Settings → Compass shows and resets it). Solved images can be zoomed and panned too. Stars, Messier objects, the Moon, planets and the Sun can be tapped for an info sheet with a Wikipedia link.
+Without camera or photo the app shows a **sky map** from the catalogue: drag to look around, pinch (or mouse wheel, double tap) to zoom. **Align** makes the map follow the phone: before the first solve roughly via the compass (often 10° or more off near metal), after a camera solve precisely via the gyroscope, relative to the last solve. After a camera solve with Align on, the app measures how far off the compass is and offers to correct it; nothing is applied without confirmation. While a correction is active it is shown at the bottom left and can be removed with one tap (also in Settings → Compass). Solved images can be zoomed and panned too. Stars, Messier objects, the Moon, planets and the Sun can be tapped for an info sheet with a Wikipedia link.
 
 ### The Sun
 
@@ -34,7 +34,7 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 7. **Refinement:** focal length, radial distortion and, with enough stars, a polynomial correction (like SIP) by least squares, with outlier rejection.
 8. **Guarding against false matches:** residuals below about 1.6 px, a cross-check of the brightest stars, rank correlation of brightness, and at least 10 matching stars when the field of view is unknown.
 9. **Navigation:** [Astronomy Engine](https://github.com/cosinekitty/astronomy) converts from J2000 to the horizon frame (including precession, nutation, refraction) and provides positions of the Sun, Moon and planets.
-10. **Motion sensors:** movement comes from the relative orientation (gyroscope), smoothed with quaternions and with jumps rejected; the compass only contributes a north offset (time-based filter with a 4 s time constant, short disturbances ignored), corrected by the calibration learned from plate solves.
+10. **Motion sensors:** movement comes from the relative orientation (gyroscope), smoothed with quaternions and with jumps rejected; the compass only contributes a north offset (time-based filter with a 4 s time constant, short disturbances ignored), plus the compass correction if the user accepted one.
 11. **Rendering:** the canvas is only redrawn when the view changes by more than a fraction of a pixel (always for live video); time-dependent sky data (horizon rotation, Sun, Moon, planets) is computed at most once per second.
 
 ## Layout
