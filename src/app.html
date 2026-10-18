@@ -31,16 +31,12 @@ button, input, select { font: inherit; color: inherit; }
 .app { height: 100%; display: flex; flex-direction: column; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Kopfzeile */
-header.bar {
-  display: flex; align-items: center; gap: 10px; min-height: 44px; box-sizing: border-box;
-  padding-block: 4px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(10px, env(safe-area-inset-right, 0px));
-  border-bottom: 1px solid var(--line); background: var(--panel);
+/* Statusplakette unten links */
+.corner {
+  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
+  display: grid; gap: 4px; justify-items: start; max-width: calc(100% - 110px); pointer-events: none;
 }
-.brand { font-weight: 700; letter-spacing: .02em; font-size: 16px; white-space: nowrap; }
-.status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
+.status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
 .status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .dot.ok { background: var(--ok); } .dot.busy { background: var(--accent); animation: pulse 1s infinite; } .dot.bad { background: var(--target); }
@@ -57,7 +53,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
 .stage video { display: none; }
 .tag {
-  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: 10px; max-width: 55%;
+  max-width: 100%; box-sizing: border-box;
   font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
   background: var(--glass); padding: 3px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -66,7 +62,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Gradzahlen oben im Bild */
 .hud {
-  position: absolute; top: 8px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px));
+  position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px));
+  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 54px);
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
 .hcell {
@@ -88,14 +85,14 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.idle .hcell { display: none; }
 
 .hint {
-  position: absolute; left: 50%; top: 104px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  position: absolute; left: 50%; top: calc(max(8px, env(safe-area-inset-top, 0px)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
 /* Runde Knöpfe unten rechts */
 .fabs {
-  position: absolute; right: max(10px, env(safe-area-inset-right, 0px)); bottom: 14px;
+  position: absolute; right: max(10px, env(safe-area-inset-right, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
   display: flex; flex-direction: column; gap: 10px; align-items: center;
 }
 .fab {
@@ -111,20 +108,25 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .fabs.labels .fab small { opacity: 1; }
 .fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
 
-/* Fester Aufnahme-Knopf unten */
-.dock {
-  background: var(--panel); border-top: 1px solid var(--line);
-  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+/* Menü-Knopf oben rechts, Aufnahme-Knopf als großer runder Knopf unten im Stapel */
+.menu-fab { position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: 46px; height: 46px; }
+.fab.shoot { width: 64px; height: 64px; background: var(--accent); border-color: var(--accent); color: #17110a; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
+.fab.shoot svg { width: 28px; height: 28px; }
+.fab.shoot:disabled { opacity: .6; cursor: default; }
+.fab.shoot small { font-weight: 600; }
+
+/* Querformat / niedrige Bildschirme: Knöpfe kompakter, Beschriftungen aus, HUD nicht über die ganze Breite */
+@media (max-height: 560px) {
+  .fabs { gap: 6px; }
+  .fab { width: 42px; height: 42px; }
+  .fab svg { width: 20px; height: 20px; }
+  .fab.shoot { width: 54px; height: 54px; }
+  .fabs.labels .fab small { opacity: 0; }
+  .menu-fab { width: 42px; height: 42px; }
+  .hud { max-width: 560px; }
+  .hcell svg { width: 24px; height: 24px; }
+  .hcell .v { font-size: 18px; }
 }
-.shoot {
-  width: 100%; border: 0; border-radius: 12px; padding: 14px 16px; cursor: pointer;
-  background: var(--accent); color: #17110a; font-weight: 700; font-size: 17px; letter-spacing: .02em;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-}
-.shoot svg { width: 22px; height: 22px; }
-.shoot:disabled { opacity: .55; cursor: default; }
 
 /* Blätter: Menü, Zielsuche, Einstellungen */
 .btn {
@@ -218,14 +220,6 @@ a.btn { text-decoration: none; color: var(--fg); }
 </style>
 
 <div class="app">
-  <header class="bar">
-    <div class="brand">Dobson-Lotse</div>
-    <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Bereit</span></div>
-    <button class="iconbtn" id="btnMenu" aria-label="Menü">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>
-  </header>
-
   <main class="stage" id="stage">
     <video id="video" playsinline muted></video>
     <canvas id="view"></canvas>
@@ -243,7 +237,13 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
 
     <div class="hint" id="hint" hidden></div>
-    <div class="tag" id="srcTag">Beispielbild (simuliert)</div>
+    <div class="corner">
+      <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Bereit</span></div>
+      <div class="tag" id="srcTag">Sternkarte</div>
+    </div>
+    <button class="fab menu-fab" id="btnMenu" aria-label="Menü">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
 
     <div class="fabs" id="fabs">
       <button class="fab" id="fabSearch" aria-label="Ziel suchen"><small>Ziel suchen</small>
@@ -256,13 +256,12 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></button>
       <button class="fab" id="btnCam" aria-label="Kamera an/aus"><small>Kamera</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>
+      <button class="fab shoot" id="btnSolve" aria-label="Position bestimmen"><small>Position bestimmen</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
     </div>
     <div class="progress"><i id="prog"></i></div>
   </main>
 
-  <footer class="dock">
-    <button class="shoot" id="btnSolve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Position bestimmen</button>
-  </footer>
   <input type="file" id="fileIn" accept="image/*" hidden>
 </div>
 
