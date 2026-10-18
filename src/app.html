@@ -51,7 +51,7 @@ header.bar {
 
 /* Bild / Karte */
 .stage { position: relative; flex: 1 1 auto; min-height: 0; background: #000; overflow: hidden; touch-action: manipulation; }
-.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
 .stage video { display: none; }
 .tag {
   position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: 10px; max-width: 55%;
@@ -129,16 +129,34 @@ header.bar {
   cursor: pointer; font-weight: 600; letter-spacing: .02em; display: inline-flex; align-items: center; gap: 7px;
 }
 .btn svg { width: 18px; height: 18px; }
-.sheet { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(0,0,0,0); transition: background .3s ease;
+}
+.sheet.open { background: rgba(0,0,0,.5); }
 .sheet .inner {
-  width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px 14px 0 0; display: grid; gap: 14px; align-content: start; box-sizing: border-box;
-  padding-block: 12px calc(18px + env(safe-area-inset-bottom, 0px));
+  width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--panel); border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 16px 16px 0 0; display: grid; gap: 14px; align-content: start; box-sizing: border-box;
+  padding-block: 0 calc(18px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
+  transform: translateY(105%); transition: transform .34s cubic-bezier(.32, .72, 0, 1);
+  box-shadow: 0 -10px 40px rgba(0,0,0,.45);
 }
+.sheet.open .inner { transform: translateY(0); }
+.sheet.dragging .inner { transition: none; }
 .sheet.tall .inner { height: 88%; }
-.sheet h2 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; }
+@media (prefers-reduced-motion: reduce) { .sheet, .sheet .inner { transition: none; } }
+/* Griff oben: ziehen schließt das Blatt */
+.grab {
+  position: sticky; top: 0; z-index: 2; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  padding: 8px 16px 6px; background: var(--panel); touch-action: none; cursor: grab;
+  display: grid; gap: 6px;
+}
+.grab::before { content: ""; justify-self: center; width: 38px; height: 5px; border-radius: 3px; background: var(--line); }
+.sheet h2 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; }
+.sheet h2 > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheet fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; display: grid; gap: 10px; }
 .sheet legend, .label { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .label { padding: 0; }
@@ -165,6 +183,17 @@ header.bar {
 .readout:empty::after { content: "Noch keine Position bestimmt."; color: var(--muted); }
 .note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; margin: 0; }
 .note b { color: var(--fg); font-weight: 600; }
+
+/* Objekt-Infos */
+.info-sub { color: var(--muted); font-size: 14px; margin-top: -8px; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fact { background: var(--raise); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.fact .k { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.fact .v { font-family: var(--font-num); font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actions .btn, .actions a { justify-content: center; padding-block: 12px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #17110a; }
+a.btn { text-decoration: none; color: var(--fg); }
 
 /* Zielsuche */
 .search input {
@@ -234,7 +263,7 @@ header.bar {
 
 <div class="sheet" id="menu" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
-    <h2 id="menuTitle">Menü <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <div class="grab"><h2 id="menuTitle"><span>Menü</span> <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Foto aus der Galerie lösen</span></button>
       <button class="menu-item" id="btnRed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><span>Rotlicht</span><em id="redState">aus</em></button>
@@ -245,23 +274,35 @@ header.bar {
     <div class="readout" id="readout"></div>
     <div class="label">So geht’s</div>
     <p class="note" id="howto">
-      Handy fest und parallel zum Tubus montieren, Kamera starten (Knopf rechts unten), dann <b>Position bestimmen</b>. Beim ersten Mal sucht die App das Bildfeld deiner Kamera und merkt es sich. Danach einen hellen Stern im Okular zentrieren, <b>Okular-Punkt</b> drücken und denselben Stern im Bild antippen. Ab dann zeigen die Gradzahlen oben, wohin du den Dobson schieben musst. Mit <b>Dauernd</b> aktualisiert sich die Position laufend.
+      Handy fest und parallel zum Tubus montieren, Kamera starten (Knopf rechts unten), dann <b>Position bestimmen</b>. Beim ersten Mal sucht die App das Bildfeld deiner Kamera und merkt es sich. Danach einen hellen Stern im Okular zentrieren, <b>Okular-Punkt</b> drücken und denselben Stern im Bild antippen. Ab dann zeigen die Gradzahlen oben, wohin du den Dobson schieben musst. Sterne, Planeten und Messier-Objekte im Bild lassen sich antippen. Mit <b>Dauernd</b> aktualisiert sich die Position laufend.
     </p>
   </div>
 </div>
 
 <div class="sheet tall" id="searchSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
-    <h2 id="searchTitle">Ziel wählen <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <div class="grab"><h2 id="searchTitle"><span>Ziel wählen</span> <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="search"><input id="q" type="text" placeholder="Suchen: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Ziel suchen"></div>
     <div class="chips" id="chips"></div>
     <div class="results" id="results"></div>
   </div>
 </div>
 
+<div class="sheet" id="infoSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="info-sub" id="infoSub"></div>
+    <div class="facts" id="infoFacts"></div>
+    <div class="actions">
+      <button class="btn primary" id="infoTarget">Als Ziel setzen</button>
+      <a class="btn" id="infoLink" href="#" target="_blank" rel="noopener noreferrer">Mehr Infos ↗</a>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h2 id="setTitle">Einstellungen <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+    <div class="grab"><h2 id="setTitle"><span>Einstellungen</span> <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <fieldset>
       <legend>Standort</legend>
       <div class="row">
@@ -566,7 +607,11 @@ MESSIER.forEach(([id, ra, dec, mag, nm, typ, desig]) => TARGETS.push({ id, name:
 Object.entries(STARLABELS).forEach(([i, nm]) => { const k = +i; if (STARS[3 * k + 2] > 3.2) return;
   TARGETS.push({ id: "S" + k, name: nm, sub: "Stern · " + STARS[3 * k + 2].toFixed(1) + " mag", kind: "star", mag: STARS[3 * k + 2], vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]) }); });
 const QUICK = ["Moon", "Jupiter", "Saturn", "M31", "M45", "M42", "M13", "M57", "M44", "M27"];
-function targetById(id) { return TARGETS.find(t => t.id === id); }
+function targetById(id) {
+  let T = TARGETS.find(t => t.id === id);
+  if (!T && /^S\d+$/.test(id) && typeof starObj === "function") { const o = starObj(+id.slice(1)); T = { id, name: o.name, sub: o.desig, kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); }
+  return T;
+}
 const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 
 function renderChips() {
@@ -656,7 +701,7 @@ function renderReadout() {
   }
   const T = targetById(cfg.target);
   if (T) { const rd = Solver.v2radec(T.vec(t)); add(T.name + " RA", fmtRA(rd.ra)); add(T.name + " Dek", fmtDec(rd.dec)); }
-  if (st.sol) { add("Bildfeld", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); add("Genauigkeit", "±" + (st.sol.rms * 60).toFixed(1).replace(".", ",") + "′ · " + st.sol.nMatch + " Sterne"); }
+  if (st.sol) { add("Bildfeld", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); add("Genauigkeit", "±" + (st.sol.rms * 60).toFixed(1).replace(".", ",") + "′"); add("Sterne erkannt", String(st.sol.nMatch)); }
   else if (st.stars.length) add("Lichtpunkte erkannt", String(st.stars.length));
 }
 
@@ -778,12 +823,17 @@ function drawOverlay(dpr) {
       }
     }
   }
+  // angetipptes Objekt hervorheben
+  if (st.picked) {
+    const p = Solver.skyToPix(sol, st.picked.vec(t));
+    if (p && p.z > 0.05) { const [x, y] = P(p.x, p.y); c.strokeStyle = "#ffffff"; c.lineWidth = 2 * dpr; c.setLineDash([]); c.beginPath(); c.arc(x, y, 15 * dpr, 0, 7); c.stroke(); }
+  }
   c.globalAlpha = 1;
 }
 
 /* ---------------- Teleskop-Punkt antippen ---------------- */
 view.addEventListener("click", e => {
-  if (!st.teleMode) return;
+  if (!st.teleMode) { const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
   const ref = st.sol || st.frame; if (!ref) return;
   const r = view.getBoundingClientRect(), dpr = view.width / r.width;
   let x = ((e.clientX - r.left) * dpr - fit.ox) / fit.sc, y = ((e.clientY - r.top) * dpr - fit.oy) / fit.sc;
@@ -817,13 +867,145 @@ function syncSettings() {
   $("teleInfo").textContent = off < 1e-4 ? "Das Teleskop zeigt laut Einstellung auf die Bildmitte der Kamera." :
     "Versatz zur Bildmitte: " + (cfg.tele.u * 100).toFixed(1) + " % / " + (cfg.tele.v * 100).toFixed(1) + " % der Bildbreite" + (st.sol ? " (≈ " + fmtDeg(Math.atan(off * Math.max(st.sol.w, st.sol.h) / st.sol.f) * R2D) + ")" : "") + ".";
 }
-/* ---------------- Blätter: Menü, Zielsuche, Einstellungen ---------------- */
-function openSheet(id) { document.querySelectorAll(".sheet").forEach(x => x.hidden = x.id !== id); }
-function closeSheet(id) { $(id).hidden = true; }
-document.querySelectorAll(".sheet").forEach(sh => {
-  sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) sh.hidden = true; });
+/* ---------------- Blätter: Menü, Zielsuche, Einstellungen, Objekt-Infos ---------------- */
+// Wie unter iOS: gleiten von unten herein, lassen sich am Griff (oder ganz oben im Inhalt) nach unten wegziehen.
+const SHEETS = [...document.querySelectorAll(".sheet")];
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function openSheet(id) {
+  SHEETS.forEach(x => { if (x.id !== id && !x.hidden) closeSheet(x.id); });
+  const sh = $(id); clearTimeout(sh._t);
+  sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
+  sh.querySelector(".inner").scrollTop = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
+}
+function closeSheet(id) {
+  const sh = $(id); if (sh.hidden) return;
+  sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
+  if (id === "infoSheet") st.picked = null;
+  if (reduceMotion()) { sh.hidden = true; return; }
+  clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) sh.hidden = true; }, 360);
+}
+SHEETS.forEach(sh => {
+  const inner = sh.querySelector(".inner"), grab = sh.querySelector(".grab");
+  sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) closeSheet(sh.id); });
+  let y0 = null, dy = 0, last = 0, lastT = 0, vel = 0, fromBody = false;
+  const start = (y, body) => { y0 = y; dy = 0; vel = 0; last = y; lastT = performance.now(); fromBody = body; };
+  const move = (y, e) => {
+    if (y0 == null) return;
+    const d = y - y0, dragging = sh.classList.contains("dragging");
+    if (!dragging) {
+      if (fromBody && (inner.scrollTop > 0 || d < -2)) { y0 = null; return; }   // normal scrollen lassen
+      if (Math.abs(d) < 6) return;
+      sh.classList.add("dragging");
+    }
+    if (e && e.cancelable) e.preventDefault();
+    dy = d > 0 ? d : -Math.sqrt(-d) * 2;                                         // nach oben nur leicht nachgeben
+    const t = performance.now(); vel = (y - last) / Math.max(1, t - lastT); last = y; lastT = t;
+    inner.style.transform = `translateY(${dy}px)`;
+    sh.style.background = `rgba(0,0,0,${(.5 * Math.max(0, 1 - Math.max(0, dy) / inner.offsetHeight)).toFixed(3)})`;
+  };
+  const end = () => {
+    if (y0 == null) return; y0 = null;
+    if (!sh.classList.contains("dragging")) return;
+    sh.classList.remove("dragging"); sh.style.background = "";
+    if (dy > Math.min(140, inner.offsetHeight * 0.28) || vel > 0.55) closeSheet(sh.id);
+    else inner.style.transform = "";
+  };
+  grab.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; try { grab.setPointerCapture(e.pointerId); } catch (_) {} start(e.clientY, false); });
+  grab.addEventListener("pointermove", e => move(e.clientY));
+  grab.addEventListener("pointerup", end); grab.addEventListener("pointercancel", end);
+  inner.addEventListener("touchstart", e => {
+    if (e.target.closest(".grab, input, select, .row, .camctl")) return;
+    if (inner.scrollTop <= 0) start(e.touches[0].clientY, true);
+  }, { passive: true });
+  inner.addEventListener("touchmove", e => { if (!e.target.closest(".grab")) move(e.touches[0].clientY, e); }, { passive: false });
+  inner.addEventListener("touchend", e => { if (!e.target.closest(".grab")) end(); });
+  inner.addEventListener("touchcancel", end);
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".sheet").forEach(x => x.hidden = true); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") SHEETS.forEach(x => closeSheet(x.id)); });
+
+/* ---------------- Objekte im Bild antippen ---------------- */
+const GREEK = { "α": "Alpha", "β": "Beta", "γ": "Gamma", "δ": "Delta", "ε": "Epsilon", "ζ": "Zeta", "η": "Eta", "θ": "Theta", "ι": "Iota", "κ": "Kappa", "λ": "Lambda", "μ": "My",
+  "ν": "Ny", "ξ": "Xi", "ο": "Omikron", "π": "Pi", "ρ": "Rho", "σ": "Sigma", "τ": "Tau", "υ": "Ypsilon", "φ": "Phi", "χ": "Chi", "ψ": "Psi", "ω": "Omega" };
+// Lateinischer Genitiv der Sternbilder (für Bezeichnungen wie „Alpha Lyrae“)
+const GEN = { And: "Andromedae", Ant: "Antliae", Aps: "Apodis", Aql: "Aquilae", Aqr: "Aquarii", Ara: "Arae", Ari: "Arietis", Aur: "Aurigae", Boo: "Bootis", CMa: "Canis Majoris",
+  CMi: "Canis Minoris", CVn: "Canum Venaticorum", Cae: "Caeli", Cam: "Camelopardalis", Cap: "Capricorni", Car: "Carinae", Cas: "Cassiopeiae", Cen: "Centauri", Cep: "Cephei",
+  Cet: "Ceti", Cha: "Chamaeleontis", Cir: "Circini", Cnc: "Cancri", Col: "Columbae", Com: "Comae Berenices", CrA: "Coronae Australis", CrB: "Coronae Borealis", Crt: "Crateris",
+  Cru: "Crucis", Crv: "Corvi", Cyg: "Cygni", Del: "Delphini", Dor: "Doradus", Dra: "Draconis", Equ: "Equulei", Eri: "Eridani", For: "Fornacis", Gem: "Geminorum", Gru: "Gruis",
+  Her: "Herculis", Hor: "Horologii", Hya: "Hydrae", Hyi: "Hydri", Ind: "Indi", LMi: "Leonis Minoris", Lac: "Lacertae", Leo: "Leonis", Lep: "Leporis", Lib: "Librae", Lup: "Lupi",
+  Lyn: "Lyncis", Lyr: "Lyrae", Men: "Mensae", Mic: "Microscopii", Mon: "Monocerotis", Mus: "Muscae", Nor: "Normae", Oct: "Octantis", Oph: "Ophiuchi", Ori: "Orionis", Pav: "Pavonis",
+  Peg: "Pegasi", Per: "Persei", Phe: "Phoenicis", Pic: "Pictoris", PsA: "Piscis Austrini", Psc: "Piscium", Pup: "Puppis", Pyx: "Pyxidis", Ret: "Reticuli", Scl: "Sculptoris",
+  Sco: "Scorpii", Sct: "Scuti", Ser: "Serpentis", Sex: "Sextantis", Sge: "Sagittae", Sgr: "Sagittarii", Tau: "Tauri", Tel: "Telescopii", TrA: "Trianguli Australis", Tri: "Trianguli",
+  Tuc: "Tucanae", UMa: "Ursae Majoris", UMi: "Ursae Minoris", Vel: "Velorum", Vir: "Virginis", Vol: "Volantis", Vul: "Vulpeculae" };
+const PLANET_WIKI = { Moon: "Mond", Jupiter: "Jupiter_(Planet)", Saturn: "Saturn_(Planet)", Mars: "Mars_(Planet)", Venus: "Venus_(Planet)", Mercury: "Merkur_(Planet)", Uranus: "Uranus_(Planet)", Neptune: "Neptun_(Planet)" };
+const wikiSearch = q => "https://de.wikipedia.org/w/index.php?go=Artikel&search=" + encodeURIComponent(q);
+const greekLatin = b => b.replace(/^([α-ω])(\d*)$/, (_, g, n) => (GREEK[g] || g) + n);
+
+// Objekt aus Katalog-Index / Messier / Planet beschreiben
+function starObj(k) {
+  const inf = STARINFO[k] || ["", "", "", ""], [nm, bay, fl, c] = inf, mag = STARS[3 * k + 2];
+  const desig = bay ? bay + " " + c : fl ? fl + " " + c : "";
+  const query = bay && GEN[c] ? greekLatin(bay) + " " + GEN[c] : fl && GEN[c] ? fl + " " + GEN[c] : nm;
+  return { id: "S" + k, kind: "star", name: nm || desig || "Stern", desig: nm ? desig : "", mag,
+    vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]), link: query ? wikiSearch(query) : null };
+}
+function messierObj(row) {
+  const [id, ra, dec, mag, nm, typ, desig] = row;
+  return { id, kind: "dso", name: nm ? id + " · " + nm : id, desig: [typ, desig].filter(Boolean).join(" · "), mag,
+    vec: () => Solver.radec2v(ra, dec), link: "https://de.wikipedia.org/wiki/Messier_" + id.slice(1) };
+}
+function planetObj(de, en) {
+  return { id: en, kind: "planet", name: de, desig: en === "Moon" ? "Erdtrabant" : "Planet", body: en,
+    vec: targetById(en).vec, link: "https://de.wikipedia.org/wiki/" + PLANET_WIKI[en] };
+}
+function pickAt(clientX, clientY) {
+  const sol = st.sol; if (!sol) return null;
+  const r = view.getBoundingClientRect(), dpr = view.width / r.width, t = A.MakeTime(new Date());
+  const px = (clientX - r.left) * dpr, py = (clientY - r.top) * dpr, lim = 30 * dpr;
+  let best = null, bs = Infinity;
+  const consider = (vec, bonus, make) => {
+    const p = Solver.skyToPix(sol, vec); if (!p || p.z < 0.2) return;
+    const [x, y] = P(p.x, p.y), d = Math.hypot(x - px, y - py); if (d > lim) return;
+    const sc = d - bonus * dpr; if (sc < bs) { bs = sc; best = make; }
+  };
+  PLANETS.forEach(([de, en]) => consider(targetById(en).vec(t), 14, () => planetObj(de, en)));
+  MESSIER.forEach(row => consider(Solver.radec2v(row[1], row[2]), 8, () => messierObj(row)));
+  for (let k = 0; k < Solver.cat.n; k++) {
+    const m = STARS[3 * k + 2]; if (m > 5.5) break;          // Katalog ist nach Helligkeit sortiert
+    consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
+  }
+  return best ? best() : null;
+}
+function showInfo(o) {
+  const t = A.MakeTime(new Date()), v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
+  const con = A.Constellation(rd.ra / 15, rd.dec);
+  st.picked = o;
+  $("infoName").textContent = o.name;
+  $("infoSub").textContent = [o.kind === "star" ? "Stern" : null, o.desig, "Sternbild " + con.name].filter(Boolean).join(" · ");
+  const facts = [];
+  let mag = o.mag;
+  if (o.kind === "planet") {
+    try { const il = A.Illumination(A.Body[o.body], t); mag = il.mag;
+      facts.push(["Entfernung", o.body === "Moon" ? Math.round(il.geo_dist * 149597870.7).toLocaleString("de-DE") + " km" : il.geo_dist.toFixed(2).replace(".", ",") + " AE"]);
+      if (o.body === "Moon" || o.body === "Venus" || o.body === "Mercury") facts.push(["Beleuchtet", Math.round(il.phase_fraction * 100) + " %"]);
+    } catch (e) {}
+  }
+  if (mag != null) facts.unshift(["Helligkeit", (+mag).toFixed(1).replace(".", ",") + " mag"]);
+  facts.push(["Höhe", h.alt < 0 ? "unter Horizont" : fmtDeg(h.alt)], ["Azimut", fmtDeg(h.az) + " " + ["N", "NO", "O", "SO", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]]);
+  facts.push(["RA", fmtRA(rd.ra)], ["Dek", fmtDec(rd.dec)]);
+  const tv = teleVec(); if (tv) facts.push(["Vom Okular", fmtDeg(Solver.angDeg(tv, v))]);
+  const box = $("infoFacts"); box.textContent = "";
+  facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; const a = document.createElement("div"); a.className = "k"; a.textContent = k; const b = document.createElement("div"); b.className = "v"; b.textContent = val; d.append(a, b); box.append(d); });
+  const ln = $("infoLink"); if (o.link) { ln.href = o.link; ln.hidden = false; } else ln.hidden = true;
+  const isTarget = cfg.target === o.id;
+  $("infoTarget").textContent = isTarget ? "Ist schon das Ziel" : "Als Ziel setzen"; $("infoTarget").disabled = isTarget;
+  $("infoTarget").onclick = () => {
+    if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
+    selectTarget(o.id); closeSheet("infoSheet");
+  };
+  openSheet("infoSheet");
+}
+
 $("btnMenu").onclick = () => { renderReadout(); syncSettings(); openSheet("menu"); };
 $("btnSettings").onclick = () => { syncSettings(); openSheet("sheet"); };
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };

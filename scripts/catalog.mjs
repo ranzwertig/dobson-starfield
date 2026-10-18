@@ -22,10 +22,13 @@ for (const f of ld('stars.6.json').features) {
 }
 rows.sort((a, b) => a[2] - b[2]);
 const stars = [], labels = {};
+// Bezeichnungen für antippbare Sterne bis 5,5 mag: [Eigenname, Bayer, Flamsteed, Sternbild]
+const info = {};
 rows.forEach(([a, d, m, hid], i) => {
   stars.push(a, d, m);
   const n = names[hid];
   if (!n) return;
+  if (m <= 5.5 && (n.name || n.bayer || n.flam) && /^[A-Z][a-zA-Z]{2}$/.test(n.c)) info[i] = [n.name || '', n.bayer || '', n.flam || '', n.c];
   if (n.name && m < 4.5) labels[i] = n.name;
   else if (n.bayer && m < 3.6) labels[i] = n.bayer + ' ' + n.c;
 });
@@ -49,6 +52,6 @@ const lines = [];
 for (const f of ld('constellations.lines.json').features)
   for (const seg of f.geometry.coordinates) lines.push(seg.flatMap(([lon, lat]) => [rnd(ra(lon), 2), rnd(lat, 2)]));
 
-const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\n`;
+const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\n`;
 writeFileSync(OUT, js);
-console.log(`src/data.js: ${rows.length} Sterne, ${Object.keys(labels).length} Namen, ${messier.length} Messier, ${lines.length} Linienzüge, ${js.length >> 10} KB`);
+console.log(`src/data.js: ${rows.length} Sterne, ${Object.keys(labels).length} Namen, ${Object.keys(info).length} Bezeichnungen, ${messier.length} Messier, ${lines.length} Linienzüge, ${js.length >> 10} KB`);
