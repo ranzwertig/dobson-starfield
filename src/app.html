@@ -209,6 +209,25 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet.dragging .inner { transition: none; }
 .sheet.tall .inner { height: 88%; }
 @media (prefers-reduced-motion: reduce) { .sheet, .sheet .inner { transition: none; } }
+/* Tablet and desktop: sheets become a side panel on the right; the map shrinks next to it and stays usable */
+@media (min-width: 900px) and (min-height: 500px) {
+  :root { --panel-w: min(420px, 38vw); }
+  .app { transition: margin-right .34s cubic-bezier(.32, .72, 0, 1); }
+  body.panel-open .app { margin-right: var(--panel-w); }
+  .hud { max-width: 640px; }
+  .sheet { inset: 0 0 0 auto; width: var(--panel-w); align-items: stretch; }
+  .sheet.open { background: none; }
+  .sheet .inner, .sheet.tall .inner {
+    max-width: none; max-height: none; height: 100%; border-radius: 0; border: 0; border-left: 1px solid var(--line);
+    padding-top: env(safe-area-inset-top, 0px); padding-right: max(18px, env(safe-area-inset-right, 0px)); padding-left: 18px;
+    transform: translateX(105%); box-shadow: -12px 0 40px rgba(0,0,0,.35);
+  }
+  .sheet.open .inner { transform: translateX(0); }
+  .grab { cursor: default; padding-top: 14px; margin-inline: -18px; padding-inline: 18px; }
+  .grab::before { display: none; }
+  .sheet h2 { font-size: 21px; }
+}
+@media (min-width: 900px) and (min-height: 500px) and (prefers-reduced-motion: reduce) { .app { transition: none; } }
 /* Handle at top: dragging closes the sheet */
 .grab {
   position: sticky; top: 0; z-index: 2; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
@@ -1253,7 +1272,11 @@ view.addEventListener("wheel", e => { e.preventDefault(); const fct = Math.exp(-
 
 /* ---------------- Drawing ---------------- */
 let fit = { sc: 1, ox: 0, oy: 0, w: 1, h: 1 };
-function resize() { const r = view.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); view.width = Math.round(r.width * dpr); view.height = Math.round(r.height * dpr); }
+function resize() {
+  const r = view.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1), w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (view.width === w && view.height === h) return;   // setting the size clears the canvas, even to the same value
+  view.width = w; view.height = h; lastSig = [];
+}
 // Only redraw when something visible changed (live video always): saves battery and keeps frames free for sensor updates
 let lastSig = [];
 function frameSig(W, H) {
@@ -1534,11 +1557,23 @@ function openSheet(id) {
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   sh.querySelector(".inner").scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
+  setPanelOpen(true);
+}
+// Side panel layout (wide screens): the stage makes room, so the canvas has to be resized afterwards
+const sidePanels = () => matchMedia("(min-width: 900px) and (min-height: 500px)").matches;
+function setPanelOpen(on) {
+  if (document.body.classList.contains("panel-open") === on) return;
+  document.body.classList.toggle("panel-open", on);
+  if (!sidePanels()) return;
+  const t0 = performance.now();
+  const step = () => { resize(); insetCache = null; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
 }
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
   sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   if (id === "infoSheet") st.picked = null;
+  if (!SHEETS.some(x => x.id !== id && !x.hidden && x.classList.contains("open"))) setPanelOpen(false);
   if (reduceMotion()) { sh.hidden = true; return; }
   clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) sh.hidden = true; }, 360);
 }
@@ -1546,7 +1581,7 @@ SHEETS.forEach(sh => {
   const inner = sh.querySelector(".inner"), grab = sh.querySelector(".grab");
   sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) closeSheet(sh.id); });
   let y0 = null, dy = 0, last = 0, lastT = 0, vel = 0, fromBody = false;
-  const start = (y, body) => { y0 = y; dy = 0; vel = 0; last = y; lastT = performance.now(); fromBody = body; };
+  const start = (y, body) => { if (sidePanels()) return; y0 = y; dy = 0; vel = 0; last = y; lastT = performance.now(); fromBody = body; };
   const move = (y, e) => {
     if (y0 == null) return;
     const d = y - y0, dragging = sh.classList.contains("dragging");
