@@ -1,4 +1,4 @@
-// Erzeugt src/data.js aus den Daten von d3-celestial (BSD-3-Clause), installiert über npm.
+// Generates src/data.js from the d3-celestial data (BSD-3-Clause), installed via npm.
 //   npm run catalog
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -11,7 +11,7 @@ const ld = f => JSON.parse(readFileSync(path.join(DATA, f), 'utf8'));
 const ra = lon => (lon < 0 ? lon + 360 : lon);
 const rnd = (x, d) => Number(x.toFixed(d));
 
-// Sterne bis 6 mag, hellste zuerst, flach als [ra, dec, mag, ...]
+// Stars down to mag 6, brightest first, flat as [ra, dec, mag, ...]
 const names = ld('starnames.json');
 const rows = [];
 for (const f of ld('stars.6.json').features) {
@@ -22,7 +22,7 @@ for (const f of ld('stars.6.json').features) {
 }
 rows.sort((a, b) => a[2] - b[2]);
 const stars = [], labels = {};
-// Bezeichnungen für antippbare Sterne bis 5,5 mag: [Eigenname, Bayer, Flamsteed, Sternbild]
+// Designations for tappable stars down to mag 5.5: [proper name, Bayer, Flamsteed, constellation]
 const info = {};
 rows.forEach(([a, d, m, hid], i) => {
   stars.push(a, d, m);
@@ -33,25 +33,23 @@ rows.forEach(([a, d, m, hid], i) => {
   else if (n.bayer && m < 3.6) labels[i] = n.bayer + ' ' + n.c;
 });
 
-// Messier-Objekte mit deutschen Namen und Typen
-const GER = { M1: 'Krebsnebel', M8: 'Lagunennebel', M13: 'Herkules-Kugelsternhaufen', M16: 'Adlernebel', M17: 'Omeganebel',
-  M20: 'Trifidnebel', M27: 'Hantelnebel', M31: 'Andromedagalaxie', M33: 'Dreiecksgalaxie', M42: 'Orionnebel',
-  M44: 'Krippe (Praesepe)', M45: 'Plejaden (Siebengestirn)', M51: 'Whirlpool-Galaxie', M57: 'Ringnebel', M64: 'Black-Eye-Galaxie',
-  M81: 'Bodes Galaxie', M82: 'Zigarrengalaxie', M97: 'Eulennebel', M101: 'Feuerradgalaxie', M104: 'Sombrerogalaxie', M11: 'Wildentenhaufen',
-  M6: 'Schmetterlingshaufen', M7: 'Ptolemäus-Haufen', M24: 'Sagittarius-Sternwolke', M35: 'Offener Sternhaufen in den Zwillingen',
-  M3: 'Kugelsternhaufen', M92: 'Kugelsternhaufen', M15: 'Kugelsternhaufen', M2: 'Kugelsternhaufen', M5: 'Kugelsternhaufen', M22: 'Kugelsternhaufen' };
-const TYPES = { s: 'Spiralgalaxie', e: 'Elliptische Galaxie', i: 'Irreguläre Galaxie', sfr: 'Sternentstehungsgebiet', gc: 'Kugelsternhaufen',
-  oc: 'Offener Haufen', pn: 'Planetarischer Nebel', en: 'Emissionsnebel', rn: 'Reflexionsnebel', snr: 'Supernova-Rest', pos: 'Sternfeld' };
+// Messier objects with common English names and types
+const NAMES = { M1: 'Crab Nebula', M8: 'Lagoon Nebula', M11: 'Wild Duck Cluster', M13: 'Great Hercules Cluster', M16: 'Eagle Nebula', M17: 'Omega Nebula',
+  M20: 'Trifid Nebula', M24: 'Sagittarius Star Cloud', M27: 'Dumbbell Nebula', M31: 'Andromeda Galaxy', M33: 'Triangulum Galaxy', M42: 'Orion Nebula',
+  M44: 'Beehive Cluster (Praesepe)', M45: 'Pleiades', M51: 'Whirlpool Galaxy', M57: 'Ring Nebula', M64: 'Black Eye Galaxy', M6: 'Butterfly Cluster',
+  M7: 'Ptolemy Cluster', M81: "Bode's Galaxy", M82: 'Cigar Galaxy', M97: 'Owl Nebula', M101: 'Pinwheel Galaxy', M104: 'Sombrero Galaxy' };
+const TYPES = { s: 'Spiral galaxy', e: 'Elliptical galaxy', i: 'Irregular galaxy', sfr: 'Star-forming region', gc: 'Globular cluster',
+  oc: 'Open cluster', pn: 'Planetary nebula', en: 'Emission nebula', rn: 'Reflection nebula', snr: 'Supernova remnant', pos: 'Star field' };
 const messier = ld('messier.json').features.map(f => {
   const p = f.properties, [lon, lat] = f.geometry.coordinates;
-  return [p.name, rnd(ra(lon), 3), rnd(lat, 3), p.mag ?? null, GER[p.name] || p.alt || '', TYPES[p.type] || p.type || '', p.desig || ''];
+  return [p.name, rnd(ra(lon), 3), rnd(lat, 3), p.mag ?? null, NAMES[p.name] || p.alt || '', TYPES[p.type] || p.type || '', p.desig || ''];
 });
 
-// Sternbildlinien als flache [ra, dec, ...]-Züge
+// Constellation lines as flat [ra, dec, ...] polylines
 const lines = [];
 for (const f of ld('constellations.lines.json').features)
   for (const seg of f.geometry.coordinates) lines.push(seg.flatMap(([lon, lat]) => [rnd(ra(lon), 2), rnd(lat, 2)]));
 
 const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\n`;
 writeFileSync(OUT, js);
-console.log(`src/data.js: ${rows.length} Sterne, ${Object.keys(labels).length} Namen, ${Object.keys(info).length} Bezeichnungen, ${messier.length} Messier, ${lines.length} Linienzüge, ${js.length >> 10} KB`);
+console.log(`src/data.js: ${rows.length} stars, ${Object.keys(labels).length} names, ${Object.keys(info).length} designations, ${messier.length} Messier, ${lines.length} line strips, ${js.length >> 10} KB`);

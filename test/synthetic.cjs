@@ -1,5 +1,5 @@
-// Synthetische Sternfelder (Rauschen, Hotpixel, Planet, fehlende Sterne) lösen und prüfen.
-// node test/synthetic.js [seed] [anzahl pro Fall]
+// Solve and verify synthetic star fields (noise, hot pixels, planet, missing stars).
+// node test/synthetic.cjs [seed] [count per case]
 const fs = require('fs'), path = require('path');
 const dir = path.join(__dirname, '..', 'src');
 eval(fs.readFileSync(path.join(dir, 'data.js'), 'utf8').replace(/^const (\w+)=/gm, 'global.$1='));
@@ -23,18 +23,18 @@ function render(R, fov, w, h, limMag, opts = {}) {
   for (let i = 0; i < S.cat.n; i++) {
     if (S.cat.mag[i] > limMag) continue;
     const p = S.skyToPix(sol, S.cat.v[i]); if (!p || p.x < 0 || p.y < 0 || p.x >= w || p.y >= h) continue;
-    // Extinktion/Wolken: zufällig 15% fehlen, Helligkeitsfehler
+    // Extinction/clouds: 10% randomly missing, brightness errors
     if (rnd() < (opts.drop || 0.1)) continue;
     put(p.x + gauss() * 0.3, p.y + gauss() * 0.3, 40 * Math.pow(10, -0.4 * (S.cat.mag[i] - limMag)) * 30 * (1 + 0.3 * gauss()), 1.4); n++;
   }
-  put(w * 0.3, h * 0.6, 40 * 30 * 300, 1.6);         // "Jupiter" - nicht im Katalog
-  put(w * 0.7, h * 0.2, 40 * 30 * 20, 1.4);           // Flugzeug/Satellit
-  for (let k = 0; k < 30; k++) img[Math.floor(rnd() * w * h)] += 200;  // Hotpixel
+  put(w * 0.3, h * 0.6, 40 * 30 * 300, 1.6);         // "Jupiter" - not in the catalog
+  put(w * 0.7, h * 0.2, 40 * 30 * 20, 1.4);           // plane/satellite
+  for (let k = 0; k < 30; k++) img[Math.floor(rnd() * w * h)] += 200;  // hot pixels
   for (let i = 0; i < img.length; i++) img[i] = Math.min(255, img[i]);
   return { img, n };
 }
 function randRot() {
-  // zufällige Rotation über zufällige Achse
+  // random rotation about a random axis
   const ra = rnd() * 360, dec = Math.asin(2 * rnd() - 1) * 180 / Math.PI, roll = rnd() * 2 * Math.PI;
   const z = S.radec2v(ra, dec), up = Math.abs(z[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
   let x = [up[1] * z[2] - up[2] * z[1], up[2] * z[0] - up[0] * z[2], up[0] * z[1] - up[1] * z[0]]; const nx = Math.hypot(...x); x = x.map(a => a / nx);

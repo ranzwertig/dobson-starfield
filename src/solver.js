@@ -1,4 +1,4 @@
-/* ===== Sternerkennung + Plate-Solver (lost-in-space, Dreiecks-Matching) ===== */
+/* ===== Star detection + plate solver (lost-in-space, triangle matching) ===== */
 const Solver = (() => {
   const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 
@@ -18,7 +18,7 @@ const Solver = (() => {
   const mul = (R, v) => [R[0][0] * v[0] + R[0][1] * v[1] + R[0][2] * v[2], R[1][0] * v[0] + R[1][1] * v[1] + R[1][2] * v[2], R[2][0] * v[0] + R[2][1] * v[1] + R[2][2] * v[2]];
   const mulT = (R, v) => [R[0][0] * v[0] + R[1][0] * v[1] + R[2][0] * v[2], R[0][1] * v[0] + R[1][1] * v[1] + R[2][1] * v[2], R[0][2] * v[0] + R[1][2] * v[1] + R[2][2] * v[2]];
 
-  /* ---------- Rotation aus Vektorpaaren (Horn, Quaternion) ---------- */
+  /* ---------- Rotation from vector pairs (Horn, quaternion) ---------- */
   function jacobiMaxEig(A) {
     const n = 4, a = A.map(r => r.slice()), V = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
     for (let sweep = 0; sweep < 50; sweep++) {
@@ -38,7 +38,7 @@ const Solver = (() => {
     let bi = 0; for (let i = 1; i < 4; i++) if (a[i][i] > a[bi][bi]) bi = i;
     return [V[0][bi], V[1][bi], V[2][bi], V[3][bi]];
   }
-  // findet R mit tgt ≈ R * src
+  // finds R with tgt ≈ R * src
   function fitRotation(src, tgt, w) {
     let Sxx = 0, Sxy = 0, Sxz = 0, Syx = 0, Syy = 0, Syz = 0, Szx = 0, Szy = 0, Szz = 0;
     for (let i = 0; i < src.length; i++) {
@@ -59,24 +59,24 @@ const Solver = (() => {
       [2 * (qz * qx - q0 * qy), 2 * (qz * qy + q0 * qx), q0 * q0 - qx * qx - qy * qy + qz * qz]];
   }
 
-  /* ---------- Katalog + Index ---------- */
+  /* ---------- Catalog + index ---------- */
   let CAT = null;            // {n, ra, dec, mag, v:[[x,y,z]]}
   const indexCache = {};
   function setCatalog(flat) {
     const n = flat.length / 3, v = new Array(n), ra = new Float32Array(n), dec = new Float32Array(n), mag = new Float32Array(n);
     for (let i = 0; i < n; i++) { ra[i] = flat[3 * i]; dec[i] = flat[3 * i + 1]; mag[i] = flat[3 * i + 2]; v[i] = radec2v(ra[i], dec[i]); }
     CAT = { n, ra, dec, mag, v };
-    // Raster-Hash aller Sterne für schnelle Nachbarsuche
+    // grid hash of all stars for fast neighbor lookup
     const cell = 0.035, grid = new Map();
     const key = (x, y, z) => ((x + 40) * 6400 + (y + 40) * 80 + (z + 40));
     for (let i = 0; i < n; i++) {
       const p = v[i], k = key(Math.floor(p[0] / cell), Math.floor(p[1] / cell), Math.floor(p[2] / cell));
       let b = grid.get(k); if (!b) grid.set(k, b = []); b.push(i);
     }
-    for (const b of grid.values()) b.sort((p, q) => mag[p] - mag[q]);   // hell zuerst -> früh abbrechen
+    for (const b of grid.values()) b.sort((p, q) => mag[p] - mag[q]);   // bright first -> stop early
     CAT.grid = grid; CAT.cell = cell; CAT.key = key;
   }
-  // nächster Katalogstern (mag<=maxMag) innerhalb rad (Grad, < ~2°)
+  // nearest catalog star (mag<=maxMag) within rad (degrees, < ~2°)
   function nearest(p, radDeg, maxMag) {
     const c = CAT.cell, ix = Math.floor(p[0] / c), iy = Math.floor(p[1] / c), iz = Math.floor(p[2] / c);
     const cosR = Math.cos(radDeg * D2R); let best = -1, bd = cosR;
@@ -106,16 +106,16 @@ const Solver = (() => {
   }
   function lowerBound(arr, x) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; }
 
-  /* ---------- Sternerkennung ---------- */
+  /* ---------- Star detection ---------- */
   // gray: Float32Array (w*h), returns [{x,y,flux,peak}]
-  // Helle, einfarbige Rahmen (weiße Passepartouts) erkennen und mit dem angrenzenden Bildinhalt füllen,
-  // damit sie Hintergrundschätzung und Sternsuche am Rand nicht stören.
+  // Detect bright, uniform borders (white mats) and fill them with the adjacent image content,
+  // so they don't disturb background estimation and star search near the edge.
   function trimFrame(gray, w, h) {
-    // Zeile/Spalte gilt als Rahmen, wenn fast alle Pixel denselben Wert haben (robust gegen einzelne Ausreißer)
+    // a row/column counts as border if almost all pixels share the same value (robust against single outliers)
     const flat = (get, n) => {
       const v = []; for (let i = 0; i < n; i += 3) v.push(get(i));
       const srt = v.slice().sort((a, b) => a - b), med = srt[srt.length >> 1];
-      // nur helle Rahmen (Passepartout); ein gleichmäßig dunkler Himmel darf nicht als Rahmen gelten
+      // only bright borders (mats); a uniformly dark sky must not count as a border
       if (med < 200) return false;
       let off = 0; for (const x of v) if (Math.abs(x - med) > 12) off++;
       return off < 0.03 * v.length;
@@ -127,7 +127,7 @@ const Solver = (() => {
     while (l < w * 0.2 && col(l)) l++;
     while (r < w * 0.2 && col(w - 1 - r)) r++;
     if (!(t || b || l || r)) return { gray, box: [0, 0, w, h] };
-    // ein paar Pixel Sicherheitsabstand für die Kante des Rahmens
+    // a few pixels of safety margin for the border edge
     const pad = 3; t = t ? t + pad : 0; b = b ? b + pad : 0; l = l ? l + pad : 0; r = r ? r + pad : 0;
     const g = new Float32Array(gray);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -151,7 +151,7 @@ const Solver = (() => {
       tmp.sort((a, b) => a - b);
       bgB[by * bw + bx] = med; sdB[by * bw + bx] = Math.max(0.5, 1.4826 * tmp[tmp.length >> 1]);
     }
-    // bilinear interpolierter Hintergrund
+    // bilinearly interpolated background
     const bgAt = (x, y, arr) => {
       const fx = Math.max(0, Math.min(bw - 1.001, x / B - 0.5)), fy = Math.max(0, Math.min(bh - 1.001, y / B - 0.5));
       const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, x1 = Math.min(bw - 1, x0 + 1), y1 = Math.min(bh - 1, y0 + 1);
@@ -159,9 +159,9 @@ const Solver = (() => {
     };
     const res = new Float32Array(w * h), sig = new Float32Array(w * h);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; res[i] = gray[i] - bgAt(x, y, bgB); sig[i] = bgAt(x, y, sdB); }
-    // Zusammenhängende Flecken über der Schwelle finden (auch große, gesättigte Sterne)
+    // Find connected blobs above the threshold (including large, saturated stars)
     const lab = new Int32Array(w * h), cand = [], stack = [], m = 3;
-    // Rauschen des Himmels: Median über alle Blöcke. Blöcke mit viel mehr Struktur (Bäume, Häuser) sind Vordergrund.
+    // Sky noise: median over all blocks. Blocks with much more structure (trees, houses) are foreground.
     const sdSorted = Array.from(sdB).sort((a, b) => a - b), skySd = sdSorted[sdSorted.length >> 1];
     const thr = i => k * sig[i];
     let nextLab = 0;
@@ -179,9 +179,9 @@ const Solver = (() => {
         const nb = [i - 1, i + 1, i - w, i + w];
         for (const j of nb) if (!lab[j] && res[j] >= thr(j)) { lab[j] = L; stack.push(j); }
       }
-      if (big || touches || area < 3) continue;                       // Flächen, Rand, Hotpixel
-      if (sig[i0] > 2.5 * skySd) continue;                              // in strukturiertem Vordergrund (Lücken im Laub)
-      // Sterne sind heller als der Himmel ringsum. Himmelslücken in dunklen Bäumen sind höchstens so hell wie der Himmel.
+      if (big || touches || area < 3) continue;                       // areas, edge, hot pixels
+      if (sig[i0] > 2.5 * skySd) continue;                              // in structured foreground (gaps in foliage)
+      // Stars are brighter than the surrounding sky. Sky gaps in dark trees are at most as bright as the sky.
       {
         const bxI = Math.min(bw - 1, Math.floor(x / B)), byI = Math.min(bh - 1, Math.floor(y / B)), rB = 3;
         let skyMax = -Infinity;
@@ -190,12 +190,12 @@ const Solver = (() => {
         if (peakAbs < skyMax + 4 * skySd) continue;
       }
       const bw2 = maxx - minx + 1, bh2 = maxy - miny + 1;
-      if (area < 0.35 * bw2 * bh2 && area > 12) continue;              // ausgefranst (Äste)
+      if (area < 0.35 * bw2 * bh2 && area > 12) continue;              // ragged (branches)
       const cxp = sx / sf, cyp = sy / sf, vx = sxx / sf - cxp * cxp, vy = syy / sf - cyp * cyp, vxy = sxy / sf - cxp * cyp;
       const tr = vx + vy, dt = Math.sqrt(Math.max(0, (vx - vy) * (vx - vy) / 4 + vxy * vxy));
       const l1 = tr / 2 + dt, l2 = Math.max(1e-3, tr / 2 - dt);
-      if (l1 / l2 > 6 && area > 6) continue;                            // länglich (Kanten, Strichspuren)
-      // Fluss inkl. Halo (Ring bis 2 px um den Fleck) – Größe zählt bei gesättigten Sternen mit
+      if (l1 / l2 > 6 && area > 6) continue;                            // elongated (edges, star trails)
+      // flux incl. halo (ring up to 2 px around the blob) – size counts too for saturated stars
       cand.push({ x: cxp + 0.5, y: cyp + 0.5, flux: sf + area * k * 0.5 * sig[i0], peak, snr: peak / sig[i0], area });
     }
     cand.sort((a, b) => b.flux - a.flux);
@@ -205,12 +205,12 @@ const Solver = (() => {
   }
 
   /* ---------- Plate solve ---------- */
-  // stars: [{x,y}] nach Helligkeit sortiert. opts: {w,h, fov (horizontal, Grad) | fovMin, fovMax, timeBudget}
+  // stars: [{x,y}] sorted by brightness. opts: {w,h, fov (horizontal, degrees) | fovMin, fovMax, timeBudget}
   function solve(stars, opts) {
-    if (!CAT) throw new Error('Katalog fehlt');
+    if (!CAT) throw new Error('Catalogue missing');
     const t0 = performance.now(), w = opts.w, h = opts.h, cx = w / 2, cy = h / 2;
     const budget = opts.timeBudget || 6000;
-    if (stars.length < 4) return { ok: false, reason: 'Zu wenige Sterne erkannt (' + stars.length + ')' };
+    if (stars.length < 4) return { ok: false, reason: 'Too few stars detected (' + stars.length + ')' };
     let fovs;
     if (opts.fov) fovs = [opts.fov];
     else {
@@ -218,34 +218,34 @@ const Solver = (() => {
       for (let i = 1; i < 80; i++) { const a = start * Math.pow(1.025, i), b = start / Math.pow(1.025, i); if (a <= hi) fovs.push(a); if (b >= lo) fovs.push(b); if (a > hi && b < lo) break; }
     }
     const known = !!opts.fov;
-    let tried = 0, lastReason = 'Keine Übereinstimmung gefunden';
+    let tried = 0, lastReason = 'No match found';
     const cands = [];
-    // Kandidat verfeinern und streng prüfen; liefert Lösung oder null (Grund in lastReason)
+    // refine candidate and verify strictly; returns solution or null (reason in lastReason)
     const rejected = [];
     const validate = best => {
       const bc = mul(best.R, [0, 0, 1]);
-      if (rejected.some(v => dot(v, bc) > 0.9998)) return null;     // schon geprüft und verworfen
+      if (rejected.some(v => dot(v, bc) > 0.9998)) return null;     // already checked and rejected
       const ref = refine(stars, best, w, h, cx, cy);
       rejected.push(bc);
       const pxDeg = ref.fov / w;
       const M40 = Math.min(stars.length, 40), md = { cx, cy, f: ref.f, k1: ref.k1, poly: ref.poly };
       const cvS = stars.slice(0, M40).map(s => camVecModel(s, md));
-      // Gegenprobe: die hellsten Bildsterne mit engem Radius gegen den Katalog prüfen
+      // Cross-check: test the brightest image stars against the catalog with a tight radius
       ref.strict = verify(ref.R, cvS, Math.max(3 * pxDeg, 2.5 * ref.rms), Math.max(best.vMag || 5, 4.5) + 0.5).score;
-      // Helligkeits-Rangkorrelation: hellere Bildpunkte sollten hellere Katalogsterne sein
+      // Brightness rank correlation: brighter image points should be brighter catalog stars
       ref.rho = rankCorr(ref.matches.map(mm => stars.find(q => q.x === mm.x && q.y === mm.y).flux), ref.matches.map(mm => -CAT.mag[mm.cat]));
-      // Echte Lösungen passen auf etwa 1 Pixel; Zufallstreffer in sternreichen Gegenden liegen deutlich darüber
+      // Real solutions fit to about 1 pixel; chance matches in star-rich regions are clearly worse
       const rmsMax = Math.max(0.03, (ref.poly ? 2.0 : 2.5) * pxDeg);
       if (opts.debug) opts.debug(ref, best);
-      // Ohne bekanntes Bildfeld gibt es viel mehr Möglichkeiten für Zufallstreffer -> mehr Sterne verlangen
-      if (!known && (ref.nMatch < 10 || ref.strict < 8)) { lastReason = 'Zu wenige sichere Sterne (' + ref.nMatch + ')'; return null; }
-      if (ref.strict < Math.max(6, Math.ceil(0.25 * M40))) { lastReason = 'Unsichere Lösung verworfen (' + ref.strict + ' Sterne)'; return null; }
-      if (ref.rho < 0.15 && ref.nMatch < 30) { lastReason = 'Unsichere Lösung verworfen (Helligkeiten passen nicht)'; return null; }
-      if (ref.nMatch < 5 || ref.rms > rmsMax) { lastReason = 'Unsichere Lösung verworfen (rms ' + ref.rms.toFixed(2) + '°)'; return null; }
+      // Without a known field of view there are many more chances for false matches -> require more stars
+      if (!known && (ref.nMatch < 10 || ref.strict < 8)) { lastReason = 'Too few reliable stars (' + ref.nMatch + ')'; return null; }
+      if (ref.strict < Math.max(6, Math.ceil(0.25 * M40))) { lastReason = 'Uncertain solution rejected (' + ref.strict + ' stars)'; return null; }
+      if (ref.rho < 0.15 && ref.nMatch < 30) { lastReason = 'Uncertain solution rejected (brightness mismatch)'; return null; }
+      if (ref.nMatch < 5 || ref.rms > rmsMax) { lastReason = 'Uncertain solution rejected (rms ' + ref.rms.toFixed(2) + '°)'; return null; }
       return ref;
     };
     const done = ref => { ref.ms = performance.now() - t0; ref.tried = tried; ref.ok = true; return ref; };
-    // Bei unbekanntem Bildfeld: erst schneller Durchlauf mit wenig Zeit pro Schritt, dann gründlich
+    // With unknown field of view: first a quick pass with little time per step, then a thorough one
     const passes = known ? [Infinity] : [120, 600, Infinity];
     for (let pi = 0; pi < passes.length; pi++) {
       for (let fi = 0; fi < fovs.length; fi++) {
@@ -260,7 +260,7 @@ const Solver = (() => {
         else cands.push(r);
       }
     }
-    // Kein sicherer Kandidat: die besten unsicheren noch prüfen
+    // No confident candidate: still check the best uncertain ones
     cands.sort((p, q) => q.score - p.score);
     for (const c of cands.slice(0, 4)) { const ok = validate(c); if (ok) return done(ok); }
     return { ok: false, reason: lastReason, tried, ms: performance.now() - t0 };
@@ -275,7 +275,7 @@ const Solver = (() => {
   function trySolve(stars, w, h, cx, cy, f, fov, known, t0, budget, stepEnd) {
     const diag = 2 * Math.atan(Math.hypot(w, h) / 2 / f) * R2D;
     const N = Math.min(stars.length, known ? 10 : 8), M = Math.min(stars.length, 40);
-    // Index passend zum Bildfeld: so hell, dass etwa 3·N Katalogsterne im Feld liegen, Paare bis zur Bilddiagonale
+    // Index matching the field of view: bright enough that about 3·N catalog stars fall in the field, pairs up to the image diagonal
     const fieldArea = fov * 2 * Math.atan(h / 2 / f) * R2D;
     let triMag = 3.5; while (triMag < 6.0 && countBrighter(triMag) * fieldArea / 41253 < 3 * N) triMag += 0.25;
     const sepSteps = [20, 30, 45, 65, 90, 120]; const maxSepQ = sepSteps.find(x => x >= diag) || 120;
@@ -284,7 +284,7 @@ const Solver = (() => {
     const pxDeg = fov / w;
     const tightR = Math.max(0.15, 5 * pxDeg);
     const matchR = known ? Math.max(0.12, 4 * pxDeg) : Math.max(0.35, 0.012 * fov);
-    // Grenzgröße so wählen, dass im Feld etwa 1.3x so viele Katalogsterne wie Bildsterne liegen
+    // Choose limiting magnitude so the field holds about 1.3x as many catalog stars as image stars
     const area = fov * 2 * Math.atan(h / 2 / f) * R2D;
     let vMag = 3.0; while (vMag < 6.5 && countBrighter(vMag) * area / 41253 < 1.3 * M) vMag += 0.25;
     const minSep = Math.max(0.5, fov * 0.03);
@@ -315,7 +315,7 @@ const Solver = (() => {
             let sc = verify(R, cv, matchR, vMag, Math.max(minSc, best ? Math.min(best.score, minSc + 4) : 0));
             if (sc.score < minSc) continue;
             let RR = R, ff = f;
-            if (!known) {   // Brennweite + Rotation an den losen Treffern nachziehen, dann streng prüfen
+            if (!known) {   // refine focal length + rotation on the loose matches, then verify strictly
               const q = quickFit(stars, sc.matches, cx, cy, f);
               RR = q.R; ff = q.f;
               const cv2 = stars.slice(0, M).map(s => camVec(s, cx, cy, ff));
@@ -363,7 +363,7 @@ const Solver = (() => {
     return { score: matches.length, matches };
   }
 
-  /* ---------- Polynom-Korrektur (wie SIP): Verzerrung, Ausschnitt, Restfehler ---------- */
+  /* ---------- Polynomial correction (like SIP): distortion, cropping, residuals ---------- */
   function polyTerms(x, y, order) {
     const t = [1, x, y];
     if (order >= 2) t.push(x * x, x * y, y * y);
@@ -383,7 +383,7 @@ const Solver = (() => {
     }
     return Array.from({ length: n }, (_, i) => M[i][n] / M[i][i]);
   }
-  // Bildkoordinate -> ideale Tangentialebene der Kamera
+  // image coordinate -> ideal tangent plane of the camera
   function camVecModel(s, md) {
     let x = (s.x - md.cx) / md.f, y = (s.y - md.cy) / md.f;
     if (md.poly) [x, y] = polyEval(md.poly, x, y);
@@ -414,10 +414,10 @@ const Solver = (() => {
     const med = arr => { const t = arr.slice().sort((x, y) => x - y); return t[t.length >> 1] || 0; };
     for (let it = 0; it < 6; it++) {
       f = golden(ff => fitWith(ff, k1, matches).rms, f * 0.93, f * 1.07, 28);
-      if (matches.length >= 15) k1 = golden(kk => fitWith(f, kk, matches).rms, -0.3, 0.3, 24);   // Linsenverzerrung
+      if (matches.length >= 15) k1 = golden(kk => fitWith(f, kk, matches).rms, -0.3, 0.3, 24);   // lens distortion
       R = fitWith(f, k1, matches).R;
       const fov = 2 * Math.atan(w / 2 / f) * R2D, px = fov / w;
-      // robust: Ausreißer verwerfen, Suchradius aus dem Median-Fehler ableiten
+      // robust: drop outliers, derive search radius from the median error
       const sg = Math.max(1.5 * px, 1.4826 * med(resid(R, f, k1, matches)));
       const keep = matches.filter((mc, i) => resid(R, f, k1, [mc])[0] < 3 * sg);
       if (keep.length >= 6 && keep.length < matches.length) { matches = keep; R = fitWith(f, k1, matches).R; }
@@ -431,7 +431,7 @@ const Solver = (() => {
     }
     let fin = fitWith(f, k1, matches);
     R = fin.R;
-    // Feinkorrektur mit Polynom, wenn genug Sterne da sind (gecroppte Fotos, Weitwinkel, Ausschnitte)
+    // Fine correction with polynomial when there are enough stars (cropped photos, wide angle, crops)
     let poly = null;
     if (matches.length >= 18) {
       const md = { cx, cy, f };
@@ -465,13 +465,13 @@ const Solver = (() => {
     return { R, f, k1, poly, fov, fovV: 2 * Math.atan(h / 2 / f) * R2D, w, h, cx, cy, center, rms: fin.rms, nMatch: matches.length, matches: matches.map(([m, c]) => ({ x: stars[m].x, y: stars[m].y, cat: c })) };
   }
 
-  /* ---------- Projektion Himmel <-> Bild für eine Lösung ---------- */
+  /* ---------- Projection sky <-> image for a solution ---------- */
   function skyToPix(sol, v) {
     const c = mulT(sol.R, v); if (c[2] <= 0.05) return null;
     let x = c[0] / c[2], y = c[1] / c[2];
     const outside = (u, v) => { const X = sol.cx + sol.f * u, Y = sol.cy + sol.f * v; return X < -0.15 * sol.w || Y < -0.15 * sol.h || X > 1.15 * sol.w || Y > 1.15 * sol.h; };
-    if (sol.poly && outside(x, y)) {   // Polynom gilt nur im Bild – außerhalb einfache Lochkamera
-    } else if (sol.poly) {   // Polynom numerisch invertieren
+    if (sol.poly && outside(x, y)) {   // polynomial only valid inside the image – outside, plain pinhole model
+    } else if (sol.poly) {   // invert polynomial numerically
       const U = x, V = y;
       for (let q = 0; q < 12; q++) { const [pu, pv] = polyEval(sol.poly, x, y); x += U - pu; y += V - pv; }
       const [pu, pv] = polyEval(sol.poly, x, y); if (Math.abs(pu - U) + Math.abs(pv - V) > 1e-3) return null;

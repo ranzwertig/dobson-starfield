@@ -1,72 +1,78 @@
-# Dobson-Lotse
+# Dobson Pilot
 
-Web-App, die über die Handykamera feststellt, wohin ein Dobson-Teleskop zeigt, und dann mit Azimut-/Höhenpfeilen zum gewünschten Objekt führt. Das Handy wird parallel zum Tubus montiert. Die App erkennt die Sterne im Kamerabild, vergleicht sie mit einem Sternkatalog (Plate Solving) und rechnet die Richtung über Uhrzeit und Standort in Höhe/Azimut um.
+A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Alles läuft lokal im Browser: kein Server, keine Anmeldung. Die fertige App ist eine einzige HTML-Datei von etwa 315 KB.
+Everything runs locally in the browser: no server, no sign-in. The finished app is a single HTML file of roughly 415 KB.
 
-## Benutzen
+## Usage
 
-1. Die App über HTTPS ausliefern, Kamera und GPS gibt der Browser nur so frei. Das Repo ist mit Cloudflare verbunden: Jeder Push auf `main` baut und deployt automatisch (`npx wrangler deploy` führt vorher `npm run build` aus, siehe `wrangler.jsonc`).
-2. Handy fest und parallel zum Tubus montieren, Kamera starten, **Position bestimmen**. Beim ersten Mal sucht die App das Bildfeld der Kamera und merkt es sich.
-3. Einen hellen Stern im Okular zentrieren, **Okular** drücken und denselben Stern im Bild antippen. Damit kennt die App den Versatz zwischen Handy und Teleskop.
-4. Ziel wählen (Messier-Objekte, helle Sterne, Mond, Planeten) und mit **Dauernd** den Pfeilen folgen.
+1. Serve the app over HTTPS; browsers only allow camera, GPS and motion sensors there. The repo is connected to Cloudflare: every push to `main` builds and deploys automatically (`npx wrangler deploy` runs `npm run build` first, see `wrangler.jsonc`).
+2. Mount the phone firmly and parallel to the tube, start the camera and tap **Locate**. The first time, the app measures the camera's field of view and remembers it.
+3. Centre a bright star in the eyepiece, tap **Eyepiece point** and tap the same star in the image. Now the app knows the offset between phone and telescope.
+4. Choose a target (Sun, Moon, planets, Messier objects, bright stars) and follow the arrows, with **Continuous** for live updates.
 
-Über **Foto** lassen sich auch gespeicherte Himmelsfotos lösen, praktisch zum Testen.
+**Solve a photo from the gallery** (menu) solves saved sky photos, which is handy for testing.
 
-Ohne Kamera und Foto zeigt die App eine **Sternkarte** aus dem Katalog: frei mit dem Finger drehen und mit zwei Fingern (oder Mausrad, Doppeltipp) zoomen. **Ausrichten** lässt die Karte dem Handy folgen: vor dem ersten Lösen grob über den Kompass (neben Metall oft 10° und mehr daneben), nach einer Positionsbestimmung mit der Kamera genau über Gyroskop und Beschleunigungssensor, bezogen auf die letzte Lösung. Erkannte Bilder lassen sich ebenfalls zoomen und verschieben. Sterne, Messier-Objekte, Mond und Planeten sind antippbar und zeigen ein Info-Blatt mit Link zu Wikipedia.
+Without camera or photo the app shows a **sky map** from the catalogue: drag to look around, pinch (or mouse wheel, double tap) to zoom. **Align** makes the map follow the phone: before the first solve roughly via the compass (often 10° or more off near metal), after a camera solve precisely via the gyroscope, relative to the last solve. Solved images can be zoomed and panned too. Stars, Messier objects, the Moon, planets and the Sun can be tapped for an info sheet with a Wikipedia link.
 
-## Wie es funktioniert
+### The Sun
 
-1. **Aufnahme:** mehrere Videoframes mitteln (weniger Rauschen), Graustufen, lange Seite maximal 1280 px.
-2. **Sternerkennung** (`detectStars`): Hintergrund und Rauschen blockweise per Median/MAD schätzen, zusammenhängende Flecken über 5σ suchen. Hotpixel, längliche oder ausgefranste Flecken, Flecken in strukturiertem Vordergrund und Himmelslücken im Laub werden verworfen. Position über den Schwerpunkt.
-3. **Lochkamera-Modell:** Pixel → Einheitsvektor über die Brennweite in Pixeln.
-4. **Matching:** Dreiecke aus den hellsten Bildsternen werden über ihre Winkelabstände im Katalog-Paarindex gesucht (binäre Suche plus Nachbarlisten, Händigkeit geprüft). Aus jedem Treffer wird die Rotation per Quaternion-Methode (Horn) berechnet und gegen alle Bildsterne verifiziert.
-5. **Unbekanntes Bildfeld:** Suche über 12–90° in 2,5-%-Schritten, in drei Durchläufen mit wachsender Zeit pro Schritt. Die Grenzhelligkeit des Index wird an das Bildfeld angepasst.
-6. **Verfeinerung:** Brennweite, radiale Verzerrung und bei genug Sternen eine Polynom-Korrektur (wie SIP) per Least-Squares, mit Ausreißer-Verwerfung.
-7. **Absicherung gegen Falschtreffer:** Restfehler unter etwa 2 px, Gegenprobe der hellsten Sterne, Rangkorrelation der Helligkeiten, ohne bekanntes Bildfeld mindestens 10 passende Sterne.
-8. **Navigation:** [Astronomy Engine](https://github.com/cosinekitty/astronomy) rechnet von J2000 ins Horizontsystem (inkl. Präzession, Nutation, Refraktion) und liefert Mond- und Planetenpositionen.
+Selecting the Sun asks you to confirm a certified full-aperture solar filter and a covered finder first. **Never look at the Sun through a telescope or finder without a proper solar filter on the front of the telescope: it causes instant, permanent eye damage.** Plate solving does not work in daylight, so guidance to the Sun relies on compass and motion sensor. To aim without looking, turn the tube until its shadow is as small and round as possible.
 
-## Aufbau
+## How it works
 
-| Pfad | Inhalt |
+1. **Capture:** several video frames are averaged (less noise), converted to grayscale, long side at most 1280 px.
+2. **Star detection** (`detectStars`): background and noise are estimated per block via median/MAD, then connected blobs above 5σ are collected. Hot pixels, elongated or ragged blobs, blobs in textured foreground, gaps in foliage and bright picture frames are rejected. Positions come from the intensity-weighted centroid.
+3. **Pinhole camera model:** pixel → unit vector via the focal length in pixels.
+4. **Matching:** triangles of the brightest image stars are looked up by their angular side lengths in a catalogue pair index (binary search plus neighbour lists, handedness checked). For each hit the rotation is computed with Horn's quaternion method and verified against all image stars.
+5. **Unknown field of view:** search over 12–90° in 2.5 % steps, in three passes with increasing time per step. The limiting magnitude of the index adapts to the field of view.
+6. **Refinement:** focal length, radial distortion and, with enough stars, a polynomial correction (like SIP) by least squares, with outlier rejection.
+7. **Guarding against false matches:** residuals below about 2 px, a cross-check of the brightest stars, rank correlation of brightness, and at least 10 matching stars when the field of view is unknown.
+8. **Navigation:** [Astronomy Engine](https://github.com/cosinekitty/astronomy) converts from J2000 to the horizon frame (including precession, nutation, refraction) and provides positions of the Sun, Moon and planets.
+9. **Motion sensors:** movement comes from the relative orientation (gyroscope), smoothed with quaternions and with jumps rejected; the compass only contributes a slowly filtered north offset.
+
+## Layout
+
+| Path | Contents |
 |---|---|
-| `src/app.html` | Oberfläche, Kamera, Overlay, Navigation |
-| `src/solver.js` | Sternerkennung und Plate Solver (auch unter Node nutzbar) |
-| `public/` | statische Zusatzdateien, werden nach `dist/` kopiert (`robots.txt`) |
-| `scripts/catalog.mjs` | erzeugt `src/data.js` aus d3-celestial: Sterne bis 6 mag, Namen, Messier, Sternbildlinien |
-| `scripts/build.mjs` | baut `dist/index.html` mit Astronomy Engine, Katalog und Solver inline |
-| `scripts/image_to_f32.py` | wandelt ein Foto für `test/photo.cjs` um |
-| `test/synthetic.cjs` | synthetische Sternfelder mit bekannter Lösung |
-| `test/photo.cjs` | löst ein echtes Foto |
+| `src/app.html` | UI, camera, overlay, sky map, navigation |
+| `src/solver.js` | star detection and plate solver (also usable in Node) |
+| `public/` | static extras copied to `dist/` (`robots.txt`) |
+| `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6, names, designations, Messier objects, constellation lines |
+| `scripts/build.mjs` | builds `dist/index.html` with Astronomy Engine, catalogue and solver inlined |
+| `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
+| `test/synthetic.cjs` | synthetic star fields with a known solution |
+| `test/photo.cjs` | solves a real photo |
 
-`dist/` und `src/data.js` werden beim Bauen erzeugt und nicht eingecheckt.
+`dist/` and `src/data.js` are generated by the build and not checked in.
 
-## Bauen und testen
+## Build and test
 
-Node 20 oder neuer.
+Node 20 or newer.
 
 ```bash
 npm install
 npm run build        # -> dist/index.html + dist/robots.txt
-npm test             # synthetische Sternfelder
-npm run dev          # lokal mit wrangler dev
-npm run deploy       # manuell deployen (sonst per Push auf main)
+npm test             # synthetic star fields
+npm run dev          # local server via wrangler dev
+npm run deploy       # manual deploy (otherwise on push to main)
 ```
 
-Echtes Foto testen (braucht Python mit Pillow und NumPy):
+Testing a real photo (needs Python with Pillow and NumPy):
 
 ```bash
-python3 scripts/image_to_f32.py foto.jpg /tmp/foto
-npm run test:photo -- /tmp/foto
+python3 scripts/image_to_f32.py photo.jpg /tmp/photo
+npm run test:photo -- /tmp/photo
 ```
 
-## Bekannte Grenzen
+## Known limitations
 
-- Unter echtem Himmel mit Live-Kamera noch nicht getestet. Ob die Videobelichtung im Browser genug Sterne liefert, hängt stark vom Handy ab.
-- Ohne bekanntes Bildfeld braucht die App mindestens 10 passende Sterne. Sehr sternarme Bilder werden deshalb lieber abgelehnt als falsch gelöst.
-- Schmale Bildfelder weit entfernt vom Startwert (66°) können beim ersten Lösen bis zu etwa 40 Sekunden dauern.
+- Not yet tested under a real sky with the live camera. Whether the browser's video exposure catches enough stars depends heavily on the phone.
+- Without a known field of view the app needs at least 10 matching stars, so very sparse images are rejected rather than solved wrongly.
+- Narrow fields far from the starting value (66°) can take up to about 40 seconds on the first solve.
+- The catalogue goes to magnitude 6, so fields narrower than about 10° (through a finder or eyepiece) cannot be solved.
 
-## Fremdcode und Daten
+## Third-party code and data
 
-- Sternkatalog, Namen, Messier-Daten und Sternbildlinien: [d3-celestial](https://github.com/ofrohn/d3-celestial) von Olaf Frohn, BSD-3-Clause
-- [Astronomy Engine](https://github.com/cosinekitty/astronomy) von Don Cross, MIT
+- Star catalogue, names, Messier data and constellation lines: [d3-celestial](https://github.com/ofrohn/d3-celestial) by Olaf Frohn, BSD-3-Clause
+- [Astronomy Engine](https://github.com/cosinekitty/astronomy) by Don Cross, MIT
