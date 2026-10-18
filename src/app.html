@@ -249,6 +249,8 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></button>
       <button class="fab" id="btnAuto" aria-pressed="false" aria-label="Dauerbetrieb"><small>Dauernd</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg></button>
+      <button class="fab" id="btnSensor" aria-pressed="false" aria-label="Ausrichten mit Kompass und Bewegungssensor"><small>Ausrichten</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></button>
       <button class="fab" id="btnCam" aria-label="Kamera an/aus"><small>Kamera</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>
     </div>
@@ -266,6 +268,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="menuTitle"><span>Menü</span> <button class="iconbtn" data-close aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Foto aus der Galerie lösen</span></button>
+      <button class="menu-item" id="btnMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg><span>Sternkarte zeigen</span></button>
       <button class="menu-item" id="btnRed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><span>Rotlicht</span><em id="redState">aus</em></button>
       <button class="menu-item" id="btnLabels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M4 12h16M4 18h7"/></svg><span>Knopf-Beschriftungen</span><em id="labelState">an</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Einstellungen</span></button>
@@ -332,6 +335,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <legend>Anzeige</legend>
       <div class="row">
         <label class="check"><input type="checkbox" id="optFill"> Bild auf ganze Fläche vergrößern</label>
+        <label class="check"><input type="checkbox" id="optMap"> Sterne aus dem Katalog einzeichnen</label>
         <label class="check"><input type="checkbox" id="optLines"> Sternbildlinien</label>
         <label class="check"><input type="checkbox" id="optNames"> Sternnamen und Messier-Objekte</label>
         <label class="check"><input type="checkbox" id="optDet"> Erkannte Lichtpunkte markieren</label>
@@ -357,7 +361,7 @@ const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 Solver.setCatalog(STARS);
 
 /* ---------------- Einstellungen ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, fabLabels: true, tele: { u: 0, v: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, fabLabels: true, map: true, tele: { u: 0, v: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 cfg.fov.demo = 60;
@@ -365,7 +369,9 @@ function save() { try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)
 
 /* ---------------- Zustand ---------------- */
 const st = {
-  source: "demo",           // demo | video | photo
+  sensor: false, base: null, moved: false, solMode: "", picked: null,
+  source: "map",            // map | video | photo
+  mapView: { az: 180, alt: 45, fov: 70 },
   frame: null,              // Canvas des zuletzt gelösten/geladenen Bildes
   sol: null, solAt: 0, stars: [],
   busy: false, auto: false, teleMode: false,
@@ -448,43 +454,6 @@ function imageToFrame(src, sw, sh, maxLong) {
   return { gray: acc, w, h, canvas: c };
 }
 
-/* Beispielbild: simulierter Himmel um Kassiopeia und Andromeda */
-function makeDemo() {
-  const w = 1280, h = 720, fov = 60, f = (w / 2) / Math.tan(fov / 2 * D2R);
-  // Blickrichtung: etwas neben M31, damit die Pfeile gleich etwas zu tun haben
-  const t = A.MakeTime(new Date()), obs = observer(), toEqj = A.Rotation_HOR_EQJ(t, obs);
-  const m31 = horiz(Solver.radec2v(10.68, 41.27), t);
-  const alt = m31.alt > 20 ? Math.min(70, m31.alt - 6) : 45, az = m31.alt > 20 ? m31.az - 24 : 60;
-  const hv = A.VectorFromHorizon(new A.Spherical(alt, az, 1), t, "normal"), zv = A.RotateVector(toEqj, new A.Vector(0, 0, 1, t));
-  const ev = A.RotateVector(toEqj, hv);
-  let z = [ev.x, ev.y, ev.z]; const nz = Math.hypot(...z); z = z.map(q => q / nz);
-  const zen = [zv.x, zv.y, zv.z], kd = zen[0] * z[0] + zen[1] * z[1] + zen[2] * z[2];
-  let up = zen.map((q, i) => q - kd * z[i]); const nu = Math.hypot(...up); up = up.map(q => q / nu);
-  const y = up.map(q => -q);                                   // Bild-y zeigt nach unten
-  const x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
-  const sol = { R: [[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]], f, cx: w / 2, cy: h / 2 };
-  const c = document.createElement("canvas"); c.width = w; c.height = h; const ctx = c.getContext("2d", { willReadFrequently: true });
-  const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#07090f"); g.addColorStop(1, "#1d1a1c");
-  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  const img = ctx.getImageData(0, 0, w, h), d = img.data;
-  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < d.length; i += 4) { const n = (rnd() + rnd() + rnd() - 1.5) * 9; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
-  const cat = Solver.cat;
-  for (let i = 0; i < cat.n; i++) {
-    if (cat.mag[i] > 4.9) continue;
-    const p = Solver.skyToPix(sol, cat.v[i]); if (!p || p.x < 3 || p.y < 3 || p.x > w - 4 || p.y > h - 4) continue;
-    const fl = 2600 * Math.pow(10, -0.4 * (cat.mag[i] - 1)), sg = 1.3;
-    for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
-      const X = Math.round(p.x) + dx, Y = Math.round(p.y) + dy, r2 = (X + .5 - p.x) ** 2 + (Y + .5 - p.y) ** 2;
-      const v = fl * Math.exp(-r2 / (2 * sg * sg)) / (2 * Math.PI * sg * sg), k = (Y * w + X) * 4;
-      d[k] += v; d[k + 1] += v * 0.97; d[k + 2] += v * 1.05;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-  const acc = new Float32Array(w * h); toGray(ctx, w, h, acc);
-  return { gray: acc, w, h, canvas: c };
-}
-
 /* ---------------- Kamera ---------------- */
 async function startCamera() {
   if (st.stream) { stopCamera(); return; }
@@ -492,7 +461,8 @@ async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
     st.stream = stream; st.track = stream.getVideoTracks()[0];
     video.srcObject = stream; await video.play();
-    st.source = "video"; st.sol = null; st.stars = []; $("srcTag").textContent = "Live-Kamera";
+    st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
+    if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; }
     $("btnCam").classList.add("on");
     try { await navigator.wakeLock?.request("screen"); } catch (e) {}
     buildCamControls();
@@ -508,7 +478,14 @@ async function startCamera() {
 function stopCamera() {
   st.stream?.getTracks().forEach(t => t.stop()); st.stream = null; st.track = null; video.srcObject = null;
   $("btnCam").classList.remove("on"); setAuto(false);
-  if (st.source === "video") { st.source = st.frame ? "frozen" : "demo"; $("srcTag").textContent = "Letztes Kamerabild"; }
+  if (st.source === "video") showMap();
+}
+// Zur reinen Sternkarte wechseln; Blickrichtung von der letzten Lösung übernehmen
+function showMap() {
+  if (st.sol && !st.sol.approx) { const h = horiz(Solver.mul(st.sol.R, [0, 0, 1]), A.MakeTime(new Date())); st.mapView.az = h.az; st.mapView.alt = Math.max(-10, h.alt); }
+  st.source = "map"; st.frame = null; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
+  if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; st.solMode = "map"; }
+  updateGuide(); renderReadout();
 }
 function buildCamControls() {
   const box = $("camctl"); box.textContent = "";
@@ -531,15 +508,20 @@ function buildCamControls() {
 }
 
 /* ---------------- Lösen ---------------- */
-function fovKey() { return st.source === "video" ? "video" : st.source === "demo" ? "demo" : "photo"; }
+function fovKey() { return st.source === "photo" ? "photo" : "video"; }
 function hfovFromLong(fl, w, h) { if (!fl) return null; const L = Math.max(w, h), f = (L / 2) / Math.tan(fl / 2 * D2R); return 2 * Math.atan(w / 2 / f) * R2D; }
 function longFromSol(sol) { const L = Math.max(sol.w, sol.h); return 2 * Math.atan(L / 2 / sol.f) * R2D; }
 
 async function solveNow() {
   if (st.busy) return;
+  if (st.source === "map" || (st.source === "video" && !st.stream)) {
+    await startCamera(); if (!st.stream) return;
+    await new Promise(r => setTimeout(r, 600));   // Belichtung einpendeln lassen
+  }
   st.busy = true; $("btnSolve").disabled = true;
   try {
     let fr;
+    const devAtCapture = st.source === "video" && sens.rel ? sens.rel.map(r => r.slice()) : null;
     if (st.source === "video" && st.stream) { setStatus("Nehme " + cfg.stack + " Bilder auf …", "busy"); fr = await captureVideo(); }
     else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
     else return;
@@ -568,13 +550,14 @@ async function solveNow() {
     st.stars = res.stars;
     const sol = res.sol;
     if (sol && sol.ok) {
-      st.sol = sol; st.solAt = Date.now(); st.solFrame = fr;
+      st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
+      st.base = st.source === "video" ? { sol, dev: devAtCapture } : null;
       if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
       else if (!known) { cfg.fov[key] = +longFromSol(sol).toFixed(2); save(); syncSettings(); hint("Bildfeld gefunden: " + cfg.fov[key].toFixed(1) + "° (gespeichert).", 5000); }
       else if (Math.abs(longFromSol(sol) - known) > 0.05) { cfg.fov[key] = +(0.8 * known + 0.2 * longFromSol(sol)).toFixed(3); save(); }
       setStatus("Gelöst · " + sol.nMatch + " Sterne · " + (sol.ms / 1000).toFixed(1) + " s", "ok");
     } else {
-      if (st.source !== "video" || !st.auto) st.sol = null;
+      if (st.source !== "video" || !st.auto) { st.sol = null; st.base = null; }
       const n = res.stars.length;
       setStatus(n < 6 ? "Nur " + n + " Sterne erkannt" : (sol?.reason || "Nicht gelöst"), "bad");
       if (!st.auto) hint(n < 6
@@ -654,7 +637,7 @@ function teleCam(sol) {
   return [x / n, y / n, sol.f / n];
 }
 function telePix(sol) { const L = Math.max(sol.w, sol.h); return { x: sol.cx + cfg.tele.u * L, y: sol.cy + cfg.tele.v * L }; }
-function teleVec() { if (!st.sol) return null; const p = telePix(st.sol); return Solver.pixToSky(st.sol, p.x, p.y); }
+function teleVec() { if (!st.sol || st.solMode === "map") return null; const p = telePix(st.sol); return Solver.pixToSky(st.sol, p.x, p.y); }
 const fmtDeg = (v, d = 1) => v.toFixed(d).replace(".", ",") + "°";
 function fmtRA(ra) { const T = Math.round(ra / 15 * 3600) % 86400, H = Math.floor(T / 3600), M = Math.floor(T / 60) % 60, S = T % 60; return `${String(H).padStart(2, "0")}h ${String(M).padStart(2, "0")}m ${String(S).padStart(2, "0")}s`; }
 function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) * 60), D = Math.floor(T / 60), M = T % 60; return `${s}${D}° ${String(M).padStart(2, "0")}′`; }
@@ -682,10 +665,11 @@ function updateGuide() {
   $("altArrow").style.transform = dAlt < 0 ? "scaleY(-1)" : "";
   const hit = sep < 0.4;
   g.classList.toggle("hit", hit);
-  g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video");
+  g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
   $("totalTxt").textContent = th.alt < 0 ? T.name + " ist gerade unter dem Horizont" : hit ? T.name + " sollte im Okular sein" : "Noch " + fmtDeg(sep) + " bis " + T.name;
   const age = Math.round((Date.now() - st.solAt) / 1000);
-  $("totalSub").textContent = (ph.alt > 80 ? "Nahe am Zenit: kleine Schübe ändern den Azimut stark. " : "") + (st.source === "video" ? "Stand vor " + age + " s" : "");
+  $("totalSub").textContent = (ph.alt > 80 ? "Nahe am Zenit: kleine Schübe ändern den Azimut stark. " : "")
+    + (st.solMode === "compass" ? "nach Kompass, ungefähr" : st.solMode === "track" ? "per Bewegungssensor" : st.source === "video" ? "Stand vor " + age + " s" : "");
   lastGuide = { ph, th, sep };
 }
 function compass(az) { return ["Nord", "Nordost", "Ost", "Südost", "Süd", "Südwest", "West", "Nordwest"][Math.round(az / 45) % 8]; }
@@ -705,6 +689,181 @@ function renderReadout() {
   else if (st.stars.length) add("Lichtpunkte erkannt", String(st.stars.length));
 }
 
+/* ---------------- Bewegungssensor und Kompass ---------------- */
+// Zwei Quellen:
+//  · relative Lage (Gyroskop + Beschleunigung): nach einem Plate-Solve wird die Karte damit mitgedreht. Genau auf ~1°,
+//    driftet langsam; jede neue Positionsbestimmung setzt den Bezug neu.
+//  · Kompass (absolute Lage): grobe Ausrichtung schon ohne Lösung. Neben Metall (Tubus, Montierung) oft 10–30° daneben.
+const mm3 = (A, B) => A.map((r, i) => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const tr3 = A => [0, 1, 2].map(i => [A[0][i], A[1][i], A[2][i]]);
+function devMatrix(a, b, g) {   // W3C: R = Rz(alpha)·Rx(beta)·Ry(gamma), Gerät -> Erde
+  a *= D2R; b *= D2R; g *= D2R;
+  const cA = Math.cos(a), sA = Math.sin(a), cB = Math.cos(b), sB = Math.sin(b), cG = Math.cos(g), sG = Math.sin(g);
+  return mm3(mm3([[cA, -sA, 0], [sA, cA, 0], [0, 0, 1]], [[1, 0, 0], [0, cB, -sB], [0, sB, cB]]), [[cG, 0, sG], [0, 1, 0], [-sG, 0, cG]]);
+}
+function camAxes() {             // Kameraachsen (x rechts, y unten, z Blickrichtung) im Gerätesystem, je nach Bildschirmdrehung
+  const th = ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R, c = Math.cos(th), s = Math.sin(th);
+  return [[c, -s, 0], [-s, -c, 0], [0, 0, -1]];
+}
+const sens = { rel: null, abs: null, absSrc: "", listening: false, lastGuide: 0, raf: 0 };
+function onOrientation(e, absolute) {
+  if (e.alpha == null || e.beta == null || e.gamma == null) return;
+  if (absolute) { sens.abs = devMatrix(e.alpha, e.beta, e.gamma); sens.absSrc = "abs"; }
+  else {
+    sens.rel = devMatrix(e.alpha, e.beta, e.gamma);
+    // iOS liefert den Kompass nur als webkitCompassHeading (im Uhrzeigersinn ab Nord)
+    if (typeof e.webkitCompassHeading === "number" && sens.absSrc !== "abs") { sens.abs = devMatrix(360 - e.webkitCompassHeading, e.beta, e.gamma); sens.absSrc = "ios"; }
+  }
+  if (st.sensor && !sens.raf) sens.raf = requestAnimationFrame(() => { sens.raf = 0; sensorUpdate(); });
+}
+async function setSensor(on) {
+  if (on) {
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+        const r = await DeviceOrientationEvent.requestPermission(); if (r !== "granted") throw new Error("verweigert");
+      }
+    } catch (e) { hint("Zugriff auf die Bewegungssensoren wurde nicht erlaubt.", 4000); return; }
+    if (!sens.listening) {
+      window.addEventListener("deviceorientation", e => onOrientation(e, false));
+      window.addEventListener("deviceorientationabsolute", e => onOrientation(e, true));
+      sens.listening = true;
+    }
+    setTimeout(() => { if (st.sensor && !sens.rel && !sens.abs) hint("Dieses Gerät liefert keine Lagedaten (Sensor fehlt oder nur über HTTPS verfügbar).", 5000); }, 1500);
+  }
+  st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
+  if (on) hint(st.base ? "Bewegungssensor an: Die Karte folgt dem Handy." : "Kompass-Modus: grobe Ausrichtung, oft 10° und mehr daneben. „Position bestimmen“ macht sie genau.", 5000);
+  else if (st.base) { st.sol = st.base.sol; st.moved = false; }
+  sensorUpdate();
+}
+// Kamera-Modell für die Kompass-Ansicht ohne Lösung
+function approxCamera() {
+  if (st.source === "map") { const W = view.width, H = view.height, f = (W / 2) / Math.tan(st.mapView.fov / 2 * D2R);
+    return { w: W, h: H, cx: W / 2, cy: H / 2, f, k1: 0, poly: null, matches: [], fov: st.mapView.fov, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0 }; }
+  let w = 1280, h = 720;
+  if (st.stream && video.videoWidth) [w, h] = sizeFor(video.videoWidth, video.videoHeight, MAXLONG);
+  else if (st.frame) { w = st.frame.w; h = st.frame.h; }
+  const fl = cfg.fov.video || 66, L = Math.max(w, h), f = (L / 2) / Math.tan(fl / 2 * D2R);
+  return { w, h, cx: w / 2, cy: h / 2, f, k1: 0, poly: null, matches: [], fov: 2 * Math.atan(w / 2 / f) * R2D, fovV: 2 * Math.atan(h / 2 / f) * R2D, rms: 0, nMatch: 0 };
+}
+function sensorUpdate() {
+  if (!st.sensor) return;
+  const C = camAxes();
+  if (st.base && st.base.dev && sens.rel) {
+    // R = R0 · Cᵀ · D0ᵀ · D · C   (Drehung des Handys seit der Aufnahme auf die gelöste Lage anwenden)
+    const R = mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C)), tr3(st.base.dev)), sens.rel), C);
+    const z0 = Solver.mul(st.base.sol.R, [0, 0, 1]), z1 = Solver.mul(R, [0, 0, 1]);
+    st.moved = Solver.angDeg(z0, z1) > 0.3;
+    st.sol = Object.assign({}, st.base.sol, { R }); st.solMode = "track"; st.solAt = Date.now();
+  } else if (!st.base && sens.abs) {
+    const t = A.MakeTime(new Date()), rot = A.Rotation_HOR_EQJ(t, observer()).rot;
+    const H2E = tr3(rot), E2H = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]];   // Ost-Nord-Oben -> Nord-West-Zenit
+    const R = mm3(mm3(mm3(H2E, E2H), sens.abs), C);
+    st.sol = Object.assign(approxCamera(), { R, approx: true }); st.solMode = "compass"; st.moved = true; st.solAt = Date.now();
+    if (!/Kompass/.test($("statusText").textContent) && !st.busy) setStatus("Kompass (ungefähr)", "");
+  }
+  const now = performance.now();
+  if (now - sens.lastGuide > 200) { sens.lastGuide = now; updateGuide(); }
+}
+
+/* ---------------- Freie Sternkarte ---------------- */
+// Blickrichtung als Azimut/Höhe, „oben“ zeigt zum Zenit (wie in Planetariumsprogrammen)
+function horToEqj(t) { return tr3(A.Rotation_HOR_EQJ(t, observer()).rot); }
+function hv(az, alt) { const a = az * D2R, h = alt * D2R; return [Math.cos(h) * Math.cos(a), -Math.cos(h) * Math.sin(a), Math.sin(h)]; }  // Nord-West-Zenit
+function mapSol() {
+  const t = A.MakeTime(new Date()), M = horToEqj(t), W = view.width, H = view.height, mv = st.mapView;
+  const z = hv(mv.az, mv.alt);
+  let up = [0, 0, 1]; const k = z[2]; up = [up[0] - k * z[0], up[1] - k * z[1], up[2] - k * z[2]];
+  let n = Math.hypot(...up); if (n < 1e-6) { up = hv(mv.az + 180, 0); n = 1; }
+  const y = up.map(q => -q / n), x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
+  const Rh = [[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]];
+  const f = (W / 2) / Math.tan(mv.fov / 2 * D2R);
+  return { R: mm3(M, Rh), f, w: W, h: H, cx: W / 2, cy: H / 2, k1: 0, poly: null, matches: [], fov: mv.fov, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0, approx: true };
+}
+function mapGestures() { return st.source === "map" && st.solMode !== "track"; }
+function mapRotate(dx, dy) {   // Finger ziehen: Himmel folgt dem Finger
+  if (st.sensor) return;
+  const mv = st.mapView, k = mv.fov / view.width;
+  mv.az = (mv.az - dx * k / Math.max(0.25, Math.cos(mv.alt * D2R)) + 360) % 360;
+  mv.alt = Math.max(-30, Math.min(90, mv.alt + dy * k));
+}
+function mapZoom(factor) { st.mapView.fov = Math.max(4, Math.min(140, st.mapView.fov / factor)); }
+function drawHorizon(c, sol, dpr, t, col) {
+  const M = horToEqj(t), W = view.width, H = view.height;
+  const toPix = (az, alt) => { const p = Solver.skyToPix(sol, Solver.mul(M, hv(az, alt))); return p && p.z > 0.05 ? P(p.x, p.y) : null; };
+  c.strokeStyle = "rgba(150,190,120,.75)"; c.lineWidth = 1.5 * dpr; c.beginPath();
+  let prev = null;
+  for (let az = 0; az <= 360; az += 2) { const q = toPix(az, 0); if (q && prev) { c.moveTo(prev[0], prev[1]); c.lineTo(q[0], q[1]); } prev = q; }
+  c.stroke();
+  c.font = `600 ${13 * dpr}px ${col("--font-ui")}`; c.textAlign = "center"; c.textBaseline = "top";
+  [["N", 0], ["NO", 45], ["O", 90], ["SO", 135], ["S", 180], ["SW", 225], ["W", 270], ["NW", 315]].forEach(([l, az]) => {
+    const q = toPix(az, 0); if (!q || q[0] < 0 || q[1] < 0 || q[0] > W || q[1] > H) return;
+    c.fillStyle = l.length === 1 ? "rgba(190,225,160,.95)" : "rgba(190,225,160,.6)"; c.fillText(l, q[0], q[1] + 4 * dpr);
+  });
+  c.textAlign = "start"; c.textBaseline = "middle";
+}
+function updateTag() {
+  const m = st.source === "photo" ? "Foto" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live-Kamera" : "Sternkarte";
+  const how = st.solMode === "compass" ? " · Kompass" : st.solMode === "track" ? " · Bewegungssensor" : st.source === "map" ? (st.sensor ? " · Ausrichten" : " · frei") : "";
+  const txt = m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+}
+
+/* ---------------- Zoomen und Verschieben ---------------- */
+const zoom = { z: 1, x: 0, y: 0 };
+const ptrs = new Map(); let gest = null, lastTap = 0;
+function canvasXY(e) { const r = view.getBoundingClientRect(), d = view.width / r.width; return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; }
+function clampPan() {
+  const W = view.width, H = view.height, lim = Math.max(W, H) * zoom.z;
+  zoom.x = Math.max(-lim, Math.min(lim, zoom.x)); zoom.y = Math.max(-lim, Math.min(lim, zoom.y));
+}
+function zoomAbout(px, py, nz) {
+  const W = view.width, H = view.height; nz = Math.max(1, Math.min(12, nz));
+  const wx = W / 2 + (px - W / 2 - zoom.x) / zoom.z, wy = H / 2 + (py - H / 2 - zoom.y) / zoom.z;
+  zoom.z = nz; zoom.x = px - W / 2 - (wx - W / 2) * nz; zoom.y = py - H / 2 - (wy - H / 2) * nz;
+  if (nz === 1) { zoom.x = 0; zoom.y = 0; }
+  clampPan();
+}
+view.addEventListener("pointerdown", e => {
+  try { view.setPointerCapture(e.pointerId); } catch (_) {}
+  ptrs.set(e.pointerId, canvasXY(e));
+  if (ptrs.size === 1) { const [x, y] = ptrs.get(e.pointerId); gest = { kind: "pan", x0: x, y0: y, px: zoom.x, py: zoom.y, moved: false }; }
+  else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    gest = { kind: "pinch", d0: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, z0: zoom.z, mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2, px: zoom.x, py: zoom.y, moved: true };
+  }
+});
+view.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId) || !gest) return;
+  ptrs.set(e.pointerId, canvasXY(e));
+  if (gest.kind === "pan" && ptrs.size === 1) {
+    const [x, y] = ptrs.get(e.pointerId), dpr = view.width / view.clientWidth;
+    if (!gest.moved && Math.hypot(x - gest.x0, y - gest.y0) < 8 * dpr) return;
+    gest.moved = true;
+    if (mapGestures()) { mapRotate(x - (gest.lx ?? gest.x0), y - (gest.ly ?? gest.y0)); gest.lx = x; gest.ly = y; }
+    else if (zoom.z > 1) { zoom.x = gest.px + x - gest.x0; zoom.y = gest.py + y - gest.y0; clampPan(); }
+  } else if (gest.kind === "pinch" && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    if (mapGestures()) { if (gest.f0 == null) gest.f0 = st.mapView.fov; st.mapView.fov = Math.max(4, Math.min(140, gest.f0 * gest.d0 / d)); return; }
+    zoom.z = gest.z0; zoom.x = gest.px; zoom.y = gest.py;
+    zoomAbout(gest.mx, gest.my, gest.z0 * d / gest.d0);
+    zoom.x += mx - gest.mx; zoom.y += my - gest.my; clampPan();
+  }
+});
+const endPtr = e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (gest && gest.kind === "pan" && !gest.moved && e.type === "pointerup") {
+    const now = performance.now();
+    if (now - lastTap < 300 && !st.teleMode) { lastTap = 0;
+      if (mapGestures()) mapZoom(st.mapView.fov > 30 ? 2.5 : 0.4);
+      else if (zoom.z > 1) zoomAbout(0, 0, 1); else { const [x, y] = canvasXY(e); zoomAbout(x, y, 3); } }
+    else { lastTap = now; handleTap(e); }
+  }
+  if (ptrs.size === 0) gest = null;
+  else if (ptrs.size === 1) { const [x, y] = [...ptrs.values()][0]; gest = { kind: "pan", x0: x, y0: y, px: zoom.x, py: zoom.y, moved: true }; }
+};
+view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", endPtr);
+view.addEventListener("wheel", e => { e.preventDefault(); const fct = Math.exp(-e.deltaY * 0.0015); if (mapGestures()) mapZoom(fct); else { const [x, y] = canvasXY(e); zoomAbout(x, y, zoom.z * fct); } }, { passive: false });
+
 /* ---------------- Zeichnen ---------------- */
 let fit = { sc: 1, ox: 0, oy: 0, w: 1, h: 1 };
 function resize() { const r = view.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); view.width = Math.round(r.width * dpr); view.height = Math.round(r.height * dpr); }
@@ -712,14 +871,21 @@ function draw() {
   const W = view.width, H = view.height, dpr = W / Math.max(1, view.clientWidth);
   vctx.setTransform(1, 0, 0, 1, 0, 0); vctx.fillStyle = "#000"; vctx.fillRect(0, 0, W, H);
   let src = null, sw = 0, sh = 0;
-  if (st.source === "video" && st.stream && video.videoWidth) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
+  const liveVideo = st.source === "video" && st.stream && video.videoWidth;
+  if (liveVideo) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
   else if (st.frame) { src = st.frame.canvas; sw = src.width; sh = src.height; }
-  if (src) {
-    const sc = (cfg.fill ? Math.max : Math.min)(W / sw, H / sh), dw = sw * sc, dh = sh * sc, ox = (W - dw) / 2, oy = (H - dh) / 2;
-    vctx.drawImage(src, ox, oy, dw, dh);
-    const ref = st.sol || st.frame || { w: sw, h: sh };
-    const k = dw / ref.w;
-    fit = { sc: k, ox, oy, w: ref.w, h: ref.h, dpr };
+  // Mit Sensor und bewegtem Handy passt ein eingefrorenes Bild nicht mehr: dann nur die Sternkarte zeigen
+  const showImg = src && (liveVideo || !st.moved);
+  if (st.source === "map" && (!st.sensor || !st.sol)) { st.sol = mapSol(); st.solMode = "map"; st.moved = true; }
+  if (st.source === "map" && st.sensor && st.solMode === "compass") sensorUpdate();
+  updateTag();
+  const ref = st.sol || st.frame || (src ? { w: sw, h: sh } : null);
+  if (ref) {
+    const bw = src ? sw : ref.w, bh = src ? sh : ref.h;
+    const sc0 = (cfg.fill ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;
+    const dw = bw * sc, dh = bh * sc, ox = W / 2 - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
+    if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
+    fit = { sc: dw / ref.w, ox, oy, w: ref.w, h: ref.h, dpr };
     drawOverlay(dpr);
   }
   requestAnimationFrame(draw);
@@ -735,11 +901,13 @@ function label(c, txt, x, y) {   // Beschriftung nur zeichnen, wenn sie nichts �
   if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return;
   placed.push(r); c.fillText(txt, x, y);
 }
+// Sternpunkte über dem echten Bild zurückhaltend, auf reiner Karte kräftig
+function showImgAlpha() { const liveVideo = st.source === "video" && st.stream; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
 function drawOverlay(dpr) {
   const c = vctx, sol = st.sol, css = getComputedStyle(document.documentElement);
   const col = n => css.getPropertyValue(n).trim();
   c.lineWidth = 1.2 * dpr; c.font = `${12 * dpr}px ${col("--font-ui")}`;
-  if (cfg.det && st.stars.length) {
+  if (cfg.det && st.stars.length && !st.moved) {
     c.strokeStyle = "rgba(200,210,220,.45)";
     st.stars.slice(0, 60).forEach(s => { const [x, y] = P(s.x, s.y); c.beginPath(); c.arc(x, y, 6 * dpr, 0, 7); c.stroke(); });
   }
@@ -747,7 +915,24 @@ function drawOverlay(dpr) {
   placed = [];
   const t = A.MakeTime(new Date()), live = st.source === "video";
   c.globalAlpha = live && Date.now() - st.solAt > 6000 ? 0.4 : 1;
-  const inView = p => p && p.x > -50 && p.y > -50 && p.x < sol.w + 50 && p.y < sol.h + 50;
+  const W = view.width, H = view.height;
+  const inView = p => { if (!p) return false; const [x, y] = P(p.x, p.y); return x > -40 * dpr && y > -40 * dpr && x < W + 40 * dpr && y < H + 40 * dpr; };
+  // Sternkarte: Katalogsterne als Punkte, Größe nach Helligkeit, beim Zoomen mehr Namen
+  const zf = Math.sqrt(zoom.z), boresight = Solver.mul(sol.R, [0, 0, 1]);
+  const halfDiag = Math.atan(Math.hypot(W, H) / 2 / (fit.sc * sol.f)) * R2D + 2, cosLim = Math.cos(Math.min(89, halfDiag) * D2R);
+  if (cfg.map) {
+    c.fillStyle = "rgba(215,225,255,.85)";
+    for (let k = 0; k < Solver.cat.n; k++) {
+      const v = Solver.cat.v[k]; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
+      const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.2) continue;
+      const [x, y] = P(p.x, p.y); if (x < -5 || y < -5 || x > W + 5 || y > H + 5) continue;
+      const r = Math.max(0.5, (6.4 - STARS[3 * k + 2]) * 0.55) * dpr * zf;
+      c.globalAlpha = (showImgAlpha()) * (STARS[3 * k + 2] > 5 ? 0.6 : 1);
+      c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+  const nameMag = Math.min(5.5, 3.0 + (zoom.z - 1) * 0.6);
   if (cfg.lines) {
     c.strokeStyle = col("--sky"); c.globalAlpha *= 0.55; c.lineWidth = 1 * dpr; c.beginPath();
     CLINES.forEach(L => { let prev = null; for (let i = 0; i < L.length; i += 2) {
@@ -758,11 +943,12 @@ function drawOverlay(dpr) {
     c.stroke(); c.globalAlpha /= 0.55;
   }
   c.strokeStyle = col("--ok"); c.lineWidth = 1.5 * dpr;
-  sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
+  if (!st.moved) sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
   if (cfg.names) {
     c.fillStyle = col("--fg"); c.textBaseline = "middle";
-    for (const [i, nm] of Object.entries(STARLABELS)) {
-      const k = +i; if (STARS[3 * k + 2] > 3.0) continue;
+    for (const [i, inf] of Object.entries(STARINFO)) {
+      const k = +i; if (STARS[3 * k + 2] > nameMag) continue;
+      const nm = STARLABELS[i] || inf[0] || (zoom.z >= 2 && inf[1] ? inf[1] + " " + inf[3] : ""); if (!nm) continue;
       const p = Solver.skyToPix(sol, Solver.cat.v[k]); if (!p || p.z < 0.3 || !inView(p)) continue;
       const [x, y] = P(p.x, p.y); label(c, nm, x + 12 * dpr, y);
     }
@@ -779,11 +965,18 @@ function drawOverlay(dpr) {
     });
   }
   // Teleskop-Fadenkreuz
-  const tp = telePix(sol), [tx, ty] = P(tp.x, tp.y);
-  c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr;
-  c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
-  [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); });
-  c.stroke();
+  // Horizont und Himmelsrichtungen
+  drawHorizon(c, sol, dpr, t, col);
+  const freeMap = st.solMode === "map";
+  let tx, ty;
+  if (freeMap) { tx = W / 2; ty = H / 2; }
+  else {
+    const tp = telePix(sol); [tx, ty] = P(tp.x, tp.y);
+    c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr; c.globalAlpha = sol.approx ? 0.6 : 1;
+    c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
+    [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); });
+    c.stroke(); c.globalAlpha = 1;
+  }
   // Ziel + Pfeil
   const T = targetById(cfg.target);
   if (T) {
@@ -832,8 +1025,9 @@ function drawOverlay(dpr) {
 }
 
 /* ---------------- Teleskop-Punkt antippen ---------------- */
-view.addEventListener("click", e => {
+function handleTap(e) {
   if (!st.teleMode) { const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
+  if (st.source === "map") { setTeleMode(false); hint("Den Okular-Punkt setzt du im Kamerabild.", 3000); return; }
   const ref = st.sol || st.frame; if (!ref) return;
   const r = view.getBoundingClientRect(), dpr = view.width / r.width;
   let x = ((e.clientX - r.left) * dpr - fit.ox) / fit.sc, y = ((e.clientY - r.top) * dpr - fit.oy) / fit.sc;
@@ -845,7 +1039,7 @@ view.addEventListener("click", e => {
   cfg.tele = { u: (x - ref.w / 2) / L, v: (y - ref.h / 2) / L }; save();
   setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
   hint(best ? "Teleskop-Punkt auf den Stern gesetzt." : "Teleskop-Punkt gesetzt.", 3000);
-});
+}
 function setTeleMode(on) {
   st.teleMode = on; $("btnTele").classList.toggle("on", on); $("btnTele").setAttribute("aria-pressed", on);
   if (on) hint("Stern, der gerade mittig im Okular steht, im Bild antippen.");
@@ -859,7 +1053,7 @@ function syncSettings() {
   $("fovRange").value = cfg.fovRange;
   $("stack").value = cfg.stack; $("stackV").textContent = cfg.stack;
   $("sigma").value = cfg.sigma; $("sigV").textContent = cfg.sigma <= 4 ? "hoch" : cfg.sigma >= 7 ? "niedrig" : "mittel";
-  $("optFill").checked = cfg.fill; $("redState").textContent = cfg.red ? "an" : "aus"; $("labelState").textContent = cfg.fabLabels ? "an" : "aus";
+  $("optFill").checked = cfg.fill; $("optMap").checked = cfg.map !== false; $("redState").textContent = cfg.red ? "an" : "aus"; $("labelState").textContent = cfg.fabLabels ? "an" : "aus";
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optLines").checked = cfg.lines; $("optNames").checked = cfg.names; $("optDet").checked = cfg.det; $("optRed").checked = cfg.red;
   document.documentElement.classList.toggle("red", cfg.red);
@@ -1025,7 +1219,7 @@ $("btnFovReset").onclick = () => { cfg.fov[fovKey()] = null; save(); syncSetting
 $("fovRange").onchange = () => { cfg.fovRange = $("fovRange").value; save(); };
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
-[["optFill", "fill"], ["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
+[["optFill", "fill"], ["optMap", "map"], ["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
 $("btnTeleReset").onclick = () => { cfg.tele = { u: 0, v: 0 }; save(); syncSettings(); updateGuide(); };
 
 /* ---------------- Bedienung ---------------- */
@@ -1037,11 +1231,13 @@ $("fileIn").onchange = async () => {
     const bmp = await createImageBitmap(f);
     if (st.stream) stopCamera();
     st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
-    st.source = "photo"; st.sol = null; st.stars = []; $("srcTag").textContent = "Foto: " + f.name;
+    st.source = "photo"; st.sol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     $("fileIn").value = ""; updateGuide(); renderReadout(); solveNow();
   } catch (e) { hint("Das Bild ließ sich nicht öffnen.", 4000); }
 };
 $("btnSolve").onclick = solveNow;
+$("btnSensor").onclick = () => setSensor(!st.sensor);
+$("btnMap").onclick = () => { closeSheet("menu"); if (st.stream) stopCamera(); else showMap(); };
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Dauerbetrieb braucht die Live-Kamera.", 3000); return; } setAuto(!st.auto); };
 $("btnTele").onclick = () => { if (!st.sol && !st.frame) return; setTeleMode(!st.teleMode); };
 $("q").addEventListener("input", showResults);
@@ -1049,10 +1245,12 @@ $("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("
 
 window.addEventListener("resize", resize);
 resize(); syncSettings(); renderChips();
-st.frame = makeDemo(); st.source = "demo";
+// Start: freie Sternkarte, Blick Richtung Ziel (falls über dem Horizont), sonst nach Süden
+{ const T = targetById(cfg.target), t = A.MakeTime(new Date());
+  if (T) { const h = horiz(T.vec(t), t); if (h.alt > 5) { st.mapView.az = h.az; st.mapView.alt = Math.min(70, h.alt); } } }
+st.solMode = "map";
 updateGuide(); renderReadout();
 requestAnimationFrame(draw);
-setTimeout(solveNow, 200);
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
 </script>

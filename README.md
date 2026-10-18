@@ -13,6 +13,8 @@ Alles läuft lokal im Browser: kein Server, keine Anmeldung. Die fertige App ist
 
 Über **Foto** lassen sich auch gespeicherte Himmelsfotos lösen, praktisch zum Testen.
 
+Ohne Kamera und Foto zeigt die App eine **Sternkarte** aus dem Katalog: frei mit dem Finger drehen und mit zwei Fingern (oder Mausrad, Doppeltipp) zoomen. **Ausrichten** lässt die Karte dem Handy folgen: vor dem ersten Lösen grob über den Kompass (neben Metall oft 10° und mehr daneben), nach einer Positionsbestimmung mit der Kamera genau über Gyroskop und Beschleunigungssensor, bezogen auf die letzte Lösung. Erkannte Bilder lassen sich ebenfalls zoomen und verschieben. Sterne, Messier-Objekte, Mond und Planeten sind antippbar und zeigen ein Info-Blatt mit Link zu Wikipedia.
+
 ## Wie es funktioniert
 
 1. **Aufnahme:** mehrere Videoframes mitteln (weniger Rauschen), Graustufen, lange Seite maximal 1280 px.
