@@ -456,6 +456,11 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
     </fieldset>
     <fieldset>
+      <legend>Camera</legend>
+      <div class="row"><label>Camera to use<select id="camSel"><option value="">Back camera (automatic)</option></select></label></div>
+      <p class="note" id="camNote">You can also use a USB webcam or an HDMI capture device mounted on the telescope with its own lens. Field of view and eyepiece point are remembered per camera.</p>
+    </fieldset>
+    <fieldset>
       <legend>Camera field of view</legend>
       <div class="row">
         <label>Field of view, long side (°)<input type="number" id="fov" step="0.1" placeholder="unknown"></label>
@@ -624,8 +629,18 @@ function imageToFrame(src, sw, sh, maxLong) {
 async function startCamera() {
   if (st.stream) { stopCamera(); return; }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+    let stream;
+    if (cfg.camId) {
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: cfg.camId }, ...size } }); }
+      catch (e) { if (e && (e.name === "OverconstrainedError" || e.name === "NotFoundError")) hint("The selected camera is not connected. Using the back camera.", 5000); else throw e; }
+    }
+    if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, ...size } });
     st.stream = stream; st.track = stream.getVideoTracks()[0];
+    // A camera without facing mode is an external one (USB webcam, capture device): the phone's motion sensors don't apply to it
+    st.extCam = !st.track.getSettings().facingMode && !!cfg.camId;
+    if (st.extCam && st.sensor) setSensor(false);
+    listCameras();
     video.srcObject = stream; await video.play();
     st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; }
@@ -673,6 +688,37 @@ function buildCamControls() {
   add("zoom", "Zoom", v => v.toFixed(1) + "×");
 }
 
+/* ---------------- Camera choice ---------------- */
+// Field of view and eyepiece point belong to a camera: kept per camera, keyed by its name
+const camKey = () => cfg.camId ? "cam:" + (cfg.camLabel || cfg.camId) : "default";
+function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele } }; }
+function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; }
+async function listCameras() {
+  const sel = $("camSel"); if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  let devs = [];
+  try { devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput"); } catch (e) { return; }
+  sel.textContent = "";
+  const add = (v, t) => { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o); };
+  add("", "Back camera (automatic)");
+  devs.forEach((d, i) => { if (d.deviceId) add(d.deviceId, d.label || "Camera " + (i + 1)); });
+  // the remembered camera may have a new id after reconnecting: find it by name
+  if (cfg.camId && !devs.some(d => d.deviceId === cfg.camId)) { const m = devs.find(d => d.label && d.label === cfg.camLabel); if (m) { cfg.camId = m.deviceId; save(); } }
+  if (cfg.camId && !devs.some(d => d.deviceId === cfg.camId)) add(cfg.camId, (cfg.camLabel || "Selected camera") + " (not connected)");
+  sel.value = cfg.camId || "";
+  $("camNote").textContent = devs.length && !devs.some(d => d.label)
+    ? "Start the camera once to see the camera names. You can also use a USB webcam or an HDMI capture device mounted on the telescope with its own lens."
+    : "You can also use a USB webcam or an HDMI capture device mounted on the telescope with its own lens. Field of view and eyepiece point are remembered per camera.";
+}
+$("camSel").onchange = async () => {
+  storeCamProfile();
+  const o = $("camSel").selectedOptions[0];
+  cfg.camId = $("camSel").value || ""; cfg.camLabel = cfg.camId ? o.textContent.replace(/ \(not connected\)$/, "") : "";
+  loadCamProfile(); save(); syncSettings(); updateGuide();
+  if (st.stream) { stopCamera(); await startCamera(); }
+  hint(cfg.fov.video ? "Camera changed. Its field of view and eyepiece point were restored." : "Camera changed. Its field of view is measured on the next Locate; set the eyepiece point again afterwards.", 5000);
+};
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", listCameras);
+
 /* ---------------- Solving ---------------- */
 function fovKey() { return st.source === "photo" ? "photo" : "video"; }
 function hfovFromLong(fl, w, h) { if (!fl) return null; const L = Math.max(w, h), f = (L / 2) / Math.tan(fl / 2 * D2R); return 2 * Math.atan(w / 2 / f) * R2D; }
@@ -687,7 +733,7 @@ async function solveNow() {
   st.busy = true; $("btnSolve").disabled = true;
   try {
     let fr;
-    const devAtCapture = st.source === "video" && sens.rel ? sens.rel.map(r => r.slice()) : null;
+    const devAtCapture = st.source === "video" && sens.rel && !st.extCam ? sens.rel.map(r => r.slice()) : null;
     if (st.source === "video" && st.stream) { setStatus("Capturing " + cfg.stack + " frames …", "busy"); fr = await captureVideo(); }
     else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
     else return;
@@ -1232,8 +1278,9 @@ function updateAvailability() {
     : "Eyepiece point needs a solved camera image: tap “Locate” first.");
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
-  setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo"), !hasOri
+  setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo" && !(st.extCam && st.stream)), !hasOri
     ? "This device or page provides no orientation sensor (needs HTTPS)."
+    : st.extCam && st.stream ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
     : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
   setAvail("btnSolve", !st.busy && (hasCam || st.source === "photo"), st.busy ? "Already solving …" : "No camera on this page: solve a photo from the menu instead.");
   setAvail("btnTeleReset", Math.hypot(+cfg.tele.x || 0, +cfg.tele.y || 0) > 1e-5, "The telescope is already set to the image centre.");
@@ -1631,7 +1678,7 @@ function showInfo(o) {
 }
 
 $("btnMenu").onclick = () => { renderReadout(); syncSettings(); openSheet("menu"); };
-$("btnSettings").onclick = () => { syncSettings(); openSheet("sheet"); };
+$("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
 $("fabSearch").onclick = openSearch;
 $("hudTarget").onclick = openSearch;

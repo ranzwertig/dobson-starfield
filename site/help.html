@@ -132,6 +132,8 @@
     <dl class="ref">
       <dt>Location</dt>
       <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows.</dd>
+      <dt id="camera">Camera</dt>
+      <dd>Which camera Locate uses. “Back camera (automatic)” is the phone’s main camera. The list also shows other cameras of the phone and any connected USB webcam or HDMI capture device; the names appear after the camera has been started once. Field of view and eyepiece point are remembered separately for each camera. With an external camera, Align is off, because the phone’s motion sensors don’t know how that camera moves; use Locate or Continuous instead.</dd>
       <dt id="field-of-view">Camera field of view</dt>
       <dd>The angle the camera covers along the long side of the image, measured on the first successful locate (typically 60–75° for main cameras). <b>Measure again</b> if you switch camera or zoom. The search range limits where the measurement looks.</dd>
       <dt>Compass</dt>
@@ -181,6 +183,7 @@
       <dt>Does it cost anything?</dt><dd>No. Zenigo is free, without account and without ads.</dd>
       <dt>Which phones work?</dt><dd>Current iPhones and Android phones with Safari or Chrome. The camera has to show a few stars in a short exposure, which most phones from the last few years manage.</dd>
       <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
+      <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
       <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
       <dt>What happens to my data?</dt><dd>Camera images, location and sensor data stay on your phone and are never uploaded. Details in the <a href="/privacy/">privacy policy</a>.</dd>
       <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>
