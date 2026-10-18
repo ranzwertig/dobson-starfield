@@ -50,7 +50,10 @@ header.bar {
 .iconbtn svg { width: 22px; height: 22px; }
 
 /* Bild / Karte */
-.stage { position: relative; flex: 1 1 auto; min-height: 0; background: #000; overflow: hidden; touch-action: manipulation; }
+.stage { position: relative; flex: 1 1 auto; min-height: 0; background: #000; overflow: hidden; touch-action: none; }
+/* Browser-Zoom der ganzen Seite unterbinden: gezoomt wird nur Karte bzw. Bild */
+html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+.stage canvas { touch-action: none; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
 .stage video { display: none; }
 .tag {
@@ -359,6 +362,9 @@ const $ = id => document.getElementById(id);
 const A = Astronomy;
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 Solver.setCatalog(STARS);
+// iOS Safari ignoriert user-scalable=no: Pinch-Gesten der Seite selbst abfangen
+["gesturestart", "gesturechange", "gestureend"].forEach(n => document.addEventListener(n, e => e.preventDefault(), { passive: false }));
+document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Einstellungen ---------------- */
 const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, fabLabels: true, map: true, tele: { u: 0, v: 0 }, target: "M31" };
