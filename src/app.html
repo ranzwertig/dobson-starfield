@@ -169,7 +169,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Landscape / short screens: more compact buttons, labels off, HUD not full width */
 @media (max-height: 560px) {
-  .fabs { gap: 6px; }
+  .fabs { gap: 6px; display: grid; grid-template-columns: repeat(2, auto); justify-items: center; align-items: center; }   /* two columns: fits below the menu */
+  .fab.shoot { grid-column: 2; }
   .fab { width: 42px; height: 42px; }
   .fab svg { width: 20px; height: 20px; }
   .fab.shoot { width: 54px; height: 54px; }
@@ -330,6 +331,8 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="fabs" id="fabs">
       <button class="fab" id="fabSearch" aria-label="Find target"><small>Find target</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
+      <button class="fab" id="fabFilter" aria-label="Filter what the map shows"><small>Filter</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg></button>
       <button class="fab" id="btnTele" aria-pressed="false" aria-label="Set eyepiece point"><small>Eyepiece point</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></button>
       <button class="fab" id="btnAuto" aria-pressed="false" aria-label="Continuous mode"><small>Continuous</small>
@@ -1645,10 +1648,12 @@ function syncFilter() {
   const all = pk === "all";
   $("filterChip").hidden = all; $("filterChipTxt").textContent = "Filter: " + filterName();
   $("filterState").textContent = all ? "all" : filterName().toLowerCase();
+  $("fabFilter").classList.toggle("on", !all); $("fabFilter").querySelector("small").textContent = all ? "Filter" : "Filter: " + filterName();
 }
 document.querySelectorAll("[data-show]").forEach(el => el.onchange = () => setShow({ ...cfg.show, [el.dataset.show]: el.checked }));
 $("showMag").oninput = () => setShow({ ...cfg.show, mag: +$("showMag").value });
 $("btnFilter").onclick = () => { syncFilter(); openSheet("filterSheet"); };
+$("fabFilter").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("filterChipTxt").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("btnFilterOff").onclick = () => { setShow(PRESETS.all.show); hint("Filter off: the map shows everything again.", 2500); };
 syncFilter();
