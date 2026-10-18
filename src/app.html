@@ -986,10 +986,13 @@ function selectTarget(id, confirmed) {
 // The eyepiece point is stored as a direction in the camera frame (tangent of the angles right/down of the image
 // centre), so it stays valid for any image size, zoom level and for the sky map in tracking mode.
 const topMode = () => cfg.pointer === "top";
-function teleCam() { if (topMode()) return [0, 0, 1]; const x = +cfg.tele.x || 0, y = +cfg.tele.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
+// The eyepiece point is kept separately for the two pointing modes (camera / top edge of the phone)
+function curTele() { return (topMode() ? cfg.teleTop : cfg.tele) || { x: 0, y: 0 }; }
+function setTele(t) { if (topMode()) cfg.teleTop = t; else cfg.tele = t; save(); }
+function teleCam() { const t = curTele(), x = +t.x || 0, y = +t.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
 function telePix(sol) {
   const p = Solver.skyToPix(sol, Solver.mul(sol.R, teleCam()));
-  return p || { x: sol.cx + sol.f * (+cfg.tele.x || 0), y: sol.cy + sol.f * (+cfg.tele.y || 0) };
+  return p || { x: sol.cx + sol.f * (+curTele().x || 0), y: sol.cy + sol.f * (+curTele().y || 0) };
 }
 function teleVec() { if (!st.sol || st.solMode === "map") return null; return Solver.mul(st.sol.R, teleCam()); }
 const fmtDeg = (v, d = 1) => v.toFixed(d) + "°";
@@ -1391,7 +1394,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, cfg.det, cfg.fill, cfg.target, cfg.tele.x, cfg.tele.y,
+    st.filterVer, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -1404,11 +1407,11 @@ function setAvail(id, ok, why) {
 function updateAvailability() {
   const hasCam = isSecureContext && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   const hasOri = isSecureContext && typeof DeviceOrientationEvent !== "undefined";
-  setAvail("btnTele", st.teleMode || teleModeAllowed(), st.solMode === "compass"
-    ? "Eyepiece point needs a precise position: tap “Locate” first (the compass is too rough)."
-    : "Eyepiece point needs a solved camera image: tap “Locate” first.");
+  setAvail("btnTele", st.teleMode || teleModeAllowed(), topMode()
+    ? "Turn on Align first: the eyepiece point is set on the map that follows the phone."
+    : "Eyepiece point needs a known position: tap “Locate”, or turn on Align to set it on the map.");
   const topWhy = "Not available while the top edge of the phone is the pointer (Settings → Pointing).";
-  if (topMode()) { ["btnTele", "btnAuto", "btnCam", "btnSolve"].forEach(id => setAvail(id, false, topWhy)); setAvail("btnSensor", hasOri, "This device or page provides no orientation sensor (needs HTTPS)."); setAvail("btnTeleReset", false, topWhy); return; }
+  if (topMode()) { ["btnAuto", "btnCam", "btnSolve"].forEach(id => setAvail(id, false, topWhy)); setAvail("btnSensor", hasOri, "This device or page provides no orientation sensor (needs HTTPS)."); return; }
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
   setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo" && !(st.extCam && st.stream)), !hasOri
@@ -1416,7 +1419,7 @@ function updateAvailability() {
     : st.extCam && st.stream ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
     : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
   setAvail("btnSolve", !st.busy && (hasCam || st.source === "photo"), st.busy ? "Already solving …" : "No camera on this page: solve a photo from the menu instead.");
-  setAvail("btnTeleReset", Math.hypot(+cfg.tele.x || 0, +cfg.tele.y || 0) > 1e-5, "The telescope is already set to the image centre.");
+  setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
 }
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest('[aria-disabled="true"]'); if (!b) return;
@@ -1609,10 +1612,11 @@ function drawOverlay(dpr) {
 // The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
 // then tap that star on screen. The app stores where that star lies relative to the camera's view direction; from then
 // on the crosshair marks where the telescope (not the camera) points.
-function teleModeAllowed() { return st.sol && (st.solMode === "solve" || st.solMode === "track"); }
+function teleModeAllowed() { return st.sol && (st.solMode === "solve" || st.solMode === "track" || (st.solMode === "compass" && st.sensor)); }
 function handleTap(e) {
   if (!st.teleMode) { const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
   if (!teleModeAllowed()) { setTeleMode(false); return; }
+  if (st.solMode === "compass") { alignOnMap(e); return; }
   const sol = st.sol, t = skyNow().t;
   // 1. a catalogue star / planet near the tap (works on the photo and on the tracked map)
   const o = pickAt(e.clientX, e.clientY, true);
@@ -1631,15 +1635,32 @@ function handleTap(e) {
   const off = Math.atan(Math.hypot(cfg.tele.x, cfg.tele.y)) * R2D;
   hint("Eyepiece point set" + (name ? " on " + name : "") + " · " + fmtDeg(off) + " from the image centre.", 4000);
 }
+// Without image detection (Align, compass mode): the star centred in the eyepiece is tapped on the map.
+// Its azimuth corrects the compass, its altitude the vertical offset between phone and telescope.
+function alignOnMap(e) {
+  const o = pickAt(e.clientX, e.clientY, true);
+  if (!o) { hint("Tap a star or planet on the map: the one that is centred in the eyepiece.", 4000); return; }
+  const t = skyNow().t, want = horiz(o.vec(t), t);
+  let tele = { ...curTele() }, dAz = 0, dAlt = 0;
+  for (let i = 0; i < 4; i++) {   // a few rounds: azimuth and altitude influence each other slightly
+    sensorUpdate(); const tv = teleVec(); if (!tv) return;
+    const have = horiz(tv, t);
+    dAz = ((want.az - have.az) + 540) % 360 - 180; dAlt = want.alt - have.alt;
+    if (Math.abs(dAz) < 0.02 && Math.abs(dAlt) < 0.02) break;
+    setCompassCal(+((((+cfg.compassCal || 0) - dAz) + 540) % 360 - 180).toFixed(2));
+    tele.y = Math.tan(Math.atan(+tele.y || 0) - dAlt * D2R); setTele({ ...tele });
+  }
+  sensorUpdate(); setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
+  hint("Aligned on " + o.name + ". The crosshair now marks where the telescope points. Tap the button again whenever you want to repeat it.", 5000);
+}
 function setTeleMode(on) {
   if (on && !teleModeAllowed()) {
-    hint(st.solMode === "compass" ? "The compass is too rough for this. Tap “Locate” first, then set the eyepiece point."
-      : "Tap “Locate” first: the eyepiece point is set on a solved camera image.", 5000);
+    hint(topMode() || st.source === "map" ? "Turn on Align first, then set the eyepiece point on the map." : "Tap “Locate” first, or turn on Align to set the eyepiece point on the map.", 5000);
     on = false;
   }
   st.teleMode = on; $("btnTele").classList.toggle("on", on); $("btnTele").setAttribute("aria-pressed", on);
-  if (on) hint("Centre a star in the eyepiece, then tap that star here. Tap the button again to cancel.");
-  else if (!on && st.teleMode === false && $("hint").textContent.startsWith("Centre a star")) hint(null);
+  if (on) hint(st.solMode === "compass" ? "Centre a bright star in the eyepiece, then tap that star on the map. Tap the button again to cancel." : "Centre a star in the eyepiece, then tap that star here. Tap the button again to cancel.");
+  else if (!on && st.teleMode === false && $("hint").textContent.startsWith("Centre a ")) hint(null);
 }
 
 /* ---------------- Settings UI ---------------- */
@@ -1655,7 +1676,7 @@ function syncSettings() {
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
-  const tx = +cfg.tele.x || 0, ty = +cfg.tele.y || 0;
+  const tx = +curTele().x || 0, ty = +curTele().y || 0;
   $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? "The telescope is set to point at the centre of the camera image." :
     "The telescope points " + fmtDeg(Math.abs(Math.atan(tx) * R2D)) + (tx >= 0 ? " right" : " left") + " and " + fmtDeg(Math.abs(Math.atan(ty) * R2D)) + (ty >= 0 ? " below" : " above") + " the image centre.";
 }
@@ -1859,8 +1880,8 @@ function syncQuick() {
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
   $("qLocTxt").textContent = Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
   $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels;
-  $("qCamRow").hidden = topMode(); $("qTeleRow").hidden = topMode();
-  const tx = +cfg.tele.x || 0, ty = +cfg.tele.y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
+  $("qCamRow").hidden = topMode();
+  const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
   $("qTeleReset").disabled = off < 0.01;
   const cal = +cfg.compassCal || 0;
@@ -2074,7 +2095,7 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 [["optFill", "fill"], ["optDet", "det"], ["optRed", "red"], ["optLabels", "fabLabels"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
-$("btnTeleReset").onclick = () => { cfg.tele = { x: 0, y: 0 }; save(); syncSettings(); updateGuide(); };
+$("btnTeleReset").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); };
 
 /* ---------------- Controls ---------------- */
 $("btnCam").onclick = startCamera;

@@ -60,7 +60,7 @@
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Filter</dt>
       <dd>Choose what the map shows. Lights up while a filter is active. See <a href="#filter">Filter</a>.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>Eyepiece point</dt>
-      <dd>Tell the app where the telescope points relative to the camera. Available after a locate. See <a href="#eyepiece">Eyepiece point</a>.</dd>
+      <dd>Tell the app where the telescope points relative to the phone. Available after a locate, or with Align on the map. See <a href="#eyepiece">Eyepiece point</a>.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg>Continuous</dt>
       <dd>Locates again and again by itself while the camera runs. After the first solve each further one only checks the predicted position, which takes a few milliseconds. Needs the live camera.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Align</dt>
@@ -101,7 +101,8 @@
       <li>Tap <b>Locate</b>.</li>
       <li>Tap <b>Eyepiece point</b>, then the same star on the screen. The tap snaps to the nearest star and confirms it by name.</li>
     </ol>
-    <p>Tap the button again to cancel. Settings shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre. Set it again whenever the holder has moved.</p>
+    <p><b>Without image detection</b> (camera off, or <a href="#top-edge">top edge</a> mode): turn on <b>Align</b>, centre a bright star in the eyepiece, tap <b>Eyepiece point</b> and then tap that star on the map. The app corrects the compass by the azimuth difference and stores the height difference between phone and telescope. The crosshair then marks where the telescope points, accurate to about a degree near that star; repeat it on another star when you move far across the sky.</p>
+    <p>Tap the button again to cancel. Camera and top edge mode each keep their own eyepiece point. Settings shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre. Set it again whenever the holder has moved.</p>
 
     <h2 id="targets">Targets and object details</h2>
     <p>Targets are the Sun, the Moon, the planets, all 110 Messier objects and the bright named stars. Tap any object on the map for its details: brightness, distance (Moon and planets), altitude and azimuth right now, coordinates and the distance from the eyepiece. <b>Set as target</b> makes it your target.</p>
@@ -137,8 +138,8 @@
     <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Pointing → Top edge</b>. The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction, with the back of the phone as “up”.</p>
     <ul>
       <li>Align switches on automatically; the position comes from compass and motion sensor only.</li>
-      <li>Locate, Camera, Continuous and Eyepiece point are not available in this mode.</li>
-      <li>The compass is often several degrees off. Align once on a bright star with <b>I’m pointing at it</b> (see <a href="#compass">Compass correction</a>); the gyroscope then keeps the direction steady for a while.</li>
+      <li>Locate, Camera and Continuous are not available in this mode.</li>
+      <li>The compass is often several degrees off, and the phone is rarely exactly parallel to the tube. Centre a bright star in the eyepiece and set the <a href="#eyepiece">eyepiece point</a> on it: that corrects both at once, and the crosshair then marks where the telescope points.</li>
       <li>Expect an accuracy of one to a few degrees: enough with a finder or a low-power eyepiece, not for small objects at high magnification.</li>
     </ul>
 
