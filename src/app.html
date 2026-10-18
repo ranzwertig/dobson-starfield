@@ -67,7 +67,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 /* Degree readouts at the top of the image */
 .hud {
   position: absolute; top: max(8px, var(--safe-top)); left: max(8px, env(safe-area-inset-left, 0px));
-  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 54px);
+  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 96px);
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
 .hcell {
@@ -137,7 +137,15 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
 
 /* Menu button top right, capture button as a large round button at the bottom of the stack */
-.menu-fab { position: absolute; top: max(8px, var(--safe-top)); right: max(8px, env(safe-area-inset-right, 0px)); width: 46px; height: 46px; }
+.menu-pill {
+  position: absolute; top: max(8px, var(--safe-top)); right: max(8px, env(safe-area-inset-right, 0px)); height: 46px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px; padding: 0 12px 0 7px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); color: var(--fg);
+}
+.menu-pill img { width: 30px; height: 30px; border-radius: 9px; display: block; }
+.menu-pill i { width: 1px; height: 22px; background: var(--line); }
+.menu-pill svg { width: 21px; height: 21px; }
+.menu-pill:active { background: var(--raise); }
 .fab.shoot { width: 64px; height: 64px; background: var(--accent); border-color: var(--accent); color: #17110a; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
 .fab.shoot svg { width: 28px; height: 28px; }
 .fab.shoot:disabled { opacity: .6; cursor: default; }
@@ -150,7 +158,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   .fab svg { width: 20px; height: 20px; }
   .fab.shoot { width: 54px; height: 54px; }
   .fabs.labels .fab small { opacity: 0; }
-  .menu-fab { width: 42px; height: 42px; }
+  .menu-pill { height: 42px; }
+  .menu-pill img { width: 27px; height: 27px; }
   .hud { max-width: 560px; }
   .hcell svg { width: 24px; height: 24px; }
   .hcell .v { font-size: 18px; }
@@ -291,7 +300,9 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
       <div class="tag" id="srcTag">Sky map</div>
     </div>
-    <button class="fab menu-fab" id="btnMenu" aria-label="Menu">
+    <button class="menu-pill" id="btnMenu" aria-label="Zenigo menu">
+      <img src="logo.svg" alt="" width="30" height="30">
+      <i aria-hidden="true"></i>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
 
@@ -442,10 +453,14 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { u: 0, v: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 cfg.fov.demo = 60;
+if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
+  const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
+  cfg.tele = { x: cfg.tele.u * k, y: cfg.tele.v * k };
+}
 function save() { try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} }
 
 /* ---------------- State ---------------- */
@@ -730,12 +745,14 @@ function selectTarget(id, confirmed) {
 }
 
 /* ---------------- Telescope direction + guidance ---------------- */
-function teleCam(sol) {
-  const L = Math.max(sol.w, sol.h), x = cfg.tele.u * L, y = cfg.tele.v * L, n = Math.hypot(x, y, sol.f);
-  return [x / n, y / n, sol.f / n];
+// The eyepiece point is stored as a direction in the camera frame (tangent of the angles right/down of the image
+// centre), so it stays valid for any image size, zoom level and for the sky map in tracking mode.
+function teleCam() { const x = +cfg.tele.x || 0, y = +cfg.tele.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
+function telePix(sol) {
+  const p = Solver.skyToPix(sol, Solver.mul(sol.R, teleCam()));
+  return p || { x: sol.cx + sol.f * (+cfg.tele.x || 0), y: sol.cy + sol.f * (+cfg.tele.y || 0) };
 }
-function telePix(sol) { const L = Math.max(sol.w, sol.h); return { x: sol.cx + cfg.tele.u * L, y: sol.cy + cfg.tele.v * L }; }
-function teleVec() { if (!st.sol || st.solMode === "map") return null; const p = telePix(st.sol); return Solver.pixToSky(st.sol, p.x, p.y); }
+function teleVec() { if (!st.sol || st.solMode === "map") return null; return Solver.mul(st.sol.R, teleCam()); }
 const fmtDeg = (v, d = 1) => v.toFixed(d) + "°";
 function fmtRA(ra) { const T = Math.round(ra / 15 * 3600) % 86400, H = Math.floor(T / 3600), M = Math.floor(T / 60) % 60, S = T % 60; return `${String(H).padStart(2, "0")}h ${String(M).padStart(2, "0")}m ${String(S).padStart(2, "0")}s`; }
 function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) * 60), D = Math.floor(T / 60), M = T % 60; return `${s}${D}° ${String(M).padStart(2, "0")}′`; }
@@ -1114,7 +1131,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    cfg.map, cfg.lines, cfg.names, cfg.det, cfg.fill, cfg.target, cfg.tele.u, cfg.tele.v,
+    cfg.map, cfg.lines, cfg.names, cfg.det, cfg.fill, cfg.target, cfg.tele.x, cfg.tele.y,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -1295,25 +1312,40 @@ function drawOverlay(dpr) {
 }
 
 /* ---------------- Tap telescope point ---------------- */
+// The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
+// then tap that star on screen. The app stores where that star lies relative to the camera's view direction; from then
+// on the crosshair marks where the telescope (not the camera) points.
+function teleModeAllowed() { return st.sol && (st.solMode === "solve" || st.solMode === "track"); }
 function handleTap(e) {
   if (!st.teleMode) { const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
-  if (st.source === "map") { setTeleMode(false); hint("Set the eyepiece point in the camera image.", 3000); return; }
-  const ref = st.sol || st.frame; if (!ref) return;
-  const r = view.getBoundingClientRect(), dpr = view.width / r.width;
-  let x = ((e.clientX - r.left) * dpr - fit.ox) / fit.sc, y = ((e.clientY - r.top) * dpr - fit.oy) / fit.sc;
-  // snap to a nearby light point
-  let best = null, bd = 28 / fit.sc * dpr;
-  st.stars.forEach(s => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; best = s; } });
-  if (best) { x = best.x; y = best.y; }
-  const L = Math.max(ref.w, ref.h);
-  cfg.tele = { u: (x - ref.w / 2) / L, v: (y - ref.h / 2) / L }; save();
+  if (!teleModeAllowed()) { setTeleMode(false); return; }
+  const sol = st.sol, t = skyNow().t;
+  // 1. a catalogue star / planet near the tap (works on the photo and on the tracked map)
+  const o = pickAt(e.clientX, e.clientY, true);
+  let v = o ? o.vec(t) : null, name = o ? o.name : null;
+  if (!v) {
+    // 2. a detected point of light in the solved image, 3. otherwise exactly where tapped
+    const r = view.getBoundingClientRect(), dpr = view.width / r.width;
+    let x = ((e.clientX - r.left) * dpr - fit.ox) / fit.sc, y = ((e.clientY - r.top) * dpr - fit.oy) / fit.sc;
+    if (!st.moved) { let bd = 28 / fit.sc * dpr; st.stars.forEach(s => { const d = Math.hypot(s.x - x, s.y - y); if (d < bd) { bd = d; x = s.x; y = s.y; name = "the point of light"; } }); }
+    v = Solver.pixToSky(sol, x, y);
+  }
+  const c = Solver.mulT(sol.R, v);
+  if (!(c[2] > 0.2)) { hint("That point is outside the camera’s view.", 3000); return; }
+  cfg.tele = { x: c[0] / c[2], y: c[1] / c[2] }; save();
   setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
-  hint(best ? "Eyepiece point set on the star." : "Eyepiece point set.", 3000);
+  const off = Math.atan(Math.hypot(cfg.tele.x, cfg.tele.y)) * R2D;
+  hint("Eyepiece point set" + (name ? " on " + name : "") + " · " + fmtDeg(off) + " from the image centre.", 4000);
 }
 function setTeleMode(on) {
+  if (on && !teleModeAllowed()) {
+    hint(st.solMode === "compass" ? "The compass is too rough for this. Tap “Locate” first, then set the eyepiece point."
+      : "Tap “Locate” first: the eyepiece point is set on a solved camera image.", 5000);
+    on = false;
+  }
   st.teleMode = on; $("btnTele").classList.toggle("on", on); $("btnTele").setAttribute("aria-pressed", on);
-  if (on) hint("Tap the star that is centred in the eyepiece right now.");
-  else hint(null);
+  if (on) hint("Centre a star in the eyepiece, then tap that star here. Tap the button again to cancel.");
+  else if (!on && st.teleMode === false && $("hint").textContent.startsWith("Centre a star")) hint(null);
 }
 
 /* ---------------- Settings UI ---------------- */
@@ -1327,9 +1359,9 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optLines").checked = cfg.lines; $("optNames").checked = cfg.names; $("optDet").checked = cfg.det; $("optRed").checked = cfg.red;
   document.documentElement.classList.toggle("red", cfg.red);
-  const off = Math.hypot(cfg.tele.u, cfg.tele.v);
-  $("teleInfo").textContent = off < 1e-4 ? "The telescope is set to point at the centre of the camera image." :
-    "Offset from image centre: " + (cfg.tele.u * 100).toFixed(1) + " % / " + (cfg.tele.v * 100).toFixed(1) + " % of image width" + (st.sol ? " (≈ " + fmtDeg(Math.atan(off * Math.max(st.sol.w, st.sol.h) / st.sol.f) * R2D) + ")" : "") + ".";
+  const tx = +cfg.tele.x || 0, ty = +cfg.tele.y || 0;
+  $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? "The telescope is set to point at the centre of the camera image." :
+    "The telescope points " + fmtDeg(Math.abs(Math.atan(tx) * R2D)) + (tx >= 0 ? " right" : " left") + " and " + fmtDeg(Math.abs(Math.atan(ty) * R2D)) + (ty >= 0 ? " below" : " above") + " the image centre.";
 }
 /* ---------------- Sheets: menu, target search, settings, object info ---------------- */
 // Like on iOS: slide in from the bottom, can be dragged down by the handle (or from the very top of the content).
@@ -1422,7 +1454,7 @@ function planetObj(de, en) {
   return { id: en, kind: "planet", name: de, desig: en === "Moon" ? "Earth’s moon" : en === "Sun" ? "Our star" : "Planet", body: en,
     vec: targetById(en).vec, link: "https://en.wikipedia.org/wiki/" + PLANET_WIKI[en] };
 }
-function pickAt(clientX, clientY) {
+function pickAt(clientX, clientY, pointsOnly) {
   const sol = st.sol; if (!sol) return null;
   const r = view.getBoundingClientRect(), dpr = view.width / r.width, t = A.MakeTime(new Date());
   const px = (clientX - r.left) * dpr, py = (clientY - r.top) * dpr, lim = 30 * dpr;
@@ -1433,7 +1465,7 @@ function pickAt(clientX, clientY) {
     const sc = d - bonus * dpr; if (sc < bs) { bs = sc; best = make; }
   };
   PLANETS.forEach(([de, en]) => consider(targetById(en).vec(t), 14, () => planetObj(de, en)));
-  MESSIER.forEach(row => consider(Solver.radec2v(row[1], row[2]), 8, () => messierObj(row)));
+  if (!pointsOnly) MESSIER.forEach(row => consider(Solver.radec2v(row[1], row[2]), 8, () => messierObj(row)));
   for (let k = 0; k < Solver.cat.n; k++) {
     const m = STARS[3 * k + 2]; if (m > 5.5) break;          // catalog is sorted by brightness
     consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
@@ -1522,7 +1554,7 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 [["optFill", "fill"], ["optMap", "map"], ["optLines", "lines"], ["optNames", "names"], ["optDet", "det"], ["optRed", "red"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
-$("btnTeleReset").onclick = () => { cfg.tele = { u: 0, v: 0 }; save(); syncSettings(); updateGuide(); };
+$("btnTeleReset").onclick = () => { cfg.tele = { x: 0, y: 0 }; save(); syncSettings(); updateGuide(); };
 
 /* ---------------- Controls ---------------- */
 $("btnCam").onclick = startCamera;
@@ -1542,7 +1574,7 @@ $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarg
 $("btnSensor").onclick = () => setSensor(!st.sensor);
 $("btnMap").onclick = () => { closeSheet("menu"); if (st.stream) stopCamera(); else showMap(); };
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Continuous mode needs the live camera.", 3000); return; } setAuto(!st.auto); };
-$("btnTele").onclick = () => { if (!st.sol && !st.frame) return; setTeleMode(!st.teleMode); };
+$("btnTele").onclick = () => setTeleMode(!st.teleMode);
 $("q").addEventListener("input", showResults);
 $("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("results").querySelector("button"); b && b.click(); } });
 
