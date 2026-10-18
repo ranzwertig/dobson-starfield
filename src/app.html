@@ -264,6 +264,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 }
 .menu-item:hover { background: var(--raise); }
 a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
+.lbl-sub { text-transform: none; letter-spacing: 0; margin-left: 6px; }
 .note a { color: var(--accent); }
 .menu-item svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
 .menu-item span { flex: 1; }
@@ -403,6 +404,11 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="label">Position</div>
     <div class="readout" id="readout"></div>
+    <div class="label">Tonight’s conditions <span class="lbl-sub" id="wxLoc"></span></div>
+    <div class="menu-list">
+      <a class="menu-item" id="wxSeeing" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9c3-2 5-2 8 0s5 2 8 0"/><path d="M3 14c3-2 5-2 8 0s5 2 8 0"/><path d="M17.5 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z" fill="currentColor"/></svg><span>Seeing forecast</span><em>meteoblue</em></a>
+      <a class="menu-item" id="wxClouds" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z"/></svg><span>Clouds and darkness</span><em>Clear Outside</em></a>
+    </div>
     <div class="label">Help</div>
     <div class="menu-list">
       <a class="menu-item" href="/getting-started/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4"/></svg><span>Getting started</span><em>first night, step by step</em></a>
@@ -1799,7 +1805,7 @@ function showInfo(o) {
   openSheet("infoSheet");
 }
 
-$("btnMenu").onclick = () => { renderReadout(); syncSettings(); openSheet("menu"); };
+$("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); openSheet("menu"); };
 $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
 $("fabSearch").onclick = openSearch;
@@ -1832,6 +1838,14 @@ function syncQuick() {
   $("qCalOff").disabled = !cal;
   const src = $("camSel"), dst = $("qCam");
   if (src) { dst.innerHTML = src.innerHTML; dst.value = src.value; }
+}
+// Weather links for the current location (opened from the menu)
+function syncWeatherLinks() {
+  const la = +cfg.lat || 0, lo = +cfg.lon || 0;
+  const c = la.toFixed(3) + "N" + lo.toFixed(3) + "E";   // meteoblue: signed values, south and west negative
+  $("wxSeeing").href = "https://www.meteoblue.com/en/weather/outdoorsports/seeing/" + c;
+  $("wxClouds").href = "https://clearoutside.com/forecast/" + la.toFixed(2) + "/" + lo.toFixed(2);
+  $("wxLoc").textContent = "for " + Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
 }
 $("fabQuick").onclick = () => { syncQuick(); listCameras().then(syncQuick); openSheet("quickSheet"); };
 document.querySelectorAll("[data-pointer]").forEach(b => b.onclick = () => { setPointer(b.dataset.pointer); syncQuick(); });
