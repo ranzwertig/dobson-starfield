@@ -75,8 +75,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hcell svg { width: 30px; height: 30px; flex: none; color: var(--accent); transition: transform .3s; }
 .hcell .v { font-family: var(--font-num); font-size: 22px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
 .hcell .w { font-size: 13px; color: var(--muted); line-height: 1.15; }
+.htrow { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
+.hclear { pointer-events: auto; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--glass); color: var(--muted); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.hclear svg { width: 13px; height: 13px; }
+.hclear:hover { color: var(--fg); }
 .htotal {
-  grid-column: 1 / -1; justify-self: center; max-width: 100%; box-sizing: border-box;
+  min-width: 0; max-width: 100%; box-sizing: border-box;
   background: var(--glass); border-radius: 99px; padding: 3px 12px; font-size: 13px; color: var(--muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; cursor: pointer; border: 0;
 }
@@ -127,6 +131,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .switch input:checked + i::after { transform: translateX(20px); background: #17110a; }
 .switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 #qAll { justify-self: start; margin-top: 4px; }
+#searchClear { justify-self: start; }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 12px; }
 .presets .chip.sel { border-color: var(--accent); color: var(--accent); }
 .ftog { display: flex !important; align-items: center; gap: 12px; padding: 4px 0; cursor: pointer; color: var(--fg) !important; font-size: 15px !important; }
@@ -352,7 +357,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
         <div><div class="v" id="altV">–</div><div class="w" id="altW">Altitude</div></div>
       </div>
-      <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
+      <div class="htrow">
+        <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
+        <button class="hclear" id="hudClear" aria-label="Clear target" title="Clear target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      </div>
     </div>
 
     <div class="notices">
@@ -446,6 +454,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="searchTitle"><span>Choose target</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="search"><input id="q" type="text" placeholder="Search: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Find target"></div>
     <div class="chips" id="chips"></div>
+    <button class="btn" id="searchClear">Clear target</button>
     <div class="results" id="results"></div>
   </div>
 </div>
@@ -945,6 +954,7 @@ function targetById(id) {
 const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
 
 function renderChips() {
+  $("searchClear").hidden = !cfg.target;
   const t = A.MakeTime(new Date()), box = $("chips"); box.textContent = "";
   QUICK.forEach(id => {
     const T = targetById(id); if (!T) return;
@@ -976,6 +986,13 @@ function showResults() {
     box.append(b);
   });
 }
+// No target: the red ring, the arrow and the directions disappear
+function clearTarget() {
+  if (!cfg.target) return;
+  cfg.target = null; save(); renderChips(); updateGuide(); renderReadout();
+  if (!$("searchSheet").hidden) showResults();
+  hint("Target cleared. Choose a new one with Find target.", 3000);
+}
 function selectTarget(id, confirmed) {
   // Sun only after explicit confirmation of the solar filter
   if (id === "Sun" && !confirmed && !st.sunOk) { openSheet("sunSheet"); return; }
@@ -1003,7 +1020,12 @@ let lastGuide = null;
 function updateGuide() {
   const T = targetById(cfg.target), tv = teleVec(), t = skyNow().t;
   const g = $("guide"); g.classList.remove("hit", "stale"); g.classList.toggle("idle", !teleVec());
-  if (!T) return;
+  $("hudClear").hidden = !T;
+  if (!T) {
+    g.classList.add("idle"); lastGuide = null;
+    $("totalTxt").textContent = "No target"; $("totalSub").textContent = "Tap here to choose one.";
+    return;
+  }
   const tgt = vecNow(T), th = horiz(tgt, t);
   if (!tv) {
     $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimuth"; $("altW").textContent = "Altitude";
@@ -1837,7 +1859,8 @@ function showInfo(o) {
   lb.hidden = !lb.childElementCount;
   $("infoWarn").hidden = o.body !== "Sun";
   const isTarget = cfg.target === o.id;
-  $("infoTarget").textContent = isTarget ? "Already the target" : "Set as target"; $("infoTarget").disabled = isTarget;
+  $("infoTarget").textContent = isTarget ? "Remove as target" : "Set as target"; $("infoTarget").disabled = false;
+  $("infoTarget").classList.toggle("primary", !isTarget);
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
   $("infoSync").onclick = () => {
@@ -1850,6 +1873,7 @@ function showInfo(o) {
     hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
   };
   $("infoTarget").onclick = () => {
+    if (isTarget) { clearTarget(); closeSheet("infoSheet"); return; }
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
     selectTarget(o.id); closeSheet("infoSheet");
   };
@@ -1861,6 +1885,8 @@ $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("she
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
 $("fabSearch").onclick = openSearch;
 $("hudTarget").onclick = openSearch;
+$("hudClear").onclick = clearTarget;
+$("searchClear").onclick = () => { clearTarget(); closeSheet("searchSheet"); };
 $("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("lon").onchange = () => { cfg.lon = +$("lon").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("btnGps").onclick = () => {
