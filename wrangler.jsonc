@@ -1,6 +1,6 @@
 {
   // Static site from dist/ (website at /, app at /app/, unknown paths get dist/404.html).
-  // The Worker (worker/index.js) only runs for /api/*: satellite orbital data for the app.
+  // The Worker (worker/index.js) only runs for /api/*: satellite orbital data for the app (from CelesTrak, once a day).
   // "build" makes wrangler deploy/dev run npm run build first.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dobson-starfield",

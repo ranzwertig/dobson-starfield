@@ -1556,7 +1556,7 @@ const satShort = n => /^ISS \(/.test(n) ? "ISS" : /^CSS \(/.test(n) ? "Tiangong"
 const satsOn = () => !!(cfg.show.sats && SAT.ok && navigator.onLine);
 async function loadSats(force) {
   if (!cfg.show.sats || !navigator.onLine || SAT.loading || typeof satellite === "undefined") { syncSatState(); return; }
-  if (!force && SAT.ok && Date.now() - SAT.at < 2 * 3600e3) return;
+  if (!force && SAT.ok && Date.now() - SAT.at < 6 * 3600e3) return;
   SAT.loading = true; syncSatState();
   try {
     const r = await fetch("/api/tle", { cache: "no-store" }); if (!r.ok) throw new Error(r.status);
@@ -1606,7 +1606,7 @@ function satsNow() {
 }
 addEventListener("online", () => loadSats(true));
 addEventListener("offline", () => { syncSatState(); st.filterVer++; lastSig = []; updateGuide(); });
-setInterval(() => loadSats(false), 10 * 60e3);
+setInterval(() => loadSats(false), 30 * 60e3);
 async function loadDeep() {
   try {
     const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);

@@ -1,10 +1,10 @@
 // Zenigo Worker: serves the static site (dist/) and one small API.
 //   /api/tle  current orbital elements (TLE) of the space stations and about 150 bright satellites, from CelesTrak.
-// The app only contacts its own server; the Worker fetches CelesTrak at most every two hours for everyone
-// (as CelesTrak asks) and keeps the last good copy for when CelesTrak can't be reached.
+// The app only contacts its own server; the Worker fetches CelesTrak at most once a day for everyone
+// and keeps the last good copy for when CelesTrak can't be reached.
 const GROUPS = ['stations', 'visual'];
-const FRESH = 2 * 3600e3;            // fetch new data after 2 h
-const KEEP = 3 * 86400;              // keep the last copy 3 days (stale fallback)
+const FRESH = 24 * 3600e3;           // fetch new data once a day
+const KEEP = 4 * 86400;              // keep the last copy 4 days (stale fallback)
 const CACHE_KEY = 'https://zenigo.internal/api/tle-v1';
 
 async function fetchCelestrak() {
