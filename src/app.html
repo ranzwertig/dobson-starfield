@@ -1015,9 +1015,9 @@ function makeWorker() {
   } catch (e) { worker = null; }
 }
 // Stop a running locate: the worker is ended (a search can't be interrupted from outside) and a fresh one started
-function abortSolve() {
+function abortSolve(quiet) {
   if (!st.busy) return;
-  st.abort = true;
+  st.abort = true; st.abortQuiet = !!quiet;
   if (worker) { worker.terminate(); makeWorker(); }
   Object.keys(jobs).forEach(id => { const j = jobs[id]; delete jobs[id]; j({ id: +id, type: "done", aborted: true, stars: [], sol: { ok: false, reason: "Stopped" } }); });
 }
@@ -1305,7 +1305,8 @@ async function solveNow() {
 }
 function stoppedSolve() {
   $("prog").style.width = "0"; if (st.auto) setAuto(false);
-  setStatus("Stopped", ""); hint("Locating stopped." + (st.source === "photo" ? " Tap Locate to try this photo again." : ""), 3500);
+  const quiet = st.abortQuiet; st.abortQuiet = false;
+  setStatus("Stopped", ""); if (!quiet) hint("Locating stopped." + (st.source === "photo" ? " Tap Locate to try this photo again." : ""), 3500);
   updateGuide(); renderReadout();
 }
 function setAuto(on) {
@@ -1650,6 +1651,8 @@ async function setSensor(on) {
         const r = await DeviceOrientationEvent.requestPermission(); if (r !== "granted") throw new Error("denied");
       }
     } catch (e) { showPermissionHelp("motion"); return; }
+    // Align follows the phone, a gallery photo stays still: go back to the sky map, looking where the photo pointed
+    if (st.source === "photo") { if (st.busy) abortSolve(true); showMap(); st.leftPhoto = true; }
     if (!sens.listening) {
       window.addEventListener("deviceorientation", e => onOrientation(e, false));
       window.addEventListener("deviceorientationabsolute", e => onOrientation(e, true));
@@ -1667,7 +1670,9 @@ async function setSensor(on) {
   st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
   // Pointing up, the phone lies flat and the system may rotate the screen: keep the current orientation while aligning
   try { if (on) await screen.orientation.lock(screen.orientation.type); else screen.orientation.unlock(); sens.locked = on; } catch (e) { sens.locked = false; }
-  if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
+  const fromPhoto = on && st.leftPhoto; st.leftPhoto = false;
+  if (fromPhoto) hint("Back to the sky map: Align follows the phone." + (+cfg.compassCal ? "" : " Compass mode is rough; “Locate” with the camera makes it precise."), 6000);
+  else if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
   sensorUpdate();
 }
@@ -2053,10 +2058,9 @@ function updateAvailability() {
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
   const noSensorCam = st.stream && st.extCam;
-  setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo" && !noSensorCam), !hasOri
+  setAvail("btnSensor", st.sensor || (hasOri && !noSensorCam), !hasOri
     ? "This device or page provides no orientation sensor (needs HTTPS)."
-    : noSensorCam ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
-    : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
+    : "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous.");
   setAvail("btnSolve", st.busy || hasCam || st.source === "photo", "No camera on this page: solve a photo from the menu instead.");
   const stopping = st.busy && performance.now() - (st.busyAt || 0) > 600, sb = $("btnSolve");
   if (sb.classList.contains("stop") !== stopping) {
@@ -3687,6 +3691,7 @@ $("fileIn").onchange = async () => {
   const f = $("fileIn").files[0]; if (!f) return;
   try {
     const bmp = await createImageBitmap(f);
+    if (st.sensor) setSensor(false);   // a photo does not follow the phone
     if (st.stream) stopCamera();
     st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
     st.source = "photo"; st.sol = null; st.photoSol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
