@@ -322,6 +322,13 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 }
 .fabs.labels .fab small { opacity: 1; }
 .fab.tgt-on { border-color: var(--target); color: var(--target); }
+.qbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .qbtns .btn { display: flex; align-items: center; justify-content: center; gap: 8px; } .qbtns svg { width: 18px; height: 18px; }
+.cammenu-bg { position: fixed; inset: 0; z-index: 14; }
+.cammenu { position: fixed; z-index: 15; width: min(300px, calc(100vw - 90px)); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 6px; display: grid; gap: 2px; box-shadow: 0 10px 34px rgba(0,0,0,.5); }
+.cammenu button { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: center; text-align: left; background: none; border: 0; border-radius: 10px; padding: 10px; color: var(--fg); cursor: pointer; }
+.cammenu button:hover, .cammenu button:focus-visible { background: var(--raise); outline: none; }
+.cammenu svg { width: 22px; height: 22px; color: var(--accent); }
+.cammenu b { display: block; font-weight: 600; font-size: 15px; } .cammenu small { display: block; color: var(--muted); font-size: 12.5px; }
 .fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
 
 /* Menu button top right, capture button as a large round button at the bottom of the stack */
@@ -621,6 +628,13 @@ a.btn { text-decoration: none; color: var(--fg); }
   </main>
 
   <input type="file" id="fileIn" accept="image/*" hidden>
+  <input type="file" id="nightIn" accept="image/*" capture="environment" hidden>
+  <div class="cammenu-bg" id="camMenuBg" hidden></div>
+  <div class="cammenu" id="camMenu" role="menu" aria-label="Camera" hidden>
+    <button role="menuitem" data-cam="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg><span><b>Live camera</b><small>Locate, follow with Continuous</small></span></button>
+    <button role="menuitem" data-cam="night"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><path d="M14.2 11.2a3 3 0 1 1-3.9 3.9 3.6 3.6 0 0 0 3.9-3.9z"/></svg><span><b>Night photo</b><small>With the camera app’s night mode: long exposure, many stars</small></span></button>
+    <button role="menuitem" data-cam="gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span><b>Photo from the gallery</b><small>Solve a sky photo you took before</small></span></button>
+  </div>
 </div>
 
 <div class="sheet" id="menu" hidden>
@@ -854,6 +868,10 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="qlabel">Red light <span class="qsub">keeps your eyes dark-adapted</span></div>
       <label class="switch"><input type="checkbox" id="qRed" aria-label="Red light"><i></i></label>
     </div>
+    <div class="qrow">
+      <div class="qlabel">Solve a photo <span class="qsub">night photo with the camera app, or one from your gallery</span></div>
+      <div class="qbtns"><button class="btn" id="qNight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><path d="M14.2 11.2a3 3 0 1 1-3.9 3.9 3.6 3.6 0 0 0 3.9-3.9z"/></svg> Night photo</button><button class="btn" id="qGallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg> From gallery</button></div>
+    </div>
     <div class="qrow" id="qCamRow">
       <div class="qlabel">Camera</div>
       <select id="qCam" aria-label="Camera to use"></select>
@@ -1002,7 +1020,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <fieldset data-stab="cam">
       <legend>Capture</legend>
       <div class="row">
-        <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="24" step="1"></label>
+        <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="90" step="1"></label>
         <label>Sensitivity: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
       </div>
       <div class="row camctl" id="camctl"></div>
@@ -1033,7 +1051,7 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, mount: "altaz", fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 24, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, mount: "altaz", fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
@@ -1061,6 +1079,8 @@ if (cfg.starNames == null) cfg.starNames = cfg.show.names !== false;
 if (cfg.conLines == null) cfg.conLines = cfg.show.lines !== false;
 delete cfg.show.names; delete cfg.show.lines;
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
+// stacking got smarter (motion check, float average): the old default of 6 frames becomes 24
+if (!cfg.stackV) { if (+cfg.stack === 6) cfg.stack = 24; cfg.stackV = 2; }
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
   const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
   cfg.tele = { x: cfg.tele.u * k, y: cfg.tele.v * k };
@@ -1108,7 +1128,7 @@ try {
       const m = e.data;
       try {
         const gray = new Float32Array(m.gray);
-        const stars = Solver.detectStars(gray, m.w, m.h, { sigma: m.sigma });
+        const stars = Solver.detectStars(gray, m.w, m.h, { sigma: m.sigma, noiseFloor: m.noiseFloor });
         self.postMessage({ id: m.id, type: "stars", stars });
         let sol = m.near ? Solver.solveNear(stars, m.near) : null;
         if (!sol || !sol.ok) sol = Solver.solve(stars, { w: m.w, h: m.h, fov: m.fov, fovMin: m.fovMin, fovMax: m.fovMax, fovGuess: m.fovGuess, timeBudget: m.budget,
@@ -1128,7 +1148,7 @@ function runSolve(gray, w, h, opts, onMsg) {
       const g = gray.slice(); msg.gray = g.buffer; worker.postMessage(msg, [g.buffer]);   // copy: the frame stays usable for re-solving
     } else {
       setTimeout(() => {
-        const stars = Solver.detectStars(gray, w, h, { sigma: cfg.sigma });
+        const stars = Solver.detectStars(gray, w, h, { sigma: cfg.sigma, noiseFloor: opts.noiseFloor });
         onMsg && onMsg({ type: "stars", stars });
         let sol = opts.near ? Solver.solveNear(stars, opts.near) : null;
         if (!sol || !sol.ok) sol = Solver.solve(stars, Object.assign({ w, h }, opts));
@@ -1146,29 +1166,41 @@ function toGray(ctx, w, h, acc) {
 }
 function sizeFor(sw, sh, maxLong) { const k = Math.min(1, maxLong / Math.max(sw, sh)); return [Math.round(sw * k), Math.round(sh * k)]; }
 
-async function captureVideo() {
+// Stack video frames: the average of n frames has about √n less noise, so fainter stars rise above it. The average is
+// kept as floating point (no rounding to 8 bit), and the detector is told how low the noise can now be.
+// While stacking, the motion sensor watches the telescope: moved early -> start again, moved late -> use what we have.
+async function captureVideo(n) {
   const [w, h] = sizeFor(video.videoWidth, video.videoHeight, MAXLONG);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d", { willReadFrequently: true });
-  const acc = new Float32Array(w * h), n = Math.max(1, cfg.stack | 0);
-  for (let k = 0; k < n; k++) {
+  let acc = new Float32Array(w * h), k = 0, q0 = null, restarts = 0;
+  const still = () => { if (!sens.raw || st.extCam) return true; if (!q0) { q0 = sens.raw.slice(); return true; } return qAng(q0, sens.raw) < 0.3; };
+  while (k < n) {
     if (st.abort) return null;
     await new Promise(r => video.requestVideoFrameCallback ? video.requestVideoFrameCallback(() => r()) : setTimeout(r, 70));
+    if (!still()) {
+      if (k >= Math.max(4, n / 3)) break;                                    // moved late: enough frames already
+      if (++restarts <= 6) { acc = new Float32Array(w * h); k = 0; q0 = null; setStatus("Hold the telescope still …", "busy"); continue; }
+      q0 = sens.raw.slice();                                                  // keeps moving: don't wait forever
+    }
     drawCam(ctx, video, 0, 0, w, h);
-    toGray(ctx, w, h, acc);
+    toGray(ctx, w, h, acc); k++;
+    if (k % 6 === 0) setStatus("Capturing " + k + " / " + n + " frames …", "busy");
   }
-  for (let i = 0; i < acc.length; i++) acc[i] /= n;
-  // keep the stacked image for display (brightened)
-  const img = ctx.createImageData(w, h); let mx = 1; for (let i = 0; i < acc.length; i += 7) if (acc[i] > mx) mx = acc[i];
-  for (let j = 0, i = 0; j < acc.length; j++, i += 4) { const v = Math.min(255, acc[j] * 1.6); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  for (let i = 0; i < acc.length; i++) acc[i] /= k;
+  // display: stretched so the faint stars show (background dark grey, the brightest 0.3 % white)
+  const smp = []; for (let i = 0; i < acc.length; i += 13) smp.push(acc[i]); smp.sort((a, b) => a - b);
+  const lo = smp[smp.length >> 1], hi = Math.max(lo + 8, smp[Math.floor(smp.length * 0.997)]);
+  const img = ctx.createImageData(w, h);
+  for (let j = 0, i = 0; j < acc.length; j++, i += 4) { const t = Math.max(0, (acc[j] - lo) / (hi - lo)), v = Math.min(255, 22 + 233 * Math.sqrt(t)); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
   ctx.putImageData(img, 0, 0);
-  return { gray: acc, w, h, canvas: c };
+  return { gray: acc, w, h, canvas: c, frames: k, noiseFloor: Math.max(0.06, 0.5 / Math.sqrt(k)) };
 }
-function imageToFrame(src, sw, sh, maxLong) {
+function imageToFrame(src, sw, sh, maxLong, flip) {
   const [w, h] = sizeFor(sw, sh, maxLong);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d", { willReadFrequently: true });
-  ctx.imageSmoothingQuality = "high"; ctx.drawImage(src, 0, 0, w, h);
+  ctx.imageSmoothingQuality = "high"; if (flip) drawCam(ctx, src, 0, 0, w, h); else ctx.drawImage(src, 0, 0, w, h);   // a night photo through a mirror: flipped back like the live image
   const acc = new Float32Array(w * h); toGray(ctx, w, h, acc);
   return { gray: acc, w, h, canvas: c };
 }
@@ -1318,15 +1350,19 @@ async function solveNow() {
   try {
     let fr;
     const devAtCapture = st.source === "video" && sens.rel && !st.extCam ? sens.rel.map(r => r.slice()) : null;
-    if (st.source === "video" && st.stream) { setStatus("Capturing " + cfg.stack + " frames …", "busy"); fr = await captureVideo(); if (!fr) { stoppedSolve(); return; } }
-    else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
+    if (st.source === "video" && st.stream) {
+      // a full search needs many frames; following a known position (Continuous) gets by with a third of them
+      const following = st.auto && st.base && Date.now() - st.base.at < 15000, n = following ? Math.max(4, Math.round(cfg.stack / 3)) : Math.max(1, cfg.stack | 0);
+      setStatus("Capturing " + n + " frames …", "busy"); fr = await captureVideo(n); if (!fr) { stoppedSolve(); return; }
+    }
+    else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas, noiseFloor: st.frame.noiseFloor };
     else return;
     const key = fovKey(), isPhoto = key === "photo";
     // Gallery photos each have their own field of view (different lens, crop) -> always search
     const known = isPhoto ? null : cfg.fov[key];
     let [lo, hi] = (cfg.fovRange || "25-85").split(/[-–,; ]+/).map(Number);
     if (isPhoto) { lo = Math.min(lo || 25, 12); hi = Math.max(hi || 85, 90); }
-    const opts = { budget: known ? 4000 : 90000 };
+    const opts = { budget: known ? 4000 : 90000, noiseFloor: fr.noiseFloor || 0.5 };
     if (known) {
       opts.fov = hfovFromLong(known, fr.w, fr.h);
       // Fast path: predict the orientation from the last solve (plus the gyroscope since then) and only verify it
@@ -1364,6 +1400,7 @@ async function solveNow() {
       if (st.base && devAtCapture && (mirrored() || topMode())) learnMirrorK(sol, devAtCapture);
       if (st.base) st.base.K = camK();
       if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
+      if (isPhoto && st.photoNight) afterNightPhoto(sol);
       if (sol.near) { setStatus("Tracked · " + sol.nMatch + " stars · " + Math.max(1, Math.round(sol.ms)) + " ms", "ok"); updateGuide(); renderReadout(); return; }
       if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
       else if (!known) { cfg.fov[key] = +longFromSol(sol).toFixed(2); save(); syncSettings(); hint("Field of view found: " + cfg.fov[key].toFixed(1) + "° (saved).", 5000); }
@@ -1773,7 +1810,9 @@ async function setSensor(on) {
       if (st.busy) abortSolve(true);
       // a solved photo stays pinned to its stars on the map: drawn there until removed (chip) or another photo is loaded
       if (st.photoSol && st.frame) pinPhoto();
+      const nb = st.nightBase && Date.now() - st.nightBase.at < 15 * 60e3 ? st.nightBase : null;
       showMap(); st.leftPhoto = true;
+      if (nb) { st.base = nb; st.leftPhoto = "night"; }   // a fresh night photo: follow precisely from it
     }
     if (!sens.listening) {
       window.addEventListener("deviceorientation", e => onOrientation(e, false));
@@ -1793,7 +1832,8 @@ async function setSensor(on) {
   // Pointing up, the phone lies flat and the system may rotate the screen: keep the current orientation while aligning
   try { if (on) await screen.orientation.lock(screen.orientation.type); else screen.orientation.unlock(); sens.locked = on; } catch (e) { sens.locked = false; }
   const fromPhoto = on && st.leftPhoto; st.leftPhoto = false;
-  if (fromPhoto) hint(st.pin ? "Align follows the phone, the photo stays on its stars. Turn the phone towards it to see it; × on the photo chip removes it."
+  if (fromPhoto === "night") hint("The map follows the telescope from the night photo. Keep the phone in its holder.", 6000);
+  else if (fromPhoto) hint(st.pin ? "Align follows the phone, the photo stays on its stars. Turn the phone towards it to see it; × on the photo chip removes it."
     : "Back to the sky map: Align follows the phone." + (+cfg.compassCal ? "" : " Compass mode is rough; “Locate” with the camera makes it precise."), 7000);
   else if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
@@ -1818,6 +1858,8 @@ function approxCamera() {
 }
 function sensorUpdate() {
   if (!st.sensor) return;
+  if (st.source === "photo") return;   // a photo being shown or solved stays as it is
+  if (st.base && !st.base.dev && sens.rel) st.base.dev = sens.rel.map(r => r.slice());   // night photo solved before Align was on: the phone hasn't moved since
   const C = viewK();
   if (!C) {   // mirror without a learned direction yet
     if (!st.busy && !/Locate once/.test($("statusText").textContent)) setStatus("Mirror: tap Locate once so Align can follow", "");
@@ -4337,20 +4379,60 @@ $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save
 $("btnTeleReset").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); };
 
 /* ---------------- Controls ---------------- */
-$("btnCam").onclick = startCamera;
+// Camera button: on -> off; off -> a small menu: live camera, night photo (camera app), photo from the gallery
+function openCamMenu() {
+  const m = $("camMenu"), r = $("btnCam").getBoundingClientRect();
+  m.hidden = false; $("camMenuBg").hidden = false;
+  m.style.right = (innerWidth - r.left + 10) + "px";
+  m.style.top = Math.max(8, Math.min(innerHeight - m.offsetHeight - 8, r.top + r.height / 2 - m.offsetHeight / 2)) + "px";
+  m.querySelector("button").focus({ preventScroll: true });
+}
+const closeCamMenu = () => { $("camMenu").hidden = true; $("camMenuBg").hidden = true; };
+// a tap outside only closes the menu (the backdrop catches it, so it doesn't also pick a star on the map)
+$("camMenuBg").addEventListener("pointerdown", e => { e.preventDefault(); closeCamMenu(); });
+$("btnCam").onclick = e => { if (st.stream) { stopCamera(); return; } if ($("camMenu").hidden) { e.stopPropagation(); openCamMenu(); } else closeCamMenu(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("camMenu").hidden) { closeCamMenu(); $("btnCam").focus(); } });
+const nightPhoto = () => { st.nightPending = true; $("nightIn").click(); };
+const galleryPhoto = () => { st.nightPending = false; $("fileIn").click(); };
+document.querySelectorAll("#camMenu [data-cam]").forEach(b => b.onclick = () => {
+  closeCamMenu(); const k = b.dataset.cam;
+  if (k === "live") startCamera(); else if (k === "night") nightPhoto(); else galleryPhoto();
+});
+$("qNight").onclick = () => { closeSheet("quickSheet"); nightPhoto(); };
+$("qGallery").onclick = () => { closeSheet("quickSheet"); galleryPhoto(); };
 $("btnPhoto").onclick = () => { closeSheet("menu"); $("fileIn").click(); };
-$("fileIn").onchange = async () => {
-  const f = $("fileIn").files[0]; if (!f) return;
+// A solved night photo: like a live Locate. With Align on, the map follows the phone from here at once (the photo stays
+// pinned to its stars); otherwise turning Align on does it. The compass is compared with the solve as well.
+function afterNightPhoto(sol) {
+  const pn = st.photoNight; st.photoNight = null;
+  st.nightBase = { sol, dev: pn.dev, K: pn.K, at: Date.now() };
+  if (pn.dev) calibrateCompass(sol, pn.dev);
+  if (st.sensor) {
+    pinPhoto(); st.base = st.nightBase; st.source = "map"; st.frame = null; st.solMode = "track"; sensorUpdate(); updateGuide(); renderReadout();
+    hint("Located with the night photo. The map now follows the telescope; the photo stays on its stars.", 6000);
+  } else hint("Located with the night photo. Turn on Align: the map then follows the telescope from here.", 6000);
+}
+// A photo to solve: from the gallery, or a night photo just taken with the camera app (the phone is still in its
+// holder then: once solved, the motion sensor can follow from it like after a live Locate)
+async function loadPhotoFile(input, night) {
+  const f = input.files[0]; input.value = ""; if (!f) return;
   try {
     const bmp = await createImageBitmap(f);
-    if (st.sensor) setSensor(false);   // a photo does not follow the phone
+    if (st.sensor && !night) setSensor(false);   // a gallery photo does not follow the phone
     unpinPhoto(true);
     if (st.stream) stopCamera();
-    st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
-    st.source = "photo"; st.sol = null; st.photoSol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
-    $("fileIn").value = ""; updateGuide(); renderReadout(); solveNow();
+    st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600, night && mirrored());
+    st.source = "photo"; st.sol = null; st.photoSol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = night ? "night photo" : f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
+    st.photoNight = night ? { at: Date.now(), dev: null, K: camK() } : null; st.nightBase = null;
+    if (night) {   // the phone's orientation now = when the photo was taken (wait briefly for the sensors after the camera app)
+      for (let i = 0; i < 15 && !(sens.rel && performance.now() - (sens.lastEvt || 0) < 300); i++) await new Promise(r => setTimeout(r, 100));
+      if (sens.rel) st.photoNight.dev = sens.rel.map(r => r.slice());
+    }
+    updateGuide(); renderReadout(); solveNow();
   } catch (e) { hint("Could not open the image.", 4000); }
-};
+}
+$("fileIn").onchange = () => loadPhotoFile($("fileIn"), false);
+$("nightIn").onchange = () => loadPhotoFile($("nightIn"), true);
 $("btnSolve").onclick = () => st.busy ? abortSolve() : solveNow();
 $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarget("Sun", true); };
 $("btnSensor").onclick = () => setSensor(!st.sensor);

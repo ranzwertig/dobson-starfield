@@ -139,6 +139,8 @@ const Solver = (() => {
 
   function detectStars(gray0, w, h, opts = {}) {
     const B = opts.block || 32, k = opts.sigma || 5, maxStars = opts.maxStars || 80;
+    // lowest noise assumed per pixel: half a grey level for a single 8-bit frame, less for an average of many frames
+    const noiseFloor = opts.noiseFloor || 0.5;
     const { gray, box } = trimFrame(gray0, w, h);
     const bw = Math.ceil(w / B), bh = Math.ceil(h / B), bgB = new Float32Array(bw * bh), sdB = new Float32Array(bw * bh);
     const tmp = [];
@@ -149,7 +151,7 @@ const Solver = (() => {
       const med = tmp[tmp.length >> 1];
       for (let i = 0; i < tmp.length; i++) tmp[i] = Math.abs(tmp[i] - med);
       tmp.sort((a, b) => a - b);
-      bgB[by * bw + bx] = med; sdB[by * bw + bx] = Math.max(0.5, 1.4826 * tmp[tmp.length >> 1]);
+      bgB[by * bw + bx] = med; sdB[by * bw + bx] = Math.max(noiseFloor, 1.4826 * tmp[tmp.length >> 1]);
     }
     // bilinearly interpolated background
     const bgAt = (x, y, arr) => {

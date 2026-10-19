@@ -75,7 +75,7 @@
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Align</dt>
       <dd>Lets the map and the directions follow the phone’s movement. See <a href="#modes">Sky map, camera and Align</a>. On iPhone the first tap asks for permission to use the motion sensors.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>Camera</dt>
-      <dd>Switches the live camera on or off. Off, you see the sky map.</dd>
+      <dd>While the live camera runs, a tap switches it off (you see the sky map). Otherwise it opens a small menu: <b>Live camera</b>; <a href="#night-photo"><b>Night photo</b></a> with your phone’s camera app; or <b>Photo from the gallery</b>. A tap anywhere else closes the menu.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Locate</dt>
       <dd>The large orange button. Starts the camera if needed, captures a few frames and works out exactly where the camera points (<a href="#solving">plate solving</a>). With a gallery photo loaded it solves the photo. If a locate takes longer (for example while the field of view of a new camera or photo is searched), the button turns into <b>Stop</b> with a spinning ring; tap it to cancel. Stopping also ends Continuous mode.</dd>
     </dl>
@@ -100,6 +100,7 @@
       <li>The first locate also measures the camera’s field of view and saves it. It takes up to about ten seconds, later ones about a second.</li>
       <li>It needs around ten stars in the image. Fields narrower than about 10° can’t be solved, so it does not work through the finder or the eyepiece.</li>
       <li>Trees, houses and clouds are ignored as far as possible, but the more open sky, the better.</li>
+      <li id="night-photo"><b>Night photo:</b> a browser only gets a video stream from the camera, with at most about 1/30 second per frame. Your phone’s camera app can expose for several seconds in its night mode and sees far more stars. Camera button → <b>Night photo</b> (or Quick settings → Night photo) opens the camera app: take the photo with the phone in its holder, without moving the telescope, and Zenigo solves it right away. If Align is on, the map then follows the telescope from that photo, as precisely as after a live Locate, and the photo stays pinned to its stars; otherwise turning Align on does that. Whether the camera app offers its night mode here depends on the phone; through a mirror the photo is flipped back like the live image.</li>
       <li>Gallery photos can be solved too (menu → Solve a photo from the gallery). Their field of view is searched every time. Once a photo is solved (and Align is off), drag to look at the sky around it and pinch or scroll to zoom out: the photo stays in its place on the sky, bent to the curvature of the view so its stars stay on the map stars up to its edges (the lens distortion measured by the solve is corrected too). As soon as you move, the view is levelled like the map (horizon horizontal, the photo turned to fit), and panning works like an alt-az mount, so it stays level. A double tap goes back to the photo. A photo does not follow the phone, so loading one turns Align off. Turning Align on again goes back to the sky map, which then follows the phone, and a solved photo stays pinned to its stars there: turn the phone towards it to see it. The “Photo” chip at the bottom left tells you where it is (or turns the map to it while Align is off); its × removes the photo from the sky.</li>
     </ul>
 
@@ -235,7 +236,7 @@
       <dt>Compass</dt>
       <dd>Shows and removes the <a href="#compass">compass correction</a>.</dd>
       <dt>Capture</dt>
-      <dd><b>Frames to stack</b>: how many video frames are averaged per locate; more frames show fainter stars but take longer and blur if the telescope moves. <b>Sensitivity</b>: how faint a point of light may be to count as a star; higher finds more stars but also more noise. If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well.</dd>
+      <dd><b>Frames to stack</b> (1–90, 24 by default): how many video frames are averaged per locate. Every four times as many frames halve the noise, so fainter stars appear: 24 frames take about a second, 60 frames two to four seconds. While stacking, the motion sensor watches the telescope: if it moves early, stacking starts again (“Hold the telescope still”), if it moves late, the frames so far are used. Continuous locating uses a third of the frames. <b>Sensitivity</b>: how faint a point of light may be to count as a star; higher finds more stars but also more noise. If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well.</dd>
       <dt>Display</dt>
       <dd>Fill the screen with the image (or show it whole), mark the detected points of light, red light. What the map labels: constellation lines, constellation names (the large constellations on the wide map, all of them when zoomed in; they give way to object names), star names, names of other objects (Messier and NGC, planets, satellites) and the marks for planned, starred and seen objects. The same switches are in the quick settings under <b>On the map</b>.</dd>
       <dt>Telescope and eyepieces</dt>
@@ -294,7 +295,7 @@
     <h2 id="troubleshooting">Troubleshooting</h2>
     <dl class="ref trouble">
       <dt>“Only a few stars detected”</dt>
-      <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in Settings → Capture. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
+      <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in Settings → Capture. Still too dark? Take a <a href="#night-photo">night photo</a> instead: the camera app exposes for seconds. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
       <dt>“Field of view not found” or “No match”</dt>
       <dd>If the camera looks through a mirror or prism, switch on <a href="#mirror">Mirrored image</a>. Otherwise get more open sky into the image. If you changed camera or zoom, tap Measure again in Settings. A wrong search range can also prevent the first measurement.</dd>
       <dt>The directions are off although the map looks right</dt>
