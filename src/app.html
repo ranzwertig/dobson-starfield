@@ -1168,25 +1168,39 @@ function sizeFor(sw, sh, maxLong) { const k = Math.min(1, maxLong / Math.max(sw,
 
 // Stack video frames: the average of n frames has about √n less noise, so fainter stars rise above it. The average is
 // kept as floating point (no rounding to 8 bit), and the detector is told how low the noise can now be.
-// While stacking, the motion sensor watches the telescope: moved early -> start again, moved late -> use what we have.
+// While stacking, the motion sensor watches the telescope, with a tolerance of about 2 pixels:
+// - frames taken while it moves (a bump, wind) are skipped, stacking goes on once it is still again;
+// - if it then points somewhere else, stacking starts again (early) or the frames so far are used (late).
 async function captureVideo(n) {
   const [w, h] = sizeFor(video.videoWidth, video.videoHeight, MAXLONG);
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d", { willReadFrequently: true });
-  let acc = new Float32Array(w * h), k = 0, q0 = null, restarts = 0;
-  const still = () => { if (!sens.raw || st.extCam) return true; if (!q0) { q0 = sens.raw.slice(); return true; } return qAng(q0, sens.raw) < 0.3; };
+  const degPerPx = (cfg.fov[fovKey()] || 66) / Math.max(w, h), tol = Math.max(0.1, 2 * degPerPx);   // gyro noise is ~0.05°
+  let acc = new Float32Array(w * h), k = 0, q0 = null, qPrev = null, restarts = 0, skipped = 0;
+  const t0 = performance.now(), useGyro = () => !!sens.raw && !st.extCam && performance.now() - (sens.lastEvt || 0) < 500;
   while (k < n) {
     if (st.abort) return null;
     await new Promise(r => video.requestVideoFrameCallback ? video.requestVideoFrameCallback(() => r()) : setTimeout(r, 70));
-    if (!still()) {
-      if (k >= Math.max(4, n / 3)) break;                                    // moved late: enough frames already
-      if (++restarts <= 6) { acc = new Float32Array(w * h); k = 0; q0 = null; setStatus("Hold the telescope still …", "busy"); continue; }
-      q0 = sens.raw.slice();                                                  // keeps moving: don't wait forever
+    if (useGyro()) {
+      const q = sens.raw.slice(), moving = qPrev && qAng(qPrev, q) > tol / 2; qPrev = q;
+      if (moving) {   // this frame is smeared: skip it, wait until the telescope is still
+        skipped++; if (skipped % 5 === 1) setStatus("Hold the telescope still …", "busy");
+        if (performance.now() - t0 > 12000 && k >= 4) break;   // never wait forever
+        continue;
+      }
+      if (!q0) q0 = q;
+      else if (qAng(q0, q) > tol) {   // still again, but pointing elsewhere
+        if (k >= Math.max(4, n / 3)) break;                     // enough frames from before: use them
+        acc = new Float32Array(w * h); k = 0; q0 = q;
+        if (++restarts > 8) q0 = null;
+        setStatus("Telescope moved: starting the frames again …", "busy");
+      }
     }
     drawCam(ctx, video, 0, 0, w, h);
     toGray(ctx, w, h, acc); k++;
     if (k % 6 === 0) setStatus("Capturing " + k + " / " + n + " frames …", "busy");
   }
+  if (!k) return null;
   for (let i = 0; i < acc.length; i++) acc[i] /= k;
   // display: stretched so the faint stars show (background dark grey, the brightest 0.3 % white)
   const smp = []; for (let i = 0; i < acc.length; i += 13) smp.push(acc[i]); smp.sort((a, b) => a - b);
