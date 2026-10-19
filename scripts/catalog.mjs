@@ -51,7 +51,10 @@ const lines = [];
 for (const f of ld('constellations.lines.json').features)
   for (const seg of f.geometry.coordinates) lines.push(seg.flatMap(([lon, lat]) => [rnd(ra(lon), 2), rnd(lat, 2)]));
 
-const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\n`;
+// Constellation names at their label positions: [name, ra, dec, rank] (rank 1 = prominent, 3 = faint/small)
+const cnames = ld('constellations.json').features.map(f => { const [lon, lat] = f.geometry.coordinates; return [f.properties.name, rnd(ra(lon), 2), rnd(lat, 2), +f.properties.rank || 3]; });
+
+const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\nconst CNAMES=${JSON.stringify(cnames)};\n`;
 writeFileSync(OUT, js);
 
 // ---------- Deep catalogue, loaded by the app after start (map zoomed in, eyepiece view, search) ----------

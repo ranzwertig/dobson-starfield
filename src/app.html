@@ -700,8 +700,6 @@ a.btn { text-decoration: none; color: var(--fg); }
       <legend>Stars</legend>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l1.6 5.2L19 10.8l-5.4 1.6L12 18l-1.6-5.6L5 10.8l5.4-1.6z"/></svg></span><span class="flab">Stars</span><input type="checkbox" data-show="stars"></label>
         <label class="fmag">Faintest stars: <b id="magV"></b><input type="range" id="showMag" min="2" max="9" step="0.5"></label>
-        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 7h14M5 12h10M5 17h7"/></svg></span><span class="flab">Star names</span><input type="checkbox" data-show="names"></label>
-        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="17" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="19" cy="13" r="1.5"/><path d="M6 16l4-7M12.3 8.8l5.5 3.4"/></svg></span><span class="flab">Constellation lines</span><input type="checkbox" data-show="lines"></label>
     </fieldset>
     <fieldset>
       <legend>Deep sky</legend>
@@ -862,6 +860,29 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="qlabel">Compass correction <span class="qsub" id="qCalTxt"></span></div>
       <button class="btn" id="qCalOff">Remove</button>
     </div>
+    <div class="qrow">
+      <div class="qlabel">On the map</div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Constellation lines</div>
+        <label class="switch"><input type="checkbox" id="qConLines" aria-label="Constellation lines"><i></i></label>
+      </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Constellation names</div>
+        <label class="switch"><input type="checkbox" id="qConNames" aria-label="Constellation names"><i></i></label>
+      </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Star names</div>
+        <label class="switch"><input type="checkbox" id="qStarNames" aria-label="Star names"><i></i></label>
+      </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Object names <span class="qsub">Messier and NGC, planets, satellites</span></div>
+        <label class="switch"><input type="checkbox" id="qObjLabels" aria-label="Object names"><i></i></label>
+      </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">List marks <span class="qsub">planned, starred, seen</span></div>
+        <label class="switch"><input type="checkbox" id="qListMarks" aria-label="List marks"><i></i></label>
+      </div>
+    </div>
     <div class="qrow qline">
       <div class="qlabel">Button labels</div>
       <label class="switch"><input type="checkbox" id="qLabels" aria-label="Button labels"><i></i></label>
@@ -888,6 +909,11 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optFill"> Fill the screen with the image</label>
         <label class="check"><input type="checkbox" id="optDet"> Mark detected points of light</label>
         <label class="check"><input type="checkbox" id="optRed"> Red light (preserves dark adaptation)</label>
+        <label class="check"><input type="checkbox" id="optConLines"> Constellation lines</label>
+        <label class="check"><input type="checkbox" id="optConNames"> Constellation names</label>
+        <label class="check"><input type="checkbox" id="optStarNames"> Star names</label>
+        <label class="check"><input type="checkbox" id="optObjLabels"> Names of other objects (Messier and NGC, planets, satellites)</label>
+        <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
       </div>
     </fieldset>
@@ -985,7 +1011,7 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { x: 0, y: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
@@ -995,12 +1021,12 @@ cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {}
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
 // What the map shows (filter). Old separate switches are migrated once.
-const SHOW_DEF = { solar: true, stars: true, mag: 9, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true, sats: true };
+const SHOW_DEF = { solar: true, stars: true, mag: 9, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true, sats: true };
 const DSO_KEYS = ["gal", "glob", "open", "neb", "pn"];
 const PRESETS = {
   all: { label: "Everything", show: { ...SHOW_DEF } },
-  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, names: false, lines: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false, sats: false } },
-  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, names: false, sats: false } },
+  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false, sats: false } },
+  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, sats: false } },
   eye: { label: "Naked eye", show: { ...SHOW_DEF, mag: 5, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
 };
 if (!cfg.show) cfg.show = { ...SHOW_DEF, stars: cfg.map !== false, lines: cfg.lines !== false, names: cfg.names !== false };
@@ -1008,6 +1034,10 @@ if (!cfg.show) cfg.show = { ...SHOW_DEF, stars: cfg.map !== false, lines: cfg.li
 if (!("ngc" in cfg.show)) { cfg.show.ngc = DSO_KEYS.some(k => cfg.show[k] !== false); if (cfg.show.mag >= 6.5) cfg.show.mag = 9; }
 // Satellites are new: on, unless the saved filter is one of the presets that leaves them out
 if (!("sats" in cfg.show)) { const k = Object.keys(PRESETS).find(k => Object.keys(SHOW_DEF).every(x => x === "sats" || cfg.show[x] === PRESETS[k].show[x])); cfg.show.sats = k ? PRESETS[k].show.sats : true; }
+// star names and constellation lines moved from the filter to the display settings
+if (cfg.starNames == null) cfg.starNames = cfg.show.names !== false;
+if (cfg.conLines == null) cfg.conLines = cfg.show.lines !== false;
+delete cfg.show.names; delete cfg.show.lines;
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
   const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
@@ -1795,6 +1825,7 @@ function skyNow() {
 }
 const vecNow = T => (T.kind === "planet" || T.kind === "sun") && sky.planets && sky.planets.get(T.id) || T.vec(skyNow().t);
 // Static catalogue data prepared once: unit vectors of constellation lines, Messier objects, named stars
+const CNV = (typeof CNAMES !== "undefined" ? CNAMES : []).map(([name, ra, dec, rank]) => ({ up: name.toUpperCase(), rank, v: Solver.radec2v(ra, dec) }));
 const CLV = CLINES.map(L => { const out = []; for (let i = 0; i < L.length; i += 2) out.push(Solver.radec2v(L[i], L[i + 1])); return out; });
 // Messier object classes as used by planetarium programs
 function dsoClass(type) {
@@ -1916,6 +1947,7 @@ async function loadDeep() {
 // nebula = square, planetary nebula = circle with centre dot
 // Small marks on the map: a star for objects on the list, a tick for objects already seen
 function obsMark(c, id, x, y, r, dpr) {
+  if (cfg.listMarks === false) return;
   const S = sets(), tonight = S.tonight.has(id), plan = S.list.has(id) && !tonight, star = S.starred.has(id), seen = S.seen.has(id);
   if (!plan && !star && !seen) return;
   const mx = x - r * 0.75 - 5 * dpr, my = y - r * 0.75 - 5 * dpr, k = 5 * dpr;
@@ -2331,10 +2363,12 @@ function overlayInsets(dpr) {   // layout reads are cached briefly: reading them
   return insetCache = { top: Math.max(30 * dpr, (hud.bottom - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr), at: now, dpr, w: view.width };
 }
 let placed = [];
+// names of objects on the map: can be switched off (settings, quick settings); ring and target labels stay
+function objLabel(c, txt, x, y) { if (cfg.objLabels !== false) label(c, txt, x, y); }
 function label(c, txt, x, y) {   // only draw a label if it doesn't cover anything
   const w = c.measureText(txt).width, h = parseFloat(c.font) * 1.1, r = [x, y - h / 2, x + w, y + h / 2];
-  if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return;
-  placed.push(r); c.fillText(txt, x, y);
+  if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return false;
+  placed.push(r); c.fillText(txt, x, y); return true;
 }
 // Star dots subtle over the real image, bold on the plain map
 function showImgAlpha() { const liveVideo = st.source === "video" && st.stream; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
@@ -2387,7 +2421,7 @@ function drawOverlay(dpr) {
     c.globalAlpha = 1;
   }
   const nameMag = Math.min(5.5, 3.0 + (zoom.z - 1) * 0.6);
-  if (show.lines) {
+  if (cfg.conLines !== false) {
     c.strokeStyle = col("--sky"); c.globalAlpha *= 0.55; c.lineWidth = 1 * dpr; c.beginPath();
     CLV.forEach(L => { let prev = null; for (let i = 0; i < L.length; i++) {
       const v = L[i], p = v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < 0.25 ? null : Solver.skyToPix(sol, v);
@@ -2399,7 +2433,7 @@ function drawOverlay(dpr) {
   c.strokeStyle = col("--ok"); c.lineWidth = 1.5 * dpr;
   if (!st.moved && !st.photoMoved) sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
   c.fillStyle = col("--fg"); c.textBaseline = "middle";
-  if (show.stars && show.names) {
+  if (show.stars && cfg.starNames !== false) {
     for (const S of NAMED) {
       if (S.mag > Math.min(nameMag, show.mag)) break;   // sorted by brightness
       const k = S.k, inf = S.inf, v = Solver.cat.v[k];
@@ -2415,7 +2449,7 @@ function drawOverlay(dpr) {
     MSV.forEach(({ id, mag, cls, v, size }) => {
       if (!show[cls] || (mag != null && mag > 9) || id === cfg.target) return;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) return;
-      const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); label(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75));
+      const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); objLabel(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75));
       obsMark(c, id, x, y, r, dpr);
     });
     st.drawnNgc = [];
@@ -2425,7 +2459,7 @@ function drawOverlay(dpr) {
       const v = o.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) continue;
       const [x, y] = P(p.x, p.y), r = symR(o.size) * 0.85; c.globalAlpha = 0.8; dsoSymbol(c, o.cls, x, y, r); c.globalAlpha = 1;
-      label(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o); obsMark(c, o.id, x, y, r, dpr);
+      objLabel(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o); obsMark(c, o.id, x, y, r, dpr);
     }
   }
   if (show.solar) {
@@ -2435,10 +2469,25 @@ function drawOverlay(dpr) {
       if (en === "Sun") {   // Sun as a yellow disc at true size (0.53°), at least 7 px
         const r = Math.max(7 * dpr, 0.266 * D2R * sol.f * fit.sc);
         c.fillStyle = "#ffd34d"; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
-        c.fillStyle = col("--fg"); label(c, "Sun", x + r + 6 * dpr, y); return;
+        c.fillStyle = col("--fg"); objLabel(c, "Sun", x + r + 6 * dpr, y); return;
       }
-      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); label(c, de, x + 10 * dpr, y + 12 * dpr); obsMark(c, en, x, y, 5 * dpr, dpr);
+      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); objLabel(c, de, x + 10 * dpr, y + 12 * dpr); obsMark(c, en, x, y, 5 * dpr, dpr);
     });
+  }
+  // Constellation names (optional): the big ones always, smaller ones when zoomed in; they give way to object names
+  if (cfg.conNames) {
+    const fov = sol.fov || 60, maxRank = fov > 100 ? 1 : fov > 55 ? 2 : 3;
+    c.save(); c.font = `${10.5 * dpr}px ${col("--font-ui")}`;   // size first: label() reads the height from it c.fillStyle = col("--sky"); c.globalAlpha = 0.8;
+    if ("letterSpacing" in c) c.letterSpacing = (1.5 * dpr) + "px";
+    for (const n of CNV) {
+      if (n.rank > maxRank) continue;
+      const v = n.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
+      const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) continue;
+      // the name gives way to object names: if its place is taken, try a little above or below
+      const [x, y] = P(p.x, p.y), x0 = x - c.measureText(n.up).width / 2;
+      [0, -16, 16, -32, 32].some(dy => label(c, n.up, x0, y + dy * dpr));
+    }
+    c.restore();
   }
   // Satellites: lit ones bright with a short tail showing where they move, those in Earth's shadow dim
   st.drawnSats = [];
@@ -2454,7 +2503,7 @@ function drawOverlay(dpr) {
         if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = "rgba(140,220,255,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
         c.fillStyle = "#9be3ff"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
       } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
-      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; label(c, s.x.name, x + 8 * dpr, y - 8 * dpr); }
+      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name, x + 8 * dpr, y - 8 * dpr); }
       st.drawnSats.push(s);
     }
     c.fillStyle = col("--fg");
@@ -3338,6 +3387,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
+  $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
@@ -3642,7 +3692,7 @@ function syncQuick() {
   if (document.activeElement !== $("qLon")) $("qLon").value = cfg.lon;
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
   $("qLocTxt").textContent = Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
-  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qMirror").checked = !!cfg.mirror;
+  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qMirror").checked = !!cfg.mirror;
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
   $("qTeleReset").disabled = off < 0.01;
@@ -3781,6 +3831,10 @@ $("qLon").onchange = () => { $("lon").value = $("qLon").value; $("lon").onchange
 $("qGps").onclick = () => $("btnGps").onclick();
 $("qRed").onchange = () => { cfg.red = $("qRed").checked; save(); syncSettings(); };
 $("qLabels").onchange = () => { cfg.fabLabels = $("qLabels").checked; save(); syncSettings(); };
+// what the map labels and marks: in the settings (Display) and the quick settings
+[["optObjLabels", "objLabels"], ["optConNames", "conNames"], ["optListMarks", "listMarks"], ["optConLines", "conLines"], ["optStarNames", "starNames"],
+ ["qObjLabels", "objLabels"], ["qConNames", "conNames"], ["qListMarks", "listMarks"], ["qConLines", "conLines"], ["qStarNames", "starNames"]].forEach(([id, k]) =>
+  $(id).onchange = () => { cfg[k] = $(id).checked; save(); st.filterVer++; syncSettings(); syncQuick(); });
 $("optMirror").onchange = () => setMirror($("optMirror").checked);
 $("qMirror").onchange = () => setMirror($("qMirror").checked);
 $("qCam").onchange = () => { $("camSel").value = $("qCam").value; $("camSel").onchange(); };
@@ -3809,7 +3863,6 @@ function syncFilter() {
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);
   $("showMag").value = sh.mag; $("magV").textContent = sh.mag >= 9 ? "all (to 9 mag, fainter ones when zoomed in)" : sh.mag.toFixed(1) + " mag";
   $("showMag").disabled = !sh.stars;
-  document.querySelectorAll('[data-show="names"]').forEach(el => el.disabled = !sh.stars);
   const box = $("presets"); box.textContent = "";
   Object.entries(PRESETS).forEach(([k, p]) => {
     const b = document.createElement("button"); b.className = "chip" + (k === pk ? " sel" : ""); b.textContent = p.label;
