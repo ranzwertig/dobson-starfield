@@ -167,6 +167,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .orow .omain small .warn2 { color: #ff9a8f; }
 .orow .obar { position: relative; height: 6px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: visible; }
 .orow .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
+.obarw { display: flex; align-items: center; gap: 6px; margin-top: 6px; font: 11px var(--font-num); color: var(--muted); }
+.obarw .obar { flex: 1; margin-top: 0 !important; }
+.obarw .oend { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+.obarw .oend svg { width: 15px; height: 15px; flex: none; }
 .orow .oalt { font-family: var(--font-num); font-size: 16px; color: var(--accent); text-align: right; }
 .orow .oalt.dim { font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
 .otag { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #17110a; background: var(--accent); border-radius: 5px; padding: 1px 6px; font-weight: 600; margin-right: 6px; vertical-align: 1px; }
@@ -2623,6 +2627,20 @@ function rowPlan(id, tn) {
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
+// The night bar: sunset (left) to sunrise (right), amber while the object is well placed, red tick = now
+const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v7M9 7.5l3 3 3-3"/></svg>';
+const SUN_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 10V3M9 6l3-3 3 3"/></svg>';
+function nightBar(p) {
+  const tn = nightPlan(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const w = document.createElement("div"); w.className = "obarw";
+  const a = document.createElement("span"); a.className = "oend"; a.innerHTML = tn.sunset ? SUN_DOWN : ""; a.append(fmt(tn.start));
+  a.setAttribute("aria-label", (tn.sunset ? "Sunset " : "From ") + fmt(tn.start));
+  const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true");
+  if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); }
+  const b = document.createElement("span"); b.className = "oend"; b.append(fmt(tn.end)); if (tn.sunrise) b.insertAdjacentHTML("beforeend", SUN_UP);
+  b.setAttribute("aria-label", (tn.sunrise ? "Sunrise " : "To ") + fmt(tn.end));
+  w.append(a, bar, b); return w;
+}
 // The list opens on the tab used last (remembered across starts)
 const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
 // Back from details or the target panel that were opened from the list: same tab, same place
@@ -2686,7 +2704,7 @@ function renderList() {
     sm.textContent = [kind, mag, mode === "seen" ? "seen " + seenAt : p ? p.sub : "", lastSeen ? "seen " + new Date(lastSeen).toLocaleDateString([], { day: "numeric", month: "short" }) : ""].filter(Boolean).join(" · ");
     if (p && p.warn && mode !== "seen") { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
     main.append(b, sm);
-    if (p && mode !== "seen") { const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } main.append(bar); }
+    if (p && mode !== "seen") main.append(nightBar(p));
     // planned: tap = target (at the telescope); seen and starred: tap = details
     main.onclick = mode === "todo" ? () => { selectTarget(id); closeSheet("listSheet"); } : () => { const o = objById(id); if (o) { listState.scroll = $("listSheet").querySelector(".inner").scrollTop; showInfo(o, true); } };
     const alt = document.createElement("span"); alt.className = "oalt";
@@ -2763,7 +2781,7 @@ function syncTargetPanel(force) {
   const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; box.append(k);
   if (p) {
     const d = document.createElement("div"); d.textContent = p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
-    const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } box.append(bar);
+    box.append(nightBar(p));
   } else { const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(d); }
   const S = sets(), stt = document.createElement("div"); stt.className = "st";
   const seenN = obs.log.filter(e => e.obj === T.id && e.result !== "miss").length;
