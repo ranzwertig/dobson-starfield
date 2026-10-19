@@ -174,6 +174,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .results button .obarw { flex-basis: 100%; margin-top: 0; }
 .obarw .oend { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
 .obarw .oend svg { width: 15px; height: 15px; flex: none; }
+.oorder { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; padding: 4px 8px 10px; font-size: 13px; color: var(--muted); }
+.oorder small { grid-column: 1 / -1; font-size: 12.5px; }
+.oorder .seg { justify-self: start; }
 .orow .oalt { font-family: var(--font-num); font-size: 16px; color: var(--accent); text-align: right; }
 .orow .oalt.dim { font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
 .otag { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #17110a; background: var(--accent); border-radius: 5px; padding: 1px 6px; font-weight: 600; margin-right: 6px; vertical-align: 1px; }
@@ -2733,12 +2736,55 @@ const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.list
 function backToList() { renderList(); openSheet("listSheet"); const inner = $("listSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = listState.scroll; }); }
 function todoItems() {
   const tn = nightPlan(), tonight = sets().tonight;
-  return obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
+  const items = obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
+  return cfg.listOrder === "route" ? routeOrder(items) : items;
+}
+// Short route: the telescope moves as little as possible from object to object.
+// Objects that get low within the hour come first (by time), then the rest of what is up now in the order with the
+// shortest total path (nearest neighbour, then improved by reversing stretches: 2-opt), starting where the telescope
+// points (current target, else the crosshair); objects that come up later stay at the end, by time.
+const ROUTE_URGENT = 60 * 60e3;
+function routeOrder(items) {
+  const now = Date.now(), t = skyNow().t;
+  const later = items.filter(r => r.p.later), up = items.filter(r => !r.p.later);
+  const leaveSoon = r => r.p.sort < 9e14 && r.p.sort - now < ROUTE_URGENT;
+  const urgent = up.filter(leaveSoon), rest = up.filter(r => !leaveSoon(r));
+  const vec = r => vecNow(r.p.T);
+  const CT = targetById(cfg.target), tv = teleVec();
+  let start = urgent.length ? vec(urgent[urgent.length - 1]) : CT ? vecNow(CT) : tv;
+  // the target itself, if planned, is where we are: first
+  const ti = rest.findIndex(r => r.x.id === cfg.target);
+  const head = !urgent.length && ti >= 0 ? rest.splice(ti, 1) : [];
+  if (head.length) start = vec(head[0]);
+  const V = rest.map(vec), n = V.length, d = (a, b) => Solver.angDeg(a, b);
+  // nearest neighbour from the start
+  const left = new Set(V.keys()), order = [];
+  let cur = start || (n ? V[0] : null);
+  while (left.size) { let bi = -1, bd = Infinity; left.forEach(i => { const x = d(cur, V[i]); if (x < bd) { bd = x; bi = i; } }); order.push(bi); left.delete(bi); cur = V[bi]; }
+  // 2-opt on the open path: reverse a stretch whenever that makes the path shorter (the start stays first)
+  const N = start ? [start, ...V] : V, path = start ? [0, ...order.map(i => i + 1)] : order.slice();
+  const D = (i, j) => d(N[path[i]], N[path[j]]);
+  for (let pass = 0, improved = true; improved && pass < 50; pass++) {
+    improved = false;
+    for (let i = start ? 0 : -1; i < path.length - 2; i++) for (let k = i + 2; k < path.length; k++) {
+      const before = (i >= 0 ? D(i, i + 1) : 0) + (k + 1 < path.length ? D(k, k + 1) : 0);
+      const after = (i >= 0 ? D(i, k) : 0) + (k + 1 < path.length ? D(i + 1, k + 1) : 0);
+      if (after < before - 1e-6) { const seg = path.slice(i + 1, k + 1).reverse(); path.splice(i + 1, seg.length, ...seg); improved = true; }
+    }
+  }
+  const ordered = (start ? path.slice(1).map(j => j - 1) : path);
+  return [...urgent, ...head, ...ordered.map(i => rest[i]), ...later];
+}
+// total telescope movement along a list (for the note under the order chips)
+function pathDeg(items) {
+  const up = items.filter(r => !r.p.later).map(r => vecNow(r.p.T)); let sum = 0;
+  for (let i = 1; i < up.length; i++) sum += Solver.angDeg(up[i - 1], up[i]);
+  return sum;
 }
 // The next object: cached, since the directions update several times a second
 const nextCache = { key: "", v: null };
 function nextItem() {
-  const key = st.obsVer + "|" + cfg.target + "|" + Math.floor(Date.now() / 60000);
+  const key = st.obsVer + "|" + cfg.target + "|" + cfg.listOrder + "|" + Math.floor(Date.now() / 60000);
   if (nextCache.key !== key) { nextCache.key = key; nextCache.v = todoItems().filter(r => r.x.id !== cfg.target && !r.p.later)[0] || null; }
   return nextCache.v;
 }
@@ -2816,6 +2862,19 @@ function renderList() {
       if (obs.starred.length) { const s2 = document.createElement("button"); s2.className = "btn"; s2.textContent = "Plan from starred (" + obs.starred.length + ")"; s2.onclick = () => { listTab.v = "starred"; renderList(); }; e.append(s2); }
       body.append(e);
     } else if (!todo.length) note("Everything planned is seen tonight. Well done!");
+    if (todo.length > 2) {   // order: by when objects get low, or the shortest way for the telescope
+      const ob = document.createElement("div"); ob.className = "oorder";
+      const route = cfg.listOrder === "route";
+      ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the list"><button role="radio" data-lorder="time">By time</button><button role="radio" data-lorder="route">Short route</button></div><small></small>';
+      ob.querySelectorAll("[data-lorder]").forEach(b => { const on = (b.dataset.lorder === "route") === route; b.setAttribute("aria-checked", on); b.classList.toggle("on", on);
+        b.onclick = () => { cfg.listOrder = b.dataset.lorder; save(); nextCache.key = ""; renderList(); syncHudNext(); }; });
+      const byTime = cfg.listOrder === "route" ? (() => { const o = cfg.listOrder; cfg.listOrder = "time"; const v = todoItems(); cfg.listOrder = o; return v; })() : todo;
+      const a = pathDeg(todo), b = pathDeg(byTime);
+      ob.querySelector("small").textContent = route
+        ? "Telescope moves about " + Math.round(a) + "° in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first."
+        : "Sorted by when objects get low. Telescope moves about " + Math.round(a) + "° in total.";
+      body.append(ob);
+    }
     todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "todo")));
   } else if (listTab.v === "seen") {
     if (!seenIds.length) note("Nothing logged tonight yet. Tap “Seen” in an object’s details.");
