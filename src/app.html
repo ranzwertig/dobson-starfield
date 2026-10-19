@@ -170,6 +170,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .orow .oalt { font-family: var(--font-num); font-size: 16px; color: var(--accent); text-align: right; }
 .orow .oalt.dim { font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
 .otag { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #17110a; background: var(--accent); border-radius: 5px; padding: 1px 6px; font-weight: 600; margin-right: 6px; vertical-align: 1px; }
+.otag.new { background: none; color: var(--accent); border: 1px solid var(--accent); }
 .ostar { width: 44px; height: 44px; border: 0; background: none; color: var(--accent); display: grid; place-items: center; cursor: pointer; border-radius: 10px; }
 .ostar svg { width: 21px; height: 21px; }
 .ostar[aria-pressed="true"] svg { fill: currentColor; }
@@ -1263,7 +1264,7 @@ function showResults() {
     const n = document.createElement("b"); n.textContent = T.name;
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
-    b.append(n, s, a); b.onclick = () => { selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
+    b.append(n, s, a); b.onclick = () => { st.fromList = false; selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
     if (T.kind === "sat") { box.append(b); return; }
     const row = document.createElement("div"); row.className = "rrow";
     const star = starButton(T.id, () => ({ id: T.id, name: T.name }));
@@ -2185,7 +2186,11 @@ function objById(id) {
 function toggleList(o) {
   const i = obs.list.findIndex(x => x.id === o.id);
   if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from your list.", 2500); }
-  else { obs.list.push({ id: o.id, name: o.name, added: Date.now() }); hint(o.name + " is on your list.", 2500); }
+  else {
+    obs.list.push({ id: o.id, name: o.name, added: Date.now() });
+    const T = targetById(o.id), t = A.MakeTime(new Date()), up = T ? horiz(vecNow(T), t).alt > 10 : true;
+    hint(o.name + " is on your list" + (sets().tonight.has(o.id) ? ", under “Seen tonight”." : up ? "." : ", marked “later”: it is low or below the horizon now."), 3500);
+  }
   saveObs();
 }
 function starButton(id, make) {
@@ -2224,7 +2229,7 @@ function rowPlan(id, tn) {
   const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? "#6d5a35" : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
   const later = altNow <= 10;
   let sub;
-  if (later && rise) sub = "rises " + fmt(rise.d) + (best ? ", best " + fmt(best.d) : "");
+  if (later && rise) sub = "well placed from " + fmt(rise.d) + (best && +best.d !== +rise.d ? ", best " + fmt(best.d) : "");
   else if (later) sub = best ? "best " + fmt(best.d) : "not well placed tonight";
   else sub = !best ? "low tonight" : best.d < now ? "past its best" : "best " + fmt(best.d) + ", " + compass(best.az);
   const warn = !later && leave && leave.d - now < 3 * 3600e3 ? "low after " + fmt(leave.d) : "";
@@ -2262,11 +2267,14 @@ function renderList() {
   document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.textContent = t === "todo" ? "To do · " + todo.length : "Seen tonight · " + seenIds.length; });
   body.textContent = "";
   const mk = (id, name, p, seen) => {
-    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && !seen ? " later" : "");
+    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && !seen ? " later" : ""); row.dataset.id = id;
     const main = document.createElement("button"); main.className = "omain";
-    const b = document.createElement("b"); if (id === cfg.target) { const tg = document.createElement("span"); tg.className = "otag"; tg.textContent = "Target"; b.append(tg); } b.append(obsName(id, name));
+    const b = document.createElement("b"); if (id === cfg.target) { const tg = document.createElement("span"); tg.className = "otag"; tg.textContent = "Target"; b.append(tg); }
+    else if (isNew(obs.list.find(x => x.id === id))) { const tg = document.createElement("span"); tg.className = "otag new"; tg.textContent = "New"; b.append(tg); }
+    b.append(obsName(id, name));
     const sm = document.createElement("small"), T = p && p.T;
-    const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : (T.sub || "").split(" · ").find(x => /galaxy|cluster|nebula|remnant|region|field|asterism/i.test(x)) || "") : "";
+    const mrow = MESSIER.find(r => r[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+    const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : mrow ? mrow[5] : nrow ? nrow.type : "") : "";
     const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
     sm.textContent = [kind, mag, seen ? "seen " + seen : p ? p.sub : ""].filter(Boolean).join(" · ");
     if (p && p.warn && !seen) { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
@@ -2319,8 +2327,15 @@ function addTonightsBest() {
   if (n) saveObs(); return n;
 }
 document.querySelectorAll("[data-ltab]").forEach(b => b.onclick = () => { listTab.v = b.dataset.ltab; renderList(); });
-$("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("listSheet"); };
-$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); };
+$("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("listSheet"); revealNew(); };
+// Newly added objects (last 10 minutes) are marked "New"; the newest one is scrolled into view
+const isNew = x => x && Date.now() - (x.added || 0) < 10 * 60e3;
+function revealNew() {
+  const newest = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0]; if (!newest) return;
+  if (sets().tonight.has(newest.id)) { listTab.v = "seen"; renderList(); }
+  setTimeout(() => { const row = [...document.querySelectorAll("#listBody .orow")].find(r => r.dataset.id === newest.id); row && row.scrollIntoView({ block: "center", behavior: "smooth" }); }, 380);
+}
+$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromList = true; hint("Tap the star next to an object to put it on your list.", 3500); };
 
 // "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
 const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
@@ -2779,6 +2794,11 @@ function askConfirm(title, text, okLabel, altLabel) {
 }
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
+  // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
+  if (id === "searchSheet" && st.fromList) {
+    st.fromList = false;
+    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) { renderList(); openSheet("listSheet"); revealNew(); } }, 60);
+  }
   if (sh._res) { const r = sh._res; sh._res = null; r(false); }
   sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   if (id === "infoSheet") st.picked = null;
