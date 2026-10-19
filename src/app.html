@@ -453,8 +453,16 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .tn-bar .now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--target); }
 .tn-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
 .tn-legend i { display: inline-block; width: 12px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+.pbox { display: grid; grid-template-columns: 54px 1fr; gap: 10px 12px; align-items: center; background: var(--raise); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.pbox.nopic { grid-template-columns: 1fr; }
+.pbox .pp svg { width: 54px; height: 54px; display: block; }
+.pbox .pl { display: grid; gap: 4px; color: var(--muted); font-size: 13px; } .pbox .pl div:first-child { color: var(--fg); font-size: 14px; }
+.pbox .jup { grid-column: 1 / -1; display: grid; gap: 6px; font-size: 13.5px; }
+.pbox .jup svg { width: 100%; height: auto; background: #05070d; border-radius: 10px; }
+.pbox .jup small { color: var(--muted); font-size: 12px; } .pbox .jup p { margin: 0; }
 .mphase { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; background: var(--raise); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
 .mphase svg { width: 54px; height: 54px; }
+.mphase .mterm { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--fg); }
 .mphase div { display: grid; gap: 2px; } .mphase small { color: var(--muted); font-size: 12.5px; }
 .tn-moon { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; }
 .tn-moon svg { width: 54px; height: 54px; }
@@ -660,6 +668,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="mphase" id="infoMoon" hidden></div>
+    <div class="pbox" id="infoPlanet" hidden></div>
     <div class="ttonight" id="infoTonight" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
@@ -756,6 +765,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <p class="warn" id="tgtWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope.</p>
     <div class="tguide" id="tgtGuide"></div>
     <div class="mphase" id="tgtMoon" hidden></div>
+    <div class="pbox" id="tgtPlanet" hidden></div>
     <div class="ttonight" id="tgtTonight"></div>
     <div class="facts" id="tgtFacts"></div>
     <div class="ohist" id="tgtHist" hidden></div>
@@ -2515,7 +2525,11 @@ function drawOverlay(dpr) {
         c.fillStyle = col("--fg"); objLabel(c, "Sun", x + r + 6 * dpr, y); return;
       }
       if (en === "Moon") { const r = drawMoonPhase(c, sol, sk, x, y, dpr); c.fillStyle = col("--fg"); objLabel(c, de, x + r + 6 * dpr, y + r * 0.6 + 6 * dpr); obsMark(c, en, x, y, r, dpr); return; }
-      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); objLabel(c, de, x + 10 * dpr, y + 12 * dpr); obsMark(c, en, x, y, 5 * dpr, dpr);
+      // planets at true size once that is bigger than the dot; Jupiter's moons when zoomed in
+      let pr = 3 * dpr; if (PLANET_R[en] && sol.fov < 10) { try { pr = Math.max(pr, planetDisc(en, sk.t).arcsec / 7200 * D2R * sol.f * fit.sc); } catch (e) {} }
+      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, pr, 0, 7); c.fill();
+      if (en === "Jupiter" && sol.fov < 8) drawJupiterMoons(c, sol, x, y, dpr);
+      c.fillStyle = col("--fg"); objLabel(c, de, x + pr + 7 * dpr, y + 12 * dpr); obsMark(c, en, x, y, Math.max(5 * dpr, pr), dpr);
     });
   }
   // Constellation names (optional): the big ones always, smaller ones when zoomed in; they give way to object names
@@ -2735,7 +2749,166 @@ function planFor(T, tn) {
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, pts, best, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
+/* ---------------- Solar system details (all calculated on the phone with Astronomy Engine) ---------------- */
+const AU_KM = 149597870.7, LIGHT_KMS = 299792.458;
+const PLANET_R = { Mercury: 2439.7, Venus: 6051.8, Mars: 3396.2, Jupiter: 71492, Saturn: 60268, Uranus: 25559, Neptune: 24764 };   // equatorial radius, km
+const JUP_MOONS = [["io", "Io"], ["europa", "Europa"], ["ganymede", "Ganymede"], ["callisto", "Callisto"]];
+const fmtDay = d => d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+const fmtDayYear = d => d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+const fmtHM = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const fmtArcsec = s => s >= 60 ? (s / 60).toFixed(1) + "′" : s.toFixed(1) + "″";
+const v3 = v => [v.x, v.y, v.z], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const unit3 = a => { const n = Math.hypot(...a) || 1; return [a[0] / n, a[1] / n, a[2] / n]; };
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+// apparent disc (arcsec) and distance of a planet
+function planetDisc(body, t) {
+  const g = A.GeoVector(A.Body[body], t, true), km = g.Length() * AU_KM;
+  return { arcsec: 2 * Math.atan(PLANET_R[body] / km) * 206264.8, km, lightMin: km / LIGHT_KMS / 60 };
+}
+// Saturn's rings: how far they are tilted towards us (positive: north side, negative: south side)
+function saturnRingTilt(t) {
+  const ax = A.RotationAxis(A.Body.Saturn, t), d = unit3(v3(A.GeoVector(A.Body.Saturn, t, true)));
+  return Math.asin(-dot3(v3(ax.north), d)) * R2D;
+}
+// Jupiter's four big moons as seen from Earth: offsets in the sky (east, north; AU at Jupiter's distance) and depth
+// (positive = behind Jupiter), plus whether each is in front of or behind the disc, or in Jupiter's shadow / casting one
+function jupiterView(t) {
+  const J = v3(A.GeoVector(A.Body.Jupiter, t, true)), dist = Math.hypot(...J), d = unit3(J);
+  const tm = A.MakeTime(new Date(t.date.getTime() - dist * 499.005 * 1000));   // light time: the moons as they were
+  const M = A.JupiterMoons(tm), S = unit3(v3(A.HelioVector(A.Body.Jupiter, tm)));
+  // axes in the sky along Jupiter's equator (the moons' orbits lie in it): "east" along the equator, "north" along the axis
+  const pole = v3(A.RotationAxis(A.Body.Jupiter, t).north), pn = unit3(pole.map((c, i) => c - dot3(pole, d) * d[i]));
+  const east = unit3(cross3(pn, d)), north = cross3(d, east), RJ = 69911 / AU_KM;
+  const out = JUP_MOONS.map(([k, name]) => {
+    const m = v3(M[k]), x = dot3(m, east), y = dot3(m, north), z = dot3(m, d), onDisc = Math.hypot(x, y) < RJ;
+    const ms = dot3(m, S), perp = Math.hypot(...m.map((c, i) => c - ms * S[i]));
+    return { k, name, x, y, z, m, transit: onDisc && z < 0, hidden: onDisc && z > 0, shadow: perp < RJ && ms < 0, eclipsed: perp < RJ && ms > 0 };
+  });
+  return { J, dist, RJ, east, north, moons: out };
+}
+// Moon transits and shadow transits in the next 24 hours (2-minute steps), cached for 10 minutes
+const jupEvCache = { at: 0, v: null };
+function jupiterEvents() {
+  const now = skyDate();
+  if (jupEvCache.v && Math.abs(now - jupEvCache.at) < 10 * 60e3) return jupEvCache.v;
+  const step = 2 * 60e3, n = 24 * 30, ev = [];
+  const open = {};
+  for (let i = 0; i <= n; i++) {
+    const d = new Date(now.getTime() + i * step), v = jupiterView(A.MakeTime(d));
+    v.moons.forEach(mo => ["transit", "shadow"].forEach(kind => {
+      const key = mo.k + kind, on = mo[kind];
+      if (on && !open[key]) open[key] = { name: mo.name, kind, start: d, startsBefore: i === 0 };
+      if ((!on || i === n) && open[key]) { ev.push(Object.assign(open[key], { end: d, endsAfter: on })); delete open[key]; }
+    }));
+  }
+  ev.sort((a, b) => a.start - b.start);
+  jupEvCache.at = now.getTime(); jupEvCache.v = ev;
+  return ev;
+}
+// Directions in the eyepiece: the view setting decides where east and north end up (naked eye: north up, east left)
+function eyepieceFlip() { const o = opt().orient; return o === "newton" ? { sx: -1, sy: -1, note: "upside down, as in a Newtonian" } : o === "mirror" ? { sx: -1, sy: 1, note: "mirrored, as with a star diagonal" } : { sx: 1, sy: 1, note: "upright, north up" }; }
+function jupiterSvg(v) {
+  const f = eyepieceFlip(), W = 300, H = 74, cx = W / 2, cy = 30;
+  const maxX = Math.max(v.RJ * 4, ...v.moons.map(m => Math.abs(m.x))) * 1.12, sc = (W / 2 - 12) / maxX, rj = Math.max(5, v.RJ * sc);
+  // east is to the left on the sky (north up): screen x = -east
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Jupiter and its moons, ${f.note}">`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${rj.toFixed(1)}" fill="#d9c7a3"/>`;
+  v.moons.slice().sort((a, b) => b.z - a.z).forEach(m => {
+    const x = cx + -m.x * sc * f.sx, y = cy - m.y * sc * f.sy;   // drawn with Jupiter's equator horizontal
+    const behind = m.hidden || m.eclipsed;
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${behind ? "none" : "#eef1f6"}" stroke="${m.transit ? "#11151a" : "#eef1f6"}" stroke-width="${m.transit ? 1.2 : 1}" ${behind ? 'stroke-dasharray="1.5 1.5"' : ""}/>`;
+    s += `<text x="${x.toFixed(1)}" y="${(cy + 26).toFixed(1)}" text-anchor="middle" font-size="11" fill="#98a3b8">${m.name[0]}</text>`;
+  });
+  const eL = f.sx > 0 ? "E" : "W", wL = f.sx > 0 ? "W" : "E";
+  s += `<text x="4" y="${cy + 4}" font-size="11" fill="#5f6b80">${eL}</text><text x="${W - 4}" y="${cy + 4}" text-anchor="end" font-size="11" fill="#5f6b80">${wL}</text></svg>`;
+  return s;
+}
+// Phase picture for Mercury, Venus and Mars (lit side towards the Sun: east or west of the planet in the sky)
+function planetPhaseSvg(body, t, k) {
+  const el = A.Elongation(A.Body[body], t), litEast = el.visibility === "morning";   // morning sky: Sun below the eastern horizon, lit side east
+  const f = eyepieceFlip(), right = (litEast ? -1 : 1) * f.sx > 0;   // east is left with north up
+  const r = 24, cx = 27, cy = 27, ex = Math.abs(1 - 2 * k) * r;
+  const lit = right ? 1 : 0, sweep = k > 0.5 ? (right ? 1 : 0) : (right ? 0 : 1);
+  return `<svg viewBox="0 0 54 54" role="img" aria-label="${Math.round(k * 100)} % lit"><circle cx="${cx}" cy="${cy}" r="${r}" fill="#2a3048"/><path fill="#e8e3c8" d="M${cx} ${cy - r}A${r} ${r} 0 0 ${lit} ${cx} ${cy + r}A${ex.toFixed(2)} ${r} 0 0 ${sweep} ${cx} ${cy - r}Z"/></svg>`;
+}
+function saturnSvg(B) {
+  const ry = Math.max(1.2, Math.abs(Math.sin(B * D2R)) * 30);
+  return `<svg viewBox="0 0 70 54" role="img" aria-label="Rings tilted ${Math.abs(B).toFixed(1)}°"><ellipse cx="35" cy="27" rx="33" ry="${ry.toFixed(1)}" fill="none" stroke="#cdbf9c" stroke-width="3"/><circle cx="35" cy="27" r="13" fill="#d9c7a3"/><path d="M2 27a33 ${ry.toFixed(1)} 0 0 0 66 0" fill="none" stroke="#cdbf9c" stroke-width="3"/></svg>`;
+}
+const nextSafe = fn => { try { return fn(); } catch (e) { return null; } };
+// The box in the details and in the target panel
+function fillPlanetBox(box, body) {
+  if (!PLANET_R[body]) { box.hidden = true; return; }
+  const d = skyDate(), key = body + Math.floor(d / 60000) + opt().orient + (curEp() ? curEp().f : "");
+  if (box._key === key && !box.hidden) return;
+  box._key = key;
+  const t = A.MakeTime(d), disc = planetDisc(body, t), il = A.Illumination(A.Body[body], t), el = A.Elongation(A.Body[body], t);
+  const lines = [], ep = curEp();
+  // how big it looks in the eyepiece, compared with the full Moon to the naked eye (about 31′)
+  let size = "Disc " + fmtArcsec(disc.arcsec);
+  if (body === "Saturn") size += " (rings " + fmtArcsec(disc.arcsec * 2.27) + ")";
+  if (ep) { const m = epData(ep).mag, deg = disc.arcsec * (body === "Saturn" ? 2.27 : 1) * m / 3600, moonX = deg / 0.52;
+    size += " · at " + Math.round(m) + "× it looks " + (deg < 0.1 ? "like a small dot" : moonX >= 0.8 && moonX <= 1.25 ? "about as big as the full Moon to the eye" : moonX > 1 ? moonX.toFixed(1) + "× as big as the full Moon to the eye" : moonX > 0.6 ? "about three quarters the size of the full Moon to the eye" : "about 1/" + Math.round(1 / moonX) + " the size of the full Moon to the eye"); }
+  lines.push(size);
+  if (["Mercury", "Venus", "Mars"].includes(body)) lines.push(Math.round(il.phase_fraction * 100) + " % lit");
+  if (body === "Saturn") { const B = saturnRingTilt(t); lines.push("Rings tilted " + Math.abs(B).toFixed(1) + "° towards us, " + (B < 0 ? "south" : "north") + " side" + (Math.abs(B) < 4 ? " – nearly edge-on" : "")); }
+  lines.push(fmtDeg(el.elongation, 0) + " from the Sun, " + (el.elongation < 15 ? "too close to the Sun to observe" : el.visibility + " sky") + " · light takes " + (disc.lightMin < 60 ? Math.round(disc.lightMin) + " min" : (disc.lightMin / 60).toFixed(1) + " h") + " to reach us");
+  // the next important dates
+  const nx = [];
+  if (body === "Mercury" || body === "Venus") {
+    const me = nextSafe(() => A.SearchMaxElongation(A.Body[body], t)), ic = nextSafe(() => A.SearchRelativeLongitude(A.Body[body], 0, t)), two = [];
+    if (me) two.push([me.time.date, "greatest elongation " + fmtDayYear(me.time.date) + " (" + Math.round(me.elongation) + "°, " + me.visibility + ")"]);
+    if (ic) two.push([ic.date, "between Earth and Sun " + fmtDayYear(ic.date)]);
+    two.sort((a, b) => a[0] - b[0]).forEach(x => nx.push(x[1]));
+  } else {
+    const op = nextSafe(() => A.SearchRelativeLongitude(A.Body[body], 0, t)), cj = nextSafe(() => A.SearchRelativeLongitude(A.Body[body], 180, t));
+    if (op && cj) (op.date < cj.date ? [["opposition (best)", op], ["behind the Sun", cj]] : [["behind the Sun", cj], ["opposition (best)", op]]).forEach(([l, x]) => nx.push(l + " " + fmtDayYear(x.date)));
+  }
+  if (nx.length) lines.push("Next: " + nx.join(" · "));
+  let pic = "", extra = "";
+  if (["Mercury", "Venus", "Mars"].includes(body)) pic = planetPhaseSvg(body, t, il.phase_fraction);
+  if (body === "Saturn") pic = saturnSvg(saturnRingTilt(t));
+  if (body === "Jupiter") {
+    const v = jupiterView(t), f = eyepieceFlip();
+    const now = v.moons.filter(m => m.transit || m.hidden || m.shadow || m.eclipsed).map(m => m.name + (m.transit ? " is in front of Jupiter" : m.hidden ? " is hidden behind Jupiter" : m.eclipsed ? " is in Jupiter’s shadow" : "") + (m.shadow ? (m.transit || m.hidden || m.eclipsed ? ", " : " casts ") + "its shadow on Jupiter" : ""));
+    // with the day when it isn't today, and whether Jupiter is up then
+    const today = d.toDateString(), when = x => (x.toDateString() === today ? "" : x.toLocaleDateString([], { weekday: "short" }) + " ") + fmtHM(x);
+    const up = x => { const tt = A.MakeTime(x); return horiz(targetById("Jupiter").vec(tt), tt).alt; };
+    const evs = jupiterEvents().map(e => {
+      // seen from here: Jupiter above 5° in a dark sky at the start, middle or end
+      const ts = [e.start, new Date((e.start.getTime() + e.end.getTime()) / 2), e.end];
+      const ok = ts.map(x => up(x) > 5 && horiz(targetById("Sun").vec(A.MakeTime(x)), A.MakeTime(x)).alt < -6), n = ok.filter(Boolean).length;
+      return e.name + (e.kind === "shadow" ? "’s shadow" : "") + " crosses Jupiter " + (e.startsBefore ? "until " : when(e.start) + "–") + (e.endsAfter ? "…" : fmtHM(e.end))
+        + (n === 0 ? " (not visible from here)" : n < 3 ? " (partly visible)" : "");
+    });
+    extra = '<div class="jup">' + jupiterSvg(v) + '<small>The four big moons with Jupiter’s equator level, ' + f.note + ' (eyepiece view setting). Dashed: hidden behind Jupiter or in its shadow.</small>'
+      + (now.length ? "<p>" + now.join(". ") + ".</p>" : "")
+      + "<p><b>Next 24 hours</b><br>" + (evs.length ? evs.join("<br>") : "No moon or shadow crosses Jupiter.") + "</p></div>";
+  }
+  box.innerHTML = (pic ? '<div class="pp">' + pic + "</div>" : "") + '<div class="pl"></div>' + extra;
+  box.classList.toggle("nopic", !pic);
+  const pl = box.querySelector(".pl"); lines.forEach(l => { const p = document.createElement("div"); p.textContent = l; pl.append(p); });
+  box.hidden = false;
+}
+// Jupiter's moons on the map, once zoomed in far enough to separate them
+function drawJupiterMoons(c, sol, x0, y0, dpr) {
+  const v = jupiterView(skyNow().t);
+  v.moons.forEach(m => {
+    if (m.hidden) return;
+    const w = [v.J[0] + m.m[0], v.J[1] + m.m[1], v.J[2] + m.m[2]], n = Math.hypot(...w), p = Solver.skyToPix(sol, [w[0] / n, w[1] / n, w[2] / n]);
+    if (!p) return; const [x, y] = P(p.x, p.y); if (Math.hypot(x - x0, y - y0) < 5 * dpr) return;
+    c.fillStyle = m.eclipsed ? "rgba(200,205,215,.35)" : "#eef1f6"; c.beginPath(); c.arc(x, y, 1.8 * dpr, 0, 7); c.fill();
+    if (Math.hypot(x - x0, y - y0) > 22 * dpr) { c.fillStyle = "rgba(200,210,225,.75)"; objLabel(c, m.name, x - c.measureText(m.name).width / 2, y + 11 * dpr); }
+  });
+}
 /* ---------------- Moon phase (computed on the phone, no data from outside) ---------------- */
+// Well-known formations for the terminator hint: [name, selenographic longitude (east +), latitude]
+const MOON_FEATURES = [["Mare Crisium", 59, 17], ["Langrenus", 61, -9], ["Petavius", 60, -25], ["Cleomedes", 56, 28], ["Atlas and Hercules", 42, 46],
+  ["Posidonius", 30, 32], ["Theophilus, Cyrillus and Catharina", 25, -14], ["Fracastorius", 33, -21], ["Piccolomini", 32, -30],
+  ["Hipparchus and Albategnius", 5, -8], ["the Alpine Valley", 3, 49], ["Ptolemaeus, Alphonsus and Arzachel", -2, -14], ["Walter", 1, -33],
+  ["the Straight Wall", -8, -22], ["Archimedes", -4, 30], ["the Apennine mountains", -4, 19], ["Plato", -9, 52], ["Tycho", -11, -43],
+  ["Clavius", -14, -58], ["Eratosthenes", -11, 15], ["Copernicus", -20, 10], ["Bullialdus", -22, -21], ["Sinus Iridum", -32, 44],
+  ["Kepler", -38, 8], ["Gassendi", -40, -18], ["Aristarchus", -48, 24], ["Schickard", -55, -44], ["Grimaldi", -68, -5]];
 function moonPhaseName(ph) {
   return ph < 10 || ph > 350 ? "New Moon" : ph < 80 ? "Waxing crescent" : ph < 100 ? "First quarter" : ph < 170 ? "Waxing gibbous" : ph < 190 ? "Full Moon" : ph < 260 ? "Waning gibbous" : ph < 280 ? "Last quarter" : "Waning crescent";
 }
@@ -2755,11 +2928,24 @@ function fillMoonPhase(box) {
   const day = x => x ? x.date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }) + ", " + x.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
   const next = lon => { try { return A.SearchMoonPhase(lon, t, 40); } catch (e) { return null; } };
   const age = ph / 360 * 29.53;
-  box.innerHTML = moonPhaseSvg(ph, k) + '<div><b></b><small></small><small></small></div>';
+  box.innerHTML = moonPhaseSvg(ph, k) + '<div><b></b><small></small><small></small><small></small></div><p class="mterm" hidden></p>';
   box.querySelector("b").textContent = moonPhaseName(ph) + ", " + Math.round(k * 100) + " % lit";
   const sm = box.querySelectorAll("small");
   sm[0].textContent = "Age " + age.toFixed(1) + " days since new Moon";
   sm[1].textContent = "Full Moon " + day(next(180)) + " · New Moon " + day(next(0));
+  // libration: which edge is tilted towards us (more of it visible than on average)
+  try {
+    const lb = A.Libration(t), parts = [];
+    if (Math.abs(lb.elon) >= 1) parts.push(Math.abs(lb.elon).toFixed(1) + "° " + (lb.elon > 0 ? "east (Mare Crisium side)" : "west (Grimaldi side)"));
+    if (Math.abs(lb.elat) >= 1) parts.push(Math.abs(lb.elat).toFixed(1) + "° " + (lb.elat > 0 ? "north" : "south"));
+    sm[2].textContent = parts.length ? "Libration: " + parts.join(", ") + " edge tilted towards you" : "Libration: small tonight";
+  } catch (e) { sm[2].remove(); }
+  // what stands out at the terminator now: formations close to the line between day and night cast long shadows
+  const tl = ph < 180 ? 90 - ph : 270 - ph, waxing = ph < 180;
+  const near = MOON_FEATURES.filter(([, lon]) => waxing ? lon >= tl - 3 && lon <= tl + 12 : lon <= tl + 3 && lon >= tl - 12)
+    .sort((a, b) => Math.abs(a[1] - tl) - Math.abs(b[1] - tl)).slice(0, 6).map(f => f[0]);
+  const mt = box.querySelector(".mterm");
+  if (near.length && k > 0.03 && k < 0.97) { mt.hidden = false; mt.textContent = "Near the terminator now, best in relief: " + near.join(", ") + "."; }
   box.hidden = false;
 }
 // The night bar: sunset (left) to sunrise (right), amber while the object is well placed, red tick = now
@@ -3001,6 +3187,7 @@ function syncTargetPanel(force) {
   g.append(w, pos);
   // tonight
   if (T.id === "Moon") fillMoonPhase($("tgtMoon")); else $("tgtMoon").hidden = true;
+  fillPlanetBox($("tgtPlanet"), T.id);
   const tn = nightPlan(), p = T.kind === "sat" ? null : rowPlan(T.id, tn), box = $("tgtTonight"); box.textContent = "";
   if (p) fillTonight(box, p);
   else { const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(k, d); }
@@ -3768,6 +3955,7 @@ function showInfo(o, fromList) {
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
   // tonight: when it is well placed, rising / highest / setting, night bar
   if (o.body === "Moon" || o.id === "Moon") fillMoonPhase($("infoMoon")); else $("infoMoon").hidden = true;
+  $("infoPlanet")._key = null; fillPlanetBox($("infoPlanet"), o.body || o.id);
   const tb = $("infoTonight"); tb.textContent = "";
   let pl = null; try { pl = o.kind === "sat" || o.body === "Sun" ? null : planFor(o, nightPlan()); } catch (e) {}
   tb.hidden = !pl; if (pl) fillTonight(tb, pl);
@@ -3912,6 +4100,94 @@ function tonightData() {
   }).filter(x => x.b && x.b.alt > 30).sort((a, b) => a.row[3] - b.row[3]).slice(0, 10) : [];
   return { now, sunset, dusk, dawn, sunrise, darkLimit, start, end, samples, phase, illum, moonRise, moonSet, moonFree, planets, dso };
 }
+/* ---------------- Coming up: events calculated on the phone ---------------- */
+// Eclipses visible here, the Moon passing planets (and covering them), planets meeting, oppositions, greatest
+// elongations and meteor showers. Computed once a day (and when the location changes), when the Tonight sheet opens.
+const METEORS = [["Quadrantids", 0, 3], ["Lyrids", 3, 22], ["Eta Aquariids", 4, 6], ["Perseids", 7, 12], ["Orionids", 9, 21], ["Leonids", 10, 17], ["Geminids", 11, 14]];
+const evCache = { key: "", v: null };
+function upcomingEvents() {
+  const now = new Date(), key = now.toDateString() + "|" + cfg.lat + "|" + cfg.lon;
+  if (evCache.key === key) return evCache.v;
+  const T = d => A.MakeTime(d), obs = observer(), out = [], DAY = 864e5;
+  const altOf = (body, d) => { const e = A.Equator(A.Body[body], T(d), obs, true, true); return A.Horizon(T(d), obs, e.ra, e.dec, "normal").altitude; };
+  const sunAlt = d => altOf("Sun", d);
+  const dayTxt = d => fmtDay(d) + ", " + fmtHM(d);
+  const safe = f => { try { f(); } catch (e) {} };
+  // lunar eclipses in the next year, if the Moon is up here
+  safe(() => {
+    let e = A.SearchLunarEclipse(T(now));
+    for (let i = 0; i < 4 && e.peak.date - now < 365 * DAY; i++, e = A.NextLunarEclipse(e.peak)) {
+      const a = altOf("Moon", e.peak.date); if (a <= 0) continue;
+      out.push({ d: e.peak.date, txt: e.kind.charAt(0).toUpperCase() + e.kind.slice(1) + " lunar eclipse", sub: "peak " + dayTxt(e.peak.date) + ", Moon " + Math.round(a) + "° high" + (e.kind === "penumbral" ? " (only a faint shading)" : "") });
+    }
+  });
+  // solar eclipses seen from here in the next two years
+  safe(() => {
+    const e = A.SearchLocalSolarEclipse(T(now), obs);
+    if (e.peak.time.date - now < 730 * DAY && e.peak.altitude > 0)
+      out.push({ d: e.peak.time.date, txt: e.kind.charAt(0).toUpperCase() + e.kind.slice(1) + " solar eclipse", sub: "peak " + dayTxt(e.peak.time.date) + ", " + Math.round(e.obscuration * 100) + " % of the Sun covered. Only with a certified solar filter!" });
+  });
+  // the Moon passing planets in the next 30 days (closer than 3°, covering them when closer than its radius)
+  const PL = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
+  const geo = (b, d) => unit3(v3(A.GeoVector(A.Body[b], T(d), true)));
+  const topo = (b, d) => { const e = A.Equator(A.Body[b], T(d), obs, true, true); return unit3(v3(e.vec)); };
+  const sep = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot3(a, b)))) * R2D;
+  const minimum = (f, t0, t1, step) => { let best = null; for (let t = t0; t <= t1; t += step) { const v = f(new Date(t)); if (!best || v < best.v) best = { t, v }; } return best; };
+  safe(() => {
+    const step = 2 * 3600e3, n = 30 * 12;
+    PL.forEach(b => {
+      let prev2 = null, prev = null;
+      for (let i = 0; i <= n; i++) {
+        const d = new Date(now.getTime() + i * step), v = sep(geo("Moon", d), geo(b, d));
+        if (prev && prev2 && prev.v < prev2.v && prev.v <= v && prev.v < 4) {
+          const m = minimum(x => sep(topo("Moon", x), topo(b, x)), prev.t - step, prev.t + step, 5 * 60e3);
+          const d0 = new Date(m.t), ma = altOf("Moon", d0), dark = sunAlt(d0) < -6, R = 0.26;
+          if (m.v < 3 && ma > 0 && (dark || b === "Venus" || b === "Jupiter"))
+            out.push({ d: d0, txt: m.v < R ? "The Moon covers " + b : "Moon and " + b + " " + m.v.toFixed(1) + "° apart", sub: dayTxt(d0) + ", " + Math.round(ma) + "° high" + (dark ? "" : " (twilight or daylight)"), body: b });
+        }
+        prev2 = prev; prev = { t: d.getTime(), v };
+      }
+    });
+  });
+  // planets meeting in the next 60 days (closer than 2°, away from the Sun)
+  safe(() => {
+    for (let i = 0; i < PL.length; i++) for (let j = i + 1; j < PL.length; j++) {
+      const a = PL[i], b = PL[j]; let prev2 = null, prev = null;
+      for (let k = 0; k <= 60; k++) {
+        const d = new Date(now.getTime() + k * DAY), v = sep(geo(a, d), geo(b, d));
+        if (prev && prev2 && prev.v < prev2.v && prev.v <= v && prev.v < 2.5) {
+          const m = minimum(x => sep(geo(a, x), geo(b, x)), prev.t - DAY, prev.t + DAY, 3600e3), d0 = new Date(m.t);
+          if (m.v < 2 && A.AngleFromSun(A.Body[a], T(d0)) > 15) out.push({ d: d0, txt: a + " and " + b + " " + m.v.toFixed(1) + "° apart", sub: fmtDay(d0) + ", " + A.Elongation(A.Body[a], T(d0)).visibility + " sky", body: a });
+        }
+        prev2 = prev; prev = { t: d.getTime(), v };
+      }
+    }
+  });
+  // oppositions and greatest elongations in the next 4 months
+  safe(() => {
+    ["Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].forEach(b => { const x = A.SearchRelativeLongitude(A.Body[b], 0, T(now)); if (x.date - now < 120 * DAY) out.push({ d: x.date, txt: b + " at opposition", sub: fmtDay(x.date) + ": closest and brightest, up all night", body: b }); });
+    ["Mercury", "Venus"].forEach(b => { const x = A.SearchMaxElongation(A.Body[b], T(now)); if (x.time.date - now < 120 * DAY) out.push({ d: x.time.date, txt: b + " at greatest elongation", sub: fmtDay(x.time.date) + ": " + Math.round(x.elongation) + "° from the Sun, " + x.visibility + " sky", body: b }); });
+  });
+  // meteor shower peaks in the next 60 days, with the Moon's light
+  METEORS.forEach(([name, mo, dd]) => {
+    let d = new Date(now.getFullYear(), mo, dd, 2); if (d < now - DAY) d = new Date(now.getFullYear() + 1, mo, dd, 2);
+    if (d - now > 60 * DAY) return;
+    let k = 0; try { k = A.Illumination(A.Body.Moon, T(d)).phase_fraction; } catch (e) {}
+    out.push({ d, txt: name + " meteor shower", sub: "peak night " + fmtDay(new Date(d.getTime() - DAY)) + " to " + fmtDay(d) + " · Moon " + Math.round(k * 100) + " % lit" + (k > 0.6 ? ", washes out fainter meteors" : "") });
+  });
+  out.sort((a, b) => a.d - b.d);
+  evCache.key = key; evCache.v = out;
+  return out;
+}
+function fillComingUp(sec, el, esc) {
+  let list = []; try { list = upcomingEvents(); } catch (e) {}
+  if (!list.length) { sec.append(el("p", "tn-note", "Nothing special in the coming weeks.")); return; }
+  list.slice(0, 10).forEach(x => {
+    const b = el(x.body ? "button" : "div", "tn-row", "<b>" + esc(x.txt) + "</b><small>" + esc(x.sub) + "</small>");
+    if (x.body) b.onclick = () => showInfo(planetObj(x.body, x.body));
+    sec.append(b);
+  });
+}
 function showTonight() {
   const t = tonightData(), box = $("tonightBody"); box.textContent = "";
   const fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
@@ -3959,6 +4235,10 @@ function showTonight() {
     b.onclick = () => showInfo(messierObj(row)); s4.append(b);
   });
   box.append(s4);
+  // coming up: computed after the sheet is shown (takes a moment once a day)
+  const s5 = el("section", "tn-sec"); s5.append(el("h3", "", "Coming up"));
+  const wait = el("p", "tn-note", "Calculating …"); s5.append(wait); box.append(s5);
+  setTimeout(() => { wait.remove(); fillComingUp(s5, el, esc); }, 30);
   box.append(el("p", "tn-note", "For " + $("wxLoc").textContent.replace(/^for /, "") + ", times in your phone’s time zone. Tap an object for details or to make it your target."));
 }
 $("btnTonight").onclick = () => { syncWeatherLinks(); showTonight(); openSheet("tonightSheet"); };
