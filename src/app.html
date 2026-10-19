@@ -794,12 +794,13 @@ function imageToFrame(src, sw, sh, maxLong) {
 /* ---------------- Camera ---------------- */
 async function startCamera() {
   if (st.stream) { stopCamera(); return; }
-  if (topMode() && !cfg.mirror) {
-    const ok = await askConfirm("Camera in top edge mode",
-      "The top edge of the phone points along the telescope, so the camera can only see the same sky through a mirror or prism that turns its view over the top of the phone. Turn on “Mirrored image” and start the camera?",
-      "Turn on and start");
-    if (!ok) return;
-    setMirror(true);
+  if (topMode() && !cfg.mirror && !cfg.topPlain) {
+    // In top edge mode the camera looks over the top of the phone through a mirror or prism; ask whether it flips the image
+    const a = await askConfirm("Mirrored image?",
+      "In top edge mode the camera looks over the top of the phone through a mirror or prism. A single mirror or a simple 90° prism mirrors the image, and Zenigo has to flip it back to recognise the stars. Two mirrors or a roof prism don’t mirror it.",
+      "Mirrored image on", "Without mirroring");
+    if (!a) return;                                       // ✕, Esc: don't start the camera
+    if (a === true) setMirror(true, true); else { cfg.topPlain = true; storeCamProfile(); save(); }
   }
   if (await cameraBlocked()) { showPermissionHelp("camera"); return; }
   try {
@@ -867,8 +868,8 @@ function buildCamControls() {
 /* ---------------- Camera choice ---------------- */
 // Field of view and eyepiece point belong to a camera: kept per camera, keyed by its name
 const camKey = () => cfg.camId ? "cam:" + (cfg.camLabel || cfg.camId) : "default";
-function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror, mirrorK: cfg.mirrorK || null, mirrorKTop: cfg.mirrorKTop || null }; }
-function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; cfg.mirrorKTop = p ? p.mirrorKTop || null : null; }
+function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror, mirrorK: cfg.mirrorK || null, mirrorKTop: cfg.mirrorKTop || null, topK: cfg.topK || null, topPlain: !!cfg.topPlain }; }
+function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; cfg.mirrorKTop = p ? p.mirrorKTop || null : null; cfg.topK = p ? p.topK || null : null; cfg.topPlain = !!(p && p.topPlain); }
 // Through a mirror the camera image is mirror-inverted: flip it before solving and showing it.
 // The phone's own orientation then no longer tells where the view goes, so the motion sensors are not used with it.
 const mirrored = () => !!cfg.mirror;
@@ -884,11 +885,13 @@ function drawCam(c, src, x, y, w, h) {   // draw a camera frame, flipped back if
   if (flipV()) { c.translate(x, y + h); c.scale(1, -1); } else { c.translate(x + w, y); c.scale(-1, 1); }
   c.drawImage(src, 0, 0, w, h); c.restore();
 }
-function setMirror(on) {
-  cfg.mirror = !!on; save(); storeCamProfile(); save();
+function setMirror(on, quiet) {
+  cfg.mirror = !!on; if (topMode()) cfg.topPlain = !on;   // in top edge mode switching it off is the answer "optic doesn't mirror"
+  storeCamProfile(); save();
   st.sol = null; st.base = null; st.stars = []; st.frame = st.source === "video" ? null : st.frame; lastSig = [];
   syncSettings(); updateGuide();
-  if (!on && topMode() && st.stream) { stopCamera(); hint("Mirrored image off: without a mirror the camera doesn’t look along the top edge, so it was switched off.", 6000); return; }
+  if (quiet) return;
+  if (!on && topMode()) { hint("Mirrored image off: the camera image is used as it is, for optics over the top of the phone that don’t mirror it.", 6000); return; }
   hint(on ? "Mirrored image on: the camera image is flipped before solving. With Align on, the next Locate also teaches the app where the mirror sends the view." : "Mirrored image off.", 6000);
 }
 async function listCameras() {
@@ -971,7 +974,7 @@ async function solveNow() {
     if (sol && sol.ok) {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
       st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
-      if (st.base && devAtCapture && mirrored()) learnMirrorK(sol, devAtCapture);
+      if (st.base && devAtCapture && (mirrored() || topMode())) learnMirrorK(sol, devAtCapture);
       if (st.base) st.base.K = camK();
       if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
       if (sol.near) { setStatus("Tracked · " + sol.nMatch + " stars · " + Math.max(1, Math.round(sol.ms)) + " ms", "ok"); updateGuide(); renderReadout(); return; }
@@ -1155,7 +1158,10 @@ function camAxes() {             // camera axes (x right, y down, z view directi
 }
 // Camera axes used with the motion sensors. Through a mirror the view no longer comes out of the back of the
 // phone: the app learns the turned direction from a Locate (see learnMirrorK) and uses it from then on.
-function camK() { return mirrored() ? (topMode() ? cfg.mirrorKTop || TOP_MIRROR_K : cfg.mirrorK || null) : camAxes(); }
+function camK() {
+  if (topMode()) return mirrored() ? cfg.mirrorKTop || TOP_MIRROR_K : cfg.topK || camAxes();   // camera over the top: learned, else expected
+  return mirrored() ? cfg.mirrorK || null : camAxes();
+}
 // Axes for the view that follows the phone. In top edge mode without a camera image the map is kept upright like in a
 // planetarium: up is always towards the zenith, however the phone is held or turned about its top edge (pointing down,
 // screen facing you, phone on the side of the tube). Pointing at the zenith itself "up" is undefined: the last one is kept.
@@ -1185,9 +1191,9 @@ function learnMirrorK(sol, dev) {
   const est = mm3(mm3(tr3(abs), tr3(mm3(H2E, E2H))), sol.R);   // camera axes in the phone frame, with the compass error
   let best = null, bs = -Infinity;
   for (const m of AXIS_ROTS) { let sc = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sc += m[i][j] * est[i][j]; if (sc > bs) { bs = sc; best = m; } }
-  const key = topMode() ? "mirrorKTop" : "mirrorK", changed = JSON.stringify(best) !== JSON.stringify(cfg[key]);
+  const key = topMode() ? (mirrored() ? "mirrorKTop" : "topK") : "mirrorK", changed = JSON.stringify(best) !== JSON.stringify(cfg[key]);
   cfg[key] = best; storeCamProfile(); save();
-  if (changed) hint("Learned how the mirror turns the view. Align now follows the phone.", 5000);
+  if (changed) hint(mirrored() ? "Learned how the mirror turns the view. Align now follows the phone." : "Learned where the camera looks. Align now follows the phone.", 5000);
 }
 const sens = { rel: null, abs: null, raw: null, pend: null, pendN: 0, off: null, offN: 0, offOut: 0, listening: false, lastGuide: 0, raf: 0 };
 // Quaternions for smoothing and jump detection
@@ -1885,13 +1891,15 @@ async function cameraBlocked() {
   try { const p = await navigator.permissions.query({ name: "camera" }); return p.state === "denied"; } catch (e) { return false; }
 }
 
-// Small confirmation dialog; resolves true for the confirm button, false for cancel, ✕, Esc or tapping outside
-function askConfirm(title, text, okLabel) {
+// Small confirmation dialog; resolves true for the confirm button, false for cancel, ✕, Esc or tapping outside.
+// With altLabel the second button is a real alternative instead of "Cancel" and resolves "alt".
+function askConfirm(title, text, okLabel, altLabel) {
   return new Promise(res => {
     $("confirmTitleTxt").textContent = title; $("confirmText").textContent = text; $("confirmOk").textContent = okLabel;
+    $("confirmCancel").textContent = altLabel || "Cancel";
     const sh = $("confirmSheet"); sh._res = res;
     $("confirmOk").onclick = () => { sh._res = null; closeSheet("confirmSheet"); res(true); };
-    $("confirmCancel").onclick = () => closeSheet("confirmSheet");
+    $("confirmCancel").onclick = altLabel ? () => { sh._res = null; closeSheet("confirmSheet"); res("alt"); } : () => closeSheet("confirmSheet");
     openSheet("confirmSheet");
   });
 }
@@ -2226,10 +2234,10 @@ async function setPointer(v) {
   cfg.pointer = v === "top" ? "top" : "camera"; save();
   st.base = null;
   if (topMode()) {
-    if (st.stream && !cfg.mirror) { stopCamera(); setAuto(false); } else if (!st.stream && st.source !== "map") showMap();
+    if (st.stream && !cfg.mirror && !cfg.topPlain) { stopCamera(); setAuto(false); } else if (!st.stream && st.source !== "map") showMap();
     if (!st.sensor) await setSensor(true);
-    hint(cfg.mirror ? "Top edge mode with mirror: the camera looks over the top of the phone. Locate makes the position exact."
-      : "Top edge mode: point the top of the phone at the sky. Compass and motion sensor show where it points. To use the camera as well, it needs a mirror.", 7000);
+    hint(st.stream ? "Top edge mode with camera: it looks over the top of the phone" + (cfg.mirror ? " through a mirror" : "") + ". Locate makes the position exact."
+      : "Top edge mode: point the top of the phone at the sky. Compass and motion sensor show where it points. To use the camera as well, it needs a mirror or prism over the top of the phone.", 7000);
   } else hint("Camera mode: the back camera looks along the telescope. Locate makes the position exact.", 4000);
   lastSig = []; sensorUpdate(); updateGuide(); syncSettings();
 }
