@@ -3848,6 +3848,7 @@ function drawEyepiece() {
   c.strokeStyle = col("--accent"); c.globalAlpha = 0.7; c.lineWidth = 1 * dpr; c.beginPath();
   [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(R + a * 5 * dpr, R + b * 5 * dpr); c.lineTo(R + a * 13 * dpr, R + b * 13 * dpr); }); c.stroke(); c.globalAlpha = 1;
 }
+const epLine = e => Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "");
 function syncOptics() {
   const o = opt(), box = $("oEps");
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
@@ -3859,7 +3860,10 @@ function syncOptics() {
     : "Enter the aperture (mirror or lens diameter, 200 mm for an 8-inch Dobson) to see exit pupils and, in each object’s details, which eyepiece suits it best.";
   $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!o.view;
   $("oOrient").value = o.orient; $("oRot").value = o.rot; $("oRotV").textContent = (o.rot > 0 ? "+" : "") + o.rot + "°";
-  if (!box.contains(document.activeElement)) {
+  // rebuilt unless a number is being typed (then only the line below each eyepiece is refreshed)
+  const ae = document.activeElement, typing = box.contains(ae) && ae.matches("input[type=number]");
+  if (typing) box.querySelectorAll(".eprow").forEach((row, i) => { const e = o.eps[i]; if (e) row.querySelector("small").textContent = epLine(e); });
+  else {
     box.textContent = "";
     o.eps.forEach((e, i) => {
       const row = document.createElement("div"); row.className = "eprow";
@@ -3871,8 +3875,12 @@ function syncOptics() {
       row.querySelector("[type=radio]").onchange = () => setOptics({ ep: i });
       row.querySelectorAll("[data-k]").forEach(inp => { inp.value = e[inp.dataset.k];
         inp.onchange = () => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setOptics({}); }; });
-      row.querySelector("button").onclick = () => { o.eps.splice(i, 1); setOptics({ ep: Math.min(o.ep | 0, Math.max(0, o.eps.length - 1)) }); };
-      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "");
+      row.querySelector("button").onclick = () => {
+        const sel = o.ep | 0; o.eps.splice(i, 1); document.activeElement?.blur();
+        setOptics({ ep: Math.max(0, Math.min(i < sel ? sel - 1 : sel, o.eps.length - 1)), src: o.eps.length ? o.src : "finder" });
+        hint("Removed the " + e.f + " mm eyepiece.", 2500);
+      };
+      row.querySelector("small").textContent = epLine(e);
       box.append(row);
     });
   }
