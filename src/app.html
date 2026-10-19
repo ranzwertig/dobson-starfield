@@ -171,6 +171,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .orow .oalt.dim { font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
 .otag { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #17110a; background: var(--accent); border-radius: 5px; padding: 1px 6px; font-weight: 600; margin-right: 6px; vertical-align: 1px; }
 .otag.new { background: none; color: var(--accent); border: 1px solid var(--accent); }
+.ostar.oplan[aria-pressed="true"] svg { fill: none; }
+#infoPlan[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+#infoPlan svg { width: 18px; height: 18px; vertical-align: -3px; }
 .ostar { width: 44px; height: 44px; border: 0; background: none; color: var(--accent); display: grid; place-items: center; cursor: pointer; border-radius: 10px; }
 .ostar svg { width: 21px; height: 21px; }
 .ostar[aria-pressed="true"] svg { fill: currentColor; }
@@ -222,7 +225,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .results .rrow { display: flex; border-bottom: 1px solid var(--line); }
 .results .rrow:last-child { border-bottom: 0; }
 .results .rrow > button:first-child { flex: 1; min-width: 0; border-bottom: 0; }
-.results .rrow > .ostar { width: 48px; height: auto; flex: none; border-radius: 0; border-bottom: 0; display: flex; align-items: center; justify-content: center; padding: 0; }
+.results .rrow > .ostar { width: 44px; height: auto; flex: none; border-radius: 0; border-bottom: 0; display: flex; align-items: center; justify-content: center; padding: 0; }
 /* Time sheet */
 .tm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 2px 0 10px; }
 .tm-head b { font-family: var(--font-num); font-size: 30px; font-weight: 500; }
@@ -570,7 +573,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="infoSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Add to the observing list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="facts" id="infoFacts"></div>
@@ -578,6 +581,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="actions">
       <button class="btn primary" id="infoSeen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Seen</button>
       <button class="btn" id="infoTarget">Set as target</button>
+      <button class="btn" id="infoPlan" aria-pressed="false"></button>
       <button class="btn" id="infoSync" hidden>I’m pointing at it</button>
     </div>
     <div class="links" id="infoLinks"></div>
@@ -664,9 +668,9 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="listSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="listTitle">
-    <div class="grab"><h2 id="listTitle"><span>Tonight’s list</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="listTitle"><span>Observing list</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <p class="note" id="listSub" style="margin-top:-8px"></p>
-    <div class="chips" id="listTabs"><button class="chip" data-ltab="todo"></button><button class="chip" data-ltab="seen"></button></div>
+    <div class="chips" id="listTabs"><button class="chip" data-ltab="todo"></button><button class="chip" data-ltab="seen"></button><button class="chip" data-ltab="starred"></button></div>
     <div class="olist" id="listBody"></div>
     <div class="lbar"><button class="btn primary" id="listNext"></button><button class="btn" id="listAdd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
   </div>
@@ -674,7 +678,8 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="seenSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="seenTitle">
-    <div class="grab"><h2 id="seenTitle"><span id="seenName"></span> <button class="iconbtn" data-close aria-label="Close without saving"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="seenTitle"><button class="iconbtn" id="seenBack" hidden aria-label="Back to the logbook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="seenName" style="flex:1"></span> <span class="ihead"><button class="iconbtn" id="seenPrev" hidden aria-label="Newer entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button><button class="iconbtn" id="seenNextE" hidden aria-label="Older entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <p class="note" id="seenPos" hidden style="margin-top:-8px"></p>
     <div class="sfacts" id="seenFacts"></div>
     <div><div class="slabel" id="seenResL">How did it go?</div><div class="seg3" id="seenRes" role="group" aria-labelledby="seenResL"><button data-res="easy">Easy</button><button data-res="hard">Hard</button><button data-res="miss">Not found</button></div></div>
     <div class="sgrid">
@@ -1267,8 +1272,8 @@ function showResults() {
     b.append(n, s, a); b.onclick = () => { st.fromList = false; selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
     if (T.kind === "sat") { box.append(b); return; }
     const row = document.createElement("div"); row.className = "rrow";
-    const star = starButton(T.id, () => ({ id: T.id, name: T.name }));
-    row.append(b, star); box.append(row);
+    const make = () => ({ id: T.id, name: T.name });
+    row.append(b, toggleButton("plan", T.id, make), toggleButton("star", T.id, make)); box.append(row);
   });
 }
 // No target: the red ring, the arrow and the directions disappear
@@ -1749,14 +1754,18 @@ async function loadDeep() {
 // nebula = square, planetary nebula = circle with centre dot
 // Small marks on the map: a star for objects on the list, a tick for objects already seen
 function obsMark(c, id, x, y, r, dpr) {
-  const S = sets(); const onL = S.list.has(id), seen = S.seen.has(id); if (!onL && !seen) return;
+  const S = sets(), tonight = S.tonight.has(id), plan = S.list.has(id) && !tonight, star = S.starred.has(id), seen = S.seen.has(id);
+  if (!plan && !star && !seen) return;
   const mx = x - r * 0.75 - 5 * dpr, my = y - r * 0.75 - 5 * dpr, k = 5 * dpr;
   c.save(); c.setLineDash([]);
-  if (onL && !S.tonight.has(id)) {
-    c.fillStyle = "#f0a845"; c.beginPath();
+  if (plan) {   // planned for tonight: filled amber dot with a dark ring
+    c.fillStyle = "#f0a845"; c.beginPath(); c.arc(mx, my, k * 0.85, 0, 7); c.fill();
+    c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 1.2 * dpr; c.stroke();
+  } else if (star) {   // starred: outline star
+    c.strokeStyle = "#f0a845"; c.lineWidth = 1.4 * dpr; c.lineJoin = "round"; c.beginPath();
     for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? k * 0.45 : k; c.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); }
-    c.closePath(); c.fill();
-  } else {
+    c.closePath(); c.stroke();
+  } else {   // seen: green tick
     c.strokeStyle = "#7cd39a"; c.lineWidth = 2 * dpr; c.lineCap = "round"; c.lineJoin = "round";
     c.beginPath(); c.moveTo(mx - k * 0.8, my); c.lineTo(mx - k * 0.2, my + k * 0.6); c.lineTo(mx + k * 0.9, my - k * 0.6); c.stroke();
   }
@@ -2147,11 +2156,13 @@ function drawOverlay(dpr) {
 }
 
 /* ---------------- Observing list and logbook ---------------- */
-// Stored on the device only, separately from the settings: { list: [{id, name, added}], log: [entry], exportedAt }
+// Stored on the device only, separately from the settings:
+// { list: planned for tonight [{id, name, added}], starred: wishlist [{id, name, added}], log: [entry], exportedAt }
 // A log entry: { uid, obj, name, t (ISO), lat, lon, alt, ep, moon, result: easy|hard|miss, seeing, transp, note }
 const OBS_KEY = "zenigo-obs";
-let obs = { list: [], log: [], exportedAt: 0 };
+let obs = { list: [], starred: [], log: [], exportedAt: 0 };
 try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || "null"); if (o && Array.isArray(o.log)) obs = Object.assign(obs, o); } catch (e) {}
+if (!Array.isArray(obs.starred)) obs.starred = [];
 function saveObs() {
   try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup.", 7000); }
   st.obsVer = (st.obsVer || 0) + 1; lastSig = []; syncListFab(); syncHudNext();
@@ -2159,11 +2170,11 @@ function saveObs() {
 const pad2 = n => String(n).padStart(2, "0");
 // A night runs from noon to noon: entries after midnight belong to the evening before
 function nightKey(d) { const x = new Date(d.getTime() - 12 * 3600e3); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
-const obsSets = { v: -1, list: new Set(), seen: new Set(), tonight: new Set() };
+const obsSets = { v: -1, list: new Set(), starred: new Set(), seen: new Set(), tonight: new Set() };
 function sets() {
   const k = nightKey(new Date());
   if (obsSets.v === st.obsVer && obsSets.k === k) return obsSets;
-  obsSets.v = st.obsVer; obsSets.k = k; obsSets.list = new Set(obs.list.map(x => x.id));
+  obsSets.v = st.obsVer; obsSets.k = k; obsSets.list = new Set(obs.list.map(x => x.id)); obsSets.starred = new Set(obs.starred.map(x => x.id));
   obsSets.seen = new Set(obs.log.filter(e => e.result !== "miss").map(e => e.obj));
   obsSets.tonight = new Set(obs.log.filter(e => e.result !== "miss" && nightKey(new Date(e.t)) === k).map(e => e.obj));
   return obsSets;
@@ -2183,27 +2194,48 @@ function objById(id) {
   const sx = SAT.list.find(x => "SAT" + x.norad === id); if (sx) return satObj(sx);
   return null;
 }
-function toggleList(o) {
+// Three different things: STARRED = want to see it some day (wishlist), PLANNED = on tonight's plan (obs.list),
+// SEEN = in the logbook. Seeing a starred object takes its star away (done).
+const ICON = {
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>',
+  plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h5"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M19 15.5v5M16.5 18h5"/></svg>',
+  planned: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h4"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M16 18l2 2 3.5-3.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+};
+function togglePlan(o) {
   const i = obs.list.findIndex(x => x.id === o.id);
-  if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from your list.", 2500); }
+  if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from tonight’s plan.", 2500); }
   else {
     obs.list.push({ id: o.id, name: o.name, added: Date.now() });
     const T = targetById(o.id), t = A.MakeTime(new Date()), up = T ? horiz(vecNow(T), t).alt > 10 : true;
-    hint(o.name + " is on your list" + (sets().tonight.has(o.id) ? ", under “Seen tonight”." : up ? "." : ", marked “later”: it is low or below the horizon now."), 3500);
+    hint(o.name + " planned for tonight" + (sets().tonight.has(o.id) ? ", already under “Seen tonight”." : up ? "." : ", marked “later”: it is low or below the horizon now."), 3500);
   }
   saveObs();
 }
-function starButton(id, make) {
-  const b = document.createElement("button"); b.className = "ostar";
-  const set = () => { const on = sets().list.has(id); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? "Remove from the observing list" : "Add to the observing list"); };
-  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>'; set();
-  b.onclick = e => { e.stopPropagation(); toggleList(make()); set(); if (!$("listSheet").hidden) renderList(); };
+function toggleStar(o) {
+  const i = obs.starred.findIndex(x => x.id === o.id);
+  if (i >= 0) { obs.starred.splice(i, 1); hint(o.name + " unstarred.", 2500); }
+  else { obs.starred.push({ id: o.id, name: o.name, added: Date.now() }); hint(o.name + " starred: you want to see it some day. Plan it for a night from the Starred tab.", 4000); }
+  saveObs();
+}
+// A small toggle button: kind "star" (wishlist) or "plan" (tonight)
+function toggleButton(kind, id, make) {
+  const b = document.createElement("button"); b.className = "ostar" + (kind === "plan" ? " oplan" : "");
+  const set = () => {
+    const on = kind === "star" ? sets().starred.has(id) : sets().list.has(id);
+    b.setAttribute("aria-pressed", String(on)); b.innerHTML = kind === "plan" ? (on ? ICON.planned : ICON.plan) : ICON.star;
+    b.setAttribute("aria-label", kind === "star" ? (on ? "Unstar" : "Star: want to see it some day") : (on ? "Remove from tonight’s plan" : "Plan for tonight"));
+  };
+  set();
+  b.onclick = e => { e.stopPropagation(); (kind === "star" ? toggleStar : togglePlan)(make()); set(); if (!$("listSheet").hidden) renderList(); };
   return b;
 }
 function syncInfoObs(o) {
-  const can = o.kind !== "sat", on = sets().list.has(o.id);
-  $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(on));
-  $("infoStar").setAttribute("aria-label", on ? "Remove from the observing list" : "Add to the observing list");
+  const can = o.kind !== "sat", star = sets().starred.has(o.id), plan = sets().list.has(o.id);
+  $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(star));
+  $("infoStar").setAttribute("aria-label", star ? "Unstar" : "Star: want to see it some day");
+  $("infoPlan").hidden = !can; $("infoPlan").setAttribute("aria-pressed", String(plan));
+  $("infoPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + (plan ? " Planned for tonight" : " Plan for tonight");
   const es = obs.log.filter(e => e.obj === o.id && e.result !== "miss").sort((a, b) => b.t.localeCompare(a.t)), h = $("infoHist");
   h.hidden = !es.length; h.textContent = "";
   if (!es.length) return;
@@ -2261,51 +2293,67 @@ function syncHudNext() {
 function goNext(nx) { selectTarget(nx.x.id); hint("Next on your list: " + obsName(nx.x.id, nx.x.name) + ".", 3000); }
 function renderList() {
   const tn = nightPlan(), body = $("listBody"), k = nightKey(new Date()), fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
-  $("listSub").textContent = (tn.dusk ? "Dark " + fmt(tn.dusk) + "–" + fmt(tn.dawn) : "No full darkness tonight") + " · Moon " + (tn.moonSet && tn.moonSet > new Date() ? "sets " + fmt(tn.moonSet) : tn.moonRise && tn.moonRise > new Date() ? "rises " + fmt(tn.moonRise) : Math.round(tn.illum * 100) + " %") + " · sorted by when they get low";
+  $("listSub").textContent = (tn.dusk ? "Dark " + fmt(tn.dusk) + "–" + fmt(tn.dawn) : "No full darkness tonight") + " · Moon " + (tn.moonSet && tn.moonSet > new Date() ? "sets " + fmt(tn.moonSet) : tn.moonRise && tn.moonRise > new Date() ? "rises " + fmt(tn.moonRise) : Math.round(tn.illum * 100) + " %");
   const todo = todoItems(), seenT = obs.log.filter(e => nightKey(new Date(e.t)) === k && e.result !== "miss");
   const seenIds = [...new Set(seenT.map(e => e.obj))];
-  document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.textContent = t === "todo" ? "To do · " + todo.length : "Seen tonight · " + seenIds.length; });
+  const counts = { todo: "Planned · " + todo.length, seen: "Seen tonight · " + seenIds.length, starred: "Starred · " + obs.starred.length };
+  document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.textContent = counts[t]; });
   body.textContent = "";
-  const mk = (id, name, p, seen) => {
-    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && !seen ? " later" : ""); row.dataset.id = id;
+  const note = html => { const p = document.createElement("p"); p.className = "note"; p.innerHTML = html; body.append(p); };
+  // one row: mode "todo" (planned), "seen" (seen tonight) or "starred"
+  const mk = (id, name, p, mode, seenAt) => {
+    const rec = (mode === "starred" ? obs.starred : obs.list).find(x => x.id === id);
+    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && mode !== "seen" ? " later" : ""); row.dataset.id = id;
     const main = document.createElement("button"); main.className = "omain";
-    const b = document.createElement("b"); if (id === cfg.target) { const tg = document.createElement("span"); tg.className = "otag"; tg.textContent = "Target"; b.append(tg); }
-    else if (isNew(obs.list.find(x => x.id === id))) { const tg = document.createElement("span"); tg.className = "otag new"; tg.textContent = "New"; b.append(tg); }
+    const b = document.createElement("b");
+    const tag = (txt, cls) => { const tg = document.createElement("span"); tg.className = "otag" + (cls ? " " + cls : ""); tg.textContent = txt; b.append(tg); };
+    if (id === cfg.target) tag("Target"); else if (isNew(rec)) tag("New", "new");
+    if (mode === "starred" && sets().list.has(id)) tag("Planned", "new");
     b.append(obsName(id, name));
-    const sm = document.createElement("small"), T = p && p.T;
+    const sm = document.createElement("small"), T = p && p.T || targetById(id);
     const mrow = MESSIER.find(r => r[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
     const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : mrow ? mrow[5] : nrow ? nrow.type : "") : "";
     const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
-    sm.textContent = [kind, mag, seen ? "seen " + seen : p ? p.sub : ""].filter(Boolean).join(" · ");
-    if (p && p.warn && !seen) { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
+    const lastSeen = mode === "starred" && sets().seen.has(id) ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort().pop() : null;
+    sm.textContent = [kind, mag, mode === "seen" ? "seen " + seenAt : p ? p.sub : "", lastSeen ? "seen " + new Date(lastSeen).toLocaleDateString([], { day: "numeric", month: "short" }) : ""].filter(Boolean).join(" · ");
+    if (p && p.warn && mode !== "seen") { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
     main.append(b, sm);
-    if (p && !seen) { const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } main.append(bar); }
-    main.onclick = () => { selectTarget(id); closeSheet("listSheet"); };
+    if (p && mode !== "seen") { const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } main.append(bar); }
+    // planned: tap = target (at the telescope); seen and starred: tap = details
+    main.onclick = mode === "todo" ? () => { selectTarget(id); closeSheet("listSheet"); } : () => { const o = objById(id); if (o) showInfo(o); };
     const alt = document.createElement("span"); alt.className = "oalt";
-    if (p && !seen) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
-    else if (seen) { alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; }
+    if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
     let tail;
-    if (seen) {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "To do"
-      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)";
-      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight");
-      tail.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-      tail.onclick = () => unseeTonight(id, name);
-    } else tail = sets().list.has(id) ? starButton(id, () => ({ id, name: obsName(id, name) })) : document.createElement("span");
+    if (mode === "seen") {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "Planned"
+      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
+      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name);
+    } else if (mode === "todo") {
+      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
+      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from tonight’s plan"); tail.onclick = () => { togglePlan({ id, name: obsName(id, name) }); renderList(); };
+    } else tail = toggleButton("plan", id, () => ({ id, name: obsName(id, name) }));
     row.append(main, alt, tail);
     return row;
   };
   if (listTab.v === "todo") {
     if (!obs.list.length) {
       const e = document.createElement("div"); e.className = "oempty";
-      e.innerHTML = '<p class="note">Your list is empty. Add objects with the star in their details or in Find target, or start with the best objects for tonight.</p>';
-      const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Add tonight’s best objects";
-      b.onclick = () => { const n = addTonightsBest(); hint(n ? n + " objects added." : "Nothing new to add tonight.", 3000); renderList(); }; e.append(b); body.append(e);
-    } else if (!todo.length) body.innerHTML = '<p class="note">Everything on your list is seen tonight. Well done!</p>';
-    todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, null)));
+      e.innerHTML = '<p class="note">Nothing planned for tonight. Plan objects with <b>Plan for tonight</b> in their details or the list icon in Find target, plan from your starred objects, or start with the best objects for tonight.</p>';
+      const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Plan tonight’s best objects";
+      b.onclick = () => { const n = addTonightsBest(); hint(n ? n + " objects planned." : "Nothing new to plan tonight.", 3000); renderList(); }; e.append(b);
+      if (obs.starred.length) { const s2 = document.createElement("button"); s2.className = "btn"; s2.textContent = "Plan from starred (" + obs.starred.length + ")"; s2.onclick = () => { listTab.v = "starred"; renderList(); }; e.append(s2); }
+      body.append(e);
+    } else if (!todo.length) note("Everything planned is seen tonight. Well done!");
+    todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "todo")));
+  } else if (listTab.v === "seen") {
+    if (!seenIds.length) note("Nothing logged tonight yet. Tap “Seen” in an object’s details.");
+    seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, "seen", new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))); });
+    if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the plan"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
   } else {
-    if (!seenIds.length) body.innerHTML = '<p class="note">Nothing logged tonight yet. Tap “Seen” in an object’s details.</p>';
-    seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))); });
-    if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the list"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
+    if (!obs.starred.length) note("Star objects you want to see some day: the star in their details or in Find target. Then plan them for a night here with the list icon.");
+    // well placed tonight first (in the order they get low), then the rest
+    obs.starred.map(x => ({ x, p: rowPlan(x.id, tn) })).sort((a, b) => (a.p ? a.p.sort : 2e15) - (b.p ? b.p.sort : 2e15))
+      .forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "starred")));
   }
   const nx = nextItem(); $("listNext").hidden = !nx;
   if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); closeSheet("listSheet"); }; }
@@ -2314,7 +2362,7 @@ async function unseeTonight(id, name) {
   const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
   if (!es.length) return;
   const nm = obsName(id, name), times = es.map(e => new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })).join(", ");
-  const back = sets().list.has(id) ? " It goes back to “To do” on your list." : "";
+  const back = sets().list.has(id) ? " It goes back to “Planned”." : "";
   // the question replaces the list sheet; the list opens again afterwards either way
   const ok = await askConfirm("Remove " + nm + " from seen tonight?", "The logbook " + (es.length === 1 ? "entry from " + times + " is" : "entries from " + times + " are") + " deleted." + back, "Remove");
   if (ok) { const del = new Set(es.map(e => e.uid)); obs.log = obs.log.filter(e => !del.has(e.uid)); saveObs(); hint(nm + " removed from seen tonight.", 3000); }
@@ -2331,17 +2379,20 @@ $("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("list
 // Newly added objects (last 10 minutes) are marked "New"; the newest one is scrolled into view
 const isNew = x => x && Date.now() - (x.added || 0) < 10 * 60e3;
 function revealNew() {
-  const newest = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0]; if (!newest) return;
-  if (sets().tonight.has(newest.id)) { listTab.v = "seen"; renderList(); }
+  const np = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0], ns = obs.starred.filter(isNew).sort((a, b) => b.added - a.added)[0];
+  const newest = np && (!ns || np.added >= ns.added) ? np : ns; if (!newest) return;
+  const tab = newest === ns ? "starred" : sets().tonight.has(newest.id) ? "seen" : "todo";
+  if (tab !== listTab.v) { listTab.v = tab; renderList(); }
   setTimeout(() => { const row = [...document.querySelectorAll("#listBody .orow")].find(r => r.dataset.id === newest.id); row && row.scrollIntoView({ block: "center", behavior: "smooth" }); }, 380);
 }
-$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromList = true; hint("Tap the star next to an object to put it on your list.", 3500); };
+$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromList = true; hint("Tap the list icon to plan an object for tonight, the star to keep it for some day.", 4000); };
 
 // "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
 const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
-function openSeen(o, entry) {
+function openSeen(o, entry, fromLog) {
   const now = entry ? new Date(entry.t) : new Date(), tNow = A.MakeTime(now), k = nightKey(new Date());
   const lastTonight = obs.log.filter(e => nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
+  seenState.fromLog = !!(entry && fromLog);
   Object.assign(seenState, { o, entry: entry || null, res: entry ? entry.result : "easy", see: entry ? entry.seeing || 0 : lastTonight?.seeing || 0, tr: entry ? entry.transp || 0 : lastTonight?.transp || 0 });
   $("seenName").textContent = (entry ? "" : "") + (o ? o.name : entry.name) + (entry ? "" : " seen");
   const alt = entry ? entry.alt : o ? Math.round(horiz(o.vec(tNow), tNow).alt) : null;
@@ -2357,16 +2408,24 @@ function openSeen(o, entry) {
   if (cur && !opts.includes(cur)) opts.unshift(cur);
   opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab);
   if (seenState.facts.alt != null) add("Altitude", seenState.facts.alt + "°");
-  add("Moon", seenState.facts.moon);
-  add("Site", Math.abs(seenState.facts.lat).toFixed(2) + "° " + (seenState.facts.lat >= 0 ? "N" : "S") + " " + Math.abs(seenState.facts.lon).toFixed(2) + "° " + (seenState.facts.lon >= 0 ? "E" : "W"));
+  if (seenState.facts.moon) add("Moon", seenState.facts.moon);
+  if (seenState.facts.lat != null && seenState.facts.lon != null && !isNaN(seenState.facts.lat)) add("Site", Math.abs(seenState.facts.lat).toFixed(2) + "° " + (seenState.facts.lat >= 0 ? "N" : "S") + " " + Math.abs(seenState.facts.lon).toFixed(2) + "° " + (seenState.facts.lon >= 0 ? "E" : "W"));
   $("seenNote").value = entry ? entry.note || "" : "";
   ["seenSee", "seenTr"].forEach((id, j) => { const box = $(id); box.textContent = ""; for (let i = 1; i <= 5; i++) { const b = document.createElement("button"); b.textContent = i; b.setAttribute("aria-label", (j ? "Transparency " : "Seeing ") + i + " of 5"); b.onclick = () => { const key = j ? "tr" : "see"; seenState[key] = seenState[key] === i ? 0 : i; syncSeen(); }; box.append(b); } });
   const nx = !entry && o && sets().list.has(o.id) ? nextItem() : null, nxx = nx && nx.x.id === o.id ? null : nx;
   $("seenSaveNext").hidden = !nxx; if (nxx) $("seenSaveNext").textContent = "Save, next: " + (targetById(nxx.x.id)?.name || nxx.x.name);
-  $("seenSave").classList.toggle("primary", !nxx);
+  $("seenSave").classList.toggle("primary", !nxx); $("seenSave").textContent = entry ? "Done" : "Save";
   $("seenDelete").hidden = !entry;
   seenState.next = nxx;
-  syncSeen(); openSheet("seenSheet");
+  // opened from the logbook: back to it, and step through the entries without leaving
+  const nav = seenState.fromLog, lst = nav ? logEntries() : [], pos = nav ? lst.findIndex(x => x.uid === entry.uid) : -1;
+  $("seenBack").hidden = !nav; $("seenPrev").hidden = $("seenNextE").hidden = $("seenPos").hidden = !nav;
+  if (nav) {
+    $("seenPrev").disabled = pos <= 0; $("seenNextE").disabled = pos < 0 || pos >= lst.length - 1;
+    $("seenPos").textContent = "Entry " + (pos + 1) + " of " + lst.length + (logState.filter ? " for " + logState.filter : "");
+    seenState.prevE = lst[pos - 1] || null; seenState.nextE = lst[pos + 1] || null;
+  }
+  syncSeen(); if ($("seenSheet").hidden || !$("seenSheet").classList.contains("open")) openSheet("seenSheet"); else $("seenSheet").querySelector(".inner").scrollTop = 0;
 }
 function syncSeen() {
   document.querySelectorAll("#seenRes [data-res]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.res === seenState.res)));
@@ -2379,22 +2438,38 @@ function saveSeen(goOn) {
   const e = entry || { uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), obj: o.id, name: o.name, t: new Date().toISOString(), lat: f.lat, lon: f.lon, alt: f.alt, moon: f.moon };
   Object.assign(e, { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value });
   if (!entry) obs.log.push(e);
+  const wasStar = e.result !== "miss" && obs.starred.some(x => x.id === e.obj);
+  if (wasStar) obs.starred = obs.starred.filter(x => x.id !== e.obj);
   saveObs(); closeSheet("seenSheet");
-  if (!$("logSheet").hidden || entry) renderLog();
-  hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged.", 2500);
+  if (!$("logSheet").hidden) renderLog();
+  hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (wasStar ? " Its star is removed: done." : ""), 3000);
   if (goOn && seenState.next) goNext(seenState.next);
 }
 $("seenSave").onclick = () => saveSeen(false);
+$("seenBack").onclick = () => closeSheet("seenSheet");
+$("seenPrev").onclick = () => stepEntry(seenState.prevE);
+$("seenNextE").onclick = () => stepEntry(seenState.nextE);
 $("seenSaveNext").onclick = () => saveSeen(true);
 $("seenDelete").onclick = async () => {
   const e = seenState.entry; if (!e) return;
+  const fromLog = seenState.fromLog; seenState.fromLog = false;   // no automatic return to the log while asking
   closeSheet("seenSheet");
-  if (!(await askConfirm("Delete this entry?", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ". This can’t be undone.", "Delete"))) { renderLog(); return; }
-  obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); renderLog(); openSheet("logSheet");
+  if (!(await askConfirm("Delete this entry?", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ". This can’t be undone.", "Delete"))) { if (fromLog) openSeen(objById(e.obj), e, true); return; }
+  obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); seenState.fromLog = false; backToLog(); hint("Entry deleted.", 2500);
 };
 
 // Logbook: progress, entries by night, export and import
-const logState = { filter: null };
+const logState = { filter: null, scroll: 0 };
+// The entries in the order the logbook shows them (newest first, with its filter)
+function logEntries() { return obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t)); }
+// Apply what was changed in the open entry without closing it (used when stepping to another entry)
+function keepSeenEdits() {
+  const e = seenState.entry; if (!e) return;
+  const v = { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value };
+  if (Object.keys(v).some(k => (e[k] ?? null) !== (v[k] ?? null))) { Object.assign(e, v); saveObs(); }
+}
+function backToLog() { renderLog(); openSheet("logSheet"); const inner = $("logSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = logState.scroll; }); }
+function stepEntry(e) { if (!e) return; keepSeenEdits(); openSeen(objById(e.obj), e, true); }
 const RES_ICON = { easy: ["easy", "var(--ok)", '<path d="M5 12.5l4.5 4.5L19 7.5"/>'], hard: ["hard", "var(--accent)", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.3"/>'], miss: ["not found", "var(--target)", '<path d="M7 7l10 10M17 7L7 17"/>'] };
 function openLog(filter) { logState.filter = filter || null; renderLog(); openSheet("logSheet"); }
 function renderLog() {
@@ -2408,13 +2483,13 @@ function renderLog() {
   const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && sm.alt(v)[0] > 30); }) : [];
   const sb = $("logSuggest"); sb.hidden = !sug.length;
   if (sug.length) {
-    sb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>' + "<span></span><b>Add</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
-    sb.onclick = () => { sug.sort((a, b) => a[3] - b[3]).slice(0, 12).forEach(r => obs.list.push({ id: r[0], name: r[0], added: Date.now() })); saveObs(); renderLog(); hint(Math.min(12, sug.length) + " objects added to your list.", 3000); };
+    sb.innerHTML = ICON.plan + "<span></span><b>Plan</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
+    sb.onclick = () => { sug.sort((a, b) => a[3] - b[3]).slice(0, 12).forEach(r => obs.list.push({ id: r[0], name: r[0], added: Date.now() })); saveObs(); renderLog(); hint(Math.min(12, sug.length) + " objects planned for tonight.", 3000); };
   }
   const fb = $("logFilter"); fb.hidden = !logState.filter; fb.textContent = "";
   if (logState.filter) { const c = document.createElement("button"); c.className = "chip sel"; c.textContent = obsName(logState.filter) + " only  ✕"; c.onclick = () => { logState.filter = null; renderLog(); }; fb.append(c); }
   const body = $("logBody"); body.textContent = "";
-  const list = obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t));
+  const list = logEntries();
   if (!list.length) body.innerHTML = '<p class="note">No entries yet. When you have found an object, open its details and tap “Seen”.</p>';
   let grp = null;
   list.forEach(e => {
@@ -2434,7 +2509,7 @@ function renderLog() {
     r.querySelector(".tm").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const b = r.querySelector("b"); b.textContent = obsName(e.obj, e.name); if (e.result === "miss") b.className = "miss";
     r.querySelector("small").textContent = [e.ep, e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
-    r.onclick = () => { closeSheet("logSheet"); openSeen(objById(e.obj), e); };
+    r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
     body.append(r);
   });
   const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
@@ -2453,7 +2528,7 @@ $("logCsv").onclick = () => {
   download("zenigo-logbook-" + stamp() + ".csv", "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
   obs.exportedAt = Date.now(); saveObs(); renderLog();
 };
-$("logJson").onclick = () => { download("zenigo-backup-" + stamp() + ".json", JSON.stringify({ app: "Zenigo", version: 1, list: obs.list, log: obs.log }, null, 1), "application/json"); obs.exportedAt = Date.now(); saveObs(); renderLog(); };
+$("logJson").onclick = () => { download("zenigo-backup-" + stamp() + ".json", JSON.stringify({ app: "Zenigo", version: 2, list: obs.list, starred: obs.starred, log: obs.log }, null, 1), "application/json"); obs.exportedAt = Date.now(); saveObs(); renderLog(); };
 $("logImport").onclick = () => $("logFile").click();
 $("logFile").onchange = async () => {
   const f = $("logFile").files[0]; $("logFile").value = ""; if (!f) return;
@@ -2463,7 +2538,8 @@ $("logFile").onchange = async () => {
     d.log.forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); n++; } });
     const lh = new Set(obs.list.map(x => x.id)); let m = 0;
     (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); m++; } });
-    saveObs(); renderLog(); hint("Imported " + n + (n === 1 ? " entry" : " entries") + " and " + m + (m === 1 ? " list object." : " list objects."), 4000);
+    const sh = new Set(obs.starred.map(x => x.id)); (d.starred || []).forEach(x => { if (x && x.id && !sh.has(x.id)) { obs.starred.push(x); sh.add(x.id); m++; } });
+    saveObs(); renderLog(); hint("Imported " + n + (n === 1 ? " entry" : " entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects."), 4000);
   } catch (e) { hint("That file is not a Zenigo backup.", 4000); }
 };
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
@@ -2795,6 +2871,10 @@ function askConfirm(title, text, okLabel, altLabel) {
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
+  if (id === "seenSheet" && seenState.fromLog) {   // an entry opened from the logbook: changes are kept, back to the logbook
+    keepSeenEdits(); seenState.fromLog = false;
+    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) backToLog(); }, 60);
+  }
   if (id === "searchSheet" && st.fromList) {
     st.fromList = false;
     setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) { renderList(); openSheet("listSheet"); revealNew(); } }, 60);
@@ -2962,7 +3042,8 @@ function showInfo(o) {
     hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
   };
   syncInfoObs(o);
-  $("infoStar").onclick = () => { toggleList(o); syncInfoObs(o); };
+  $("infoStar").onclick = () => { toggleStar(o); syncInfoObs(o); };
+  $("infoPlan").onclick = () => { togglePlan(o); syncInfoObs(o); };
   $("infoSeen").onclick = () => { closeSheet("infoSheet"); openSeen(o); };
   $("infoTarget").onclick = () => {
     if (isTarget) { clearTarget(); closeSheet("infoSheet"); return; }
