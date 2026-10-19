@@ -618,7 +618,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="infoSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="facts" id="infoFacts"></div>
@@ -713,7 +713,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="targetSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="tgtTitle">
-    <div class="grab"><h2 id="tgtTitle"><span><small class="tkick">Current target</small><span id="tgtName"></span></span> <span class="ihead"><button class="ostar" id="tgtStar" aria-pressed="false"></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="tgtTitle"><button class="iconbtn" id="tgtBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1"><small class="tkick">Current target</small><span id="tgtName"></span></span> <span class="ihead"><button class="ostar" id="tgtStar" aria-pressed="false"></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="tgtSub"></div>
     <p class="warn" id="tgtWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope.</p>
     <div class="tguide" id="tgtGuide"></div>
@@ -2310,7 +2310,7 @@ function syncInfoObs(o) {
   h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + "<b>Seen " + es.length + "×</b>";
   const sp = document.createElement("span"); sp.className = "note"; sp.textContent = "· last on " + d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h1.append(sp); h.append(h1);
   if (last.note || last.ep) { const p = document.createElement("p"); p.textContent = (last.note ? "“" + last.note + "” " : "") + [last.ep, last.seeing ? "seeing " + last.seeing + "/5" : ""].filter(Boolean).join(" · "); h.append(p); }
-  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { closeSheet("infoSheet"); openLog(o.id); }; h.append(b);
+  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { st.infoFromList = false; closeSheet("infoSheet"); openLog(o.id); }; h.append(b);
 }
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
@@ -2334,7 +2334,9 @@ function rowPlan(id, tn) {
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
-const listTab = { v: "todo" };
+const listTab = { v: "todo" }, listState = { scroll: 0 };
+// Back from details or the target panel that were opened from the list: same tab, same place
+function backToList() { renderList(); openSheet("listSheet"); const inner = $("listSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = listState.scroll; }); }
 function todoItems() {
   const tn = nightPlan(), tonight = sets().tonight;
   return obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
@@ -2374,7 +2376,7 @@ function renderList() {
     c.innerHTML = '<span class="ot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg><span><small>Current target</small><b></b></span></span><span class="oalt"></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>';
     c.querySelector("b").textContent = obsName(CT.id, CT.name);
     const tt = skyNow().t; c.querySelector(".oalt").textContent = Math.round(horiz(vecNow(CT), tt).alt) + "°";
-    c.onclick = () => openTargetPanel(); body.append(c);
+    c.onclick = () => { listState.scroll = $("listSheet").querySelector(".inner").scrollTop; openTargetPanel(true); }; body.append(c);
   }
   // one row: mode "todo" (planned), "seen" (seen tonight) or "starred"
   const mk = (id, name, p, mode, seenAt) => {
@@ -2396,7 +2398,7 @@ function renderList() {
     main.append(b, sm);
     if (p && mode !== "seen") { const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } main.append(bar); }
     // planned: tap = target (at the telescope); seen and starred: tap = details
-    main.onclick = mode === "todo" ? () => { selectTarget(id); closeSheet("listSheet"); } : () => { const o = objById(id); if (o) showInfo(o); };
+    main.onclick = mode === "todo" ? () => { selectTarget(id); closeSheet("listSheet"); } : () => { const o = objById(id); if (o) { listState.scroll = $("listSheet").querySelector(".inner").scrollTop; showInfo(o, true); } };
     const alt = document.createElement("span"); alt.className = "oalt";
     if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
@@ -2436,8 +2438,9 @@ function renderList() {
 }
 // Current target panel (Target button): where it is, how to get there, tonight's visibility, and what to do with it
 const tgtPanel = { at: 0 };
-function openTargetPanel() {
+function openTargetPanel(fromList) {
   if (!targetById(cfg.target)) { openSearch(); hint("No target yet: choose one.", 3000); return; }
+  st.tgtFromList = fromList === true; $("tgtBack").hidden = !st.tgtFromList;
   syncTargetPanel(true); openSheet("targetSheet");
 }
 function syncTargetPanel(force) {
@@ -2490,10 +2493,10 @@ function syncTargetPanel(force) {
   if (nx) $("tgtNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →";
   $("tgtStar").onclick = () => { toggleStar(o); syncTargetPanel(true); };
   $("tgtPlan").onclick = () => { togglePlan(o); syncTargetPanel(true); };
-  $("tgtSeen").onclick = () => { closeSheet("targetSheet"); openSeen(o); };
+  $("tgtSeen").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSeen(o); };
   $("tgtNext").onclick = () => { if (nx) { goNext(nx); syncTargetPanel(true); } };
-  $("tgtChange").onclick = () => { closeSheet("targetSheet"); openSearch(); };
-  $("tgtClear").onclick = () => { closeSheet("targetSheet"); clearTarget(); };
+  $("tgtChange").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSearch(); };
+  $("tgtClear").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); clearTarget(); };
 }
 function tgtDetails(o, T, v, t) {
   const facts = [], rd = Solver.v2radec(v);
@@ -2520,13 +2523,15 @@ function tgtDetails(o, T, v, t) {
     h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b></b><span class="note"></span>';
     h1.querySelector("b").textContent = "Seen " + es.length + "×"; h1.querySelector(".note").textContent = "· last on " + new Date(last.t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h.append(h1);
     if (last.note) { const p = document.createElement("p"); p.textContent = "“" + last.note + "”"; h.append(p); }
-    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => { closeSheet("targetSheet"); openLog(T.id); }; h.append(b);
+    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openLog(T.id); }; h.append(b);
   }
   const lb = $("tgtLinks"); lb.textContent = "";
   (o.links || []).forEach(([label, url]) => { const a = document.createElement("a"); a.className = "btn"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = label + " ↗"; lb.append(a); });
   lb.hidden = !lb.childElementCount;
 }
-$("fabTarget").onclick = openTargetPanel;
+$("fabTarget").onclick = () => openTargetPanel(false);
+$("infoBack").onclick = () => closeSheet("infoSheet");
+$("tgtBack").onclick = () => closeSheet("targetSheet");
 async function unseeTonight(id, name) {
   const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
   if (!es.length) return;
@@ -3043,6 +3048,10 @@ function askConfirm(title, text, okLabel, altLabel) {
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
+  if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list: back to it
+    st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
+    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) backToList(); }, 60);
+  }
   if (id === "seenSheet" && seenState.fromLog) {   // an entry opened from the logbook: changes are kept, back to the logbook
     keepSeenEdits(); seenState.fromLog = false;
     setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) backToLog(); }, 60);
@@ -3171,7 +3180,8 @@ function pickAt(clientX, clientY, pointsOnly) {
   }
   return best ? best() : null;
 }
-function showInfo(o) {
+function showInfo(o, fromList) {
+  st.infoFromList = !!fromList; $("infoBack").hidden = !fromList;
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o;
@@ -3204,6 +3214,7 @@ function showInfo(o) {
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
   $("infoSync").onclick = () => {
+    st.infoFromList = false;
     if (st.tOff) setTimeOffset(0, null);
     const t = skyNow().t, tv = teleVec(); if (!tv) return;
     const want = horiz(o.vec(t), t), have = horiz(tv, t);
@@ -3216,8 +3227,9 @@ function showInfo(o) {
   syncInfoObs(o);
   $("infoStar").onclick = () => { toggleStar(o); syncInfoObs(o); };
   $("infoPlan").onclick = () => { togglePlan(o); syncInfoObs(o); };
-  $("infoSeen").onclick = () => { closeSheet("infoSheet"); openSeen(o); };
+  $("infoSeen").onclick = () => { st.infoFromList = false; closeSheet("infoSheet"); openSeen(o); };
   $("infoTarget").onclick = () => {
+    st.infoFromList = false;
     if (isTarget) { clearTarget(); closeSheet("infoSheet"); return; }
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
     selectTarget(o.id); closeSheet("infoSheet");
@@ -3229,7 +3241,7 @@ $("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks
 $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
 $("fabSearch").onclick = openSearch;
-$("hudTarget").onclick = () => cfg.target ? openTargetPanel() : openSearch();
+$("hudTarget").onclick = () => cfg.target ? openTargetPanel(false) : openSearch();
 $("hudClear").onclick = clearTarget;
 $("searchClear").onclick = () => { clearTarget(); closeSheet("searchSheet"); };
 $("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
