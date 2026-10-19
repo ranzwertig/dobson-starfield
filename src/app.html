@@ -2677,6 +2677,8 @@ function memoPlan(T) {
   if (!planMemo.m.has(T.id)) { let p = null; try { p = planFor(T, tn); } catch (e) {} planMemo.m.set(T.id, p); }
   return planMemo.m.get(T.id);
 }
+// Night bar colours (muted, for dark-adapted eyes): above the horizon amber, well placed (above 20° in darkness) green
+const BAR_UP = "#7a5a2c", BAR_GOOD = "#4c9466";
 function rowPlan(id, tn) { const T = targetById(id); return T ? planFor(T, tn) : null; }
 function planFor(T, tn) {
   const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -2686,7 +2688,7 @@ function planFor(T, tn) {
   let best = null; pts.forEach(p => { if (p.good && (!best || p.a > best.a)) best = p; });
   const fut = pts.filter(p => p.d > now), leave = altNow > 20 ? fut.find(p => p.a < 20) : null, rise = altNow <= 20 ? fut.find(p => p.good) : null;
   const span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
-  const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? "#6d5a35" : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
+  const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? BAR_GOOD : p.a > 0 ? BAR_UP : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
   const later = altNow <= 10;
   let sub;
   if (later && rise) sub = "well placed from " + fmt(rise.d) + (best && +best.d !== +rise.d ? ", best " + fmt(best.d) : "");
