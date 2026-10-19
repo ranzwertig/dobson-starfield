@@ -328,6 +328,14 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .fab[aria-disabled="true"], .btn[aria-disabled="true"] { opacity: .38; cursor: not-allowed; box-shadow: none; }
 .fab.shoot[aria-disabled="true"] { opacity: .5; }
 .fab.shoot small { font-weight: 600; }
+/* While a locate takes longer, the button becomes Stop */
+.fab.shoot .i-stop { display: none; }
+.fab.shoot.stop { background: var(--raise); border-color: var(--accent); color: var(--accent); }
+.fab.shoot.stop .i-go { display: none; }
+.fab.shoot.stop .i-stop { display: block; }
+.fab.shoot.stop::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .fab.shoot.stop::after { animation: none; border-color: var(--accent); opacity: .4; } }
 
 /* Landscape / short screens: more compact buttons, labels off, HUD not full width */
 /* Medium-height phones (iPhone SE and similar): smaller round buttons, so the column stays below the menu */
@@ -568,8 +576,9 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></button>
       <button class="fab" id="btnCam" aria-label="Camera on/off"><small>Camera</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg></button>
-      <button class="fab shoot" id="btnSolve" aria-label="Locate"><small>Locate</small>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
+      <button class="fab shoot" id="btnSolve" aria-label="Locate"><small id="solveLbl">Locate</small>
+        <svg class="i-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>
+        <svg class="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg></button>
     </div>
     <div class="progress"><i id="prog"></i></div>
   </main>
@@ -997,6 +1006,21 @@ function hint(text, ms) { const h = $("hint"); if (!text) { h.hidden = true; ret
 
 /* ---------------- Compute core in the worker ---------------- */
 let worker = null, jobId = 0; const jobs = {};
+let workerSrc = null;
+function makeWorker() {
+  try {
+    worker = new Worker(URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" })));
+    worker.onmessage = e => { const j = jobs[e.data.id]; if (j) j(e.data); };
+    worker.onerror = () => { worker = null; };
+  } catch (e) { worker = null; }
+}
+// Stop a running locate: the worker is ended (a search can't be interrupted from outside) and a fresh one started
+function abortSolve() {
+  if (!st.busy) return;
+  st.abort = true;
+  if (worker) { worker.terminate(); makeWorker(); }
+  Object.keys(jobs).forEach(id => { const j = jobs[id]; delete jobs[id]; j({ id: +id, type: "done", aborted: true, stars: [], sol: { ok: false, reason: "Stopped" } }); });
+}
 try {
   const src = $("core").textContent + `
     Solver.setCatalog(STARS);
@@ -1012,9 +1036,7 @@ try {
         self.postMessage({ id: m.id, type: "done", stars, sol });
       } catch (err) { self.postMessage({ id: m.id, type: "done", stars: [], sol: { ok: false, reason: String(err) } }); }
     };`;
-  worker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
-  worker.onmessage = e => { const j = jobs[e.data.id]; if (j) j(e.data); };
-  worker.onerror = () => { worker = null; };
+  workerSrc = src; makeWorker();
 } catch (e) { worker = null; }
 
 function runSolve(gray, w, h, opts, onMsg) {
@@ -1022,7 +1044,7 @@ function runSolve(gray, w, h, opts, onMsg) {
     const id = ++jobId;
     const msg = Object.assign({ id, w, h, sigma: cfg.sigma }, opts);
     if (worker) {
-      jobs[id] = d => { onMsg && onMsg(d); if (d.type === "done") { delete jobs[id]; resolve(d); } };
+      jobs[id] = d => { if (!d.aborted) onMsg && onMsg(d); if (d.type === "done") { delete jobs[id]; resolve(d); } };
       const g = gray.slice(); msg.gray = g.buffer; worker.postMessage(msg, [g.buffer]);   // copy: the frame stays usable for re-solving
     } else {
       setTimeout(() => {
@@ -1050,6 +1072,7 @@ async function captureVideo() {
   const ctx = c.getContext("2d", { willReadFrequently: true });
   const acc = new Float32Array(w * h), n = Math.max(1, cfg.stack | 0);
   for (let k = 0; k < n; k++) {
+    if (st.abort) return null;
     await new Promise(r => video.requestVideoFrameCallback ? video.requestVideoFrameCallback(() => r()) : setTimeout(r, 70));
     drawCam(ctx, video, 0, 0, w, h);
     toGray(ctx, w, h, acc);
@@ -1211,11 +1234,11 @@ async function solveNow() {
     await startCamera(); if (!st.stream) return;
     await new Promise(r => setTimeout(r, 600));   // let exposure settle
   }
-  st.busy = true; $("btnSolve").disabled = true;
+  st.busy = true; st.busyAt = performance.now(); st.abort = false;
   try {
     let fr;
     const devAtCapture = st.source === "video" && sens.rel && !st.extCam ? sens.rel.map(r => r.slice()) : null;
-    if (st.source === "video" && st.stream) { setStatus("Capturing " + cfg.stack + " frames …", "busy"); fr = await captureVideo(); }
+    if (st.source === "video" && st.stream) { setStatus("Capturing " + cfg.stack + " frames …", "busy"); fr = await captureVideo(); if (!fr) { stoppedSolve(); return; } }
     else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
     else return;
     const key = fovKey(), isPhoto = key === "photo";
@@ -1248,6 +1271,7 @@ async function solveNow() {
       }
     });
     $("prog").style.width = "0";
+    if (res.aborted) { if (st.source === "photo") st.frame = fr; stoppedSolve(); return; }
     st.frame = fr;
     st.stars = res.stars;
     const sol = res.sol;
@@ -1275,9 +1299,14 @@ async function solveNow() {
     }
     updateGuide(); renderReadout();
   } finally {
-    st.busy = false; $("btnSolve").disabled = false;
-    if (st.auto && st.stream) setTimeout(solveNow, st.sol && st.sol.near ? 150 : 400);
+    st.busy = false;
+    if (st.auto && st.stream && !st.abort) setTimeout(solveNow, st.sol && st.sol.near ? 150 : 400);
   }
+}
+function stoppedSolve() {
+  $("prog").style.width = "0"; if (st.auto) setAuto(false);
+  setStatus("Stopped", ""); hint("Locating stopped." + (st.source === "photo" ? " Tap Locate to try this photo again." : ""), 3500);
+  updateGuide(); renderReadout();
 }
 function setAuto(on) {
   st.auto = on; $("btnAuto").classList.toggle("on", on); $("btnAuto").setAttribute("aria-pressed", on);
@@ -2028,7 +2057,12 @@ function updateAvailability() {
     ? "This device or page provides no orientation sensor (needs HTTPS)."
     : noSensorCam ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
     : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
-  setAvail("btnSolve", !st.busy && (hasCam || st.source === "photo"), st.busy ? "Already solving …" : "No camera on this page: solve a photo from the menu instead.");
+  setAvail("btnSolve", st.busy || hasCam || st.source === "photo", "No camera on this page: solve a photo from the menu instead.");
+  const stopping = st.busy && performance.now() - (st.busyAt || 0) > 600, sb = $("btnSolve");
+  if (sb.classList.contains("stop") !== stopping) {
+    sb.classList.toggle("stop", stopping); $("solveLbl").textContent = stopping ? "Stop" : "Locate";
+    sb.setAttribute("aria-label", stopping ? "Stop locating" : "Locate");
+  }
   setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
 }
 document.addEventListener("click", e => {
@@ -3659,7 +3693,7 @@ $("fileIn").onchange = async () => {
     $("fileIn").value = ""; updateGuide(); renderReadout(); solveNow();
   } catch (e) { hint("Could not open the image.", 4000); }
 };
-$("btnSolve").onclick = solveNow;
+$("btnSolve").onclick = () => st.busy ? abortSolve() : solveNow();
 $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarget("Sun", true); };
 $("btnSensor").onclick = () => setSensor(!st.sensor);
 $("btnMap").onclick = () => { closeSheet("menu"); if (st.stream) stopCamera(); else showMap(); };
