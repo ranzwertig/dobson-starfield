@@ -273,6 +273,18 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
 .ttonight .course { color: var(--muted); font-size: 13px; }
+.epbox .eb { display: flex; align-items: center; gap: 10px; }
+.epbox .eb > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.epbox .eb b { font: 600 16px/1.2 var(--font-num); }
+.epbox .eb small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+.epbox .eb .btn { flex: none; padding: 7px 14px; min-height: 0; }
+.epbox .inuse { flex: none; font-size: 12.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 2px 9px; }
+.epbox .ers { display: grid; gap: 5px; }
+.epbox .er { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: none; border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; color: var(--fg); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.epbox .er span:first-child { font-family: var(--font-num); white-space: nowrap; }
+.epbox .er span:last-child { color: var(--muted); text-align: right; }
+.epbox .er.best span:last-child { color: var(--ok); font-weight: 600; }
+.epbox .er[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .ttonight .st { display: flex; flex-wrap: wrap; gap: 6px; }
 .ttonight .st span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
 .ttonight .st .on { border-color: var(--accent); color: var(--accent); }
@@ -698,6 +710,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="mphase" id="infoMoon" hidden></div>
     <div class="pbox" id="infoPlanet" hidden></div>
     <div class="ttonight" id="infoTonight" hidden></div>
+    <div class="ttonight epbox" id="infoEp" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
     <div class="actions">
@@ -795,6 +808,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="mphase" id="tgtMoon" hidden></div>
     <div class="pbox" id="tgtPlanet" hidden></div>
     <div class="ttonight" id="tgtTonight"></div>
+    <div class="ttonight epbox" id="tgtEp" hidden></div>
     <div class="facts" id="tgtFacts"></div>
     <div class="ohist" id="tgtHist" hidden></div>
     <div class="actions" id="tgtActs">
@@ -1001,11 +1015,13 @@ a.btn { text-decoration: none; color: var(--fg); }
           <option value="eq">Equatorial</option>
         </select></label>
         <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
+        <label>Aperture (mm)<input type="number" id="oAp" min="30" max="1500" step="1"></label>
         <label>Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.5"></label>
       </div>
+      <p class="note" id="oScopeInfo"></p>
       <div class="eps" id="oEps"></div>
       <div class="row"><button class="btn" id="oEpAdd">Add eyepiece</button></div>
-      <p class="note">The selected eyepiece is used on the map and in the eyepiece view. Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces. True field = apparent field × eyepiece focal length ÷ telescope focal length.</p>
+      <p class="note">The selected eyepiece is used on the map and in the eyepiece view. The details of an object say which of your eyepieces suits it best. Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces. True field = apparent field × eyepiece focal length ÷ telescope focal length.</p>
       <div class="row">
         <label class="check"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
         <label class="check"><input type="checkbox" id="oRing"> Eyepiece and finder field on the map</label>
@@ -1089,7 +1105,7 @@ const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
-const OPT_DEF = { scope: 1200, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
+const OPT_DEF = { scope: 1200, ap: null, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
 cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
@@ -3342,7 +3358,7 @@ function tgtDetails(o, T, v, t) {
   const ms = MSV.find(m => m.id === T.id), ng = !ms && NGC.find(n => n.id === T.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
   if (T.kind === "sat") { const sx = SAT.list.find(x => "SAT" + x.norad === T.id), ss = sx && satState(sx, skyDate()); if (ss) facts.push(["Height", Math.round(ss.height) + " km"], ["Distance", Math.round(ss.range) + " km"]); }
-  const e = curEp(); if (e && T.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(e).mag) + "× · " + fmtField(epData(e).fov)]);
+  const e = curEp(); if (!fillEpBox($("tgtEp"), o.kind ? o : { ...o, kind: T.kind }) && e && T.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(e).mag) + "× · " + fmtField(epData(e).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const box = $("tgtFacts"); box.textContent = "";
   facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; d.innerHTML = '<div class="k"></div><div class="v"></div>'; d.firstChild.textContent = k; d.lastChild.textContent = val; box.append(d); });
@@ -3627,10 +3643,102 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 function opt() { return cfg.optics; }
 function curEp() { const o = opt(); return o.eps.length ? o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))] : null; }
 function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
+// Aperture (mirror or lens diameter): set in the settings, otherwise estimated from the focal length (typical f/6 Dobson)
+function apGuess() { return Math.round((+opt().scope || 1200) / 6 / 5) * 5; }
+function aperture() { return +opt().ap > 0 ? +opt().ap : apGuess(); }
+function exitPupil(e) { return e.f * aperture() / Math.max(1, +opt().scope || 1200); }   // mm
 function fmtField(d) { return d < 1 ? Math.round(d * 60) + "′" : (d < 10 ? d.toFixed(1) : d.toFixed(0)) + "°"; }
 function epLabel(e) { const d = epData(e); return e.f + " mm · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
 // "Should be in the eyepiece": within the inner part of the selected eyepiece's field
 function hitRadius() { const e = curEp(); return e ? Math.max(0.05, epData(e).fov / 2 * 0.7) : 0.4; }
+// Which of your eyepieces suits an object best. Deep-sky: the object should fit and fill a good part of the field
+// (true field vs catalogue size) and the exit pupil should suit its kind (2–4 mm for faint galaxies and nebulae,
+// 1–2 mm for small bright planetary nebulae and for resolving globulars). Moon: the whole disc first, then details.
+// Planets and double stars: magnification against what the aperture (and the air) allow.
+const EP_DSO = {   // wanted fill (object ÷ field), exit pupil (mm), weight of framing and of exit pupil
+  gal: [0.4, 3, 0.6, 1], neb: [0.5, 3, 0.6, 1], open: [0.55, 2.5, 1, 0.4], glob: [0.4, 1.5, 0.8, 1], pn: [0.3, 1.2, 0.3, 1] };
+const EP_PLANET = { Mercury: [0.6, 150], Venus: [0.6, 150], Mars: [1.4, 280], Jupiter: [1, 220], Saturn: [1.2, 250], Uranus: [1, 220], Neptune: [1, 220] };   // × aperture in mm, cap
+function fillWords(f) {
+  return f > 0.95 ? "larger than the field" : f > 0.7 ? "fills most of the field" : f > 0.42 ? "fills about half the field" : f > 0.26 ? "fills about a third of the field" :
+    f > 0.12 ? "a small patch in the field" : "a small spot in the field";
+}
+function epAdvice(o, t) {
+  const eps = opt().eps;
+  if (!eps.length || !o || (o.kind !== "dso" && o.kind !== "planet") || (o.body || o.id) === "Sun") return null;
+  const ap = aperture(), maxM = 2 * ap, body = o.kind === "planet" ? o.body || o.id : null;
+  const rows = eps.map((e, i) => { const d = epData(e); return { i, e, mag: d.mag, fov: d.fov, pupil: exitPupil(e), score: 0, note: "" }; });
+  const pick = list => list.reduce((a, b) => (b.score < a.score ? b : a));
+  const magPenalty = r => (r.mag > maxM ? 3 : 0) + (r.pupil > 7.5 ? 1 : 0);
+  let best, why = "", alt = null, kind;
+  if (body === "Moon") {
+    kind = "moon";
+    const size = 2 * Math.atan(1737.4 / (A.GeoVector(A.Body.Moon, t, true).Length() * AU_KM)) * R2D, ideal = Math.min(250, 1.2 * ap);
+    rows.forEach(r => { const fit = r.fov >= size * 1.08; r.note = fit ? (r.fov > size * 2.5 ? "whole Moon, small" : "whole Moon") : r.mag > maxM ? "too much magnification" : "part of the Moon: craters, mountains";
+      r.score = (fit ? -r.mag / 1000 : 10 + Math.abs(Math.log(r.mag / ideal))) + magPenalty(r); });
+    best = pick(rows);
+    if (best.fov < size * 1.08) why = "None of your eyepieces shows the whole Moon; this one shows the most of it.";
+    else why = "The whole Moon fits, as large as possible.";
+    rows.forEach(r => { r.det = Math.abs(Math.log(r.mag / ideal)) + magPenalty(r); });
+    const det = rows.reduce((a, b) => (b.det < a.det ? b : a));
+    if (det !== best && det.fov < size * 1.08) alt = det;
+  } else if (body) {
+    kind = "planet";
+    const [k, cap] = EP_PLANET[body] || [1, 220], ideal = Math.max(50, Math.min(cap, k * ap)), arcsec = planetDisc(body, t).arcsec;
+    rows.forEach(r => { const q = r.mag / ideal;
+      r.score = Math.abs(Math.log(q)) + magPenalty(r);
+      r.note = r.mag > maxM ? "too much magnification" : q < 0.45 ? "small disc" : q < 0.8 ? "good overview" : q <= 1.3 ? "good for details" : "only on very steady nights"; });
+    best = pick(rows);
+    const rel = arcsec * best.mag / 1865;   // vs the full Moon to the naked eye
+    why = o.name + " looks " + (rel >= 1.3 ? "about " + (rel < 2.5 ? rel.toFixed(1).replace(/\.0$/, "") : Math.round(rel)) + "× as large as" : rel >= 0.75 ? "about as large as" : rel >= 0.4 ? "about half as large as" : "much smaller than") + " the full Moon does to the naked eye.";
+    if (best.mag < ideal * 0.8) why += " More magnification (up to about " + Math.round(ideal / 10) * 10 + "×) would show more detail.";
+  } else {
+    kind = "dso";
+    const ms = MESSIER.find(r => r[0] === o.id), ng = !ms && NGC.find(n => n.id === o.id);
+    const cls = ms ? dsoClass(ms[5]) : ng ? ng.cls : "neb", sz = ms ? ms[7] : ng ? ng.size : null, size = sz > 0 ? sz / 60 : null;
+    const [fillT, pupT, wF, wP] = EP_DSO[cls] || EP_DSO.neb;
+    rows.forEach(r => {
+      const f = size ? size / r.fov : null;
+      const frame = f == null ? 0 : f > 0.9 ? 3 + (f - 0.9) * 5 : Math.abs(Math.log(f / fillT)) * wF;
+      r.score = frame + Math.abs(Math.log(r.pupil / pupT)) * wP + magPenalty(r); r.fill = f;
+      r.note = r.mag > maxM ? "too much magnification" : f == null ? (r.pupil > 4.5 ? "bright, wide view" : r.pupil < 1 ? "dim, high magnification" : r.pupil < 2 ? "darker sky, more contrast" : "good brightness")
+        : f > 0.95 ? "larger than the field" : f > 0.75 ? "fills the field" : f < 0.08 ? "looks tiny" : f < 0.2 ? "fits easily, looks small" : "frames it well";
+    });
+    best = pick(rows);
+    const pw = "exit pupil " + best.pupil.toFixed(1) + " mm" + (cls === "gal" || cls === "neb" ? best.pupil >= 2 && best.pupil <= 4.5 ? ", good for faint light" : "" : cls === "glob" && best.pupil <= 2.2 ? ", enough magnification to resolve stars" : "");
+    why = size ? (best.fill > 0.95 ? "Larger than any of your fields: this one shows the most of it." : "It " + fillWords(best.fill).replace(/^a small/, "is a small") + "; " + pw + ".") : pw[0].toUpperCase() + pw.slice(1) + ".";
+  }
+  // for finding it: the widest field
+  const widest = rows.reduce((a, b) => (b.fov > a.fov ? b : a));
+  return { kind, rows, best, why, alt, widest: widest !== best && widest.fov > best.fov * 1.3 ? widest : null };
+}
+// The eyepiece box in the details and the target panel: best one, all of yours (tap to use), how to find it
+function fillEpBox(box, o) {
+  let a = null; try { a = epAdvice(o, skyNow().t); } catch (e) {}
+  box.hidden = !a; box.textContent = ""; if (!a) return false;
+  const O = opt(), cur = O.src === "finder" ? -1 : Math.min(O.ep | 0, O.eps.length - 1);
+  const short = r => r.e.f + " mm · " + Math.round(r.mag) + "×";
+  const use = (r, quiet) => { setOptics({ ep: r.i, src: "ep" }); fillEpBox(box, o); if (!quiet) hint("Eyepiece: " + epLabel(r.e), 2500); };
+  const k = document.createElement("div"); k.className = "k"; k.textContent = O.eps.length > 1 ? "Best eyepiece" : "Eyepiece"; box.append(k);
+  const head = document.createElement("div"); head.className = "eb";
+  head.innerHTML = "<div><b></b><small></small></div>"; head.querySelector("b").textContent = short(a.best) + " · " + fmtField(a.best.fov); head.querySelector("small").textContent = a.why;
+  if (a.best.i !== cur) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use it"; b.setAttribute("aria-label", "Use the " + a.best.e.f + " mm eyepiece"); b.onclick = () => use(a.best); head.append(b); }
+  else { const s = document.createElement("span"); s.className = "inuse"; s.textContent = "in use"; head.append(s); }
+  box.append(head);
+  if (a.rows.length > 1) {
+    const list = document.createElement("div"); list.className = "ers";
+    a.rows.forEach(r => {
+      const b = document.createElement("button"); b.className = "er" + (r === a.best ? " best" : ""); b.setAttribute("aria-pressed", String(r.i === cur));
+      b.innerHTML = "<span></span><span></span>"; b.firstChild.textContent = short(r) + " · " + fmtField(r.fov); b.lastChild.textContent = r === a.best ? "best" : r.note;
+      b.onclick = () => use(r); list.append(b);
+    });
+    box.append(list);
+  }
+  const tips = [];
+  if (a.alt) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
+  if (a.widest) tips.push("Find it with the " + a.widest.e.f + " mm (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + a.best.e.f + " mm.");
+  tips.forEach(txt => { const d = document.createElement("div"); d.className = "course"; d.textContent = txt; box.append(d); });
+  return true;
+}
 function setOptics(patch) { Object.assign(cfg.optics, patch); save(); st.opticsVer = (st.opticsVer || 0) + 1; syncOptics(); updateGuide(); }
 // Telrad rings (0.5°, 2°, 4°) and the true field of eyepiece and finder, centred on the crosshair
 function drawRings(c, sol, tx, ty, dpr, col) {
@@ -3721,6 +3829,10 @@ function syncOptics() {
   const o = opt(), box = $("oEps");
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
+  if (document.activeElement !== $("oAp")) $("oAp").value = +o.ap > 0 ? o.ap : "";
+  $("oAp").placeholder = apGuess() + " (estimate)";
+  const fr = (+o.scope || 1200) / aperture();
+  $("oScopeInfo").textContent = "f/" + fr.toFixed(1) + " · highest useful magnification about " + Math.round(2 * aperture() / 10) * 10 + "×" + (+o.ap > 0 ? "." : ". The aperture is estimated from the focal length; enter it for exact exit pupils.");
   $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!o.view;
   $("oOrient").value = o.orient; $("oRot").value = o.rot; $("oRotV").textContent = (o.rot > 0 ? "+" : "") + o.rot + "°";
   if (!box.contains(document.activeElement)) {
@@ -3736,7 +3848,7 @@ function syncOptics() {
       row.querySelectorAll("[data-k]").forEach(inp => { inp.value = e[inp.dataset.k];
         inp.onchange = () => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setOptics({}); }; });
       row.querySelector("button").onclick = () => { o.eps.splice(i, 1); setOptics({ ep: Math.min(o.ep | 0, Math.max(0, o.eps.length - 1)) }); };
-      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov);
+      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + " · exit pupil " + exitPupil(e).toFixed(1) + " mm";
       box.append(row);
     });
   }
@@ -3747,6 +3859,7 @@ function syncOptics() {
 }
 $("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
 $("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
+$("oAp").onchange = () => { const v = +$("oAp").value; setOptics({ ap: v >= 30 ? v : null }); };
 $("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
 $("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
 $("oTelrad").onchange = () => setOptics({ telrad: $("oTelrad").checked });
@@ -4065,7 +4178,7 @@ function showInfo(o, fromList) {
   facts.push(["Altitude", h.alt < 0 ? "below horizon" : fmtDeg(h.alt)], ["Azimuth", fmtDeg(h.az) + " " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]]);
   const ms = MSV.find(m => m.id === o.id), ng = !ms && NGC.find(n => n.id === o.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
-  const ep = curEp(); if (ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
+  const ep = curEp(); if (!fillEpBox($("infoEp"), o) && ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
   // tonight: when it is well placed, rising / highest / setting, night bar
