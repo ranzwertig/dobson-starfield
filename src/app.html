@@ -1422,7 +1422,7 @@ async function solveNow() {
       const following = st.auto && st.base && Date.now() - st.base.at < 15000, n = following ? Math.max(4, Math.round(cfg.stack / 3)) : Math.max(1, cfg.stack | 0);
       setStatus("Capturing " + n + " frames …", "busy"); fr = await captureVideo(n); if (!fr) { stoppedSolve(); return; }
     }
-    else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas, noiseFloor: st.frame.noiseFloor };
+    else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas, noiseFloor: st.frame.noiseFloor, frames: st.frame.frames, single: st.frame.single };
     else return;
     const key = fovKey(), isPhoto = key === "photo";
     // Gallery photos each have their own field of view (different lens, crop) -> always search
@@ -4581,12 +4581,19 @@ function starName(ci) { const inf = STARINFO[ci]; return inf ? (inf[0] || (inf[1
 function renderDiag() {
   const d = diag.last, body = $("diagBody");
   if (!d) { body.innerHTML = '<p class="note">No Locate yet since diagnostics were switched on. Tap Locate (or solve a photo), then come back here.</p>'; return; }
-  document.querySelectorAll("#diagLayers [data-layer]").forEach(b => { b.classList.toggle("sel", b.dataset.layer === diag.layer); b.disabled = b.dataset.layer === "single" && !d.fr.single; });
+  // "One frame" only exists for the live camera (a photo is a single image); a photo's image isn't a stack
+  if (diag.layer === "single" && !d.fr.single) diag.layer = "stretch";
+  document.querySelectorAll("#diagLayers [data-layer]").forEach(b => { b.classList.toggle("sel", b.dataset.layer === diag.layer); b.hidden = b.dataset.layer === "single" && !d.fr.single; });
+  $("diagLayers").querySelector('[data-layer=stretch]').textContent = d.fr.frames > 1 ? "Stack" : "Image";
   $("diagMarks").checked = diag.marks;
-  // image with marks
-  const cv = $("diagCanvas"), src = diagImage(d, diag.layer), W = d.fr.w, H = d.fr.h;
+  diagCompose(d, $("diagCanvas"), diag.zoom);
+  diagRest(d);
+}
+// the selected layer with the marks, zoomed in like on screen (zoom 1: the whole image, as saved)
+function diagCompose(d, cv, z) {
+  const src = diagImage(d, diag.layer), W = d.fr.w, H = d.fr.h;
   cv.width = W; cv.height = H; const g = cv.getContext("2d");
-  const z = diag.zoom, vw = W / z, vh = H / z, sx = Math.max(0, Math.min(W - vw, diag.zx * W - vw / 2)), sy = Math.max(0, Math.min(H - vh, diag.zy * H - vh / 2));
+  const vw = W / z, vh = H / z, sx = Math.max(0, Math.min(W - vw, diag.zx * W - vw / 2)), sy = Math.max(0, Math.min(H - vh, diag.zy * H - vh / 2));
   g.imageSmoothingEnabled = z < 2; g.drawImage(src, sx, sy, vw, vh, 0, 0, W, H);
   if (diag.marks) {
     const P2 = (x, y) => [(x - sx) * z, (y - sy) * z], lw = Math.max(1.2, W / 600);
@@ -4594,6 +4601,9 @@ function renderDiag() {
     d.stars.forEach((s, i) => { const [x, y] = P2(s.x, s.y); g.strokeStyle = "rgba(240,168,69,.9)"; g.beginPath(); g.arc(x, y, Math.max(6, W / 120) * Math.min(z, 3), 0, 7); g.stroke(); if (i < 25) { g.fillStyle = "rgba(240,168,69,.95)"; g.fillText(String(i + 1), x + W / 90 * Math.min(z, 3), y - W / 110); } });
     (d.sol.matches || []).forEach(m => { const [x, y] = P2(m.x, m.y); g.strokeStyle = "#7cd39a"; g.lineWidth = lw * 1.4; g.beginPath(); g.arc(x, y, Math.max(9, W / 85) * Math.min(z, 3), 0, 7); g.stroke(); const nm = starName(m.cat); if (nm) { g.fillStyle = "#7cd39a"; g.fillText(nm, x + W / 60 * Math.min(z, 3), y + W / 70); } });
   }
+  return cv;
+}
+function diagRest(d) {
   // histogram of the stack (log counts), zoomed to where the pixels are, with sky level and detection threshold
   const hc = $("diagHist"), hg = hc.getContext("2d"), HW = hc.width = 600, HH = hc.height = 120, NB = 200;
   const smp = []; for (let i = 0; i < d.fr.gray.length; i += 7) smp.push(d.fr.gray[i]); smp.sort((a, b) => a - b);
@@ -4634,10 +4644,13 @@ function diagReport() {
 async function diagSave() {
   const d = diag.last; if (!d) return;
   const name = "zenigo-locate-" + d.at.toISOString().slice(0, 19).replace(/[:T]/g, "-");
-  // the stack, stretched like on screen, as PNG (solvable again with “Photo from the gallery”), and the report
-  const png = await new Promise(r => diagImage(d, "stretch").toBlob(r, "image/png"));
+  // the selected layer as on screen (whole image, with the marks if they are on) as PNG, and the report.
+  // The stack without marks can be solved again with “Photo from the gallery”.
+  const LN = { stretch: d.fr.frames > 1 ? "stack" : "image", raw: "raw", bg: "sky-removed", mask: "detection", single: "one-frame" };
+  const png = await new Promise(r => diagCompose(d, document.createElement("canvas"), 1).toBlob(r, "image/png"));
+  const pngName = name + "-" + (LN[diag.layer] || "image") + (diag.marks ? "-marks" : "") + ".png";
   const json = new Blob([JSON.stringify(diagReport(), null, 1)], { type: "application/json" });
-  const files = [new File([png], name + ".png", { type: "image/png" }), new File([json], name + ".json", { type: "application/json" })];
+  const files = [new File([png], pngName, { type: "image/png" }), new File([json], name + ".json", { type: "application/json" })];
   try { if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, title: "Zenigo Locate" }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
   files.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, i * 400));
 }
