@@ -1581,7 +1581,14 @@ function feedHeading(e) {
 }
 function feedOff(off) {
   const now = performance.now();
-  if (!sens.off) { sens.off = [Math.cos(off), Math.sin(off)]; sens.offN = 1; sens.offT = now; sens.offStart = now; setAbs(); return; }
+  if (!sens.off) {
+    // first reading after a pause: if the gyroscope came back with a new zero, a solved base from before no longer fits
+    const ob = sens.offBefore; sens.offBefore = null;
+    if (ob && st.base && Math.abs(((off - Math.atan2(ob[1], ob[0])) * R2D + 540) % 360 - 180) > 10) {
+      st.base = null; if (st.sensor) hint("The motion sensor restarted: Align is back on the compass. Tap “Locate” to make it precise again.", 5000);
+    }
+    sens.off = [Math.cos(off), Math.sin(off)]; sens.offN = 1; sens.offT = now; sens.offStart = now; setAbs(); return;
+  }
   const dt = Math.min(0.5, (now - sens.offT) / 1000); sens.offT = now;
   if (Math.abs(camElev()) > 50) { sens.outSince = 0; return; }   // steep: hold the offset
   const cur = Math.atan2(sens.off[1], sens.off[0]), d = ((off - cur) * R2D + 540) % 360 - 180;
@@ -1638,6 +1645,9 @@ function syncCompassCal() {
 }
 function onOrientation(e, absolute) {
   if (e.alpha == null || e.beta == null || e.gamma == null) return;
+  const now = performance.now();
+  if (sens.lastEvt && now - sens.lastEvt > 700) resumeSensors();
+  sens.lastEvt = now;
   const m = devMatrix(e.alpha, e.beta, e.gamma);
   if (absolute) feedAbs(m);
   else {
@@ -1648,6 +1658,13 @@ function onOrientation(e, absolute) {
   }
   if (absolute) sens.hasAbsEvent = true;
   if (st.sensor && !sens.raf) sens.raf = requestAnimationFrame(() => { sens.raf = 0; sensorUpdate(); });
+}
+// After a pause in the sensor data (page in the background, e.g. while picking a gallery photo, or the screen was off)
+// phones often restart the gyroscope with a new zero for its heading. The filtered compass offset belongs to the old
+// zero: kept, the map would point the wrong way (pointing up steeply the offset is held, so it would stay wrong).
+// Start the filters afresh instead; the first compass reading after the pause sets the heading again.
+function resumeSensors() {
+  Object.assign(sens, { offBefore: sens.off || sens.offBefore, raw: null, rel: null, abs: null, pend: null, pendN: 0, relT: 0, speed: 0, off: null, offN: 0, offUsed: null, outSince: 0 });
 }
 async function setSensor(on) {
   if (on) {
