@@ -831,17 +831,16 @@ function buildCamControls() {
 /* ---------------- Camera choice ---------------- */
 // Field of view and eyepiece point belong to a camera: kept per camera, keyed by its name
 const camKey = () => cfg.camId ? "cam:" + (cfg.camLabel || cfg.camId) : "default";
-function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror }; }
-function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); }
+function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror, mirrorK: cfg.mirrorK || null }; }
+function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; }
 // Through a mirror the camera image is mirror-inverted: flip it before solving and showing it.
 // The phone's own orientation then no longer tells where the view goes, so the motion sensors are not used with it.
 const mirrored = () => !!cfg.mirror && !topMode();
 function setMirror(on) {
   cfg.mirror = !!on; save(); storeCamProfile(); save();
   st.sol = null; st.base = null; st.stars = []; st.frame = st.source === "video" ? null : st.frame; lastSig = [];
-  if (on && st.sensor && st.stream) setSensor(false);
   syncSettings(); updateGuide();
-  hint(on ? "Mirrored image on: the camera image is flipped before solving. Tap Locate again." : "Mirrored image off.", 4000);
+  hint(on ? "Mirrored image on: the camera image is flipped before solving. With Align on, the next Locate also teaches the app where the mirror sends the view." : "Mirrored image off.", 6000);
 }
 async function listCameras() {
   const sel = $("camSel"); if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
@@ -883,7 +882,7 @@ async function solveNow() {
   st.busy = true; $("btnSolve").disabled = true;
   try {
     let fr;
-    const devAtCapture = st.source === "video" && sens.rel && !st.extCam && !mirrored() ? sens.rel.map(r => r.slice()) : null;
+    const devAtCapture = st.source === "video" && sens.rel && !st.extCam ? sens.rel.map(r => r.slice()) : null;
     if (st.source === "video" && st.stream) { setStatus("Capturing " + cfg.stack + " frames …", "busy"); fr = await captureVideo(); }
     else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas };
     else return;
@@ -899,7 +898,7 @@ async function solveNow() {
       const b = st.base, age = b ? Date.now() - b.at : Infinity;
       if (b && b.sol.w === fr.w && b.sol.h === fr.h && age < (b.dev && devAtCapture ? 180000 : 15000)) {
         let R = b.sol.R;
-        if (b.dev && devAtCapture) { const C = camAxes(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(C)), tr3(b.dev)), devAtCapture), C); }
+        if (b.dev && devAtCapture && camK()) { const C = camK(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(C)), tr3(b.dev)), devAtCapture), C); }
         const s0 = b.sol;
         opts.near = { R, f: s0.f, k1: s0.k1, poly: s0.poly, w: s0.w, h: s0.h, cx: s0.cx, cy: s0.cy, fov: s0.fov, fovV: s0.fovV };
       }
@@ -923,6 +922,7 @@ async function solveNow() {
     if (sol && sol.ok) {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
       st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
+      if (st.base && devAtCapture && mirrored()) learnMirrorK(sol, devAtCapture);
       if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
       if (sol.near) { setStatus("Tracked · " + sol.nMatch + " stars · " + Math.max(1, Math.round(sol.ms)) + " ms", "ok"); updateGuide(); renderReadout(); return; }
       if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
@@ -1103,6 +1103,31 @@ function camAxes() {             // camera axes (x right, y down, z view directi
   const th = ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R, c = Math.cos(th), s = Math.sin(th);
   return [[c, -s, 0], [-s, -c, 0], [0, 0, -1]];
 }
+// Camera axes used with the motion sensors. Through a mirror the view no longer comes out of the back of the
+// phone: the app learns the turned direction from a Locate (see learnMirrorK) and uses it from then on.
+function camK() { return mirrored() ? (cfg.mirrorK || null) : camAxes(); }
+// the 24 rotations that map the phone's axes onto each other (mirrors and holders turn the view by multiples of 90°)
+const AXIS_ROTS = (() => {
+  const out = [], perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+  for (const p of perms) for (let sx = -1; sx <= 1; sx += 2) for (let sy = -1; sy <= 1; sy += 2) for (let sz = -1; sz <= 1; sz += 2) {
+    const m = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], sg = [sx, sy, sz];
+    for (let i = 0; i < 3; i++) m[i][p[i]] = sg[i];
+    const det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+    if (det > 0) out.push(m);
+  }
+  return out;
+})();
+function learnMirrorK(sol, dev) {
+  if (!sens.off) return;
+  const a = Math.atan2(sens.off[1], sens.off[0]) + (+cfg.compassCal || 0) * D2R, ca = Math.cos(a), sa = Math.sin(a);
+  const abs = mm3([[ca, -sa, 0], [sa, ca, 0], [0, 0, 1]], dev), H2E = skyNow().M, E2H = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]];
+  const est = mm3(mm3(tr3(abs), tr3(mm3(H2E, E2H))), sol.R);   // camera axes in the phone frame, with the compass error
+  let best = null, bs = -Infinity;
+  for (const m of AXIS_ROTS) { let sc = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sc += m[i][j] * est[i][j]; if (sc > bs) { bs = sc; best = m; } }
+  const changed = JSON.stringify(best) !== JSON.stringify(cfg.mirrorK);
+  cfg.mirrorK = best; storeCamProfile(); save();
+  if (changed) hint("Learned how the mirror turns the view. Align now follows the phone.", 5000);
+}
 const sens = { rel: null, abs: null, raw: null, pend: null, pendN: 0, off: null, offN: 0, offOut: 0, listening: false, lastGuide: 0, raf: 0 };
 // Quaternions for smoothing and jump detection
 function m2q(m) {
@@ -1147,7 +1172,7 @@ function feedRel(m) {
 // usual compass noise of a few degrees no longer shakes the map. Short disturbances (>20°) are ignored, lasting ones accepted.
 // Pointing steeply up or down the compass heading is poorly defined (and phones switch the reference axis there):
 // the offset is then held and the gyroscope alone carries the orientation.
-function camElev() { const v = Solver.mul(sens.rel, Solver.mul(camAxes(), [0, 0, 1])); return Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D; }
+function camElev() { const v = Solver.mul(sens.rel, Solver.mul(camK() || camAxes(), [0, 0, 1])); return Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D; }
 function feedAbs(mAbs) {
   if (!sens.rel) return;
   const M = mm3(mAbs, tr3(sens.rel));
@@ -1193,7 +1218,8 @@ function calibrateCompass(sol, dev) {
   const t = A.MakeTime(new Date()), rot = A.Rotation_HOR_EQJ(t, observer()).rot;
   const E2H = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]];
   // true north-referenced device orientation = (H2E·E2H)ᵀ · R · Cᵀ
-  const Atrue = mm3(mm3(tr3(E2H), rot), mm3(sol.R, tr3(camAxes())));
+  const K = camK(); if (!K) return;
+  const Atrue = mm3(mm3(tr3(E2H), rot), mm3(sol.R, tr3(K)));
   const M = mm3(Atrue, tr3(dev)), trueOff = Math.atan2(M[1][0], M[0][0]);
   const d = ((trueOff - Math.atan2(sens.off[1], sens.off[0])) * R2D + 540) % 360 - 180;
   // Only suggest: the user decides whether to apply it
@@ -1271,7 +1297,11 @@ function approxCamera() {
 }
 function sensorUpdate() {
   if (!st.sensor) return;
-  const C = camAxes();
+  const C = camK();
+  if (!C) {   // mirror without a learned direction yet
+    if (!st.busy && !/Locate once/.test($("statusText").textContent)) setStatus("Mirror: tap Locate once so Align can follow", "");
+    return;
+  }
   if (st.base && st.base.dev && sens.rel) {
     // R = R0 · Cᵀ · D0ᵀ · D · C   (apply the phone's rotation since capture to the solved orientation)
     const R = mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C)), tr3(st.base.dev)), sens.rel), C);
@@ -1453,11 +1483,10 @@ function updateAvailability() {
   if (topMode()) { ["btnAuto", "btnCam", "btnSolve"].forEach(id => setAvail(id, false, topWhy)); setAvail("btnSensor", hasOri, "This device or page provides no orientation sensor (needs HTTPS)."); return; }
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
-  const noSensorCam = st.stream && (st.extCam || mirrored());
+  const noSensorCam = st.stream && st.extCam;
   setAvail("btnSensor", st.sensor || (hasOri && st.source !== "photo" && !noSensorCam), !hasOri
     ? "This device or page provides no orientation sensor (needs HTTPS)."
-    : noSensorCam ? (st.extCam ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
-      : "With a mirror the phone’s orientation doesn’t show where the camera looks. Align is off; use Locate or Continuous.")
+    : noSensorCam ? "Align follows the phone’s own camera. It is off while an external camera is in use; use Locate or Continuous."
     : "Align does not apply to a gallery photo. Show the sky map or start the camera.");
   setAvail("btnSolve", !st.busy && (hasCam || st.source === "photo"), st.busy ? "Already solving …" : "No camera on this page: solve a photo from the menu instead.");
   setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
