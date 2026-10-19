@@ -1864,12 +1864,16 @@ function mapSol() {
 // A solved photo without Align: drag and pinch move the sky around it like on the map (the photo stays in place on the sky)
 const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
 function mapGestures() { return (st.source === "map" && st.solMode !== "track") || photoSky(); }
+// The first move makes the view a plain projection like the map (the photo's lens distortion is corrected by the mesh)
+function photoViewPlain() { if (!st.photoMoved) { st.sol.k1 = 0; st.sol.poly = null; } }
 function photoRotate(dx, dy) {
+  photoViewPlain();
   const sol = st.sol, k = 1 / (sol.f * fit.sc), a = -dx * k, b = dy * k, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
   sol.R = mm3(mm3(sol.R, [[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]]), [[1, 0, 0], [0, cb, -sb], [0, sb, cb]]);
   st.photoMoved = true;
 }
 function photoZoom(factor) {
+  photoViewPlain();
   const sol = st.sol, f0 = st.photoSol.f; sol.f = Math.max(f0 * 0.12, Math.min(f0 * 10, sol.f * factor));
   sol.fov = 2 * Math.atan(sol.w / 2 / sol.f) * R2D; sol.fovV = 2 * Math.atan(sol.h / 2 / sol.f) * R2D; st.photoMoved = true;
 }
@@ -1961,7 +1965,7 @@ const endPtr = e => {
   else if (ptrs.size === 1) { const [x, y] = [...ptrs.values()][0]; gest = { kind: "pan", x0: x, y0: y, px: zoom.x, py: zoom.y, moved: true }; }
 };
 view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", endPtr);
-view.addEventListener("wheel", e => { e.preventDefault(); const fct = Math.exp(-e.deltaY * 0.0015); if (mapGestures()) mapZoom(fct); else { const [x, y] = canvasXY(e); zoomAbout(x, y, zoom.z * fct); } }, { passive: false });
+view.addEventListener("wheel", e => { e.preventDefault(); st.wheelAt = performance.now(); const fct = Math.exp(-e.deltaY * 0.0015); if (mapGestures()) mapZoom(fct); else { const [x, y] = canvasXY(e); zoomAbout(x, y, zoom.z * fct); } }, { passive: false });
 
 /* ---------------- Drawing ---------------- */
 let fit = { sc: 1, ox: 0, oy: 0, w: 1, h: 1 };
@@ -1976,7 +1980,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, st.obsVer, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, st.obsVer, st.photoMoved ? meshSize()[0] : 0, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -2044,16 +2048,119 @@ function draw() {
   drawEyepiece();
 }
 const P = (x, y) => [fit.ox + x * fit.sc, fit.oy + y * fit.sc];
-// The solved photo placed on the sky of the current view: photo pixel -> sky (its solution) -> view pixel -> screen,
-// approximated by an affine map around the photo centre (good enough for the usual camera fields)
+// The solved photo bent onto the sky of the current view (mesh warp): the photo is cut into a grid of triangles; every
+// grid point goes photo pixel -> sky (the photo's own solution, lens distortion included) -> view pixel -> screen, and
+// each triangle is drawn with its own affine transform. So the photo stays on the stars up to its edges.
+// Coarse grid while dragging or pinching, fine grid at rest; the density drops by itself if drawing gets slow.
+const mesh = { key: "", nx: 0, ny: 0, sky: null, slow: 0 };
+const MESH = { fine: [16, 12], mid: [12, 8], coarse: [8, 6], min: [6, 4] };
+function meshSize() {
+  const busy = ptrs.size > 0 || performance.now() - (st.wheelAt || 0) < 250;
+  if (busy) return mesh.slow > 1 ? MESH.min : MESH.coarse;
+  return mesh.slow > 0 ? MESH.mid : MESH.fine;
+}
+// Preferred: the same mesh drawn with WebGL into an offscreen canvas (one pass on the graphics chip, a finer grid,
+// then copied onto the map in one go). The 2D-canvas mesh below is the fallback when WebGL isn't available.
+const glw = { tried: false, ok: false, slowN: 0 };
+function glSetup() {
+  glw.tried = true;
+  try {
+    const cv = document.createElement("canvas"), gl = cv.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false });
+    if (!gl) return false;
+    // a software WebGL (no graphics chip) is slower than the 2D mesh: don't use it
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info"), rnd = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
+    if (/swiftshader|llvmpipe|software|basic render/i.test(rnd)) return false;
+    const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, "attribute vec2 p; attribute vec2 t; varying vec2 v; void main() { v = t; gl_Position = vec4(p, 0.0, 1.0); }"));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, "precision mediump float; varying vec2 v; uniform sampler2D s; void main() { gl_FragColor = texture2D(s, v); }"));
+    gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    Object.assign(glw, { cv, gl, prog, pb: gl.createBuffer(), tb: gl.createBuffer(), ib: gl.createBuffer(), tex: gl.createTexture(), aP: gl.getAttribLocation(prog, "p"), aT: gl.getAttribLocation(prog, "t"), ok: true,
+      u32: !!gl.getExtension("OES_element_index_uint") });
+    cv.addEventListener("webglcontextlost", e => { e.preventDefault(); glw.ok = false; });
+    return true;
+  } catch (e) { glw.ok = false; return false; }
+}
+function drawPhotoGL(src) {
+  if (!glw.tried) glSetup();
+  if (!glw.ok) return false;
+  const { gl, cv } = glw, ps = st.photoSol, sol = st.sol, W = view.width, H = view.height, nx = 32, ny = 24;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  if (glw.texSrc !== src) {   // upload the photo once
+    gl.bindTexture(gl.TEXTURE_2D, glw.tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    glw.texSrc = src; glw.skyKey = "";
+  }
+  const key = ps.w + "|" + ps.f + "|" + nx;
+  if (glw.skyKey !== key || glw.ps !== ps) {   // grid points on the sky: once per photo
+    glw.skyKey = key; glw.ps = ps; glw.sky = []; const tc = new Float32Array((nx + 1) * (ny + 1) * 2);
+    for (let j = 0, k = 0; j <= ny; j++) for (let i = 0; i <= nx; i++, k++) { glw.sky.push(Solver.pixToSky(ps, i * ps.w / nx, j * ps.h / ny)); tc[2 * k] = i / nx; tc[2 * k + 1] = j / ny; }
+    gl.bindBuffer(gl.ARRAY_BUFFER, glw.tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
+  }
+  const pos = new Float32Array(glw.sky.length * 2), ok = new Uint8Array(glw.sky.length);
+  glw.sky.forEach((v, k) => { const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.15) return; const [u, w] = P(p.x, p.y); pos[2 * k] = u / W * 2 - 1; pos[2 * k + 1] = 1 - w / H * 2; ok[k] = 1; });
+  const idx = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+    if (ok[a] && ok[b] && ok[c]) idx.push(a, b, c);
+    if (ok[b] && ok[d] && ok[c]) idx.push(b, d, c);
+  }
+  gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (idx.length) {
+    gl.useProgram(glw.prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, glw.pb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(glw.aP); gl.vertexAttribPointer(glw.aP, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, glw.tb); gl.enableVertexAttribArray(glw.aT); gl.vertexAttribPointer(glw.aT, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, glw.ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.DYNAMIC_DRAW);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glw.tex);
+    gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+  }
+  vctx.drawImage(cv, 0, 0);
+  return true;
+}
 function drawPhotoInView(src, sw, sh) {
-  const ps = st.photoSol, sol = st.sol, d = ps.w / 4;
-  const at = (x, y) => { const p = Solver.skyToPix(sol, Solver.pixToSky(ps, x, y)); return p && p.z > 0.2 ? P(p.x, p.y) : null; };
-  const c0 = at(ps.cx, ps.cy), cx = at(ps.cx + d, ps.cy), cy = at(ps.cx, ps.cy + d); if (!c0 || !cx || !cy) return;
-  const a = (cx[0] - c0[0]) / d, b = (cx[1] - c0[1]) / d, c = (cy[0] - c0[0]) / d, e = (cy[1] - c0[1]) / d;
-  const kx = ps.w / sw, ky = ps.h / sh;
-  vctx.save(); vctx.setTransform(a * kx, b * kx, c * ky, e * ky, c0[0] - a * ps.cx - c * ps.cy, c0[1] - b * ps.cx - e * ps.cy);
-  vctx.drawImage(src, 0, 0, sw, sh); vctx.restore();
+  const g0 = performance.now();
+  if (drawPhotoGL(src)) {   // measured: if WebGL turns out slow on this device (3 slow frames), use the 2D mesh from then on
+    if (performance.now() - g0 > 18) { if (++glw.slowN >= 3) glw.ok = false; } else glw.slowN = 0;
+    return;
+  }
+  const ps = st.photoSol, sol = st.sol, [nx, ny] = meshSize(), t0 = performance.now();
+  // sky directions of the grid points depend only on the photo: computed once per photo and grid size
+  const key = nx + "x" + ny + "|" + ps.w + "|" + ps.f;
+  if (mesh.key !== key || mesh.ps !== ps) {
+    mesh.key = key; mesh.ps = ps; mesh.nx = nx; mesh.ny = ny; mesh.sky = [];
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const x = i * ps.w / nx, y = j * ps.h / ny; mesh.sky.push([x, y, Solver.pixToSky(ps, x, y)]); }
+  }
+  const pts = mesh.sky.map(([x, y, v]) => { const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.15) return null; const [u, w] = P(p.x, p.y); return [x, y, u, w]; });
+  const kx = sw / ps.w, ky = sh / ps.h, c = vctx;
+  // the photo canvas is kept for reading pixels (CPU memory); a GPU-friendly copy draws much faster, made once per photo
+  if (mesh.src !== src) { mesh.src = src; mesh.bmp = null; if (window.createImageBitmap) createImageBitmap(src).then(b => { if (mesh.src === src) { mesh.bmp = b; lastSig = []; } }).catch(() => {}); }
+  const img = mesh.bmp || src;
+  const tri = (a, b, d) => {
+    if (!a || !b || !d) return;
+    const [x0, y0, u0, v0] = a, [x1, y1, u1, v1] = b, [x2, y2, u2, v2] = d;
+    const den = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0); if (!den) return;
+    const A = ((u1 - u0) * (y2 - y0) - (u2 - u0) * (y1 - y0)) / den, B = ((v1 - v0) * (y2 - y0) - (v2 - v0) * (y1 - y0)) / den;
+    const C = ((u2 - u0) * (x1 - x0) - (u1 - u0) * (x2 - x0)) / den, D = ((v2 - v0) * (x1 - x0) - (v1 - v0) * (x2 - x0)) / den;
+    // clip slightly larger than the triangle (0.6 px), so no hairline seams show between neighbours
+    const mx = (u0 + u1 + u2) / 3, my = (v0 + v1 + v2) / 3, grow = (u, v) => { const dx = u - mx, dy = v - my, l = Math.hypot(dx, dy) || 1; return [u + dx / l * 0.6, v + dy / l * 0.6]; };
+    const [p0, p1, p2] = [grow(u0, v0), grow(u1, v1), grow(u2, v2)];
+    c.save(); c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]); c.closePath(); c.clip();
+    c.setTransform(A / kx, B / kx, C / ky, D / ky, u0 - A * x0 - C * y0, v0 - B * x0 - D * y0);
+    // only the triangle's part of the photo (plus a pixel), not the whole image, for every triangle
+    const sx = Math.max(0, Math.floor(Math.min(x0, x1, x2) * kx) - 1), sy = Math.max(0, Math.floor(Math.min(y0, y1, y2) * ky) - 1);
+    const ex = Math.min(sw, Math.ceil(Math.max(x0, x1, x2) * kx) + 1), ey = Math.min(sh, Math.ceil(Math.max(y0, y1, y2) * ky) + 1);
+    if (ex > sx && ey > sy) c.drawImage(img, sx, sy, ex - sx, ey - sy, sx, sy, ex - sx, ey - sy);
+    c.restore();
+  };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const k = j * (nx + 1) + i; tri(pts[k], pts[k + 1], pts[k + nx + 1]); tri(pts[k + 1], pts[k + nx + 2], pts[k + nx + 1]);
+  }
+  // adapt: slow frames lower the density (coarse grid > 14 ms, fine grid > 30 ms)
+  const ms = performance.now() - t0, coarse = nx <= 8;
+  if ((coarse && ms > 14) || (!coarse && ms > 30)) mesh.slow = Math.min(2, mesh.slow + 1);
 }
 let insetCache = null;
 function overlayInsets(dpr) {   // layout reads are cached briefly: reading them every frame forces a layout
