@@ -78,9 +78,18 @@ const year = new Date().getFullYear();
 const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');
+// Search engines: canonical address per page and a sitemap (the app itself at /app/ is excluded in robots.txt)
+const SITE = 'https://zenigo.app';
+const urlOf = dst => dst === 'dist/404.html' ? null : SITE + dst.replace(/^dist/, '').replace(/index\.html$/, '');
+const today = new Date().toISOString().slice(0, 10);
+const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+  + Object.values(pages).map(urlOf).filter(Boolean).map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n') + '\n</urlset>\n';
+write('dist/sitemap.xml', sitemap);
 for (const [src, dst] of Object.entries(pages)) {
-  write(dst, read('site/' + src).replace('<!--HEADER-->', () => header).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)));
+  const url = urlOf(dst);
+  const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';   // the 404 page carries its own noindex
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => header).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 
-console.log(`dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);
+console.log(`sitemap: ${Object.values(pages).map(urlOf).filter(Boolean).length} pages; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);

@@ -1,3 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /app/
+
+Sitemap: https://zenigo.app/sitemap.xml

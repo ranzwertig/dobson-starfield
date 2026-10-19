@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Zenigo – push-to for your telescope</title>
-<meta name="description" content="Zenigo turns your phone into a push-to system for a Dobsonian telescope: it recognises the stars in the camera image and shows how far to turn and tilt to reach your target. Free, in the browser, works offline.">
+<meta name="description" content="Zenigo turns your phone into a push-to system for a Dobsonian telescope: it recognises the stars in the camera image and shows how far to turn and tilt to reach your target. With eyepiece view, observing list and logbook. Free, in the browser, works offline.">
 <meta name="theme-color" content="#0c1124">
 <link rel="icon" href="/app/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
 <meta property="og:title" content="Zenigo – push-to for your telescope">
 <meta property="og:description" content="Your phone recognises the stars and shows your Dobson the way. Free, in the browser, works offline.">
-<meta property="og:image" content="/app/icons/icon-512.png">
+<meta property="og:image" content="https://zenigo.app/app/icons/icon-512.png">
+<meta property="og:type" content="website">
 <script>
   // Started from the home screen: go straight to the app
   if (navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) location.replace("/app/");
@@ -71,41 +72,66 @@
 
   <section>
     <div class="wrap">
-      <h2>What’s in it</h2>
+      <h2>At the telescope</h2>
       <dl class="features">
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Precise, without extra hardware</dt>
-          <dd>No encoders, no Wi-Fi box. The position comes from the stars themselves, accurate to a fraction of a degree.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Precise, without extra hardware</dt>
+          <dd>No encoders, no Wi-Fi box. The position comes from the stars themselves, accurate to a fraction of a degree, and the motion sensor keeps the directions up to date while you push.</dd>
         </div>
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg>Sky map that follows the phone</dt>
-          <dd>Without the camera you get a star map. Turn on Align and it moves with the phone, roughly by compass or precisely after a solve.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg>Sky map that follows the phone</dt>
+          <dd>Without the camera you get a star map. Turn on Align and it moves with the phone, roughly by compass or precisely after a locate. Filter it to planets, deep-sky classes or what the naked eye sees.</dd>
         </div>
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9.5" ry="4"/></svg>Planets, Moon and 2,000 deep-sky objects</dt>
-          <dd>All 110 Messier objects, about 1,900 NGC and IC objects and stars to magnitude 9. Tap anything on the map for its details and links to SEDS, NASA, In-The-Sky and Wikipedia.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 9.5v5M9.5 12h5"/></svg>See what the eyepiece shows</dt>
+          <dd>Enter your telescope and eyepieces: the map shows Telrad rings and the true field, and a round eyepiece view shows the stars around your target the way your Newtonian turns them.</dd>
         </div>
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Show only what you need</dt>
-          <dd>Filter the map to the solar system, deep-sky classes or what the naked eye sees.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>Your target at a glance</dt>
+          <dd>One panel with how far to turn and tilt, when the target is best placed tonight, its brightness and size, and what you logged about it before.</dd>
         </div>
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/></svg>Works without signal</dt>
-          <dd>Add it to your home screen once. At a dark site it starts and solves without any connection.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>With or without the phone camera</dt>
+          <dd>Use a USB webcam on the tube, a mirror or prism over the top of the phone, or no camera at all: then the top edge of the phone is the pointer.</dd>
         </div>
         <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Everything stays on your phone</dt>
-          <dd>Camera images, location and motion data are processed in the browser and never uploaded. No account, no tracking.</dd>
-        </div>
-        <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Plan the night</dt>
-          <dd>When it gets dark, when the Moon is up, which planets and deep-sky objects are well placed tonight. Plus seeing forecast, light pollution and ISS passes for your location.</dd>
-        </div>
-        <div>
-          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg>With or without the phone camera</dt>
-          <dd>Use a USB webcam on the tube instead, or no camera at all: then the top edge of the phone is the pointer, aligned on a bright star.</dd>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/></svg>Works without signal</dt>
+          <dd>Add it to your home screen once. At a dark site it starts, solves and keeps your logbook without any connection.</dd>
         </div>
       </dl>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Plan and keep track</h2>
+      <dl class="features">
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Plan the night</dt>
+          <dd>When it gets dark, when the Moon is up, which planets and deep-sky objects are well placed tonight, seeing and light pollution for your site. A time slider shows the sky at any hour.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg>Observing list and logbook</dt>
+          <dd>Star what you want to see some day, plan tonight’s objects in the order they set, work through them with Next and log each one with seeing, eyepiece and notes. Export it anytime.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9.5" ry="4"/></svg>2,000 deep-sky objects, 78,000 stars</dt>
+          <dd>All Messier objects, about 1,900 NGC and IC objects and stars to magnitude 9, more the further you zoom in. Tap anything for details and links to SEDS, NASA, SIMBAD and Wikipedia.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9.5" y="9.5" width="5" height="5" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M3 8l5-5M16 21l5-5"/></svg>ISS and satellites</dt>
+          <dd>With a connection the map shows the ISS and about 150 bright satellites, lit or in Earth’s shadow. Move the time ahead to catch the next pass.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg>Your own sky photos</dt>
+          <dd>Solve a photo from your gallery: Zenigo names what is in it, and you can look around and zoom out, with the photo bent onto the sky.</dd>
+        </div>
+        <div>
+          <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Everything stays on your phone</dt>
+          <dd>Camera images, location, motion data and your logbook are processed and stored in the browser and never uploaded. No account, no tracking.</dd>
+        </div>
+      </dl>
+      <p class="more">Every feature explained: <a href="/help/">Help</a>.</p>
     </div>
   </section>
 

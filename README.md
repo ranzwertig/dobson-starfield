@@ -65,6 +65,7 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 | `scripts/hero.mjs` | draws the landing page star chart from the catalogue at build time |
 | `public/` | static files copied to `dist/`: `app/` logo, web app manifest and icons, `robots.txt` |
 | `scripts/icons.cjs` | renders the PNG icons from `public/app/logo.svg` (needs Playwright; only after logo changes) |
+| `scripts/build.mjs` (website part) | builds the pages from `site/`, adds a canonical link (https://zenigo.app/…) to each, and writes `dist/sitemap.xml`; `public/robots.txt` allows everything except `/app/` and points to the sitemap |
 | `worker/index.js` | Cloudflare Worker for `/api/tle` only (satellite orbital elements from CelesTrak, edge-cached, last good copy as fallback); everything else is served from `dist/` |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6 (also used by the solver), names, designations, Messier objects with sizes, constellation lines; plus `public/app/deep-stars.bin` (78,000 stars 6–9 mag, 7 bytes each) and `public/app/dso.json` (about 1,900 NGC/IC and other deep-sky objects), loaded after start and precached for offline use |
 | `scripts/build.mjs` | builds the website and `dist/app/index.html` with Astronomy Engine, catalogue and solver inlined, copies the fonts |

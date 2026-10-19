@@ -44,15 +44,15 @@
     <h2 id="screen">The screen</h2>
     <dl class="ref">
       <dt>Directions at the top</dt>
-      <dd>How many degrees to <b>turn</b> the telescope left or right (azimuth) and to <b>tilt</b> it up or down (altitude) to reach the target. The line below shows the distance to the target and where the position comes from. Tap that line to choose another target; the small ✕ next to it clears the target, so the red ring, the arrow and the directions disappear. Before the first locate it shows how high the target stands and in which direction.</dd>
+      <dd>How many degrees to <b>turn</b> the telescope left or right (azimuth) and to <b>tilt</b> it up or down (altitude) to reach the target. The line below shows the distance to the target and where the position comes from. Tap that line to open the <a href="#targets">target panel</a> (or Find target when no target is set); a “Next” button beside it jumps to the next object on your <a href="#list">plan</a>; the small ✕ next to it clears the target, so the red ring, the arrow and the directions disappear. Before the first locate it shows how high the target stands and in which direction.</dd>
       <dt>Map or image</dt>
-      <dd>The camera image or the star map, with stars, constellation lines, names, Messier objects, planets and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image.</dd>
+      <dd>The camera image or the star map, with stars (fainter ones as you zoom in), constellation lines, names, Messier and other deep-sky objects, planets, <a href="#satellites">satellites</a> when online, and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image. Optional <a href="#optics">Telrad and eyepiece rings</a> sit around the crosshair, and small marks show objects you planned (amber dot), starred (star outline) or have seen (green tick).</dd>
       <dt>Menu (top right)</dt>
-      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, filter, settings, the current position, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers they open at the right side and float over the map, which stays where it is; the buttons move next to the panel; close them with ✕ or the Esc key.</dd>
+      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, filter, <a href="#list">logbook</a>, <a href="#time">time</a>, settings, the current position, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers they open at the right side and float over the map, which stays where it is; the buttons move next to the panel; close them with ✕ or the Esc key.</dd>
       <dt>Status (bottom left)</dt>
-      <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a> or a <a href="#filter">filter</a>. Their ✕ switches them off.</dd>
+      <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a>, a <a href="#filter">filter</a> or <a href="#time">another time</a>. Their ✕ switches them off. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
       <dt>Gestures</dt>
-      <dd>Pinch or double-tap to zoom, drag to pan or, on the free sky map, to look around. Tap a star, planet or Messier object for its details.</dd>
+      <dd>Pinch, double-tap or the mouse wheel to zoom, drag to pan or, on the free sky map and around a solved photo, to look around. Tap a star, planet, deep-sky object or satellite for its details.</dd>
     </dl>
 
     <h2 id="buttons">Buttons</h2>
@@ -242,7 +242,7 @@
     <p>Choosing the Sun as a target first asks you to confirm that a certified full-aperture filter (ISO 12312-2 or solar film) sits on the front of the telescope, that the finder is covered or removed and that children are supervised. Locate doesn’t work in daylight, so guidance to the Sun relies on compass and motion sensor. To aim without looking, turn the tube until its shadow is as small and round as possible.</p>
 
     <h2 id="offline">Offline and updates</h2>
-    <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue, calculations and solving all run on the phone. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
+    <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
 
     <h2 id="permissions">Camera and sensor access</h2>
     <p>Zenigo asks for the camera (for Locate) and, on iPhone, for motion and orientation access (for Align). If you declined once, the browser remembers it and won’t ask again; a web page can’t open the settings for you either. When this happens, the app shows the steps for your device and a button to reload. Here they are in full:</p>
@@ -281,6 +281,12 @@
       <dd>The camera access was declined. See <a href="#permissions">Camera and sensor access</a> for the steps on your device. If the camera is used by another app, close that app first.</dd>
       <dt>“This device provides no orientation data”</dt>
       <dd>The motion sensors are blocked or missing. See <a href="#permissions">Camera and sensor access</a>.</dd>
+      <dt>Locating takes very long</dt>
+      <dd>The first locate with a new camera or a gallery photo searches the field of view, which can take a while. The Locate button turns into <b>Stop</b>: tap it to cancel, then try with more sky in the image or a narrower search range in Settings.</dd>
+      <dt>No satellites on the map</dt>
+      <dd>They need an internet connection and are hidden offline. Check that “ISS and bright satellites” is on in the <a href="#filter">Filter</a>; the Solar system and Deep sky presets switch them off.</dd>
+      <dt>The eyepiece view shows hardly any stars</dt>
+      <dd>It shows stars to magnitude 9. In a narrow field away from the Milky Way that can be only a few; through the telescope you see many more. The pattern of the brighter ones is what helps to find the field.</dd>
       <dt>The app shows an old version</dt>
       <dd>Tap Update when the message appears, or close the app completely and open it again.</dd>
     </dl>
@@ -292,7 +298,7 @@
       <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
       <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
       <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
-      <dt>What happens to my data?</dt><dd>Camera images, location and sensor data stay on your phone and are never uploaded. Details in the <a href="/privacy/">privacy policy</a>.</dd>
+      <dt>What happens to my data?</dt><dd>Camera images, location, sensor data, your observing list and logbook stay on your phone and are never uploaded. Export a backup of the logbook now and then (Menu → Logbook). Details in the <a href="/privacy/">privacy policy</a>.</dd>
       <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>
     </dl>
   </article>
