@@ -177,3 +177,15 @@ footer a:hover { color: var(--amber); }
   -webkit-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg>') center / contain no-repeat;
           mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg>') center / contain no-repeat;
 }
+
+/* Help: night bar example and legend (same colours as in the app) */
+.nbar-demo { display: flex; align-items: center; gap: 10px; max-width: 460px; margin: 14px 0 10px; font: 13px var(--num); color: var(--mist); }
+.nbar { position: relative; flex: 1; height: 8px; border-radius: 4px; background: var(--line); }
+.nbar i { position: absolute; top: 0; height: 8px; }
+.nbar i:first-child { border-radius: 4px 0 0 4px; }
+.nbar b { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--coral); }
+.up { background: #7a5a2c; } .good { background: #4c9466; } .down { background: var(--line); } .now { background: var(--coral); }
+.nbar-legend { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 6px; }
+.nbar-legend li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: baseline; }
+.nbar-legend li i { flex: none; width: 22px; height: 8px; border-radius: 4px; transform: translateY(-1px); }
+.nbar-legend li i.now { width: 3px; height: 14px; border-radius: 0; transform: translateY(2px); justify-self: center; }
