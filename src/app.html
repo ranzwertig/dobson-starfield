@@ -168,7 +168,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .orow .obar { position: relative; height: 6px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: visible; }
 .orow .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .obarw { display: flex; align-items: center; gap: 6px; margin-top: 6px; font: 11px var(--font-num); color: var(--muted); }
-.obarw .obar { flex: 1; margin-top: 0 !important; }
+.obarw .obar { flex: 1; margin-top: 0 !important; position: relative; height: 6px; border-radius: 3px; background: var(--line); }
+.obarw .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
+.results button.wbar { flex-wrap: wrap; row-gap: 6px; }
+.results button .obarw { flex-basis: 100%; margin-top: 0; }
 .obarw .oend { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
 .obarw .oend svg { width: 15px; height: 15px; flex: none; }
 .orow .oalt { font-family: var(--font-num); font-size: 16px; color: var(--accent); text-align: right; }
@@ -1386,7 +1389,7 @@ function showResults() {
     const rank = T => { const n = norm(T.name); return n === q || norm(T.id) === q ? 0 : n.startsWith(q) ? 1 : n.includes(q) ? 2 : 3; };
     list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).map(T => ({ T, r: rank(T) })).sort((a, b) => a.r - b.r).slice(0, 30)
       .map(({ T }) => ({ T, alt: horiz(T.vec(t), t).alt }));
-    if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nichts gefunden"; box.append(g); }
+    if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nothing found"; box.append(g); }
   }
   list.forEach(({ T, alt }) => {
     const b = document.createElement("button");
@@ -1395,6 +1398,7 @@ function showResults() {
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
     b.append(n, s, a); b.onclick = () => { st.fromList = false; selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
     if (T.kind === "sat") { box.append(b); return; }
+    const pl = T.kind === "sun" ? null : memoPlan(T); if (pl) { b.classList.add("wbar"); b.append(nightBar(pl)); }
     const row = document.createElement("div"); row.className = "rrow";
     const make = () => ({ id: T.id, name: T.name });
     row.append(b, toggleButton("plan", T.id, make), toggleButton("star", T.id, make)); box.append(row);
@@ -2610,6 +2614,13 @@ function syncInfoObs(o) {
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
 function nightPlan() { if (!planCache.t || Date.now() - planCache.at > 10 * 60e3) { planCache.t = tonightData(); planCache.at = Date.now(); } return planCache.t; }
+// Night plans for search results: kept per object until the night plan is refreshed (typing would recompute them)
+const planMemo = { tn: null, m: new Map() };
+function memoPlan(T) {
+  const tn = nightPlan(); if (planMemo.tn !== tn) { planMemo.tn = tn; planMemo.m.clear(); }
+  if (!planMemo.m.has(T.id)) { let p = null; try { p = planFor(T, tn); } catch (e) {} planMemo.m.set(T.id, p); }
+  return planMemo.m.get(T.id);
+}
 function rowPlan(id, tn) { const T = targetById(id); return T ? planFor(T, tn) : null; }
 function planFor(T, tn) {
   const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -2634,13 +2645,14 @@ const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SUN_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 10V3M9 6l3-3 3 3"/></svg>';
 function nightBar(p) {
   const tn = nightPlan(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (!tn.endsTxt) tn.endsTxt = [fmt(tn.start), fmt(tn.end)];   // formatting times is slow: once per night plan
   const w = document.createElement("div"); w.className = "obarw";
-  const a = document.createElement("span"); a.className = "oend"; a.innerHTML = tn.sunset ? SUN_DOWN : ""; a.append(fmt(tn.start));
-  a.setAttribute("aria-label", (tn.sunset ? "Sunset " : "From ") + fmt(tn.start));
+  const a = document.createElement("span"); a.className = "oend"; a.innerHTML = tn.sunset ? SUN_DOWN : ""; a.append(tn.endsTxt[0]);
+  a.setAttribute("aria-label", (tn.sunset ? "Sunset " : "From ") + tn.endsTxt[0]);
   const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true");
   if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); }
-  const b = document.createElement("span"); b.className = "oend"; b.append(fmt(tn.end)); if (tn.sunrise) b.insertAdjacentHTML("beforeend", SUN_UP);
-  b.setAttribute("aria-label", (tn.sunrise ? "Sunrise " : "To ") + fmt(tn.end));
+  const b = document.createElement("span"); b.className = "oend"; b.append(tn.endsTxt[1]); if (tn.sunrise) b.insertAdjacentHTML("beforeend", SUN_UP);
+  b.setAttribute("aria-label", (tn.sunrise ? "Sunrise " : "To ") + tn.endsTxt[1]);
   w.append(a, bar, b); return w;
 }
 // Rising, highest point and setting during the night (from the 10-minute samples)
