@@ -1866,10 +1866,27 @@ const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !
 function mapGestures() { return (st.source === "map" && st.solMode !== "track") || photoSky(); }
 // The first move makes the view a plain projection like the map (the photo's lens distortion is corrected by the mesh)
 function photoViewPlain() { if (!st.photoMoved) { st.sol.k1 = 0; st.sol.poly = null; } }
+// Dragging turns the view like a telescope on an alt-az mount: sideways about the zenith, up and down about the
+// horizontal axis across the view. So the horizon keeps its angle on the screen (no tilting while panning).
+function rotAxis(ax, ang) {   // rotation matrix about a unit axis (Rodrigues)
+  const [x, y, z] = ax, c = Math.cos(ang), s = Math.sin(ang), t = 1 - c;
+  return [[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]];
+}
 function photoRotate(dx, dy) {
   photoViewPlain();
-  const sol = st.sol, k = 1 / (sol.f * fit.sc), a = -dx * k, b = dy * k, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
-  sol.R = mm3(mm3(sol.R, [[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]]), [[1, 0, 0], [0, cb, -sb], [0, sb, cb]]);
+  const sol = st.sol, k = 1 / (sol.f * fit.sc), zen = Solver.mul(skyNow().M, [0, 0, 1]);
+  const fwd = () => Solver.mul(sol.R, [0, 0, 1]);
+  // the drag measured along the horizon and across it, since the view may be rolled (as the photo was taken)
+  const cz = Solver.mulT(sol.R, zen), un = Math.hypot(cz[0], cz[1]);
+  if (un > 1e-6) { const ux = cz[0] / un, uy = cz[1] / un, h = dx * -uy + dy * ux, vv = -(dx * ux + dy * uy); dx = h; dy = vv; }
+  let v = fwd(), sAlt = v[0] * zen[0] + v[1] * zen[1] + v[2] * zen[2];
+  // sideways: about the zenith, scaled so the sky under the finger keeps up at any altitude
+  sol.R = mm3(rotAxis(zen, dx * k / Math.max(0.25, Math.sqrt(Math.max(0, 1 - sAlt * sAlt)))), sol.R);
+  // up and down: about the horizontal axis across the view, stopping just short of the zenith and nadir
+  v = fwd(); sAlt = v[0] * zen[0] + v[1] * zen[1] + v[2] * zen[2];
+  const alt = Math.asin(Math.max(-1, Math.min(1, sAlt))), want = Math.max(-89 * D2R, Math.min(89 * D2R, alt + dy * k));
+  const r = [v[1] * zen[2] - v[2] * zen[1], v[2] * zen[0] - v[0] * zen[2], v[0] * zen[1] - v[1] * zen[0]], rn = Math.hypot(...r);
+  if (rn > 1e-6) sol.R = mm3(rotAxis(r.map(q => q / rn), want - alt), sol.R);
   st.photoMoved = true;
 }
 function photoZoom(factor) {
