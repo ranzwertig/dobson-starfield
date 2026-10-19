@@ -28,6 +28,7 @@
     <a href="#tonight">Tonight</a>
     <a href="#sun">Observing the Sun</a>
     <a href="#offline">Offline and updates</a>
+    <a href="#permissions">Camera and sensor access</a>
     <a href="#troubleshooting">Troubleshooting</a>
     <a href="#faq">Questions</a>
   </nav>
@@ -190,6 +191,25 @@
     <h2 id="offline">Offline and updates</h2>
     <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue, calculations and solving all run on the phone. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
 
+    <h2 id="permissions">Camera and sensor access</h2>
+    <p>Zenigo asks for the camera (for Locate) and, on iPhone, for motion and orientation access (for Align). If you declined once, the browser remembers it and won’t ask again; a web page can’t open the settings for you either. When this happens, the app shows the steps for your device and a button to reload. Here they are in full:</p>
+    <h3 id="permissions-ios">iPhone and iPad</h3>
+    <ul>
+      <li><b>Camera, in Safari:</b> tap <b>aA</b> (or the page icon) on the left of the address bar → <b>Website Settings</b> → set <b>Camera</b> to <b>Ask</b> or <b>Allow</b>. Then reload the page.</li>
+      <li><b>Camera, app on the home screen:</b> open the <b>Settings</b> app → <b>Apps</b> → <b>Safari</b> → <b>Camera</b> → <b>Ask</b> or <b>Allow</b>. If that doesn’t help, remove Zenigo from the home screen and add it again from Safari.</li>
+      <li><b>Motion and compass:</b> iPhone remembers a refusal only until the tab or Safari is closed. Close the Zenigo tab (or quit Safari, or close the app completely) and open it again, then tap <b>Align</b> and choose <b>Allow</b>. If your iOS version shows it, also check <b>Settings</b> → <b>Apps</b> → <b>Safari</b> → <b>Motion &amp; Orientation Access</b>.</li>
+    </ul>
+    <h3 id="permissions-android">Android</h3>
+    <ul>
+      <li><b>In Chrome:</b> tap the icon on the left of the address bar → <b>Permissions</b> → allow <b>Camera</b> and <b>Motion sensors</b>, or tap <b>Reset permissions</b>. Then reload.</li>
+      <li><b>App on the home screen:</b> long-press the Zenigo icon → <b>App info</b> → <b>Permissions</b>, or in Chrome → ⋮ → <b>Settings</b> → <b>Site settings</b> → <b>Camera</b> / <b>Motion sensors</b>.</li>
+      <li>Blocked motion sensors don’t produce an error, they just send nothing. If Align shows nothing after a moment, the app assumes they are blocked and shows these steps.</li>
+    </ul>
+    <h3 id="permissions-desktop">Computer</h3>
+    <ul>
+      <li>Click the icon on the left of the address bar (Chrome, Edge) or open the site settings (Safari → Settings → Websites → Camera) and allow the camera for Zenigo. Then reload.</li>
+    </ul>
+
     <h2 id="troubleshooting">Troubleshooting</h2>
     <dl class="ref trouble">
       <dt>“Only a few stars detected”</dt>
@@ -205,9 +225,9 @@
       <dt>The map jumps or shakes</dt>
       <dd>Strong magnetic disturbances or fast jerks. After a locate the gyroscope takes over and the view becomes calm.</dd>
       <dt>Camera not available</dt>
-      <dd>The app needs permission to use the camera. iPhone: Settings → Safari → Camera (for the installed app: Settings → Apps → Safari, or remove and re-add the app). Android: long-press the app icon → App info → Permissions.</dd>
+      <dd>The camera access was declined. See <a href="#permissions">Camera and sensor access</a> for the steps on your device. If the camera is used by another app, close that app first.</dd>
       <dt>“This device provides no orientation data”</dt>
-      <dd>The motion sensors are blocked or missing. On iPhone allow motion access when Align asks, or in Settings → Safari → Motion &amp; Orientation Access.</dd>
+      <dd>The motion sensors are blocked or missing. See <a href="#permissions">Camera and sensor access</a>.</dd>
       <dt>The app shows an old version</dt>
       <dd>Tap Update when the message appears, or close the app completely and open it again.</dd>
     </dl>

@@ -132,6 +132,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 #qAll { justify-self: start; margin-top: 4px; }
 #searchClear { justify-self: start; }
+.perm-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.perm-steps b { color: var(--fg); }
+#permHelp { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+#permHelp .ext { width: 14px; height: 14px; }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 12px; }
 .presets .chip.sel { border-color: var(--accent); color: var(--accent); }
 .ftog { display: flex !important; align-items: center; gap: 12px; padding: 4px 0; cursor: pointer; color: var(--fg) !important; font-size: 15px !important; }
@@ -525,6 +529,19 @@ a.btn { text-decoration: none; color: var(--fg); }
   </div>
 </div>
 
+<div class="sheet" id="permSheet" hidden>
+  <div class="inner" role="alertdialog" aria-modal="true" aria-labelledby="permTitle">
+    <div class="grab"><h2 id="permTitle"><span id="permTitleTxt"></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="note" id="permIntro"></p>
+    <ol class="note perm-steps" id="permSteps"></ol>
+    <p class="note" id="permExtra"></p>
+    <div class="actions">
+      <button class="btn primary" id="permReload">Reload the app</button>
+      <a class="btn" id="permHelp" href="/help/#permissions" target="_blank" rel="noopener">Detailed help <svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="confirmSheet" hidden>
   <div class="inner" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
@@ -783,6 +800,7 @@ async function startCamera() {
     if (!ok) return;
     setMirror(true);
   }
+  if (await cameraBlocked()) { showPermissionHelp("camera"); return; }
   try {
     const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
     let stream;
@@ -806,9 +824,11 @@ async function startCamera() {
     hint("Point the telescope at a patch of sky with several bright stars, then tap “Locate”.", 6000);
   } catch (e) {
     const name = e && e.name;
-    hint(name === "NotAllowedError" || name === "SecurityError"
-      ? "No camera access on this page. Serve the app over HTTPS or solve a sky photo from the menu instead."
-      : "Could not start the camera (" + (name || e) + ").", 9000);
+    if (name === "NotAllowedError" && isSecureContext) showPermissionHelp("camera");
+    else if (name === "NotAllowedError" || name === "SecurityError") hint("No camera access on this page: it has to be opened over HTTPS. You can still solve a sky photo from the menu.", 9000);
+    else if (name === "NotFoundError" || name === "OverconstrainedError") hint("No camera found. Check that a camera is connected, or solve a sky photo from the menu.", 7000);
+    else if (name === "NotReadableError") hint("The camera is in use by another app. Close it and try again.", 7000);
+    else hint("Could not start the camera (" + (name || e) + ").", 9000);
   }
 }
 function stopCamera() {
@@ -1280,15 +1300,22 @@ async function setSensor(on) {
   if (on) {
     try {
       if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-        const r = await DeviceOrientationEvent.requestPermission(); if (r !== "granted") throw new Error("verweigert");
+        const r = await DeviceOrientationEvent.requestPermission(); if (r !== "granted") throw new Error("denied");
       }
-    } catch (e) { hint("Access to the motion sensors was not allowed.", 4000); return; }
+    } catch (e) { showPermissionHelp("motion"); return; }
     if (!sens.listening) {
       window.addEventListener("deviceorientation", e => onOrientation(e, false));
       window.addEventListener("deviceorientationabsolute", e => onOrientation(e, true));
       sens.listening = true;
     }
-    setTimeout(() => { if (st.sensor && !sens.rel && !sens.abs) hint("This device provides no orientation data (no sensor, or only available over HTTPS).", 5000); }, 1500);
+    setTimeout(async () => {
+      if (!st.sensor || sens.rel || sens.abs) return;
+      // Android/Chrome: blocked motion sensors simply send no data
+      let denied = false;
+      try { denied = (await navigator.permissions.query({ name: "accelerometer" })).state === "denied"; } catch (e) {}
+      if (denied || (platform() === "android" && isSecureContext)) showPermissionHelp("motion");
+      else hint("This device provides no orientation data (no sensor, or only available over HTTPS).", 5000);
+    }, 1500);
   }
   st.sensor = on; $("btnSensor").classList.toggle("on", on); $("btnSensor").setAttribute("aria-pressed", on);
   // Pointing up, the phone lies flat and the system may rotate the screen: keep the current orientation while aligning
@@ -1796,6 +1823,43 @@ function setPanelOpen(on) {
   const step = () => { resize(); insetCache = null; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+/* ---------------- Blocked permissions: explain how to allow them again ---------------- */
+// Browsers never ask again once a permission is blocked, and web pages can't open the settings app,
+// so the app shows the steps for this platform, a reload button and a link to the help page.
+function platform() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "desktop";
+}
+const installedApp = () => navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+function showPermissionHelp(kind) {   // kind: "camera" | "motion"
+  const pf = platform(), app = installedApp(), cam = kind === "camera";
+  const what = cam ? "Camera" : (pf === "ios" ? "Motion & Orientation" : "Motion sensors");
+  $("permTitleTxt").textContent = cam ? "Camera access is blocked" : "Motion sensors are blocked";
+  $("permIntro").textContent = (cam ? "Zenigo needs the camera to recognise the stars. " : "Align needs the compass and motion sensor. ")
+    + "The access was declined earlier, and the browser won’t ask again by itself. Allow it like this:";
+  const steps = {
+    ios: cam
+      ? (app ? ["Open the iPhone <b>Settings</b> app → <b>Apps</b> → <b>Safari</b> → <b>Camera</b> and choose <b>Ask</b> or <b>Allow</b>.", "If Zenigo still can’t use the camera, remove the app from the home screen and add it again from Safari."]
+             : ["Tap <b>aA</b> (or the page icon) on the left of the address bar.", "Choose <b>Website Settings</b>.", "Set <b>Camera</b> to <b>Ask</b> or <b>Allow</b>."])
+      : ["Close the Zenigo tab, or quit Safari completely, and open Zenigo again: iPhone remembers this refusal only until then.", "In the iPhone <b>Settings</b> app → <b>Apps</b> → <b>Safari</b>, make sure <b>Motion & Orientation Access</b> is on (if your iOS version shows it).", "Tap <b>Align</b> again and choose <b>Allow</b>."],
+    android: app
+      ? ["Long-press the Zenigo icon → <b>App info</b> → <b>Permissions</b>, or open Chrome → ⋮ → <b>Settings</b> → <b>Site settings</b>.", "Find <b>" + what + "</b> and allow it for Zenigo."]
+      : ["Tap the icon on the left of the address bar.", "Choose <b>Permissions</b> (or <b>Site settings</b>).", "Allow <b>" + what + "</b>, or tap <b>Reset permissions</b>."],
+    desktop: ["Click the icon on the left of the address bar.", "Allow <b>" + what + "</b> for this site, or reset the permissions."],
+  }[pf];
+  $("permSteps").innerHTML = steps.map(x => "<li>" + x + "</li>").join("");
+  $("permExtra").textContent = "Then reload the app.";
+  $("permHelp").href = "/help/#permissions-" + pf;
+  openSheet("permSheet");
+}
+$("permReload").onclick = () => location.reload();
+// Ask the browser beforehand whether the camera is blocked (not every browser can tell)
+async function cameraBlocked() {
+  try { const p = await navigator.permissions.query({ name: "camera" }); return p.state === "denied"; } catch (e) { return false; }
+}
+
 // Small confirmation dialog; resolves true for the confirm button, false for cancel, ✕, Esc or tapping outside
 function askConfirm(title, text, okLabel) {
   return new Promise(res => {
