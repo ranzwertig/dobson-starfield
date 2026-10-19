@@ -2150,10 +2150,26 @@ function unpinPhoto(quiet) {
   st.pin = null; lastSig = []; syncPin();
   if (!quiet) hint("Photo removed from the sky.", 2500);
 }
+// The photo chip: shown while a photo is on screen (being solved, solved or not solvable) and while a solved photo is
+// pinned to the map. Its × always gets rid of the photo.
 function syncPin() {
-  const on = !!st.pin && st.source === "map";
+  const viewing = st.source === "photo", on = viewing || (!!st.pin && st.source === "map");
   if ($("pinChip").hidden === on) $("pinChip").hidden = !on;
-  if (on) { const t = st.pin.name ? "Photo: " + st.pin.name : "Photo on the sky"; if ($("pinChipTxt").textContent !== t) $("pinChipTxt").textContent = t; }
+  if (!on) return;
+  const name = viewing ? st.photoName : st.pin.name;
+  const t = (name ? "Photo: " + name : "Photo on the sky") + (viewing && !st.busy && !st.photoSol ? " · not solved" : "");
+  if ($("pinChipTxt").textContent !== t) $("pinChipTxt").textContent = t;
+  const lbl = viewing ? (st.photoSol ? "Back to the whole photo" : "Locate this photo again") : "Where is the photo?";
+  if ($("pinChipTxt").getAttribute("aria-label") !== lbl) $("pinChipTxt").setAttribute("aria-label", lbl);
+  const off = viewing ? "Close the photo" : "Remove the photo from the sky";
+  if ($("btnPinOff").getAttribute("aria-label") !== off) $("btnPinOff").setAttribute("aria-label", off);
+}
+// Close a photo that is on screen: stop solving it, back to the sky map (a pinned copy is removed too)
+function closePhoto() {
+  if (st.busy) abortSolve(true);
+  st.photoSol = null; st.photoNight = null; st.photoMoved = false; st.pin = null;
+  showMap(); lastSig = []; syncPin(); updateGuide(); renderReadout();
+  setStatus("Ready", ""); hint("Photo closed.", 2000);
 }
 // Tapping the chip: without Align the map turns to the photo; with Align, say where to turn the phone
 function findPin() {
@@ -2169,8 +2185,13 @@ function findPin() {
   const up = Math.abs(dAlt) < 3 ? "" : Math.round(Math.abs(dAlt)) + "° " + (dAlt > 0 ? "higher" : "lower");
   hint("Turn the phone " + [side, up].filter(Boolean).join(" and ") + " to see the photo." + (h.alt < 0 ? " It is below the horizon now." : ""), 4000);
 }
-$("pinChipTxt").onclick = findPin;
-$("btnPinOff").onclick = () => unpinPhoto();
+$("pinChipTxt").onclick = () => {
+  if (st.source !== "photo") return findPin();
+  if (st.busy) return;
+  if (!st.photoSol) { solveNow(); return; }   // not solved: try again
+  st.sol = Object.assign({}, st.photoSol, { R: st.photoSol.R.map(r => r.slice()) }); st.photoMoved = false; zoom.z = 1; zoom.x = 0; zoom.y = 0; lastSig = [];
+};
+$("btnPinOff").onclick = () => st.source === "photo" ? closePhoto() : unpinPhoto();
 
 /* ---------------- Zooming and panning ---------------- */
 const zoom = { z: 1, x: 0, y: 0 };
