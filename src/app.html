@@ -931,6 +931,10 @@ a.btn { text-decoration: none; color: var(--fg); }
     <fieldset data-stab="scope" id="optics">
       <legend>Telescope and eyepieces</legend>
       <div class="row">
+        <label style="flex-basis:100%">Mount<select id="oMount">
+          <option value="altaz">Alt-azimuth (Dobson)</option>
+          <option value="eq">Equatorial</option>
+        </select></label>
         <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
         <label>Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.5"></label>
       </div>
@@ -1014,7 +1018,7 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, mount: "altaz", fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
@@ -2744,19 +2748,27 @@ function todoItems() {
 // shortest total path (nearest neighbour, then improved by reversing stretches: 2-opt), starting where the telescope
 // points (current target, else the crosshair); objects that come up later stay at the end, by time.
 const ROUTE_URGENT = 60 * 60e3;
+// How far the telescope moves between two directions, along its own axes: an alt-azimuth mount (Dobson) turns in
+// azimuth and tilts in altitude, an equatorial mount turns in right ascension and declination. Near the zenith a
+// short step on the sky can need a big turn in azimuth, so the mount type changes the best order.
+function mountPos(v) {
+  if (cfg.mount === "eq") { const r = Solver.v2radec(v); return [r.ra, r.dec]; }
+  const h = horiz(v, skyNow().t); return [h.az, h.alt];
+}
+function mountDist(p, q) { const da = Math.abs(p[0] - q[0]) % 360; return Math.min(da, 360 - da) + Math.abs(p[1] - q[1]); }
 function routeOrder(items) {
   const now = Date.now(), t = skyNow().t;
   const later = items.filter(r => r.p.later), up = items.filter(r => !r.p.later);
   const leaveSoon = r => r.p.sort < 9e14 && r.p.sort - now < ROUTE_URGENT;
   const urgent = up.filter(leaveSoon), rest = up.filter(r => !leaveSoon(r));
-  const vec = r => vecNow(r.p.T);
+  const vec = r => mountPos(vecNow(r.p.T));
   const CT = targetById(cfg.target), tv = teleVec();
-  let start = urgent.length ? vec(urgent[urgent.length - 1]) : CT ? vecNow(CT) : tv;
+  let start = urgent.length ? vec(urgent[urgent.length - 1]) : CT ? mountPos(vecNow(CT)) : tv ? mountPos(tv) : null;
   // the target itself, if planned, is where we are: first
   const ti = rest.findIndex(r => r.x.id === cfg.target);
   const head = !urgent.length && ti >= 0 ? rest.splice(ti, 1) : [];
   if (head.length) start = vec(head[0]);
-  const V = rest.map(vec), n = V.length, d = (a, b) => Solver.angDeg(a, b);
+  const V = rest.map(vec), n = V.length, d = mountDist;
   // nearest neighbour from the start
   const left = new Set(V.keys()), order = [];
   let cur = start || (n ? V[0] : null);
@@ -2777,14 +2789,14 @@ function routeOrder(items) {
 }
 // total telescope movement along a list (for the note under the order chips)
 function pathDeg(items) {
-  const up = items.filter(r => !r.p.later).map(r => vecNow(r.p.T)); let sum = 0;
-  for (let i = 1; i < up.length; i++) sum += Solver.angDeg(up[i - 1], up[i]);
+  const up = items.filter(r => !r.p.later).map(r => mountPos(vecNow(r.p.T))); let sum = 0;
+  for (let i = 1; i < up.length; i++) sum += mountDist(up[i - 1], up[i]);
   return sum;
 }
 // The next object: cached, since the directions update several times a second
 const nextCache = { key: "", v: null };
 function nextItem() {
-  const key = st.obsVer + "|" + cfg.target + "|" + cfg.listOrder + "|" + Math.floor(Date.now() / 60000);
+  const key = st.obsVer + "|" + cfg.target + "|" + cfg.listOrder + cfg.mount + "|" + Math.floor(Date.now() / 60000);
   if (nextCache.key !== key) { nextCache.key = key; nextCache.v = todoItems().filter(r => r.x.id !== cfg.target && !r.p.later)[0] || null; }
   return nextCache.v;
 }
@@ -2871,8 +2883,8 @@ function renderList() {
       const byTime = cfg.listOrder === "route" ? (() => { const o = cfg.listOrder; cfg.listOrder = "time"; const v = todoItems(); cfg.listOrder = o; return v; })() : todo;
       const a = pathDeg(todo), b = pathDeg(byTime);
       ob.querySelector("small").textContent = route
-        ? "Telescope moves about " + Math.round(a) + "° in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first."
-        : "Sorted by when objects get low. Telescope moves about " + Math.round(a) + "° in total.";
+        ? "Shortest way for " + (cfg.mount === "eq" ? "an equatorial mount" : "an alt-azimuth mount (Dobson)") + ": about " + Math.round(a) + "° of turning in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first. Mount type: Settings › Telescope."
+        : "Sorted by when objects get low. About " + Math.round(a) + "° of turning in total.";
       body.append(ob);
     }
     todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "todo")));
@@ -3364,6 +3376,7 @@ function syncOptics() {
   const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = "Finder · " + fmtField(+o.finder || 6); q.append(fo);
   q.value = o.src === "finder" || !o.eps.length ? "finder" : String(o.ep | 0);
 }
+$("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
 $("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
 $("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
 $("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
@@ -3446,7 +3459,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
-  $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
+  $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
