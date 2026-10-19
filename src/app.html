@@ -153,6 +153,75 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip svg { width: 15px; height: 15px; flex: none; }
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
+/* Observing list and logbook */
+.fab .badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: var(--accent); color: #17110a; font: 600 11px/18px var(--font-num); text-align: center; }
+.hnext { pointer-events: auto; flex: none; border: 1px solid #3a3222; background: var(--glass); color: var(--accent); border-radius: 99px; padding: 2px 10px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.olist { display: grid; }
+.orow { display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; column-gap: 6px; border-bottom: 1px solid var(--line); }
+.orow:last-child { border-bottom: 0; }
+.orow.tgt { border: 1px solid var(--accent); border-radius: 12px; background: var(--raise); }
+.orow.later { opacity: .6; }
+.orow .omain { display: grid; gap: 2px; text-align: left; background: none; border: 0; padding: 10px 8px; cursor: pointer; min-width: 0; }
+.orow .omain b { font-weight: 600; font-size: 15.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orow .omain small { color: var(--muted); font-size: 13px; }
+.orow .omain small .warn2 { color: #ff9a8f; }
+.orow .obar { position: relative; height: 6px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: visible; }
+.orow .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
+.orow .oalt { font-family: var(--font-num); font-size: 16px; color: var(--accent); text-align: right; }
+.orow .oalt.dim { font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
+.otag { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #17110a; background: var(--accent); border-radius: 5px; padding: 1px 6px; font-weight: 600; margin-right: 6px; vertical-align: 1px; }
+.ostar { width: 44px; height: 44px; border: 0; background: none; color: var(--accent); display: grid; place-items: center; cursor: pointer; border-radius: 10px; }
+.ostar svg { width: 21px; height: 21px; }
+.ostar[aria-pressed="true"] svg { fill: currentColor; }
+.lbar { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; padding: 10px 0 calc(18px + env(safe-area-inset-bottom, 0px)); margin-bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); background: var(--panel); border-top: 1px solid var(--line); }
+.lbar .btn { justify-content: center; padding-block: 12px; }
+.lbar .btn.primary { flex: 1; }
+.oempty { display: grid; gap: 10px; justify-items: start; padding: 6px 2px; }
+.ihead { display: flex; align-items: center; gap: 4px; }
+.ihead .ostar { border: 1px solid var(--line); }
+.ihead .ostar[aria-pressed="true"] { border-color: var(--accent); background: rgba(240,168,69,.12); }
+.ohist { background: var(--raise); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; font-size: 14px; }
+.ohist .h1 { display: flex; align-items: center; gap: 8px; }
+.ohist .h1 svg { width: 18px; height: 18px; color: var(--ok); flex: none; }
+.ohist p { margin: 0; color: #c3cad3; }
+.ohist button { justify-self: start; background: none; border: 0; padding: 4px 0; color: var(--accent); cursor: pointer; font-size: 14px; }
+.sfacts { display: flex; flex-wrap: wrap; gap: 6px; }
+.sfacts span, .sfacts label { font-size: 13px; background: var(--raise); border-radius: 8px; padding: 5px 9px; display: inline-flex; gap: 5px; align-items: center; }
+.sfacts em { font-style: normal; color: var(--muted); }
+.sfacts b { font: 400 13px var(--font-num); }
+.sfacts select { background: none; border: 0; color: var(--fg); font: 400 13px var(--font-num); padding: 0; }
+.slabel { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.seg3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.seg3 button, .scale button { min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: none; cursor: pointer; }
+.seg3 button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: rgba(240,168,69,.12); font-weight: 600; }
+.sgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.scale button { min-height: 40px; border-radius: 8px; font-family: var(--font-num); }
+.scale button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #17110a; }
+#seenNote { width: 100%; box-sizing: border-box; resize: vertical; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 15px; color: var(--fg); }
+.ltiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ltiles > div { background: var(--raise); border-radius: 12px; padding: 10px; display: grid; gap: 5px; }
+.ltiles .k { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.ltiles .v { font: 400 20px var(--font-num); }
+.ltiles .v small { font-size: 13px; color: var(--muted); }
+.ltiles .pb { height: 5px; border-radius: 3px; background: var(--line); }
+.ltiles .pb i { display: block; height: 5px; border-radius: 3px; background: var(--accent); }
+.lsuggest { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid #3a3222; border-radius: 12px; background: rgba(240,168,69,.07); cursor: pointer; font-size: 14px; }
+.lsuggest svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
+.lsuggest span { flex: 1; }
+.lsuggest b { color: var(--accent); }
+.lgrp { display: flex; justify-content: space-between; gap: 8px; padding: 12px 4px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.lrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) 22px; gap: 2px 10px; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 4px; cursor: pointer; }
+.lrow:hover { background: var(--raise); }
+.lrow .tm { font: 400 13px var(--font-num); color: var(--muted); }
+.lrow b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lrow b.miss { color: var(--muted); }
+.lrow svg { width: 18px; height: 18px; }
+.lrow small { grid-column: 2 / 4; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.results .rrow { display: flex; border-bottom: 1px solid var(--line); }
+.results .rrow:last-child { border-bottom: 0; }
+.results .rrow > button:first-child { flex: 1; min-width: 0; border-bottom: 0; }
+.results .rrow > .ostar { width: 48px; height: auto; flex: none; border-radius: 0; border-bottom: 0; justify-content: center; padding: 0; }
 /* Time sheet */
 .tm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 2px 0 10px; }
 .tm-head b { font-family: var(--font-num); font-size: 30px; font-weight: 500; }
@@ -384,6 +453,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <div class="htrow">
         <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
+        <button class="hnext" id="hudNext" hidden></button>
         <button class="hclear" id="hudClear" aria-label="Clear target" title="Clear target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
       </div>
     </div>
@@ -435,6 +505,8 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="fabs" id="fabs">
       <button class="fab" id="fabQuick" aria-label="Quick settings"><small>Quick settings</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>
+      <button class="fab" id="fabList" aria-label="Observing list"><small>List</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg><span class="badge" id="listBadge" hidden></span></button>
       <button class="fab" id="fabSearch" aria-label="Find target"><small>Find target</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
       <button class="fab" id="fabFilter" aria-label="Filter what the map shows"><small>Filter</small>
@@ -463,6 +535,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Solve a photo from the gallery</span></button>
       <button class="menu-item" id="btnMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg><span>Show sky map</span></button>
       <button class="menu-item" id="btnFilter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg><span>Filter: what the map shows</span><em id="filterState">all</em></button>
+      <button class="menu-item" id="btnLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span>Logbook</span><em id="logState"></em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
     </div>
@@ -496,12 +569,14 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="infoSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="infoTitle"><span id="infoName">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Add to the observing list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="facts" id="infoFacts"></div>
+    <div class="ohist" id="infoHist" hidden></div>
     <div class="actions">
-      <button class="btn primary" id="infoTarget">Set as target</button>
+      <button class="btn primary" id="infoSeen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Seen</button>
+      <button class="btn" id="infoTarget">Set as target</button>
       <button class="btn" id="infoSync" hidden>I’m pointing at it</button>
     </div>
     <div class="links" id="infoLinks"></div>
@@ -583,6 +658,45 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <p class="note" id="confirmText"></p>
     <div class="actions"><button class="btn primary" id="confirmOk"></button><button class="btn" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+
+<div class="sheet tall" id="listSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="listTitle">
+    <div class="grab"><h2 id="listTitle"><span>Tonight’s list</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="note" id="listSub" style="margin-top:-8px"></p>
+    <div class="chips" id="listTabs"><button class="chip" data-ltab="todo"></button><button class="chip" data-ltab="seen"></button></div>
+    <div class="olist" id="listBody"></div>
+    <div class="lbar"><button class="btn primary" id="listNext"></button><button class="btn" id="listAdd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="seenSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="seenTitle">
+    <div class="grab"><h2 id="seenTitle"><span id="seenName"></span> <button class="iconbtn" data-close aria-label="Close without saving"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="sfacts" id="seenFacts"></div>
+    <div><div class="slabel" id="seenResL">How did it go?</div><div class="seg3" id="seenRes" role="group" aria-labelledby="seenResL"><button data-res="easy">Easy</button><button data-res="hard">Hard</button><button data-res="miss">Not found</button></div></div>
+    <div class="sgrid">
+      <div><div class="slabel" id="seenSeeL">Seeing</div><div class="scale" id="seenSee" role="group" aria-labelledby="seenSeeL"></div></div>
+      <div><div class="slabel" id="seenTrL">Transparency</div><div class="scale" id="seenTr" role="group" aria-labelledby="seenTrL"></div></div>
+    </div>
+    <label><div class="slabel">Note</div><textarea id="seenNote" rows="3" placeholder="What did you see? For example: core resolved at 120×"></textarea></label>
+    <div class="actions"><button class="btn primary" id="seenSaveNext"></button><button class="btn" id="seenSave">Save</button></div>
+    <button class="btn" id="seenDelete" hidden>Delete this entry</button>
+  </div>
+</div>
+
+<div class="sheet tall" id="logSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <div class="grab"><h2 id="logTitle"><span>Logbook</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="ltiles" id="logTiles"></div>
+    <button class="lsuggest" id="logSuggest" hidden></button>
+    <div class="chips" id="logFilter" hidden></div>
+    <div id="logBody"></div>
+    <p class="note" id="logBackup"></p>
+    <div class="actions"><button class="btn" id="logCsv">Export CSV</button><button class="btn" id="logJson">Export backup (JSON)</button></div>
+    <button class="btn" id="logImport">Import a backup</button>
+    <input type="file" id="logFile" accept=".json,application/json" hidden>
   </div>
 </div>
 
@@ -801,6 +915,7 @@ const st = {
   sol: null, solAt: 0, stars: [],
   busy: false, auto: false, teleMode: false, filterVer: 0,
   tOff: 0,                  // time shown on the map, as offset from now (ms)
+  obsVer: 0,                // observing list / logbook changes
   stream: null, track: null,
 };
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
@@ -1149,7 +1264,10 @@ function showResults() {
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
     b.append(n, s, a); b.onclick = () => { selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
-    box.append(b);
+    if (T.kind === "sat") { box.append(b); return; }
+    const row = document.createElement("div"); row.className = "rrow";
+    const star = starButton(T.id, () => ({ id: T.id, name: T.name }));
+    row.append(b, star); box.append(row);
   });
 }
 // No target: the red ring, the arrow and the directions disappear
@@ -1184,6 +1302,7 @@ function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) *
 
 let lastGuide = null;
 function updateGuide() {
+  syncHudNext();
   const T = targetById(cfg.target), tv = teleVec(), t = skyNow().t;
   const g = $("guide"); g.classList.remove("hit", "stale"); g.classList.toggle("idle", !teleVec());
   $("hudClear").hidden = !T;
@@ -1627,6 +1746,21 @@ async function loadDeep() {
 }
 // Classic chart symbols: galaxy = ellipse, globular = circle with cross, open cluster = dashed circle,
 // nebula = square, planetary nebula = circle with centre dot
+// Small marks on the map: a star for objects on the list, a tick for objects already seen
+function obsMark(c, id, x, y, r, dpr) {
+  const S = sets(); const onL = S.list.has(id), seen = S.seen.has(id); if (!onL && !seen) return;
+  const mx = x - r * 0.75 - 5 * dpr, my = y - r * 0.75 - 5 * dpr, k = 5 * dpr;
+  c.save(); c.setLineDash([]);
+  if (onL && !S.tonight.has(id)) {
+    c.fillStyle = "#f0a845"; c.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? k * 0.45 : k; c.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); }
+    c.closePath(); c.fill();
+  } else {
+    c.strokeStyle = "#7cd39a"; c.lineWidth = 2 * dpr; c.lineCap = "round"; c.lineJoin = "round";
+    c.beginPath(); c.moveTo(mx - k * 0.8, my); c.lineTo(mx - k * 0.2, my + k * 0.6); c.lineTo(mx + k * 0.9, my - k * 0.6); c.stroke();
+  }
+  c.restore();
+}
 function dsoSymbol(c, cls, x, y, r) {
   c.beginPath();
   if (cls === "gal") c.ellipse(x, y, r * 1.25, r * 0.6, -0.5, 0, 6.2832);
@@ -1747,7 +1881,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, st.obsVer, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -1907,6 +2041,7 @@ function drawOverlay(dpr) {
       if (!show[cls] || (mag != null && mag > 9) || id === cfg.target) return;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) return;
       const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); label(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75));
+      obsMark(c, id, x, y, r, dpr);
     });
     st.drawnNgc = [];
     if (show.ngc) for (const o of NGC) {
@@ -1915,7 +2050,7 @@ function drawOverlay(dpr) {
       const v = o.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) continue;
       const [x, y] = P(p.x, p.y), r = symR(o.size) * 0.85; c.globalAlpha = 0.8; dsoSymbol(c, o.cls, x, y, r); c.globalAlpha = 1;
-      label(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o);
+      label(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o); obsMark(c, o.id, x, y, r, dpr);
     }
   }
   if (show.solar) {
@@ -1927,7 +2062,7 @@ function drawOverlay(dpr) {
         c.fillStyle = "#ffd34d"; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
         c.fillStyle = col("--fg"); label(c, "Sun", x + r + 6 * dpr, y); return;
       }
-      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); label(c, de, x + 10 * dpr, y + 12 * dpr);
+      c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); label(c, de, x + 10 * dpr, y + 12 * dpr); obsMark(c, en, x, y, 5 * dpr, dpr);
     });
   }
   // Satellites: lit ones bright with a short tail showing where they move, those in Earth's shadow dim
@@ -2010,6 +2145,297 @@ function drawOverlay(dpr) {
   c.globalAlpha = 1;
 }
 
+/* ---------------- Observing list and logbook ---------------- */
+// Stored on the device only, separately from the settings: { list: [{id, name, added}], log: [entry], exportedAt }
+// A log entry: { uid, obj, name, t (ISO), lat, lon, alt, ep, moon, result: easy|hard|miss, seeing, transp, note }
+const OBS_KEY = "zenigo-obs";
+let obs = { list: [], log: [], exportedAt: 0 };
+try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || "null"); if (o && Array.isArray(o.log)) obs = Object.assign(obs, o); } catch (e) {}
+function saveObs() {
+  try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup.", 7000); }
+  st.obsVer = (st.obsVer || 0) + 1; lastSig = []; syncListFab(); syncHudNext();
+}
+const pad2 = n => String(n).padStart(2, "0");
+// A night runs from noon to noon: entries after midnight belong to the evening before
+function nightKey(d) { const x = new Date(d.getTime() - 12 * 3600e3); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
+const obsSets = { v: -1, list: new Set(), seen: new Set(), tonight: new Set() };
+function sets() {
+  const k = nightKey(new Date());
+  if (obsSets.v === st.obsVer && obsSets.k === k) return obsSets;
+  obsSets.v = st.obsVer; obsSets.k = k; obsSets.list = new Set(obs.list.map(x => x.id));
+  obsSets.seen = new Set(obs.log.filter(e => e.result !== "miss").map(e => e.obj));
+  obsSets.tonight = new Set(obs.log.filter(e => e.result !== "miss" && nightKey(new Date(e.t)) === k).map(e => e.obj));
+  return obsSets;
+}
+// Long name for lists: "M13 · Great Hercules Cluster", "NGC 869 · h Persei"
+function obsName(id, fallback) {
+  const m = MESSIER.find(r => r[0] === id); if (m) return m[4] ? id + " · " + m[4] : id;
+  const n = NGC.find(o => o.id === id); if (n) return n.name ? id + " · " + n.name : id;
+  const T = targetById(id); return T ? T.name : fallback || id;
+}
+// Full object (details, links) from an id
+function objById(id) {
+  const m = MESSIER.find(r => r[0] === id); if (m) return messierObj(m);
+  const n = NGC.find(o => o.id === id); if (n) return ngcObj(n);
+  const p = PLANETS.find(([, en]) => en === id); if (p) return planetObj(p[0], p[1]);
+  if (/^S\d+$/.test(id)) return starObj(+id.slice(1));
+  const sx = SAT.list.find(x => "SAT" + x.norad === id); if (sx) return satObj(sx);
+  return null;
+}
+function toggleList(o) {
+  const i = obs.list.findIndex(x => x.id === o.id);
+  if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from your list.", 2500); }
+  else { obs.list.push({ id: o.id, name: o.name, added: Date.now() }); hint(o.name + " is on your list.", 2500); }
+  saveObs();
+}
+function starButton(id, make) {
+  const b = document.createElement("button"); b.className = "ostar";
+  const set = () => { const on = sets().list.has(id); b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", on ? "Remove from the observing list" : "Add to the observing list"); };
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>'; set();
+  b.onclick = e => { e.stopPropagation(); toggleList(make()); set(); if (!$("listSheet").hidden) renderList(); };
+  return b;
+}
+function syncInfoObs(o) {
+  const can = o.kind !== "sat", on = sets().list.has(o.id);
+  $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(on));
+  $("infoStar").setAttribute("aria-label", on ? "Remove from the observing list" : "Add to the observing list");
+  const es = obs.log.filter(e => e.obj === o.id && e.result !== "miss").sort((a, b) => b.t.localeCompare(a.t)), h = $("infoHist");
+  h.hidden = !es.length; h.textContent = "";
+  if (!es.length) return;
+  const last = es[0], d = new Date(last.t);
+  const h1 = document.createElement("div"); h1.className = "h1";
+  h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + "<b>Seen " + es.length + "×</b>";
+  const sp = document.createElement("span"); sp.className = "note"; sp.textContent = "· last on " + d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h1.append(sp); h.append(h1);
+  if (last.note || last.ep) { const p = document.createElement("p"); p.textContent = (last.note ? "“" + last.note + "” " : "") + [last.ep, last.seeing ? "seeing " + last.seeing + "/5" : ""].filter(Boolean).join(" · "); h.append(p); }
+  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { closeSheet("infoSheet"); openLog(o.id); }; h.append(b);
+}
+// Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
+const planCache = { at: 0, t: null };
+function nightPlan() { if (!planCache.t || Date.now() - planCache.at > 10 * 60e3) { planCache.t = tonightData(); planCache.at = Date.now(); } return planCache.t; }
+function rowPlan(id, tn) {
+  const T = targetById(id); if (!T) return null;
+  const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const tNow = A.MakeTime(now), altNow = horiz(T.kind === "planet" || T.kind === "sun" ? T.vec(tNow) : vecNow(T), tNow).alt;
+  const planet = T.kind === "planet";
+  const pts = tn.samples.map(sm => { const [a, az] = sm.alt(T.vec(A.MakeTime(sm.d))); return { d: sm.d, a, az, good: a > 20 && sm.sun < (planet ? -6 : -12) }; });
+  let best = null; pts.forEach(p => { if (p.good && (!best || p.a > best.a)) best = p; });
+  const fut = pts.filter(p => p.d > now), leave = altNow > 20 ? fut.find(p => p.a < 20) : null, rise = altNow <= 20 ? fut.find(p => p.good) : null;
+  const span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
+  const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? "#6d5a35" : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
+  const later = altNow <= 10;
+  let sub;
+  if (later && rise) sub = "rises " + fmt(rise.d) + (best ? ", best " + fmt(best.d) : "");
+  else if (later) sub = best ? "best " + fmt(best.d) : "not well placed tonight";
+  else sub = !best ? "low tonight" : best.d < now ? "past its best" : "best " + fmt(best.d) + ", " + compass(best.az);
+  const warn = !later && leave && leave.d - now < 3 * 3600e3 ? "low after " + fmt(leave.d) : "";
+  const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
+  return { T, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
+}
+const listTab = { v: "todo" };
+function todoItems() {
+  const tn = nightPlan(), tonight = sets().tonight;
+  return obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
+}
+// The next object: cached, since the directions update several times a second
+const nextCache = { key: "", v: null };
+function nextItem() {
+  const key = st.obsVer + "|" + cfg.target + "|" + Math.floor(Date.now() / 60000);
+  if (nextCache.key !== key) { nextCache.key = key; nextCache.v = todoItems().filter(r => r.x.id !== cfg.target && !r.p.later)[0] || null; }
+  return nextCache.v;
+}
+function syncListFab() {
+  const n = obs.list.filter(x => !sets().tonight.has(x.id)).length, b = $("listBadge");
+  b.hidden = !n; b.textContent = n;
+  $("logState").textContent = obs.log.length ? obs.log.length + (obs.log.length === 1 ? " entry" : " entries") : "";
+}
+function syncHudNext() {
+  const b = $("hudNext"); if (!b) return;
+  const onList = !cfg.target || sets().list.has(cfg.target), nx = onList && obs.list.length ? nextItem() : null;
+  b.hidden = !nx; if (nx) { b.textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; b.onclick = () => goNext(nx); }
+}
+function goNext(nx) { selectTarget(nx.x.id); hint("Next on your list: " + obsName(nx.x.id, nx.x.name) + ".", 3000); }
+function renderList() {
+  const tn = nightPlan(), body = $("listBody"), k = nightKey(new Date()), fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  $("listSub").textContent = (tn.dusk ? "Dark " + fmt(tn.dusk) + "–" + fmt(tn.dawn) : "No full darkness tonight") + " · Moon " + (tn.moonSet && tn.moonSet > new Date() ? "sets " + fmt(tn.moonSet) : tn.moonRise && tn.moonRise > new Date() ? "rises " + fmt(tn.moonRise) : Math.round(tn.illum * 100) + " %") + " · sorted by when they get low";
+  const todo = todoItems(), seenT = obs.log.filter(e => nightKey(new Date(e.t)) === k && e.result !== "miss");
+  const seenIds = [...new Set(seenT.map(e => e.obj))];
+  document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.textContent = t === "todo" ? "To do · " + todo.length : "Seen tonight · " + seenIds.length; });
+  body.textContent = "";
+  const mk = (id, name, p, seen) => {
+    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && !seen ? " later" : "");
+    const main = document.createElement("button"); main.className = "omain";
+    const b = document.createElement("b"); if (id === cfg.target) { const tg = document.createElement("span"); tg.className = "otag"; tg.textContent = "Target"; b.append(tg); } b.append(obsName(id, name));
+    const sm = document.createElement("small"), T = p && p.T;
+    const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : (T.sub || "").split(" · ").find(x => /galaxy|cluster|nebula|remnant|region|field|asterism/i.test(x)) || "") : "";
+    const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
+    sm.textContent = [kind, mag, seen ? "seen " + seen : p ? p.sub : ""].filter(Boolean).join(" · ");
+    if (p && p.warn && !seen) { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
+    main.append(b, sm);
+    if (p && !seen) { const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = p.bar; bar.setAttribute("aria-hidden", "true"); if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); } main.append(bar); }
+    main.onclick = () => { selectTarget(id); closeSheet("listSheet"); };
+    const alt = document.createElement("span"); alt.className = "oalt";
+    if (p && !seen) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
+    else if (seen) { alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; }
+    row.append(main, alt, sets().list.has(id) ? starButton(id, () => ({ id, name: obsName(id, name) })) : document.createElement("span"));
+    return row;
+  };
+  if (listTab.v === "todo") {
+    if (!obs.list.length) {
+      const e = document.createElement("div"); e.className = "oempty";
+      e.innerHTML = '<p class="note">Your list is empty. Add objects with the star in their details or in Find target, or start with the best objects for tonight.</p>';
+      const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Add tonight’s best objects";
+      b.onclick = () => { const n = addTonightsBest(); hint(n ? n + " objects added." : "Nothing new to add tonight.", 3000); renderList(); }; e.append(b); body.append(e);
+    } else if (!todo.length) body.innerHTML = '<p class="note">Everything on your list is seen tonight. Well done!</p>';
+    todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, null)));
+  } else {
+    if (!seenIds.length) body.innerHTML = '<p class="note">Nothing logged tonight yet. Tap “Seen” in an object’s details.</p>';
+    seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))); });
+    if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the list"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
+  }
+  const nx = nextItem(); $("listNext").hidden = !nx;
+  if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); closeSheet("listSheet"); }; }
+}
+function addTonightsBest() {
+  const tn = nightPlan(), have = sets().list, seen = sets().seen; let n = 0;
+  tn.planets.forEach(p => { if (!have.has(p.en)) { obs.list.push({ id: p.en, name: p.de, added: Date.now() }); n++; } });
+  tn.dso.forEach(({ row }) => { if (!have.has(row[0]) && !seen.has(row[0])) { obs.list.push({ id: row[0], name: row[0], added: Date.now() }); n++; } });
+  if (n) saveObs(); return n;
+}
+document.querySelectorAll("[data-ltab]").forEach(b => b.onclick = () => { listTab.v = b.dataset.ltab; renderList(); });
+$("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("listSheet"); };
+$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); };
+
+// "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
+const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
+function openSeen(o, entry) {
+  const now = entry ? new Date(entry.t) : new Date(), tNow = A.MakeTime(now), k = nightKey(new Date());
+  const lastTonight = obs.log.filter(e => nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
+  Object.assign(seenState, { o, entry: entry || null, res: entry ? entry.result : "easy", see: entry ? entry.seeing || 0 : lastTonight?.seeing || 0, tr: entry ? entry.transp || 0 : lastTonight?.transp || 0 });
+  $("seenName").textContent = (entry ? "" : "") + (o ? o.name : entry.name) + (entry ? "" : " seen");
+  const alt = entry ? entry.alt : o ? Math.round(horiz(o.vec(tNow), tNow).alt) : null;
+  const il = A.Illumination(A.Body.Moon, tNow), moonUp = horiz(targetById("Moon").vec(tNow), tNow).alt > 0;
+  seenState.facts = entry ? { alt: entry.alt, moon: entry.moon, lat: entry.lat, lon: entry.lon } : { alt, moon: Math.round(il.phase_fraction * 100) + " %, " + (moonUp ? "up" : "down"), lat: +cfg.lat, lon: +cfg.lon };
+  const f = $("seenFacts"); f.textContent = "";
+  const add = (k, v) => { const s = document.createElement("span"); s.innerHTML = "<em></em><b></b>"; s.firstChild.textContent = k; s.lastChild.textContent = v; f.append(s); };
+  add("When", now.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
+  // eyepiece: a small select with the user's eyepieces
+  const lab = document.createElement("label"); lab.innerHTML = "<em>Eyepiece</em>"; const sel = document.createElement("select"); sel.id = "seenEp"; sel.setAttribute("aria-label", "Eyepiece");
+  const opts = opt().eps.map(epLabel).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder", "Naked eye", "Binoculars"]);
+  const cur = entry ? entry.ep : (opt().src === "finder" || !curEp() ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
+  if (cur && !opts.includes(cur)) opts.unshift(cur);
+  opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab);
+  if (seenState.facts.alt != null) add("Altitude", seenState.facts.alt + "°");
+  add("Moon", seenState.facts.moon);
+  add("Site", Math.abs(seenState.facts.lat).toFixed(2) + "° " + (seenState.facts.lat >= 0 ? "N" : "S") + " " + Math.abs(seenState.facts.lon).toFixed(2) + "° " + (seenState.facts.lon >= 0 ? "E" : "W"));
+  $("seenNote").value = entry ? entry.note || "" : "";
+  ["seenSee", "seenTr"].forEach((id, j) => { const box = $(id); box.textContent = ""; for (let i = 1; i <= 5; i++) { const b = document.createElement("button"); b.textContent = i; b.setAttribute("aria-label", (j ? "Transparency " : "Seeing ") + i + " of 5"); b.onclick = () => { const key = j ? "tr" : "see"; seenState[key] = seenState[key] === i ? 0 : i; syncSeen(); }; box.append(b); } });
+  const nx = !entry && o && sets().list.has(o.id) ? nextItem() : null, nxx = nx && nx.x.id === o.id ? null : nx;
+  $("seenSaveNext").hidden = !nxx; if (nxx) $("seenSaveNext").textContent = "Save, next: " + (targetById(nxx.x.id)?.name || nxx.x.name);
+  $("seenSave").classList.toggle("primary", !nxx);
+  $("seenDelete").hidden = !entry;
+  seenState.next = nxx;
+  syncSeen(); openSheet("seenSheet");
+}
+function syncSeen() {
+  document.querySelectorAll("#seenRes [data-res]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.res === seenState.res)));
+  [...$("seenSee").children].forEach((b, i) => b.setAttribute("aria-pressed", String(seenState.see === i + 1)));
+  [...$("seenTr").children].forEach((b, i) => b.setAttribute("aria-pressed", String(seenState.tr === i + 1)));
+}
+document.querySelectorAll("#seenRes [data-res]").forEach(b => b.onclick = () => { seenState.res = b.dataset.res; syncSeen(); });
+function saveSeen(goOn) {
+  const { o, entry } = seenState, f = seenState.facts;
+  const e = entry || { uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), obj: o.id, name: o.name, t: new Date().toISOString(), lat: f.lat, lon: f.lon, alt: f.alt, moon: f.moon };
+  Object.assign(e, { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value });
+  if (!entry) obs.log.push(e);
+  saveObs(); closeSheet("seenSheet");
+  if (!$("logSheet").hidden || entry) renderLog();
+  hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged.", 2500);
+  if (goOn && seenState.next) goNext(seenState.next);
+}
+$("seenSave").onclick = () => saveSeen(false);
+$("seenSaveNext").onclick = () => saveSeen(true);
+$("seenDelete").onclick = async () => {
+  const e = seenState.entry; if (!e) return;
+  closeSheet("seenSheet");
+  if (!(await askConfirm("Delete this entry?", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ". This can’t be undone.", "Delete"))) { renderLog(); return; }
+  obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); renderLog(); openSheet("logSheet");
+};
+
+// Logbook: progress, entries by night, export and import
+const logState = { filter: null };
+const RES_ICON = { easy: ["easy", "var(--ok)", '<path d="M5 12.5l4.5 4.5L19 7.5"/>'], hard: ["hard", "var(--accent)", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.3"/>'], miss: ["not found", "var(--target)", '<path d="M7 7l10 10M17 7L7 17"/>'] };
+function openLog(filter) { logState.filter = filter || null; renderLog(); openSheet("logSheet"); }
+function renderLog() {
+  const ok = obs.log.filter(e => e.result !== "miss"), ids = new Set(ok.map(e => e.obj));
+  const mCount = [...ids].filter(id => /^M\d+$/.test(id)).length, pCount = [...ids].filter(id => ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(id)).length;
+  const nights = new Set(obs.log.map(e => nightKey(new Date(e.t)))).size;
+  const tile = (k, v, of) => '<div><span class="k">' + k + '</span><span class="v">' + v + (of ? "<small>/" + of + "</small>" : "") + "</span>" + (of ? '<span class="pb"><i style="width:' + Math.round(v / of * 100) + '%"></i></span>' : '<span class="note">' + ids.size + (ids.size === 1 ? " object" : " objects") + "</span>") + "</div>";
+  $("logTiles").innerHTML = tile("Messier", mCount, 110) + tile("Planets", pCount, 7) + tile("Nights", nights);
+  // suggestion: Messier objects not seen yet that are well placed tonight
+  const tn = nightPlan(), have = sets().list;
+  const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && sm.alt(v)[0] > 30); }) : [];
+  const sb = $("logSuggest"); sb.hidden = !sug.length;
+  if (sug.length) {
+    sb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>' + "<span></span><b>Add</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
+    sb.onclick = () => { sug.sort((a, b) => a[3] - b[3]).slice(0, 12).forEach(r => obs.list.push({ id: r[0], name: r[0], added: Date.now() })); saveObs(); renderLog(); hint(Math.min(12, sug.length) + " objects added to your list.", 3000); };
+  }
+  const fb = $("logFilter"); fb.hidden = !logState.filter; fb.textContent = "";
+  if (logState.filter) { const c = document.createElement("button"); c.className = "chip sel"; c.textContent = obsName(logState.filter) + " only  ✕"; c.onclick = () => { logState.filter = null; renderLog(); }; fb.append(c); }
+  const body = $("logBody"); body.textContent = "";
+  const list = obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t));
+  if (!list.length) body.innerHTML = '<p class="note">No entries yet. When you have found an object, open its details and tap “Seen”.</p>';
+  let grp = null;
+  list.forEach(e => {
+    const d = new Date(e.t), k = nightKey(d);
+    if (k !== grp) {
+      grp = k; const night = list.filter(x => nightKey(new Date(x.t)) === k), h = document.createElement("div"); h.className = "lgrp";
+      const [y, m, dd] = k.split("-").map(Number), nd = new Date(y, m - 1, dd);
+      const se = night.map(x => x.seeing).filter(Boolean), tr = night.map(x => x.transp).filter(Boolean), avg = a => Math.round(a.reduce((p, c) => p + c, 0) / a.length);
+      h.innerHTML = "<span></span><span></span>";
+      h.firstChild.textContent = nd.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: "numeric" }) + " · " + night.length + (night.length === 1 ? " entry" : " entries");
+      h.lastChild.textContent = [se.length ? "seeing " + avg(se) : "", tr.length ? "transp. " + avg(tr) : ""].filter(Boolean).join(" · ");
+      body.append(h);
+    }
+    const r = document.createElement("button"); r.className = "lrow";
+    const [lbl, colr, path] = RES_ICON[e.result] || RES_ICON.easy;
+    r.innerHTML = '<span class="tm"></span><b></b><svg viewBox="0 0 24 24" fill="none" stroke="' + colr + '" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="' + lbl + '">' + path + "</svg><small></small>";
+    r.querySelector(".tm").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const b = r.querySelector("b"); b.textContent = obsName(e.obj, e.name); if (e.result === "miss") b.className = "miss";
+    r.querySelector("small").textContent = [e.ep, e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
+    r.onclick = () => { closeSheet("logSheet"); openSeen(objById(e.obj), e); };
+    body.append(r);
+  });
+  const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
+  $("logBackup").textContent = "Stored only on this device. Clearing the browser’s website data deletes it. Last backup: " + (ago == null ? "never" : ago === 0 ? "today" : ago === 1 ? "yesterday" : ago + " days ago") + ".";
+  $("logCsv").disabled = $("logJson").disabled = !obs.log.length;
+}
+function download(name, text, type) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+$("logCsv").onclick = () => {
+  const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const rows = [["date", "time", "object", "name", "result", "seeing", "transparency", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
+  obs.log.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), e.result, e.seeing, e.transp, e.ep, e.alt, e.moon, e.lat, e.lon, e.note]); });
+  download("zenigo-logbook-" + stamp() + ".csv", "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
+  obs.exportedAt = Date.now(); saveObs(); renderLog();
+};
+$("logJson").onclick = () => { download("zenigo-backup-" + stamp() + ".json", JSON.stringify({ app: "Zenigo", version: 1, list: obs.list, log: obs.log }, null, 1), "application/json"); obs.exportedAt = Date.now(); saveObs(); renderLog(); };
+$("logImport").onclick = () => $("logFile").click();
+$("logFile").onchange = async () => {
+  const f = $("logFile").files[0]; $("logFile").value = ""; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); if (!d || !Array.isArray(d.log)) throw new Error("format");
+    const have = new Set(obs.log.map(e => e.uid)); let n = 0;
+    d.log.forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); n++; } });
+    const lh = new Set(obs.list.map(x => x.id)); let m = 0;
+    (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); m++; } });
+    saveObs(); renderLog(); hint("Imported " + n + (n === 1 ? " entry" : " entries") + " and " + m + (m === 1 ? " list object." : " list objects."), 4000);
+  } catch (e) { hint("That file is not a Zenigo backup.", 4000); }
+};
+$("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
+
 /* ---------------- Time: show the sky at another time ---------------- */
 function skyDate() { return new Date(Date.now() + st.tOff); }
 function fmtClock(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
@@ -2065,8 +2491,8 @@ function drawRings(c, sol, tx, ty, dpr, col) {
   const o = opt(); if (!o.telrad && !o.ring) return;
   const rad = d => Math.tan(d / 2 * D2R) * sol.f * fit.sc, maxR = Math.hypot(view.width, view.height);
   const ring = (d, txt) => { const r = rad(d); if (r < 5 * dpr || r > maxR) return; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.stroke();
-    if (txt) { c.fillText(txt, tx + r * 0.71 + 4 * dpr, ty - r * 0.71 - 4 * dpr); } };
-  c.save(); c.font = `${11 * dpr}px ${col("--font-ui")}`; c.textBaseline = "alphabetic";
+    if (txt) label(c, txt, tx + r * 0.71 + 4 * dpr, ty - r * 0.71 - 6 * dpr); };   // skipped where it would cover a name
+  c.save(); c.font = `${11 * dpr}px ${col("--font-ui")}`; c.textBaseline = "middle";
   if (o.telrad) { c.strokeStyle = c.fillStyle = col("--target"); c.globalAlpha = 0.55; c.lineWidth = 1.2 * dpr; [0.5, 2, 4].forEach(d => ring(d, null)); }
   if (o.ring) {
     c.globalAlpha = 0.8; c.strokeStyle = c.fillStyle = col("--fg"); c.lineWidth = 1.2 * dpr;
@@ -2485,7 +2911,7 @@ function showInfo(o) {
   $("infoWarn").hidden = o.body !== "Sun";
   const isTarget = cfg.target === o.id;
   $("infoTarget").textContent = isTarget ? "Remove as target" : "Set as target"; $("infoTarget").disabled = false;
-  $("infoTarget").classList.toggle("primary", !isTarget);
+  $("infoTarget").classList.remove("primary");
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
   $("infoSync").onclick = () => {
@@ -2498,6 +2924,9 @@ function showInfo(o) {
     closeSheet("infoSheet");
     hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
   };
+  syncInfoObs(o);
+  $("infoStar").onclick = () => { toggleList(o); syncInfoObs(o); };
+  $("infoSeen").onclick = () => { closeSheet("infoSheet"); openSeen(o); };
   $("infoTarget").onclick = () => {
     if (isTarget) { clearTarget(); closeSheet("infoSheet"); return; }
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
@@ -2782,7 +3211,7 @@ resize(); syncSettings(); renderChips();
 st.solMode = "map";
 updateGuide(); renderReadout();
 requestAnimationFrame(draw);
-loadDeep(); loadSats(true);
+loadDeep(); loadSats(true); syncListFab();
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
 </script>
