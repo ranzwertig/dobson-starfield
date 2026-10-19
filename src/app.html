@@ -284,7 +284,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .epbox .er span:first-child { font-family: var(--font-num); white-space: nowrap; }
 .epbox .er span:last-child { color: var(--muted); text-align: right; }
 .epbox .er.best span:last-child { color: var(--ok); font-weight: 600; }
-.epbox .er[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.epbox .er[aria-checked=true] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.epbox .tbest { font: 600 12px var(--font-ui); font-style: normal; color: var(--ok); border: 1px solid var(--ok); border-radius: 99px; padding: 1px 8px; vertical-align: 2px; }
 .ttonight .st { display: flex; flex-wrap: wrap; gap: 6px; }
 .ttonight .st span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
 .ttonight .st .on { border-color: var(--accent); color: var(--accent); }
@@ -3666,31 +3667,32 @@ function epAdvice(o, t) {
   const eps = opt().eps;
   if (!eps.length || !o || (o.kind !== "dso" && o.kind !== "planet") || (o.body || o.id) === "Sun") return null;
   const ap = aperture(), maxM = 2 * ap, body = o.kind === "planet" ? o.body || o.id : null;
-  const rows = eps.map((e, i) => { const d = epData(e); return { i, e, mag: d.mag, fov: d.fov, pupil: exitPupil(e), score: 0, note: "" }; });
+  const rows = eps.map((e, i) => { const d = epData(e); return { i, e, mag: d.mag, fov: d.fov, pupil: exitPupil(e), score: 0, note: "", why: "" }; });
   const pick = list => list.reduce((a, b) => (b.score < a.score ? b : a));
   const magPenalty = r => (r.mag > maxM ? 3 : 0) + (r.pupil > 7.5 ? 1 : 0);
-  let best, why = "", alt = null, kind;
+  const tooMuch = "More magnification than this aperture shows sharply (about " + Math.round(maxM / 10) * 10 + "× at most). ";
+  let best, alt = null, kind;
   if (body === "Moon") {
     kind = "moon";
-    const size = 2 * Math.atan(1737.4 / (A.GeoVector(A.Body.Moon, t, true).Length() * AU_KM)) * R2D, ideal = Math.min(250, 1.2 * ap);
-    rows.forEach(r => { const fit = r.fov >= size * 1.08; r.note = fit ? (r.fov > size * 2.5 ? "whole Moon, small" : "whole Moon") : r.mag > maxM ? "too much magnification" : "part of the Moon: craters, mountains";
-      r.score = (fit ? -r.mag / 1000 : 10 + Math.abs(Math.log(r.mag / ideal))) + magPenalty(r); });
+    const size = 2 * Math.atan(1737.4 / (A.GeoVector(A.Body.Moon, t, true).Length() * AU_KM)) * R2D, ideal = Math.min(250, 1.2 * ap), fits = r => r.fov >= size * 1.08;
+    rows.forEach(r => { r.note = fits(r) ? (r.fov > size * 2.5 ? "whole Moon, small" : "whole Moon") : r.mag > maxM ? "too much magnification" : "part of the Moon";
+      r.score = (fits(r) ? -r.mag / 1000 : 10 + Math.abs(Math.log(r.mag / ideal))) + magPenalty(r);
+      r.det = Math.abs(Math.log(r.mag / ideal)) + magPenalty(r); });
     best = pick(rows);
-    if (best.fov < size * 1.08) why = "None of your eyepieces shows the whole Moon; this one shows the most of it.";
-    else why = "The whole Moon fits, as large as possible.";
-    rows.forEach(r => { r.det = Math.abs(Math.log(r.mag / ideal)) + magPenalty(r); });
+    const anyFits = rows.some(fits);
+    rows.forEach(r => { r.why = (r.mag > maxM ? tooMuch : "") + (fits(r) ? (r === best ? "The whole Moon fits, as large as possible." : r.fov > size * 2.5 ? "The whole Moon fits, but small with a lot of sky around it." : "The whole Moon fits.")
+      : !anyFits && r === best ? "None of your eyepieces shows the whole Moon; this one shows the most of it." : "Shows part of the Moon: good for craters and mountains along the line between day and night."); });
     const det = rows.reduce((a, b) => (b.det < a.det ? b : a));
-    if (det !== best && det.fov < size * 1.08) alt = det;
+    if (det !== best && !fits(det)) alt = det;
   } else if (body) {
     kind = "planet";
     const [k, cap] = EP_PLANET[body] || [1, 220], ideal = Math.max(50, Math.min(cap, k * ap)), arcsec = planetDisc(body, t).arcsec;
-    rows.forEach(r => { const q = r.mag / ideal;
+    rows.forEach(r => { const q = r.mag / ideal, rel = arcsec * r.mag / 1865;   // vs the full Moon to the naked eye
       r.score = Math.abs(Math.log(q)) + magPenalty(r);
-      r.note = r.mag > maxM ? "too much magnification" : q < 0.45 ? "small disc" : q < 0.8 ? "good overview" : q <= 1.3 ? "good for details" : "only on very steady nights"; });
+      r.note = r.mag > maxM ? "too much magnification" : q < 0.45 ? "small disc" : q < 0.8 ? "good overview" : q <= 1.3 ? "good for details" : "only on very steady nights";
+      r.why = (r.mag > maxM ? tooMuch : "") + o.name + " looks " + (rel >= 1.3 ? "about " + (rel < 2.5 ? rel.toFixed(1).replace(/\.0$/, "") : Math.round(rel)) + "× as large as" : rel >= 0.75 ? "about as large as" : rel >= 0.4 ? "about half as large as" : "much smaller than") + " the full Moon does to the naked eye."
+        + (q < 0.8 ? " More magnification (up to about " + Math.round(ideal / 10) * 10 + "×) would show more detail." : q > 1.3 && r.mag <= maxM ? " Sharp only when the air is very steady." : ""); });
     best = pick(rows);
-    const rel = arcsec * best.mag / 1865;   // vs the full Moon to the naked eye
-    why = o.name + " looks " + (rel >= 1.3 ? "about " + (rel < 2.5 ? rel.toFixed(1).replace(/\.0$/, "") : Math.round(rel)) + "× as large as" : rel >= 0.75 ? "about as large as" : rel >= 0.4 ? "about half as large as" : "much smaller than") + " the full Moon does to the naked eye.";
-    if (best.mag < ideal * 0.8) why += " More magnification (up to about " + Math.round(ideal / 10) * 10 + "×) would show more detail.";
   } else {
     kind = "dso";
     const ms = MESSIER.find(r => r[0] === o.id), ng = !ms && NGC.find(n => n.id === o.id);
@@ -3704,38 +3706,48 @@ function epAdvice(o, t) {
         : f > 0.95 ? "larger than the field" : f > 0.75 ? "fills the field" : f < 0.08 ? "looks tiny" : f < 0.2 ? "fits easily, looks small" : "frames it well";
     });
     best = pick(rows);
-    const pw = "exit pupil " + best.pupil.toFixed(1) + " mm" + (cls === "gal" || cls === "neb" ? best.pupil >= 2 && best.pupil <= 4.5 ? ", good for faint light" : "" : cls === "glob" && best.pupil <= 2.2 ? ", enough magnification to resolve stars" : "");
-    why = size ? (best.fill > 0.95 ? "Larger than any of your fields: this one shows the most of it." : "It " + fillWords(best.fill).replace(/^a small/, "is a small") + "; " + pw + ".") : pw[0].toUpperCase() + pw.slice(1) + ".";
+    const allBig = size && rows.every(r => r.fill > 0.95);
+    rows.forEach(r => {
+      const pw = "exit pupil " + r.pupil.toFixed(1) + " mm" + ((cls === "gal" || cls === "neb") ? (r.pupil >= 2 && r.pupil <= 4.5 ? ", good for faint light" : r.pupil < 2 ? ", rather dim for faint light" : "")
+        : cls === "glob" ? (r.pupil <= 2.2 ? ", enough magnification to resolve stars" : ", too little magnification to resolve many stars")
+        : cls === "pn" ? (r.pupil > 2 ? ", more magnification would make the small disc easier to see" : ", magnified enough to show it as a small disc") : "");
+      r.why = (r.mag > maxM ? tooMuch : "") + (!size ? pw[0].toUpperCase() + pw.slice(1) + "." : r.fill > 0.95 ? (allBig && r === best ? "Larger than any of your fields: this one shows the most of it." : "Larger than the field: you only see part of it at once.")
+        : "It " + fillWords(r.fill).replace(/^a small/, "is a small") + "; " + pw + ".");
+    });
   }
-  // for finding it: the widest field
   const widest = rows.reduce((a, b) => (b.fov > a.fov ? b : a));
-  return { kind, rows, best, why, alt, widest: widest !== best && widest.fov > best.fov * 1.3 ? widest : null };
+  return { kind, rows, best, alt, widest };
 }
-// The eyepiece box in the details and the target panel: best one, all of yours (tap to use), how to find it
-function fillEpBox(box, o) {
+// The eyepiece box in the details and the target panel. It opens on the best eyepiece; tapping one in the list shows
+// what that one does for the object, and "Use it" makes it the eyepiece in use (map rings, eyepiece view).
+function fillEpBox(box, o, keep) {
   let a = null; try { a = epAdvice(o, skyNow().t); } catch (e) {}
   box.hidden = !a; box.textContent = ""; if (!a) return false;
   const O = opt(), cur = O.src === "finder" ? -1 : Math.min(O.ep | 0, O.eps.length - 1);
-  const short = r => r.e.f + " mm · " + Math.round(r.mag) + "×";
-  const use = (r, quiet) => { setOptics({ ep: r.i, src: "ep" }); fillEpBox(box, o); if (!quiet) hint("Eyepiece: " + epLabel(r.e), 2500); };
-  const k = document.createElement("div"); k.className = "k"; k.textContent = O.eps.length > 1 ? "Best eyepiece" : "Eyepiece"; box.append(k);
+  if (!keep || !a.rows[box._sel]) box._sel = a.best.i;
+  const sel = a.rows[box._sel], short = r => r.e.f + " mm · " + Math.round(r.mag) + "×";
+  const k = document.createElement("div"); k.className = "k"; k.textContent = O.eps.length > 1 ? "Which eyepiece" : "Eyepiece"; box.append(k);
   const head = document.createElement("div"); head.className = "eb";
-  head.innerHTML = "<div><b></b><small></small></div>"; head.querySelector("b").textContent = short(a.best) + " · " + fmtField(a.best.fov); head.querySelector("small").textContent = a.why;
-  if (a.best.i !== cur) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use it"; b.setAttribute("aria-label", "Use the " + a.best.e.f + " mm eyepiece"); b.onclick = () => use(a.best); head.append(b); }
+  head.innerHTML = "<div><b></b><small></small></div>"; head.querySelector("b").textContent = short(sel) + " · " + fmtField(sel.fov);
+  if (sel === a.best && O.eps.length > 1) { const t = document.createElement("i"); t.className = "tbest"; t.textContent = "best"; head.querySelector("b").append(" ", t); }
+  head.querySelector("small").textContent = sel.why;
+  if (sel.i !== cur) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use it"; b.setAttribute("aria-label", "Use the " + sel.e.f + " mm eyepiece");
+    b.onclick = () => { setOptics({ ep: sel.i, src: "ep" }); fillEpBox(box, o, true); hint("Now using the " + epLabel(sel.e), 2500); }; head.append(b); }
   else { const s = document.createElement("span"); s.className = "inuse"; s.textContent = "in use"; head.append(s); }
   box.append(head);
   if (a.rows.length > 1) {
-    const list = document.createElement("div"); list.className = "ers";
+    const list = document.createElement("div"); list.className = "ers"; list.setAttribute("role", "radiogroup");
     a.rows.forEach(r => {
-      const b = document.createElement("button"); b.className = "er" + (r === a.best ? " best" : ""); b.setAttribute("aria-pressed", String(r.i === cur));
-      b.innerHTML = "<span></span><span></span>"; b.firstChild.textContent = short(r) + " · " + fmtField(r.fov); b.lastChild.textContent = r === a.best ? "best" : r.note;
-      b.onclick = () => use(r); list.append(b);
+      const b = document.createElement("button"); b.className = "er" + (r === a.best ? " best" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(r === sel));
+      b.innerHTML = "<span></span><span></span>"; b.firstChild.textContent = short(r) + " · " + fmtField(r.fov);
+      b.lastChild.textContent = (r.i === cur ? "in use · " : "") + (r === a.best ? "best" : r.note);
+      b.onclick = () => { box._sel = r.i; fillEpBox(box, o, true); }; list.append(b);
     });
     box.append(list);
   }
   const tips = [];
-  if (a.alt) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
-  if (a.widest) tips.push("Find it with the " + a.widest.e.f + " mm (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + a.best.e.f + " mm.");
+  if (a.alt && sel === a.best) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
+  if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push("Find it with the " + a.widest.e.f + " mm (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + sel.e.f + " mm.");
   tips.forEach(txt => { const d = document.createElement("div"); d.className = "course"; d.textContent = txt; box.append(d); });
   return true;
 }
