@@ -2276,7 +2276,14 @@ function renderList() {
     const alt = document.createElement("span"); alt.className = "oalt";
     if (p && !seen) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
     else if (seen) { alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; }
-    row.append(main, alt, sets().list.has(id) ? starButton(id, () => ({ id, name: obsName(id, name) })) : document.createElement("span"));
+    let tail;
+    if (seen) {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "To do"
+      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)";
+      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight");
+      tail.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      tail.onclick = () => unseeTonight(id, name);
+    } else tail = sets().list.has(id) ? starButton(id, () => ({ id, name: obsName(id, name) })) : document.createElement("span");
+    row.append(main, alt, tail);
     return row;
   };
   if (listTab.v === "todo") {
@@ -2294,6 +2301,16 @@ function renderList() {
   }
   const nx = nextItem(); $("listNext").hidden = !nx;
   if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); closeSheet("listSheet"); }; }
+}
+async function unseeTonight(id, name) {
+  const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
+  if (!es.length) return;
+  const nm = obsName(id, name), times = es.map(e => new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })).join(", ");
+  const back = sets().list.has(id) ? " It goes back to “To do” on your list." : "";
+  // the question replaces the list sheet; the list opens again afterwards either way
+  const ok = await askConfirm("Remove " + nm + " from seen tonight?", "The logbook " + (es.length === 1 ? "entry from " + times + " is" : "entries from " + times + " are") + " deleted." + back, "Remove");
+  if (ok) { const del = new Set(es.map(e => e.uid)); obs.log = obs.log.filter(e => !del.has(e.uid)); saveObs(); hint(nm + " removed from seen tonight.", 3000); }
+  renderList(); openSheet("listSheet");
 }
 function addTonightsBest() {
   const tn = nightPlan(), have = sets().list, seen = sets().seen; let n = 0;
