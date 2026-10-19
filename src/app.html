@@ -273,6 +273,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
 .ttonight .course { color: var(--muted); font-size: 13px; }
+.epbox .lnk { justify-self: start; background: none; border: 0; padding: 2px 0; color: var(--accent); font: 600 14px var(--font-ui); cursor: pointer; }
 .epbox .eb { display: flex; align-items: center; gap: 10px; }
 .epbox .eb > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .epbox .eb b { font: 600 16px/1.2 var(--font-num); }
@@ -3644,10 +3645,9 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 function opt() { return cfg.optics; }
 function curEp() { const o = opt(); return o.eps.length ? o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))] : null; }
 function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
-// Aperture (mirror or lens diameter): set in the settings, otherwise estimated from the focal length (typical f/6 Dobson)
-function apGuess() { return Math.round((+opt().scope || 1200) / 6 / 5) * 5; }
-function aperture() { return +opt().ap > 0 ? +opt().ap : apGuess(); }
-function exitPupil(e) { return e.f * aperture() / Math.max(1, +opt().scope || 1200); }   // mm
+// Aperture (mirror or lens diameter), from the settings; without it there are no exit pupils and no eyepiece advice
+function aperture() { return +opt().ap > 0 ? +opt().ap : null; }
+function exitPupil(e) { const ap = aperture(); return ap ? e.f * ap / Math.max(1, +opt().scope || 1200) : null; }   // mm
 function fmtField(d) { return d < 1 ? Math.round(d * 60) + "′" : (d < 10 ? d.toFixed(1) : d.toFixed(0)) + "°"; }
 function epLabel(e) { const d = epData(e); return e.f + " mm · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
 // "Should be in the eyepiece": within the inner part of the selected eyepiece's field
@@ -3663,9 +3663,10 @@ function fillWords(f) {
   return f > 0.95 ? "larger than the field" : f > 0.7 ? "fills most of the field" : f > 0.42 ? "fills about half the field" : f > 0.26 ? "fills about a third of the field" :
     f > 0.12 ? "a small patch in the field" : "a small spot in the field";
 }
+const epAdviceFor = o => !!o && (o.kind === "dso" || o.kind === "planet") && (o.body || o.id) !== "Sun";
 function epAdvice(o, t) {
   const eps = opt().eps;
-  if (!eps.length || !o || (o.kind !== "dso" && o.kind !== "planet") || (o.body || o.id) === "Sun") return null;
+  if (!eps.length || !aperture() || !epAdviceFor(o)) return null;
   const ap = aperture(), maxM = 2 * ap, body = o.kind === "planet" ? o.body || o.id : null;
   const rows = eps.map((e, i) => { const d = epData(e); return { i, e, mag: d.mag, fov: d.fov, pupil: exitPupil(e), score: 0, note: "", why: "" }; });
   const pick = list => list.reduce((a, b) => (b.score < a.score ? b : a));
@@ -3721,8 +3722,18 @@ function epAdvice(o, t) {
 // The eyepiece box in the details and the target panel. It opens on the best eyepiece; tapping one in the list shows
 // what that one does for the object, and "Use it" makes it the eyepiece in use (map rings, eyepiece view).
 function fillEpBox(box, o, keep) {
+  box.textContent = "";
+  if (epAdviceFor(o) && (!opt().eps.length || !aperture())) {   // something is missing: say what, with a way to the settings
+    const miss = [!opt().eps.length && "your eyepieces", !aperture() && "the telescope’s aperture"].filter(Boolean).join(" and ");
+    const k = document.createElement("div"); k.className = "k"; k.textContent = "Which eyepiece";
+    const d = document.createElement("div"); d.className = "course"; d.textContent = "Enter " + miss + " in the settings to see which eyepiece suits this object best.";
+    const b = document.createElement("button"); b.className = "lnk"; b.textContent = "Telescope settings →";
+    b.onclick = () => { st.infoFromList = st.tgtFromList = false; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope");
+      setTimeout(() => $(aperture() ? "oEps" : "oAp").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
+    box.append(k, d, b); box.hidden = false; return true;
+  }
   let a = null; try { a = epAdvice(o, skyNow().t); } catch (e) {}
-  box.hidden = !a; box.textContent = ""; if (!a) return false;
+  box.hidden = !a; if (!a) return false;
   const O = opt(), cur = O.src === "finder" ? -1 : Math.min(O.ep | 0, O.eps.length - 1);
   if (!keep || !a.rows[box._sel]) box._sel = a.best.i;
   const sel = a.rows[box._sel], short = r => r.e.f + " mm · " + Math.round(r.mag) + "×";
@@ -3842,9 +3853,10 @@ function syncOptics() {
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
   if (document.activeElement !== $("oAp")) $("oAp").value = +o.ap > 0 ? o.ap : "";
-  $("oAp").placeholder = apGuess() + " (estimate)";
-  const fr = (+o.scope || 1200) / aperture();
-  $("oScopeInfo").textContent = "f/" + fr.toFixed(1) + " · highest useful magnification about " + Math.round(2 * aperture() / 10) * 10 + "×" + (+o.ap > 0 ? "." : ". The aperture is estimated from the focal length; enter it for exact exit pupils.");
+  $("oAp").placeholder = "e.g. 200";
+  const ap = aperture();
+  $("oScopeInfo").textContent = ap ? "f/" + ((+o.scope || 1200) / ap).toFixed(1) + " · highest useful magnification about " + Math.round(2 * ap / 10) * 10 + "×."
+    : "Enter the aperture (mirror or lens diameter, 200 mm for an 8-inch Dobson) to see exit pupils and, in each object’s details, which eyepiece suits it best.";
   $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!o.view;
   $("oOrient").value = o.orient; $("oRot").value = o.rot; $("oRotV").textContent = (o.rot > 0 ? "+" : "") + o.rot + "°";
   if (!box.contains(document.activeElement)) {
@@ -3860,7 +3872,7 @@ function syncOptics() {
       row.querySelectorAll("[data-k]").forEach(inp => { inp.value = e[inp.dataset.k];
         inp.onchange = () => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setOptics({}); }; });
       row.querySelector("button").onclick = () => { o.eps.splice(i, 1); setOptics({ ep: Math.min(o.ep | 0, Math.max(0, o.eps.length - 1)) }); };
-      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + " · exit pupil " + exitPupil(e).toFixed(1) + " mm";
+      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "");
       box.append(row);
     });
   }
