@@ -1865,7 +1865,15 @@ function mapSol() {
 const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
 function mapGestures() { return (st.source === "map" && st.solMode !== "track") || photoSky(); }
 // The first move makes the view a plain projection like the map (the photo's lens distortion is corrected by the mesh)
-function photoViewPlain() { if (!st.photoMoved) { st.sol.k1 = 0; st.sol.poly = null; } }
+// and levels it: up on the screen is the zenith, so the horizon is horizontal and the photo is turned instead.
+function photoViewPlain() {
+  if (st.photoMoved) return;
+  const sol = st.sol; sol.k1 = 0; sol.poly = null;
+  const v = Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(skyNow().M, [0, 0, 1]), d = v[0] * zen[0] + v[1] * zen[1] + v[2] * zen[2];
+  const up = zen.map((q, i) => q - d * v[i]), n = Math.hypot(...up); if (n < 1e-3) return;   // looking at the zenith: nothing to level
+  const y = up.map(q => -q / n), x = [y[1] * v[2] - y[2] * v[1], y[2] * v[0] - y[0] * v[2], y[0] * v[1] - y[1] * v[0]];
+  sol.R = [[x[0], y[0], v[0]], [x[1], y[1], v[1]], [x[2], y[2], v[2]]];
+}
 // Dragging turns the view like a telescope on an alt-az mount: sideways about the zenith, up and down about the
 // horizontal axis across the view. So the horizon keeps its angle on the screen (no tilting while panning).
 function rotAxis(ax, ang) {   // rotation matrix about a unit axis (Rodrigues)
