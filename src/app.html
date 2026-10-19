@@ -543,6 +543,11 @@ a.btn { text-decoration: none; color: var(--fg); }
         <button class="chiplabel" id="filterChipTxt" aria-label="Change filter"></button>
         <button class="iconbtn" id="btnFilterOff" aria-label="Show everything again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
+      <div class="calchip" id="pinChip" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M3.5 15.5l5-4.5 4 3.5 3-2.5 5 4"/><circle cx="16" cy="9.5" r="1.4"/></svg>
+        <button class="chiplabel" id="pinChipTxt" aria-label="Where is the photo?">Photo on the sky</button>
+        <button class="iconbtn" id="btnPinOff" aria-label="Remove the photo from the sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
       <div class="calchip" id="calChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
         <span id="calChipTxt"></span>
@@ -1652,7 +1657,12 @@ async function setSensor(on) {
       }
     } catch (e) { showPermissionHelp("motion"); return; }
     // Align follows the phone, a gallery photo stays still: go back to the sky map, looking where the photo pointed
-    if (st.source === "photo") { if (st.busy) abortSolve(true); showMap(); st.leftPhoto = true; }
+    if (st.source === "photo") {
+      if (st.busy) abortSolve(true);
+      // a solved photo stays pinned to its stars on the map: drawn there until removed (chip) or another photo is loaded
+      if (st.photoSol && st.frame) pinPhoto();
+      showMap(); st.leftPhoto = true;
+    }
     if (!sens.listening) {
       window.addEventListener("deviceorientation", e => onOrientation(e, false));
       window.addEventListener("deviceorientationabsolute", e => onOrientation(e, true));
@@ -1671,7 +1681,8 @@ async function setSensor(on) {
   // Pointing up, the phone lies flat and the system may rotate the screen: keep the current orientation while aligning
   try { if (on) await screen.orientation.lock(screen.orientation.type); else screen.orientation.unlock(); sens.locked = on; } catch (e) { sens.locked = false; }
   const fromPhoto = on && st.leftPhoto; st.leftPhoto = false;
-  if (fromPhoto) hint("Back to the sky map: Align follows the phone." + (+cfg.compassCal ? "" : " Compass mode is rough; “Locate” with the camera makes it precise."), 6000);
+  if (fromPhoto) hint(st.pin ? "Align follows the phone, the photo stays on its stars. Turn the phone towards it to see it; × on the photo chip removes it."
+    : "Back to the sky map: Align follows the phone." + (+cfg.compassCal ? "" : " Compass mode is rough; “Locate” with the camera makes it precise."), 7000);
   else if (on) hint(st.base ? "Motion sensor on: the map follows the phone." : (+cfg.compassCal ? "Compass mode, corrected by " + fmtSigned(+cfg.compassCal) + ". “Locate” makes it precise." : "Compass mode: rough alignment, often 10° or more off. “Locate” makes it precise and can measure the compass error."), 5000);
   else if (st.base) { st.sol = st.base.sol; st.moved = false; }
   sensorUpdate();
@@ -1962,8 +1973,43 @@ function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
   const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
   const txt = m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+  syncPin();
   if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
+
+/* ---------------- A solved photo pinned to the sky ---------------- */
+// After a photo, Align switches to the map that follows the phone; the photo stays drawn on its stars there
+function pinPhoto() {
+  const c = st.frame.canvas;
+  st.pin = { src: c, sw: c.width, sh: c.height, sol: st.photoSol, name: st.photoName || "" };
+  syncPin();
+}
+function unpinPhoto(quiet) {
+  if (!st.pin) return;
+  st.pin = null; lastSig = []; syncPin();
+  if (!quiet) hint("Photo removed from the sky.", 2500);
+}
+function syncPin() {
+  const on = !!st.pin && st.source === "map";
+  if ($("pinChip").hidden === on) $("pinChip").hidden = !on;
+  if (on) { const t = st.pin.name ? "Photo: " + st.pin.name : "Photo on the sky"; if ($("pinChipTxt").textContent !== t) $("pinChipTxt").textContent = t; }
+}
+// Tapping the chip: without Align the map turns to the photo; with Align, say where to turn the phone
+function findPin() {
+  const ps = st.pin.sol, t = skyNow().t, h = horiz(Solver.pixToSky(ps, ps.w / 2, ps.h / 2), t);
+  if (!st.sensor) {
+    st.mapView.az = h.az; st.mapView.alt = Math.max(-10, h.alt); st.mapView.fov = Math.min(120, Math.max(st.mapView.fov, (ps.fov || 50) * 1.4)); lastSig = [];
+    hint(h.alt < 0 ? "The photo’s part of the sky is below the horizon now." : "Turned to the photo.", 2500); return;
+  }
+  const c = horiz(Solver.mul(st.sol.R, [0, 0, 1]), t);
+  let dAz = ((h.az - c.az + 540) % 360) - 180; const dAlt = h.alt - c.alt;
+  if (Math.abs(dAz) * Math.cos(c.alt * D2R) < 5 && Math.abs(dAlt) < 5) { hint("The photo is right in front of you.", 2500); return; }
+  const side = Math.abs(dAz) < 3 ? "" : Math.round(Math.abs(dAz)) + "° to the " + (dAz > 0 ? "right" : "left");
+  const up = Math.abs(dAlt) < 3 ? "" : Math.round(Math.abs(dAlt)) + "° " + (dAlt > 0 ? "higher" : "lower");
+  hint("Turn the phone " + [side, up].filter(Boolean).join(" and ") + " to see the photo." + (h.alt < 0 ? " It is below the horizon now." : ""), 4000);
+}
+$("pinChipTxt").onclick = findPin;
+$("btnPinOff").onclick = () => unpinPhoto();
 
 /* ---------------- Zooming and panning ---------------- */
 const zoom = { z: 1, x: 0, y: 0 };
@@ -2039,7 +2085,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, st.obsVer, st.photoMoved ? meshSize()[0] : 0, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, st.obsVer, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -2106,6 +2152,7 @@ function draw() {
     if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
     else if (showImg && st.photoSol && st.source === "photo" && st.sol && st.photoMoved) drawPhotoInView(src, sw, sh);
     else if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
+    if (st.pin && st.source === "map" && st.sol) drawPhotoInView(st.pin.src, st.pin.sw, st.pin.sh, st.pin.sol);
     drawOverlay(dpr);
   }
   drawEyepiece();
@@ -2144,10 +2191,10 @@ function glSetup() {
     return true;
   } catch (e) { glw.ok = false; return false; }
 }
-function drawPhotoGL(src) {
+function drawPhotoGL(src, ps) {
   if (!glw.tried) glSetup();
   if (!glw.ok) return false;
-  const { gl, cv } = glw, ps = st.photoSol, sol = st.sol, W = view.width, H = view.height, nx = 32, ny = 24;
+  const { gl, cv } = glw, sol = st.sol, W = view.width, H = view.height, nx = 32, ny = 24;
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   if (glw.texSrc !== src) {   // upload the photo once
     gl.bindTexture(gl.TEXTURE_2D, glw.tex);
@@ -2183,13 +2230,13 @@ function drawPhotoGL(src) {
   vctx.drawImage(cv, 0, 0);
   return true;
 }
-function drawPhotoInView(src, sw, sh) {
+function drawPhotoInView(src, sw, sh, ps = st.photoSol) {
   const g0 = performance.now();
-  if (drawPhotoGL(src)) {   // measured: if WebGL turns out slow on this device (3 slow frames), use the 2D mesh from then on
+  if (drawPhotoGL(src, ps)) {   // measured: if WebGL turns out slow on this device (3 slow frames), use the 2D mesh from then on
     if (performance.now() - g0 > 18) { if (++glw.slowN >= 3) glw.ok = false; } else glw.slowN = 0;
     return;
   }
-  const ps = st.photoSol, sol = st.sol, [nx, ny] = meshSize(), t0 = performance.now();
+  const sol = st.sol, [nx, ny] = meshSize(), t0 = performance.now();
   // sky directions of the grid points depend only on the photo: computed once per photo and grid size
   const key = nx + "x" + ny + "|" + ps.w + "|" + ps.f;
   if (mesh.key !== key || mesh.ps !== ps) {
@@ -3692,6 +3739,7 @@ $("fileIn").onchange = async () => {
   try {
     const bmp = await createImageBitmap(f);
     if (st.sensor) setSensor(false);   // a photo does not follow the phone
+    unpinPhoto(true);
     if (st.stream) stopCamera();
     st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
     st.source = "photo"; st.sol = null; st.photoSol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
