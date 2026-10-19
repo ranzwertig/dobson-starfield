@@ -39,6 +39,16 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   display: grid; gap: 4px; justify-items: start; max-width: calc(100% - 110px); pointer-events: none;
 }
 .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
+.status.tappable { pointer-events: auto; cursor: pointer; border: 1px solid var(--line); }
+#diagLayers .chip.sel { border-color: var(--accent); color: var(--accent); }
+.diaglive { font-variant-numeric: tabular-nums; }
+#diagCanvas { width: 100%; height: auto; border-radius: 10px; background: #000; cursor: zoom-in; display: block; }
+#diagHist { width: 100%; height: auto; border-radius: 8px; display: block; }
+.diagfacts { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; font-size: 13.5px; }
+.diagfacts dt { color: var(--muted); } .diagfacts dd { margin: 0; font-family: var(--font-num); font-size: 12.5px; overflow-wrap: anywhere; }
+.diagh { margin: 6px 0 0; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.diaghist { margin: 0; padding-left: 20px; font-size: 12.5px; color: var(--muted); display: grid; gap: 3px; } .diaghist .ok { color: var(--fg); }
+#diagBody { display: grid; gap: 12px; min-width: 0; }
 .status span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .dot.ok { background: var(--ok); } .dot.busy { background: var(--accent); animation: pulse 1s infinite; } .dot.bad { background: var(--target); }
@@ -592,7 +602,8 @@ a.btn { text-decoration: none; color: var(--fg); }
         <span id="calChipTxt"></span>
         <button class="iconbtn" id="btnCalOff" aria-label="Remove compass correction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
-      <div class="status" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
+      <div class="status" id="statusBox" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
+      <div class="tag diaglive" id="diagLive" hidden></div>
       <div class="tag" id="srcTag">Sky map</div>
     </div>
     <button class="menu-pill" id="btnMenu" aria-label="Zenigo menu">
@@ -831,6 +842,24 @@ a.btn { text-decoration: none; color: var(--fg); }
   </div>
 </div>
 
+<div class="sheet tall" id="diagSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="diagTitle">
+    <div class="grab"><h2 id="diagTitle"><span>Diagnostics</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <div class="chips" id="diagLayers"><button class="chip" data-layer="stretch">Stack</button><button class="chip" data-layer="raw">Raw</button><button class="chip" data-layer="bg">Sky removed</button><button class="chip" data-layer="mask">Detection</button><button class="chip" data-layer="single">One frame</button></div></div>
+    <div id="diagBody">
+      <canvas id="diagCanvas" aria-label="The image Locate worked with"></canvas>
+      <label class="check"><input type="checkbox" id="diagMarks"> Marks: amber = points of light (numbered by brightness), green = matched catalogue stars</label>
+      <p class="note">Tap the image to zoom in, again to zoom further, once more for the whole image. <b>Raw</b>: the averaged frames as they came, <b>Sky removed</b>: brighter than the sky light, darker blue, <b>Detection</b>: pixels above the threshold, <b>One frame</b>: the first frame alone, to compare with the stack.</p>
+      <canvas id="diagHist" aria-label="Histogram of the image with sky level and threshold"></canvas>
+      <dl class="diagfacts" id="diagFacts"></dl>
+      <div class="actions"><button class="btn" id="diagSave">Save image and report</button><button class="btn" id="diagCopy">Copy report</button></div>
+      <p class="note">The image is saved as PNG (it can be solved again with “Photo from the gallery”), the report as JSON with the numbers above and the brightest points. Nothing is uploaded.</p>
+      <h3 class="diagh">Last attempts</h3>
+      <ol class="diaghist" id="diagHistList"></ol>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="timeSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="timeTitle">
     <div class="grab"><h2 id="timeTitle"><span>Time</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
@@ -1023,6 +1052,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="90" step="1"></label>
         <label>Sensitivity: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
       </div>
+      <label class="check"><input type="checkbox" id="optDiag"> Diagnostics: tap the status at the bottom left to see the image Locate worked with, its numbers and a live star count</label>
       <div class="row camctl" id="camctl"></div>
     </fieldset>
     <fieldset data-stab="cam">
@@ -1051,7 +1081,7 @@ Solver.setCatalog(STARS);
 document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.target.closest("#view")) e.preventDefault(); }, { passive: false });
 
 /* ---------------- Settings ---------------- */
-const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 24, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, mount: "altaz", fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
+const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 24, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, diag: false, mount: "altaz", fabLabels: true, objLabels: true, listMarks: true, conNames: false, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
@@ -1176,7 +1206,7 @@ async function captureVideo(n) {
   const c = document.createElement("canvas"); c.width = w; c.height = h;
   const ctx = c.getContext("2d", { willReadFrequently: true });
   const degPerPx = (cfg.fov[fovKey()] || 66) / Math.max(w, h), tol = Math.max(0.1, 2 * degPerPx);   // gyro noise is ~0.05°
-  let acc = new Float32Array(w * h), k = 0, q0 = null, qPrev = null, restarts = 0, skipped = 0;
+  let acc = new Float32Array(w * h), k = 0, q0 = null, qPrev = null, restarts = 0, skipped = 0, single = null;
   const t0 = performance.now(), useGyro = () => !!sens.raw && !st.extCam && performance.now() - (sens.lastEvt || 0) < 500;
   while (k < n) {
     if (st.abort) return null;
@@ -1198,6 +1228,7 @@ async function captureVideo(n) {
     }
     drawCam(ctx, video, 0, 0, w, h);
     toGray(ctx, w, h, acc); k++;
+    if (k === 1 && cfg.diag) single = acc.slice();   // diagnostics: one frame alone, to compare with the stack
     if (k % 6 === 0) setStatus("Capturing " + k + " / " + n + " frames …", "busy");
   }
   if (!k) return null;
@@ -1208,7 +1239,7 @@ async function captureVideo(n) {
   const img = ctx.createImageData(w, h);
   for (let j = 0, i = 0; j < acc.length; j++, i += 4) { const t = Math.max(0, (acc[j] - lo) / (hi - lo)), v = Math.min(255, 22 + 233 * Math.sqrt(t)); img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
   ctx.putImageData(img, 0, 0);
-  return { gray: acc, w, h, canvas: c, frames: k, noiseFloor: Math.max(0.06, 0.5 / Math.sqrt(k)) };
+  return { gray: acc, w, h, canvas: c, frames: k, noiseFloor: Math.max(0.06, 0.5 / Math.sqrt(k)), skipped, restarts, single, want: n, ms: performance.now() - t0 };
 }
 function imageToFrame(src, sw, sh, maxLong, flip) {
   const [w, h] = sizeFor(sw, sh, maxLong);
@@ -1405,6 +1436,7 @@ async function solveNow() {
     st.frame = fr;
     st.stars = res.stars;
     const sol = res.sol;
+    if (cfg.diag) recordDiag(fr, res, isPhoto, known);
     if (sol && sol.ok) {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
       // a solved photo: keep its solution, the view (st.sol) can then be turned and zoomed around it
@@ -3792,7 +3824,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
-  $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
+  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
@@ -4320,6 +4352,173 @@ function showTonight() {
   setTimeout(() => { wait.remove(); fillComingUp(s5, el, esc); }, 30);
   box.append(el("p", "tn-note", "For " + $("wxLoc").textContent.replace(/^for /, "") + ", times in your phone’s time zone. Tap an object for details or to make it your target."));
 }
+/* ---------------- Diagnostics: see what Locate worked with ---------------- */
+// Switched on in Settings › Camera & sensors. Then each Locate keeps its stacked image, the first single frame and the
+// numbers, a tap on the status opens them, and while the live camera runs a small line shows how many points of light
+// a quick look finds and how sharp they are (for focusing).
+const diag = { last: null, hist: [], layer: "stretch", marks: true, zoom: 1, zx: 0.5, zy: 0.5 };
+function camInfo() {
+  const t = st.track; if (!t || !t.getSettings) return null;
+  const s = t.getSettings(), o = {};
+  ["width", "height", "frameRate", "exposureMode", "exposureTime", "iso", "exposureCompensation", "focusMode", "zoom"].forEach(k => { if (s[k] != null) o[k] = typeof s[k] === "number" ? +s[k].toFixed(2) : s[k]; });
+  o.label = t.label || "";
+  return o;
+}
+// background and noise like the detector sees them (32-px blocks, median and robust spread)
+function diagAnalyze(fr) {
+  const { gray, w, h } = fr, B = 32, bw = Math.ceil(w / B), bh = Math.ceil(h / B), bg = new Float32Array(bw * bh), sd = new Float32Array(bw * bh), tmp = [];
+  const floor = fr.noiseFloor || 0.5;
+  for (let by = 0; by < bh; by++) for (let bx = 0; bx < bw; bx++) {
+    tmp.length = 0;
+    for (let y = by * B; y < Math.min(h, by * B + B); y += 2) for (let x = bx * B; x < Math.min(w, bx * B + B); x += 2) tmp.push(gray[y * w + x]);
+    tmp.sort((a, b) => a - b); const med = tmp[tmp.length >> 1];
+    for (let i = 0; i < tmp.length; i++) tmp[i] = Math.abs(tmp[i] - med);
+    tmp.sort((a, b) => a - b);
+    bg[by * bw + bx] = med; sd[by * bw + bx] = Math.max(floor, 1.4826 * tmp[tmp.length >> 1]);
+  }
+  const med = a => Array.from(a).sort((x, y) => x - y)[a.length >> 1];
+  return { B, bw, bh, bg, sd, sky: med(bg), noise: med(sd), floor };
+}
+const bgAt = (A, x, y, arr) => {
+  const fx = Math.max(0, Math.min(A.bw - 1.001, x / A.B - 0.5)), fy = Math.max(0, Math.min(A.bh - 1.001, y / A.B - 0.5));
+  const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, x1 = Math.min(A.bw - 1, x0 + 1), y1 = Math.min(A.bh - 1, y0 + 1);
+  return (arr[y0 * A.bw + x0] * (1 - tx) + arr[y0 * A.bw + x1] * tx) * (1 - ty) + (arr[y1 * A.bw + x0] * (1 - tx) + arr[y1 * A.bw + x1] * tx) * ty;
+};
+// star size: FWHM from the second moments of the brightest stars (median), in pixels
+function starFwhm(fr, stars, A) {
+  const out = [];
+  stars.slice(0, 12).forEach(s => {
+    const r = 4, cx = Math.round(s.x - 0.5), cy = Math.round(s.y - 0.5); let f = 0, xx = 0, yy = 0;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= fr.w || y >= fr.h) continue;
+      const v = Math.max(0, fr.gray[y * fr.w + x] - bgAt(A, x, y, A.bg)); f += v; xx += v * dx * dx; yy += v * dy * dy;
+    }
+    if (f > 0) out.push(2.355 * Math.sqrt((xx + yy) / f / 2));
+  });
+  out.sort((a, b) => a - b); return out.length ? out[out.length >> 1] : null;
+}
+function recordDiag(fr, res, isPhoto, known) {
+  const A = diagAnalyze(fr), sol = res.sol || {};
+  const sat = res.stars.filter(s => s.peak + bgAt(A, s.x, s.y, A.bg) > 250).length;
+  const d = {
+    at: new Date(), src: isPhoto ? (st.photoNight ? "night photo" : "photo") : "live camera", fr, A, stars: res.stars, sol,
+    frames: fr.frames, want: fr.want, skipped: fr.skipped || 0, restarts: fr.restarts || 0, captureMs: fr.ms, cam: isPhoto ? null : camInfo(),
+    fwhm: starFwhm(fr, res.stars, A), sat, sigma: cfg.sigma, known: !!known
+  };
+  diag.last = d;
+  diag.hist.unshift({ at: d.at, src: d.src, frames: d.frames, stars: res.stars.length, ok: !!sol.ok, txt: sol.ok ? (sol.near ? "tracked" : "solved") + " · " + sol.nMatch + " matched" : (sol.reason || "not solved") });
+  diag.hist.length = Math.min(diag.hist.length, 10);
+  if (!$("diagSheet").hidden) renderDiag();
+}
+// the image layers
+function diagImage(d, layer) {
+  const fr = layer === "single" && d.fr.single ? { ...d.fr, gray: d.fr.single } : d.fr, { gray, w, h } = fr, A = d.A;
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"), img = g.createImageData(w, h), px = img.data;
+  const thr = d.sigma;
+  // stretch from the stack, so single frame and stack are shown alike and can be compared
+  const lo = A.sky, hi = Math.max(lo + 8, (() => { const sm = []; for (let i = 0; i < d.fr.gray.length; i += 13) sm.push(d.fr.gray[i]); sm.sort((a, b) => a - b); return sm[Math.floor(sm.length * 0.997)]; })());
+  for (let y = 0, j = 0; y < h; y++) for (let x = 0; x < w; x++, j++) {
+    const v = gray[j]; let r, gg, b;
+    if (layer === "raw") r = gg = b = Math.min(255, v);
+    else if (layer === "bg") { const res = v - bgAt(A, x, y, A.bg), s = bgAt(A, x, y, A.sd), t = Math.max(-1, Math.min(1, res / (4 * thr * s))); r = t > 0 ? 40 + 215 * t : 40; gg = t > 0 ? 40 + 215 * t : 40 + 40 * -t; b = t > 0 ? 40 + 215 * t : 40 + 160 * -t; }
+    else if (layer === "mask") { const res = v - bgAt(A, x, y, A.bg), s = bgAt(A, x, y, A.sd); const on = res > thr * s; r = on ? 255 : 14; gg = on ? 210 : 16; b = on ? 120 : 22; }
+    else { const t = Math.max(0, (v - lo) / (hi - lo)); r = gg = b = Math.min(255, 22 + 233 * Math.sqrt(t)); }
+    px[4 * j] = r; px[4 * j + 1] = gg; px[4 * j + 2] = b; px[4 * j + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+function starName(ci) { const inf = STARINFO[ci]; return inf ? (inf[0] || (inf[1] ? inf[1] + " " + inf[3] : "")) : STARLABELS[ci] || ""; }
+function renderDiag() {
+  const d = diag.last, body = $("diagBody");
+  if (!d) { body.innerHTML = '<p class="note">No Locate yet since diagnostics were switched on. Tap Locate (or solve a photo), then come back here.</p>'; return; }
+  document.querySelectorAll("#diagLayers [data-layer]").forEach(b => { b.classList.toggle("sel", b.dataset.layer === diag.layer); b.disabled = b.dataset.layer === "single" && !d.fr.single; });
+  $("diagMarks").checked = diag.marks;
+  // image with marks
+  const cv = $("diagCanvas"), src = diagImage(d, diag.layer), W = d.fr.w, H = d.fr.h;
+  cv.width = W; cv.height = H; const g = cv.getContext("2d");
+  const z = diag.zoom, vw = W / z, vh = H / z, sx = Math.max(0, Math.min(W - vw, diag.zx * W - vw / 2)), sy = Math.max(0, Math.min(H - vh, diag.zy * H - vh / 2));
+  g.imageSmoothingEnabled = z < 2; g.drawImage(src, sx, sy, vw, vh, 0, 0, W, H);
+  if (diag.marks) {
+    const P2 = (x, y) => [(x - sx) * z, (y - sy) * z], lw = Math.max(1.2, W / 600);
+    g.lineWidth = lw; g.font = Math.round(W / 55) + "px sans-serif"; g.textBaseline = "middle";
+    d.stars.forEach((s, i) => { const [x, y] = P2(s.x, s.y); g.strokeStyle = "rgba(240,168,69,.9)"; g.beginPath(); g.arc(x, y, Math.max(6, W / 120) * Math.min(z, 3), 0, 7); g.stroke(); if (i < 25) { g.fillStyle = "rgba(240,168,69,.95)"; g.fillText(String(i + 1), x + W / 90 * Math.min(z, 3), y - W / 110); } });
+    (d.sol.matches || []).forEach(m => { const [x, y] = P2(m.x, m.y); g.strokeStyle = "#7cd39a"; g.lineWidth = lw * 1.4; g.beginPath(); g.arc(x, y, Math.max(9, W / 85) * Math.min(z, 3), 0, 7); g.stroke(); const nm = starName(m.cat); if (nm) { g.fillStyle = "#7cd39a"; g.fillText(nm, x + W / 60 * Math.min(z, 3), y + W / 70); } });
+  }
+  // histogram of the stack (log counts), zoomed to where the pixels are, with sky level and detection threshold
+  const hc = $("diagHist"), hg = hc.getContext("2d"), HW = hc.width = 600, HH = hc.height = 120, NB = 200;
+  const smp = []; for (let i = 0; i < d.fr.gray.length; i += 7) smp.push(d.fr.gray[i]); smp.sort((a, b) => a - b);
+  const top = Math.min(255, Math.max(d.A.sky + (d.sigma + 4) * d.A.noise, smp[Math.floor(smp.length * 0.999)] * 1.1, 16)), bins = new Float32Array(NB);
+  smp.forEach(v => { bins[Math.max(0, Math.min(NB - 1, Math.floor(v / top * NB)))]++; });
+  let mx = 0; bins.forEach(v => { if (v > mx) mx = v; });
+  hg.fillStyle = "#05070d"; hg.fillRect(0, 0, HW, HH);
+  hg.fillStyle = "#8693a1"; for (let i = 0; i < NB; i++) { const hgt = bins[i] ? Math.log(1 + bins[i]) / Math.log(1 + mx) * (HH - 34) : 0; hg.fillRect(i * HW / NB, HH - 16 - hgt, HW / NB + 0.5, hgt); }
+  const mark = (v, col, txt, row) => { const x = Math.min(HW - 2, v / top * HW); hg.fillStyle = col; hg.fillRect(x, 4, 2, HH - 20); hg.font = "12px sans-serif"; const tw = hg.measureText(txt).width; hg.fillText(txt, Math.min(HW - tw - 2, x + 5), 14 + row * 14); };
+  mark(d.A.sky, "#9fb4ff", "sky " + d.A.sky.toFixed(1), 0); mark(Math.min(255, d.A.sky + d.sigma * d.A.noise), "#f0a845", "threshold " + (d.A.sky + d.sigma * d.A.noise).toFixed(1), 1);
+  hg.fillStyle = "#5f6b80"; hg.font = "11px sans-serif"; hg.fillText("0", 2, HH - 3); const tl = top.toFixed(0) + (top < 255 ? " (of 255)" : ""); hg.fillText(tl, HW - hg.measureText(tl).width - 2, HH - 3);
+  // numbers
+  const f1 = v => v == null ? "–" : (+v).toFixed(1), cam = d.cam || {}, sol = d.sol || {};
+  const rows = [
+    ["Source", d.src + " · " + d.at.toLocaleTimeString()],
+    ["Frames", d.frames != null ? d.frames + (d.want ? " of " + d.want : "") + (d.skipped ? " · " + d.skipped + " skipped (moving)" : "") + (d.restarts ? " · " + d.restarts + " restarts" : "") + (d.captureMs ? " · " + (d.captureMs / 1000).toFixed(1) + " s" : "") : "–"],
+    ["Image", d.fr.w + " × " + d.fr.h + " px (worked on)"],
+    ["Camera", d.cam ? [cam.width && cam.width + "×" + cam.height, cam.frameRate && f1(cam.frameRate) + " fps", cam.exposureMode, cam.exposureTime && "exposure " + (cam.exposureTime / 10).toFixed(1) + " ms", cam.iso && "ISO " + cam.iso].filter(Boolean).join(" · ") || "no details from the browser" : "–"],
+    ["Sky", "background " + f1(d.A.sky) + " of 255 · noise " + d.A.noise.toFixed(2) + " (floor " + d.A.floor.toFixed(2) + ")"],
+    ["Detection", "sensitivity " + d.sigma + " → threshold " + f1(d.sigma * d.A.noise) + " above the sky"],
+    ["Points of light", d.stars.length + (d.stars.length >= 80 ? " (only the 80 brightest are used)" : "") + (d.sat ? " · " + d.sat + " saturated" : "")],
+    ["Star size", d.fwhm ? f1(d.fwhm) + " px (FWHM)" + (d.fwhm > 5 ? " – large: check the focus" : "") : "–"],
+    ["Result", sol.ok ? (sol.near ? "tracked" : "solved") + " · " + sol.nMatch + " stars matched · field " + f1(sol.fov) + "° · residual " + f1((sol.rms || 0) / ((sol.fov || 1) / d.fr.w)) + " px · " + (sol.ms < 1000 ? Math.round(sol.ms) + " ms" : (sol.ms / 1000).toFixed(1) + " s") : (sol.reason || "not solved")]
+  ];
+  const tb = $("diagFacts"); tb.textContent = "";
+  rows.forEach(([k, v]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; tb.append(dt, dd); });
+  const hl = $("diagHistList"); hl.textContent = "";
+  diag.hist.forEach(x => { const li = document.createElement("li"); li.textContent = x.at.toLocaleTimeString() + " · " + x.src + (x.frames ? " · " + x.frames + " frames" : "") + " · " + x.stars + " points · " + x.txt; li.className = x.ok ? "ok" : ""; hl.append(li); });
+}
+function diagReport() {
+  const d = diag.last; if (!d) return null;
+  return { app: "Zenigo", at: d.at.toISOString(), source: d.src, frames: d.frames, want: d.want, skipped: d.skipped, restarts: d.restarts, captureMs: d.captureMs && Math.round(d.captureMs),
+    image: { w: d.fr.w, h: d.fr.h }, camera: d.cam, sky: +d.A.sky.toFixed(2), noise: +d.A.noise.toFixed(3), noiseFloor: +d.A.floor.toFixed(3), sigma: d.sigma,
+    points: d.stars.length, saturated: d.sat, fwhm: d.fwhm && +d.fwhm.toFixed(2), knownFov: d.known, fovSetting: cfg.fov.video, fovRange: cfg.fovRange, pointer: cfg.pointer, mirror: !!cfg.mirror,
+    result: d.sol.ok ? { matched: d.sol.nMatch, fov: d.sol.fov && +d.sol.fov.toFixed(2), rms: d.sol.rms, ms: Math.round(d.sol.ms) } : { reason: d.sol.reason || "not solved" },
+    stars: d.stars.slice(0, 40).map(s => [+s.x.toFixed(1), +s.y.toFixed(1), +s.flux.toFixed(0)]), device: navigator.userAgent };
+}
+async function diagSave() {
+  const d = diag.last; if (!d) return;
+  const name = "zenigo-locate-" + d.at.toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  // the stack, stretched like on screen, as PNG (solvable again with “Photo from the gallery”), and the report
+  const png = await new Promise(r => diagImage(d, "stretch").toBlob(r, "image/png"));
+  const json = new Blob([JSON.stringify(diagReport(), null, 1)], { type: "application/json" });
+  const files = [new File([png], name + ".png", { type: "image/png" }), new File([json], name + ".json", { type: "application/json" })];
+  try { if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, title: "Zenigo Locate" }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  files.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, i * 400));
+}
+function openDiag() { renderDiag(); openSheet("diagSheet"); }
+document.querySelectorAll("#diagLayers [data-layer]").forEach(b => b.onclick = () => { diag.layer = b.dataset.layer; renderDiag(); });
+$("diagMarks").onchange = () => { diag.marks = $("diagMarks").checked; renderDiag(); };
+// tap the image: zoom in 3× there (and 6×), once more back to the whole image
+$("diagCanvas").onclick = e => {
+  const r = e.currentTarget.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height, z = diag.zoom;
+  const W = 1, vw = W / z, sx = Math.max(0, Math.min(1 - vw, diag.zx - vw / 2)), sy = Math.max(0, Math.min(1 - vw, diag.zy - vw / 2));
+  diag.zx = sx + fx / z; diag.zy = sy + fy / z; diag.zoom = z >= 6 ? 1 : z * (z === 1 ? 3 : 2); if (diag.zoom === 1) { diag.zx = diag.zy = 0.5; }
+  renderDiag();
+};
+$("diagSave").onclick = diagSave;
+$("diagCopy").onclick = async () => { const r = diagReport(); if (!r) return; try { await navigator.clipboard.writeText(JSON.stringify(r, null, 1)); hint("Report copied.", 2000); } catch (e) { hint("Could not copy: the browser didn’t allow it.", 3000); } };
+// the status opens diagnostics while they are on
+$("statusBox").addEventListener("click", () => { if (cfg.diag) openDiag(); });
+// live look while the camera runs: points of light and star size in a small frame, every 1.5 s (not while locating)
+setInterval(() => {
+  const el = $("diagLive"), on = cfg.diag && st.stream && video.videoWidth && !st.busy && !document.hidden;
+  if (!on) { if (!el.hidden) el.hidden = true; return; }
+  try {
+    const [w, h] = sizeFor(video.videoWidth, video.videoHeight, 480), c = diag.lc || (diag.lc = document.createElement("canvas")); c.width = w; c.height = h;
+    const ctx = c.getContext("2d", { willReadFrequently: true }); drawCam(ctx, video, 0, 0, w, h);
+    const gray = new Float32Array(w * h); toGray(ctx, w, h, gray);
+    const stars = Solver.detectStars(gray, w, h, { sigma: cfg.sigma, maxStars: 200 }), fr = { gray, w, h, noiseFloor: 0.5 }, A = diagAnalyze(fr), fw = starFwhm(fr, stars, A);
+    el.textContent = "Live: " + stars.length + " points · sky " + Math.round(A.sky) + " · noise " + A.noise.toFixed(1) + (fw ? " · stars " + fw.toFixed(1) + " px" : "");
+    el.hidden = false;
+  } catch (e) {}
+}, 1500);
 $("btnTonight").onclick = () => { syncWeatherLinks(); showTonight(); openSheet("tonightSheet"); };
 $("fabQuick").onclick = () => { syncQuick(); listCameras().then(syncQuick); openSheet("quickSheet"); };
 document.querySelectorAll("[data-pointer]").forEach(b => b.onclick = () => { setPointer(b.dataset.pointer); syncQuick(); });
@@ -4408,6 +4607,7 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
     setInterval(check, 3600e3);
   }).catch(() => {}));
 }
+$("optDiag").onchange = () => { cfg.diag = $("optDiag").checked; save(); syncSettings(); if (cfg.diag) hint("Diagnostics on: after a Locate, tap the status at the bottom left.", 4000); };
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 [["optFill", "fill"], ["optDet", "det"], ["optRed", "red"], ["optLabels", "fabLabels"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
