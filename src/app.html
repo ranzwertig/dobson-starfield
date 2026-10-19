@@ -153,6 +153,15 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip svg { width: 15px; height: 15px; flex: none; }
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
+/* Time sheet */
+.tm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 2px 0 10px; }
+.tm-head b { font-family: var(--font-num); font-size: 30px; font-weight: 500; }
+.tm-head span { font-size: 15px; }
+.tm-head small { color: var(--accent); font-size: 13.5px; }
+#tmRange { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+.tm-scale { position: relative; height: 16px; font-size: 11.5px; color: var(--muted); margin: 0 9px 10px; }
+.tm-scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+#timeChip { color: var(--accent); }
 /* Eyepiece view: a round inset at the bottom left showing the field of the eyepiece or finder */
 .epview { --ep: 168px; pointer-events: auto; display: grid; gap: 4px; justify-items: start; margin-bottom: 4px; }
 .stage .epview canvas { position: static; inset: auto; width: var(--ep); height: var(--ep); border-radius: 50%; display: block; background: #000; border: 1px solid var(--line); box-shadow: 0 2px 14px rgba(0,0,0,.55); cursor: pointer; }
@@ -399,6 +408,11 @@ a.btn { text-decoration: none; color: var(--fg); }
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
         <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       </div>
+      <div class="calchip" id="timeChip" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>
+        <button class="chiplabel" id="timeChipTxt" aria-label="Change the time"></button>
+        <button class="iconbtn" id="btnTimeNow" aria-label="Back to the current time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
       <div class="calchip" id="filterChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>
         <button class="chiplabel" id="filterChipTxt" aria-label="Change filter"></button>
@@ -449,6 +463,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Solve a photo from the gallery</span></button>
       <button class="menu-item" id="btnMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg><span>Show sky map</span></button>
       <button class="menu-item" id="btnFilter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg><span>Filter: what the map shows</span><em id="filterState">all</em></button>
+      <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
     </div>
     <div class="label">Position</div>
@@ -522,17 +537,18 @@ a.btn { text-decoration: none; color: var(--fg); }
     <fieldset>
       <legend>Stars</legend>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l1.6 5.2L19 10.8l-5.4 1.6L12 18l-1.6-5.6L5 10.8l5.4-1.6z"/></svg></span><span class="flab">Stars</span><input type="checkbox" data-show="stars"></label>
-        <label class="fmag">Faintest stars: <b id="magV"></b><input type="range" id="showMag" min="2" max="6.5" step="0.5"></label>
+        <label class="fmag">Faintest stars: <b id="magV"></b><input type="range" id="showMag" min="2" max="9" step="0.5"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 7h14M5 12h10M5 17h7"/></svg></span><span class="flab">Star names</span><input type="checkbox" data-show="names"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="17" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="19" cy="13" r="1.5"/><path d="M6 16l4-7M12.3 8.8l5.5 3.4"/></svg></span><span class="flab">Constellation lines</span><input type="checkbox" data-show="lines"></label>
     </fieldset>
     <fieldset>
-      <legend>Deep sky (Messier objects)</legend>
+      <legend>Deep sky</legend>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-28 12 12)"/></svg></span><span class="flab">Galaxies<small>Andromeda, Whirlpool, …</small></span><input type="checkbox" data-show="gal"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><path d="M5 12h14M12 5v14"/></svg></span><span class="flab">Globular clusters<small>M13, M3, …</small></span><input type="checkbox" data-show="glob"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7" stroke-dasharray="2.6 2.6"/></svg></span><span class="flab">Open clusters<small>Pleiades, Beehive, …</small></span><input type="checkbox" data-show="open"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="12" height="12"/></svg></span><span class="flab">Nebulae<small>Orion, Lagoon, Crab, …</small></span><input type="checkbox" data-show="neb"></label>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg></span><span class="flab">Planetary nebulae<small>Ring, Dumbbell, …</small></span><input type="checkbox" data-show="pn"></label>
+        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18V6l7 12V6M14 6h6M14 12h5M14 18h6"/></svg></span><span class="flab">Beyond Messier<small>about 1900 NGC, IC and other objects, more the further you zoom in</small></span><input type="checkbox" data-show="ngc"></label>
     </fieldset>
     <p class="note">The selected target is always shown. “Find target” still searches everything.</p>
   </div>
@@ -563,6 +579,21 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <p class="note" id="confirmText"></p>
     <div class="actions"><button class="btn primary" id="confirmOk"></button><button class="btn" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="timeSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="timeTitle">
+    <div class="grab"><h2 id="timeTitle"><span>Time</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="tm-head"><b id="tmClock"></b><span id="tmDate"></span><small id="tmOff"></small></div>
+    <input type="range" id="tmRange" min="-720" max="1440" step="5" aria-label="Time shown on the map, minutes from now">
+    <div class="tm-scale"><span>−12 h</span><span style="left:33.33%">now</span><span style="left:66.67%">+12 h</span><span style="left:100%">+24 h</span></div>
+    <div class="chips" id="tmChips">
+      <button class="chip" data-tm="now">Now</button><button class="chip" data-tm="-60">−1 h</button><button class="chip" data-tm="60">+1 h</button>
+      <button class="chip" data-tm="dark">Dark tonight</button><button class="chip" data-tm="midnight">Midnight</button><button class="chip" data-tm="dawn">End of darkness</button>
+    </div>
+    <div class="row"><label>Date and time<input type="datetime-local" id="tmPick"></label></div>
+    <p class="note">The map, the directions at the top, target search and object details show the sky at this time. It keeps running from there. Locate, the eyepiece point and aligning on a star need the sky as it is now and switch back to the current time.</p>
   </div>
 </div>
 
@@ -705,9 +736,9 @@ a.btn { text-decoration: none; color: var(--fg); }
         </select></label>
         <label>Turn the view by: <span id="oRotV"></span><input type="range" id="oRot" min="-180" max="180" step="5"></label>
       </div>
-      <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to about magnitude 6, Messier objects, the Moon and planets.</p>
+      <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to magnitude 9, deep-sky objects, the Moon and planets.</p>
     </fieldset>
-    <p class="note">Star catalogue: Hipparcos/Yale to magnitude 6 from d3-celestial (BSD). Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
+    <p class="note">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
 </div>
 
@@ -736,15 +767,17 @@ cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {}
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
 // What the map shows (filter). Old separate switches are migrated once.
-const SHOW_DEF = { solar: true, stars: true, mag: 6.5, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true };
+const SHOW_DEF = { solar: true, stars: true, mag: 9, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true };
 const DSO_KEYS = ["gal", "glob", "open", "neb", "pn"];
 const PRESETS = {
   all: { label: "Everything", show: { ...SHOW_DEF } },
-  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, names: false, lines: false, gal: false, glob: false, open: false, neb: false, pn: false } },
+  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, names: false, lines: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
   deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, names: false } },
-  eye: { label: "Naked eye", show: { ...SHOW_DEF, mag: 5, gal: false, glob: false, open: false, neb: false, pn: false } },
+  eye: { label: "Naked eye", show: { ...SHOW_DEF, mag: 5, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
 };
 if (!cfg.show) cfg.show = { ...SHOW_DEF, stars: cfg.map !== false, lines: cfg.lines !== false, names: cfg.names !== false };
+// Deeper catalogue: "all stars" was 6.5 mag, now 9; objects beyond Messier follow the deep-sky classes
+if (!("ngc" in cfg.show)) { cfg.show.ngc = DSO_KEYS.some(k => cfg.show[k] !== false); if (cfg.show.mag >= 6.5) cfg.show.mag = 9; }
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
   const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
@@ -760,6 +793,7 @@ const st = {
   frame: null,              // canvas of the last solved/loaded image
   sol: null, solAt: 0, stars: [],
   busy: false, auto: false, teleMode: false, filterVer: 0,
+  tOff: 0,                  // time shown on the map, as offset from now (ms)
   stream: null, track: null,
 };
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
@@ -891,7 +925,7 @@ function stopCamera() {
 }
 // Switch to the plain star map; take the view direction from the last solution
 function showMap() {
-  if (st.sol && !st.sol.approx) { const h = horiz(Solver.mul(st.sol.R, [0, 0, 1]), A.MakeTime(new Date())); st.mapView.az = h.az; st.mapView.alt = Math.max(-10, h.alt); }
+  if (st.sol && !st.sol.approx) { const h = horiz(Solver.mul(st.sol.R, [0, 0, 1]), skyNow().t); st.mapView.az = h.az; st.mapView.alt = Math.max(-10, h.alt); }
   st.source = "map"; st.frame = null; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
   if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; st.solMode = "map"; }
   updateGuide(); renderReadout();
@@ -978,6 +1012,7 @@ function longFromSol(sol) { const L = Math.max(sol.w, sol.h); return 2 * Math.at
 
 async function solveNow() {
   if (st.busy) return;
+  if (st.tOff) setTimeOffset(0, "Back to the current time: locating needs the sky as it is now.");
   if (st.source === "map" || (st.source === "video" && !st.stream)) {
     await startCamera(); if (!st.stream) return;
     await new Promise(r => setTimeout(r, 600));   // let exposure settle
@@ -1076,7 +1111,7 @@ const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").repla
 
 function renderChips() {
   $("searchClear").hidden = !cfg.target;
-  const t = A.MakeTime(new Date()), box = $("chips"); box.textContent = "";
+  const t = skyNow().t, box = $("chips"); box.textContent = "";
   QUICK.forEach(id => {
     const T = targetById(id); if (!T) return;
     const alt = horiz(T.vec(t), t).alt;
@@ -1087,13 +1122,13 @@ function renderChips() {
   });
 }
 function showResults() {
-  const q = norm($("q").value), box = $("results"), t = A.MakeTime(new Date());
+  const q = norm($("q").value), box = $("results"), t = skyNow().t;
   box.textContent = "";
   let list;
   if (!q) {
-    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => x.alt > 15)
+    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => x.alt > 15)
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
-    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed now (above 15°)"; box.append(g);
+    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (above 15°)"; box.append(g);
   } else {
     list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).slice(0, 30).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nichts gefunden"; box.append(g); }
@@ -1166,7 +1201,7 @@ function updateGuide() {
   const hit = sep < hitRadius();
   g.classList.toggle("hit", hit);
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
-  $("totalTxt").textContent = th.alt < 0 ? T.name + " is below the horizon right now" : hit ? T.name + " should be in the eyepiece" : fmtDeg(sep) + " to " + T.name;
+  $("totalTxt").textContent = th.alt < 0 ? T.name + " is below the horizon " + (st.tOff ? "at " + fmtClock(skyDate()) : "right now") : hit ? T.name + " should be in the eyepiece" : fmtDeg(sep) + " to " + T.name;
   const age = Math.round((Date.now() - st.solAt) / 1000);
   $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + (ph.alt > 80 ? "Near the zenith: small nudges change the azimuth a lot. " : "")
     + (st.solMode === "compass" ? "by compass, approximate" : st.solMode === "track" ? "via motion sensor" : st.source === "video" ? age + " s ago" : "");
@@ -1452,9 +1487,9 @@ function horToEqj(t) { return tr3(A.Rotation_HOR_EQJ(t, observer()).rot); }
 // horizon rotation, Sun/Moon/planet positions and theme colours. Saves a lot of work per frame.
 const sky = { at: 0 };
 function skyNow() {
-  const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + cfg.red;
+  const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + cfg.red + "|" + st.tOff;
   if (now - sky.at < 1000 && sky.key === key) return sky;
-  sky.at = now; sky.key = key; sky.t = A.MakeTime(new Date(now));
+  sky.at = now; sky.key = key; sky.t = A.MakeTime(new Date(now + st.tOff));
   sky.M = horToEqj(sky.t);
   sky.planets = new Map(PLANETS.map(([, en]) => [en, targetById(en).vec(sky.t)]));
   const css = getComputedStyle(document.documentElement);
@@ -1468,7 +1503,59 @@ const CLV = CLINES.map(L => { const out = []; for (let i = 0; i < L.length; i +=
 function dsoClass(type) {
   return /galaxy/i.test(type) ? "gal" : /globular/i.test(type) ? "glob" : /open cluster|star field/i.test(type) ? "open" : /planetary/i.test(type) ? "pn" : "neb";
 }
-const MSV = MESSIER.map(([id, ra, dec, mag, , type]) => ({ id, mag, cls: dsoClass(type), v: Solver.radec2v(ra, dec) }));
+const MSV = MESSIER.map(([id, ra, dec, mag, , type, , size]) => ({ id, mag, cls: dsoClass(type), size, v: Solver.radec2v(ra, dec) }));
+// Deep catalogue, loaded after start (see loadDeep): stars 6–9 mag and about 1900 deep-sky objects beyond Messier
+const DEEP = { n: 0, v: null, m: null };
+let NGC = [];
+// Sky cells of about 4° × 4° (declination bands, split in right ascension), each holding its stars brightest first,
+// so drawing a small part of the sky only looks at the stars near it
+const DCELL = 4;
+function buildDeepIndex() {
+  const nb = 180 / DCELL, bands = [];
+  for (let b = 0; b < nb; b++) { const dc = Math.cos(((b + 0.5) * DCELL - 90) * D2R); bands.push({ n: Math.max(1, Math.floor(360 / DCELL * dc)), cells: null }); }
+  bands.forEach(B => B.cells = Array.from({ length: B.n }, () => []));
+  const v = DEEP.v;
+  for (let i = 0; i < DEEP.n; i++) {
+    const x = v[3 * i], y = v[3 * i + 1], z = v[3 * i + 2];
+    const dec = Math.asin(Math.max(-1, Math.min(1, z))) * R2D, ra = (Math.atan2(y, x) * R2D + 360) % 360;
+    const B = bands[Math.min(nb - 1, Math.floor((dec + 90) / DCELL))]; B.cells[Math.min(B.n - 1, Math.floor(ra / 360 * B.n))].push(i);
+  }
+  DEEP.bands = bands.map(B => ({ n: B.n, cells: B.cells.map(c => Int32Array.from(c)) }));
+}
+// Calls fn(i) for every deep star within about radDeg of the unit vector c that is not fainter than maxMag
+function deepNear(c, radDeg, maxMag, fn) {
+  if (!DEEP.bands) return;
+  const dec = Math.asin(Math.max(-1, Math.min(1, c[2]))) * R2D, ra = (Math.atan2(c[1], c[0]) * R2D + 360) % 360, nb = DEEP.bands.length, m = DEEP.m;
+  const b0 = Math.max(0, Math.floor((dec - radDeg + 90) / DCELL)), b1 = Math.min(nb - 1, Math.floor((dec + radDeg + 90) / DCELL));
+  for (let b = b0; b <= b1; b++) {
+    const B = DEEP.bands[b], dMax = Math.max(Math.abs(b * DCELL - 90), Math.abs((b + 1) * DCELL - 90));
+    const sr = Math.sin(Math.min(90, radDeg) * D2R), cosd = Math.cos(Math.min(89.9, dMax) * D2R), half = sr >= cosd ? 360 : Math.asin(sr / cosd) * R2D + 0.01;
+    let k0 = 0, k1 = B.n - 1;
+    if (half < 180 && dMax < 89) { const w = 360 / B.n; k0 = Math.floor((ra - half) / w); k1 = Math.floor((ra + half) / w); if (k1 - k0 >= B.n) { k0 = 0; k1 = B.n - 1; } }
+    for (let k = k0; k <= k1; k++) {
+      const cell = B.cells[((k % B.n) + B.n) % B.n];
+      for (let j = 0; j < cell.length; j++) { const i = cell[j]; if (m[i] > maxMag) break; fn(i); }
+    }
+  }
+}
+async function loadDeep() {
+  try {
+    const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);
+    if (b) {
+      const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215;
+      for (let i = 0; i < n; i++) {
+        const o = i * 7, w = Solver.radec2v((u[o] | u[o + 1] << 8 | u[o + 2] << 16) / U * 360, (u[o + 3] | u[o + 4] << 8 | u[o + 5] << 16) / U * 180 - 90);
+        v[3 * i] = w[0]; v[3 * i + 1] = w[1]; v[3 * i + 2] = w[2]; m[i] = u[o + 6] / 20 - 2;
+      }
+      Object.assign(DEEP, { n, v, m }); buildDeepIndex();
+    }
+    if (d) {
+      NGC = d.map(([id, ra, dec, mag, cls, size, name, type]) => ({ id, ra, dec, mag, cls, size, name, type, v: Solver.radec2v(ra, dec) }));
+      NGC.forEach(o => TARGETS.push({ id: o.id, name: o.id, sub: [o.name, o.type, o.mag + " mag"].filter(Boolean).join(" · "), kind: "dso", ngc: true, mag: o.mag, vec: () => o.v }));
+    }
+    st.filterVer++; lastSig = []; updateGuide();
+  } catch (e) {}
+}
 // Classic chart symbols: galaxy = ellipse, globular = circle with cross, open cluster = dashed circle,
 // nebula = square, planetary nebula = circle with centre dot
 function dsoSymbol(c, cls, x, y, r) {
@@ -1518,6 +1605,7 @@ function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
   const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
   const txt = m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+  if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
 
 /* ---------------- Zooming and panning ---------------- */
@@ -1689,7 +1777,9 @@ function drawOverlay(dpr) {
   // Star map: catalog stars as dots, size by brightness, more names when zoomed in
   const zf = Math.sqrt(zoom.z), boresight = Solver.mul(sol.R, [0, 0, 1]);
   const halfDiag = Math.atan(Math.hypot(W, H) / 2 / (fit.sc * sol.f)) * R2D + 2, cosLim = Math.cos(Math.min(89, halfDiag) * D2R);
-  const show = cfg.show;
+  const show = cfg.show, fovNow = 2 * Math.atan(W / 2 / (fit.sc * sol.f)) * R2D;
+  // fainter stars and more deep-sky objects the further you zoom in
+  const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow))), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
   if (show.stars) {
     // all dots in two paths (bright / faint) instead of one draw call per star
     c.fillStyle = "rgba(215,225,255,.85)";
@@ -1699,10 +1789,20 @@ function drawOverlay(dpr) {
       const v = cv[k]; if (v[0] * b0 + v[1] * b1 + v[2] * b2 < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.2) continue;
       const x = fit.ox + p.x * fit.sc, y = fit.oy + p.y * fit.sc; if (x < -5 || y < -5 || x > W + 5 || y > H + 5) continue;
-      const m = STARS[3 * k + 2]; if (m > show.mag) continue;
+      const m = STARS[3 * k + 2]; if (m > starLim) continue;
       const r = Math.max(0.5, (6.4 - m) * 0.55) * dpr * zf;
       if (r < 1.6) faint.rect(x - r, y - r, 2 * r, 2 * r);   // tiny dots: squares are much cheaper to rasterize and look the same
       else { const path = m > 5 ? faint : bright; path.moveTo(x + r, y); path.arc(x, y, r, 0, 6.2832); }
+    }
+    if (starLim > 6 && DEEP.n) {   // deep catalogue (6–9 mag), sorted by brightness
+      const dv = DEEP.v, dm = DEEP.m, deep = new Path2D(), zk = dpr * Math.max(1, zf * 0.7);
+      deepNear(boresight, Math.min(89, halfDiag), starLim, k => {
+        const i3 = 3 * k, v = [dv[i3], dv[i3 + 1], dv[i3 + 2]]; if (v[0] * b0 + v[1] * b1 + v[2] * b2 < cosLim) return;
+        const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.2) return;
+        const x = fit.ox + p.x * fit.sc, y = fit.oy + p.y * fit.sc; if (x < -5 || y < -5 || x > W + 5 || y > H + 5) return;
+        const r = (0.55 + (9 - dm[k]) * 0.22) * zk; deep.rect(x - r, y - r, 2 * r, 2 * r);
+      });
+      c.globalAlpha = showImgAlpha() * 0.8; c.fill(deep); c.globalAlpha = 1;
     }
     const ia = showImgAlpha();
     c.globalAlpha = ia; c.fill(bright); c.globalAlpha = ia * 0.6; c.fill(faint);
@@ -1733,11 +1833,21 @@ function drawOverlay(dpr) {
   }
   {
     c.strokeStyle = col("--accent"); c.fillStyle = col("--accent"); c.lineWidth = 1.3 * dpr;
-    MSV.forEach(({ id, mag, cls, v }) => {
+    const pxPerDeg = D2R * sol.f * fit.sc, symR = size => Math.max(7 * dpr, (size || 0) / 120 * pxPerDeg);   // true size when zoomed in
+    MSV.forEach(({ id, mag, cls, v, size }) => {
       if (!show[cls] || (mag != null && mag > 9) || id === cfg.target) return;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) return;
-      const [x, y] = P(p.x, p.y); dsoSymbol(c, cls, x, y, 7 * dpr); label(c, id, x + 10 * dpr, y - 10 * dpr);
+      const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); label(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75));
     });
+    st.drawnNgc = [];
+    if (show.ngc) for (const o of NGC) {
+      if (o.mag > dsoLim) break;
+      if (!show[o.cls] || o.id === cfg.target) continue;
+      const v = o.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
+      const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.3 || !inView(p)) continue;
+      const [x, y] = P(p.x, p.y), r = symR(o.size) * 0.85; c.globalAlpha = 0.8; dsoSymbol(c, o.cls, x, y, r); c.globalAlpha = 1;
+      label(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o);
+    }
   }
   if (show.solar) {
     PLANETS.forEach(([de, en]) => {
@@ -1812,6 +1922,47 @@ function drawOverlay(dpr) {
   c.globalAlpha = 1;
 }
 
+/* ---------------- Time: show the sky at another time ---------------- */
+function skyDate() { return new Date(Date.now() + st.tOff); }
+function fmtClock(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+function fmtOffset(ms) {
+  const m = Math.round(Math.abs(ms) / 60000), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  const txt = (d ? d + " d " : "") + (h ? h + " h " : "") + (mm || (!d && !h) ? mm + " min" : "");
+  return ms >= 0 ? "in " + txt.trim() : txt.trim() + " ago";
+}
+function setTimeOffset(ms, msg) {
+  st.tOff = Math.abs(ms) < 30000 ? 0 : Math.round(ms); sky.at = 0; lastSig = [];
+  syncTime(); updateGuide(); renderReadout();
+  if (!$("searchSheet").hidden) { renderChips(); showResults(); }
+  if (msg) hint(msg, 4000);
+}
+function syncTime() {
+  const d = skyDate(), on = !!st.tOff;
+  const sameDay = d.toDateString() === new Date().toDateString();
+  const chip = on ? fmtClock(d) + (sameDay ? "" : " · " + d.toLocaleDateString([], { day: "numeric", month: "short" })) : "";
+  $("timeChip").hidden = !on; if ($("timeChipTxt").textContent !== chip) $("timeChipTxt").textContent = chip;
+  $("timeState").textContent = on ? chip : "now";
+  if ($("timeSheet").hidden) return;
+  $("tmClock").textContent = fmtClock(d);
+  $("tmDate").textContent = d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: sameDay ? undefined : "numeric" });
+  $("tmOff").textContent = on ? fmtOffset(st.tOff) : "now";
+  if (document.activeElement !== $("tmRange")) $("tmRange").value = Math.max(-720, Math.min(1440, Math.round(st.tOff / 60000)));
+  if (document.activeElement !== $("tmPick")) { const p = n => String(n).padStart(2, "0"); $("tmPick").value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+}
+$("btnTime").onclick = () => { closeSheet("menu"); openSheet("timeSheet"); syncTime(); };
+$("timeChipTxt").onclick = () => { openSheet("timeSheet"); syncTime(); };
+$("btnTimeNow").onclick = () => setTimeOffset(0);
+$("tmRange").oninput = () => setTimeOffset(+$("tmRange").value * 60000);
+$("tmPick").onchange = () => { const d = new Date($("tmPick").value); if (!isNaN(d)) setTimeOffset(d - Date.now()); };
+document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
+  const k = b.dataset.tm;
+  if (k === "now") return setTimeOffset(0);
+  if (/^-?\d+$/.test(k)) return setTimeOffset(st.tOff + +k * 60000);
+  if (k === "midnight") { const d = skyDate(); if (d.getHours() >= 12) d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return setTimeOffset(d - Date.now()); }
+  const t = tonightData(), at = k === "dark" ? t.dusk : t.dawn;
+  if (at) setTimeOffset(at - Date.now()); else hint("It doesn’t get properly dark tonight.", 4000);
+});
+
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
 function opt() { return cfg.optics; }
 function curEp() { const o = opt(); return o.eps.length ? o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))] : null; }
@@ -1868,10 +2019,21 @@ function drawEyepiece() {
     const p = proj(w); if (!p) continue; const m = STARS[3 * i + 2];
     const r = Math.max(0.7, (6.8 - m) * 0.55 * big) * dpr; c.beginPath(); c.arc(p[0], p[1], r, 0, 7); c.fill();
   }
+  if (DEEP.n) {
+    const dv = DEEP.v, dm = DEEP.m;
+    deepNear(v, Math.min(89, fov * 0.75), 99, i => {
+      const i3 = 3 * i; if (dv[i3] * v[0] + dv[i3 + 1] * v[1] + dv[i3 + 2] * v[2] < cosLim) return;
+      const p = proj([dv[i3], dv[i3 + 1], dv[i3 + 2]]); if (!p) return;
+      const r = Math.max(0.6, (9.6 - dm[i]) * 0.3 * big) * dpr; c.beginPath(); c.arc(p[0], p[1], r, 0, 7); c.fill();
+    });
+  }
   c.fillStyle = col("--fg");
   for (const S2 of NAMED) { if (S2.mag > 3.5) break; if (!S2.lab) continue; const p = proj(cvs[S2.k]); if (p) c.fillText(S2.lab, p[0] + 7 * dpr, p[1]); }
   c.strokeStyle = col("--accent"); c.fillStyle = col("--accent"); c.lineWidth = 1.3 * dpr;
-  MSV.forEach(({ id, cls, v: w }) => { const p = proj(w); if (!p) return; dsoSymbol(c, cls, p[0], p[1], 7 * dpr); c.fillText(id, p[0] + 10 * dpr, p[1] - 9 * dpr); });
+  const er = size => Math.max(7 * dpr, (size || 0) / 120 * D2R * k);   // true size in the field
+  MSV.forEach(({ id, cls, v: w, size }) => { const p = proj(w); if (!p) return; const r = er(size); dsoSymbol(c, cls, p[0], p[1], r); c.fillText(id, p[0] + Math.max(10 * dpr, r * 0.7), p[1] - Math.max(9 * dpr, r * 0.7)); });
+  NGC.forEach(o => { if (o.v[0] * v[0] + o.v[1] * v[1] + o.v[2] * v[2] < cosLim) return; const p = proj(o.v); if (!p) return; const r = er(o.size) * 0.85;
+    dsoSymbol(c, o.cls, p[0], p[1], r); c.fillText(o.id, p[0] + Math.max(9 * dpr, r * 0.7), p[1] - Math.max(9 * dpr, r * 0.7)); });
   PLANETS.forEach(([de, en]) => {
     const w = sk.planets.get(en); const p = w && proj(w); if (!p) return;
     if (en === "Sun" || en === "Moon") { c.fillStyle = en === "Sun" ? "#ffd34d" : "#d9d6cc"; c.beginPath(); c.arc(p[0], p[1], Math.max(4 * dpr, Math.tan(0.26 * D2R) * k), 0, 7); c.fill(); }
@@ -1983,6 +2145,7 @@ function alignOnMap(e) {
   hint("Aligned on " + o.name + ". The crosshair now marks where the telescope points. Tap the button again whenever you want to repeat it.", 5000);
 }
 function setTeleMode(on) {
+  if (on && st.tOff) setTimeOffset(0, null);
   if (on && !teleModeAllowed()) {
     hint(topMode() || st.source === "map" ? "Turn on Align first, then set the eyepiece point on the map." : "Tap “Locate” first, or turn on Align to set the eyepiece point on the map.", 5000);
     on = false;
@@ -2167,6 +2330,12 @@ function messierObj(row) {
       ["In-The-Sky", "https://in-the-sky.org/data/object.php?id=" + id],
       ["Wikipedia", "https://en.wikipedia.org/wiki/Messier_" + id.slice(1)]] };
 }
+function ngcObj(o) {
+  const size = o.size ? (o.size >= 60 ? (o.size / 60).toFixed(1) + "°" : Math.round(o.size) + "′") : "";
+  return { id: o.id, kind: "dso", name: o.name ? o.id + " · " + o.name : o.id, desig: [o.type, size && "size " + size].filter(Boolean).join(" · "), mag: o.mag,
+    vec: () => o.v,
+    links: [/^(NGC|IC|PGC) /.test(o.id) && ["SIMBAD", "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=" + encodeURIComponent(o.id)], ["Wikipedia", wikiSearch(o.name || o.id)]].filter(Boolean) };
+}
 function planetObj(de, en) {
   return { id: en, kind: "planet", name: de, desig: en === "Moon" ? "Earth’s moon" : en === "Sun" ? "Our star" : "Planet", body: en,
     vec: targetById(en).vec,
@@ -2174,7 +2343,7 @@ function planetObj(de, en) {
 }
 function pickAt(clientX, clientY, pointsOnly) {
   const sol = st.sol; if (!sol) return null;
-  const r = view.getBoundingClientRect(), dpr = view.width / r.width, t = A.MakeTime(new Date());
+  const r = view.getBoundingClientRect(), dpr = view.width / r.width, t = skyNow().t;
   const px = (clientX - r.left) * dpr, py = (clientY - r.top) * dpr, lim = 30 * dpr;
   let best = null, bs = Infinity;
   const consider = (vec, bonus, make) => {
@@ -2185,6 +2354,7 @@ function pickAt(clientX, clientY, pointsOnly) {
   const show = pointsOnly ? SHOW_DEF : cfg.show;   // the eyepiece point may use any star
   if (show.solar) PLANETS.forEach(([de, en]) => consider(targetById(en).vec(t), 14, () => planetObj(de, en)));
   if (!pointsOnly) MESSIER.forEach((row, i) => { if (show[MSV[i].cls]) consider(MSV[i].v, 8, () => messierObj(row)); });
+  if (!pointsOnly) (st.drawnNgc || []).forEach(o => consider(o.v, 4, () => ngcObj(o)));
   for (let k = 0; show.stars && k < Solver.cat.n; k++) {
     const m = STARS[3 * k + 2]; if (m > Math.min(5.5, show.mag)) break;          // catalog is sorted by brightness
     consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
@@ -2192,7 +2362,7 @@ function pickAt(clientX, clientY, pointsOnly) {
   return best ? best() : null;
 }
 function showInfo(o) {
-  const t = A.MakeTime(new Date()), v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
+  const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o;
   $("infoName").textContent = o.name;
@@ -2224,6 +2394,7 @@ function showInfo(o) {
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
   $("infoSync").onclick = () => {
+    if (st.tOff) setTimeOffset(0, null);
     const t = skyNow().t, tv = teleVec(); if (!tv) return;
     const want = horiz(o.vec(t), t), have = horiz(tv, t);
     const d = ((want.az - have.az) + 540) % 360 - 180;
@@ -2430,7 +2601,7 @@ function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFil
 function syncFilter() {
   const sh = cfg.show, pk = presetOf(sh);
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);
-  $("showMag").value = sh.mag; $("magV").textContent = sh.mag >= 6.5 ? "all (6.5 mag)" : sh.mag.toFixed(1) + " mag";
+  $("showMag").value = sh.mag; $("magV").textContent = sh.mag >= 9 ? "all (to 9 mag, fainter ones when zoomed in)" : sh.mag.toFixed(1) + " mag";
   $("showMag").disabled = !sh.stars;
   document.querySelectorAll('[data-show="names"]').forEach(el => el.disabled = !sh.stars);
   const box = $("presets"); box.textContent = "";
@@ -2516,6 +2687,7 @@ resize(); syncSettings(); renderChips();
 st.solMode = "map";
 updateGuide(); renderReadout();
 requestAnimationFrame(draw);
+loadDeep();
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
 </script>
