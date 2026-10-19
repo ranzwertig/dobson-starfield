@@ -256,6 +256,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar { position: relative; height: 6px; border-radius: 3px; background: var(--line); margin-top: 2px; }
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
+.ttonight .course { color: var(--muted); font-size: 13px; }
 .ttonight .st { display: flex; flex-wrap: wrap; gap: 6px; }
 .ttonight .st span { font-size: 12.5px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
 .ttonight .st .on { border-color: var(--accent); color: var(--accent); }
@@ -649,6 +650,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
+    <div class="ttonight" id="infoTonight" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
     <div class="actions">
@@ -2608,8 +2610,8 @@ function syncInfoObs(o) {
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
 function nightPlan() { if (!planCache.t || Date.now() - planCache.at > 10 * 60e3) { planCache.t = tonightData(); planCache.at = Date.now(); } return planCache.t; }
-function rowPlan(id, tn) {
-  const T = targetById(id); if (!T) return null;
+function rowPlan(id, tn) { const T = targetById(id); return T ? planFor(T, tn) : null; }
+function planFor(T, tn) {
   const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const tNow = A.MakeTime(now), altNow = horiz(T.kind === "planet" || T.kind === "sun" ? T.vec(tNow) : vecNow(T), tNow).alt;
   const planet = T.kind === "planet";
@@ -2625,7 +2627,7 @@ function rowPlan(id, tn) {
   else sub = !best ? "low tonight" : best.d < now ? "past its best" : "best " + fmt(best.d) + ", " + compass(best.az);
   const warn = !later && leave && leave.d - now < 3 * 3600e3 ? "low after " + fmt(leave.d) : "";
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
-  return { T, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
+  return { T, pts, best, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
 // The night bar: sunset (left) to sunrise (right), amber while the object is well placed, red tick = now
 const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v7M9 7.5l3 3 3-3"/></svg>';
@@ -2640,6 +2642,29 @@ function nightBar(p) {
   const b = document.createElement("span"); b.className = "oend"; b.append(fmt(tn.end)); if (tn.sunrise) b.insertAdjacentHTML("beforeend", SUN_UP);
   b.setAttribute("aria-label", (tn.sunrise ? "Sunrise " : "To ") + fmt(tn.end));
   w.append(a, bar, b); return w;
+}
+// Rising, highest point and setting during the night (from the 10-minute samples)
+function nightCourse(p) {
+  const fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), pts = p.pts;
+  if (!pts || !pts.length) return "";
+  let hi = pts[0]; pts.forEach(q => { if (q.a > hi.a) hi = q; });
+  if (hi.a < 0) return "Below the horizon all night.";
+  const ev = [];
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i - 1].a < 0 && pts[i].a >= 0) ev.push([pts[i].d, "rises " + fmt(pts[i].d) + " " + compass(pts[i].az)]);
+    if (pts[i - 1].a >= 0 && pts[i].a < 0) ev.push([pts[i].d, "sets " + fmt(pts[i].d) + " " + compass(pts[i - 1].az)]);
+  }
+  const top = "highest " + Math.round(hi.a) + "° at " + fmt(hi.d) + " " + compass(hi.az);
+  if (!ev.length) return "Above the horizon all night, " + top + ".";
+  ev.push([hi.d, top]); ev.sort((x, y) => x[0] - y[0]);
+  const txt = ev.map(x => x[1]).join(" · "); return txt.charAt(0).toUpperCase() + txt.slice(1) + ".";
+}
+// "Tonight" box: when it is well placed, the course of the night and the night bar
+function fillTonight(box, p) {
+  const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; box.append(k);
+  const d = document.createElement("div"); d.textContent = p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
+  const c = nightCourse(p); if (c) { const cd = document.createElement("div"); cd.className = "course"; cd.textContent = c; box.append(cd); }
+  box.append(nightBar(p));
 }
 // The list opens on the tab used last (remembered across starts)
 const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
@@ -2778,11 +2803,8 @@ function syncTargetPanel(force) {
   g.append(w, pos);
   // tonight
   const tn = nightPlan(), p = T.kind === "sat" ? null : rowPlan(T.id, tn), box = $("tgtTonight"); box.textContent = "";
-  const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; box.append(k);
-  if (p) {
-    const d = document.createElement("div"); d.textContent = p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
-    box.append(nightBar(p));
-  } else { const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(d); }
+  if (p) fillTonight(box, p);
+  else { const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(k, d); }
   const S = sets(), stt = document.createElement("div"); stt.className = "st";
   const seenN = obs.log.filter(e => e.obj === T.id && e.result !== "miss").length;
   [[S.list.has(T.id), "Planned", "on"], [S.starred.has(T.id), "Starred", "on"], [S.tonight.has(T.id), "Seen tonight", "ok"], [!S.tonight.has(T.id) && seenN > 0, "Seen " + seenN + "×", "ok"]]
@@ -3536,8 +3558,15 @@ function showInfo(o, fromList) {
   }
   if (mag != null) facts.unshift(["Magnitude", (+mag).toFixed(1)]);
   facts.push(["Altitude", h.alt < 0 ? "below horizon" : fmtDeg(h.alt)], ["Azimuth", fmtDeg(h.az) + " " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]]);
+  const ms = MSV.find(m => m.id === o.id), ng = !ms && NGC.find(n => n.id === o.id), size = ms ? ms.size : ng ? ng.size : null;
+  if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
+  const ep = curEp(); if (ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
+  // tonight: when it is well placed, rising / highest / setting, night bar
+  const tb = $("infoTonight"); tb.textContent = "";
+  let pl = null; try { pl = o.kind === "sat" || o.body === "Sun" ? null : planFor(o, nightPlan()); } catch (e) {}
+  tb.hidden = !pl; if (pl) fillTonight(tb, pl);
   const box = $("infoFacts"); box.textContent = "";
   facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; const a = document.createElement("div"); a.className = "k"; a.textContent = k; const b = document.createElement("div"); b.className = "v"; b.textContent = val; d.append(a, b); box.append(d); });
   const lb = $("infoLinks"); lb.textContent = "";
