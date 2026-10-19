@@ -65,7 +65,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 /* Degree readouts at the top of the image */
 .hud {
   position: absolute; top: max(8px, var(--safe-top)); left: max(8px, env(safe-area-inset-left, 0px));
-  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 96px);
+  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 96px + var(--pr, 0px));
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
 .hcell {
@@ -91,12 +91,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.idle .hcell { display: none; }
 
 .hint {
-  position: absolute; left: 50%; top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  position: absolute; left: calc((100% - var(--pr, 0px)) / 2); top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px - var(--pr, 0px));
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
-.notices { position: absolute; z-index: 5; left: 16px; right: 16px; top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices { position: absolute; z-index: 5; left: 16px; right: calc(16px + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
 .notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 168px); }
 .update {
@@ -161,7 +161,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Round buttons bottom right */
 .fabs {
-  position: absolute; right: max(10px, env(safe-area-inset-right, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
+  position: absolute; right: calc(max(10px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
   display: flex; flex-direction: column; gap: 10px; align-items: center;
 }
 .fab {
@@ -179,7 +179,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Menu button top right, capture button as a large round button at the bottom of the stack */
 .menu-pill {
-  position: absolute; top: max(8px, var(--safe-top)); right: max(8px, env(safe-area-inset-right, 0px)); height: 46px; box-sizing: border-box;
+  position: absolute; top: max(8px, var(--safe-top)); right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); height: 46px; box-sizing: border-box;
   display: flex; align-items: center; gap: 8px; padding: 0 12px 0 7px; border-radius: 99px; cursor: pointer;
   border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); color: var(--fg);
 }
@@ -235,11 +235,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet.dragging .inner { transition: none; }
 .sheet.tall .inner { height: 88%; }
 @media (prefers-reduced-motion: reduce) { .sheet, .sheet .inner { transition: none; } }
-/* Tablet and desktop: sheets become a side panel on the right; the map shrinks next to it and stays usable */
+/* Tablet and desktop: sheets become a side panel on the right that floats over the map. The map stays where it is;
+   the buttons, the menu and the messages on the right move left so they stay visible next to the panel. */
 @media (min-width: 900px) and (min-height: 500px) {
   :root { --panel-w: min(420px, 38vw); }
-  .app { transition: margin-right .34s cubic-bezier(.32, .72, 0, 1); }
-  body.panel-open .app { margin-right: var(--panel-w); }
+  body.panel-open { --pr: var(--panel-w); }
+  .fabs, .menu-pill, .hud, .notices, .hint { transition: right .34s cubic-bezier(.32, .72, 0, 1), left .34s cubic-bezier(.32, .72, 0, 1); }
   .hud { max-width: 640px; }
   .sheet { inset: 0 0 0 auto; width: var(--panel-w); align-items: stretch; }
   .sheet.open { background: none; }
@@ -253,7 +254,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   .grab::before { display: none; }
   .sheet h2 { font-size: 21px; }
 }
-@media (min-width: 900px) and (min-height: 500px) and (prefers-reduced-motion: reduce) { .app { transition: none; } }
+@media (min-width: 900px) and (min-height: 500px) and (prefers-reduced-motion: reduce) { .fabs, .menu-pill, .hud, .notices, .hint { transition: none; } }
 /* Handle at top: dragging closes the sheet */
 .grab {
   position: sticky; top: 0; z-index: 2; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
@@ -1844,14 +1845,15 @@ function openSheet(id) {
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
   setPanelOpen(true);
 }
-// Side panel layout (wide screens): the stage makes room, so the canvas has to be resized afterwards
+// Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
+// avoid the buttons, so their position is re-read while they slide.
 const sidePanels = () => matchMedia("(min-width: 900px) and (min-height: 500px)").matches;
 function setPanelOpen(on) {
   if (document.body.classList.contains("panel-open") === on) return;
   document.body.classList.toggle("panel-open", on);
   if (!sidePanels()) return;
   const t0 = performance.now();
-  const step = () => { resize(); insetCache = null; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
+  const step = () => { insetCache = null; lastSig = []; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
 /* ---------------- Blocked permissions: explain how to allow them again ---------------- */
