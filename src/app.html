@@ -282,7 +282,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 @media (min-width: 900px) and (min-height: 500px) { .epview { --ep: 230px; } }
 @media (max-height: 560px) { .epview { --ep: 128px; } }
 .eps { display: grid; gap: 8px; margin: 4px 0 8px; }
-.eprow { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 8px; align-items: end; }
+.eprow { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.eprow label:not(.epsel) { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+.eprow input[type=number] { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; }
 .eprow .epsel { padding-bottom: 10px; }
 .eprow .epsel input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
 .eprow small { grid-column: 2 / 4; color: var(--muted); font-size: 12.5px; margin-top: -4px; }
@@ -376,6 +378,14 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   box-shadow: 0 -10px 40px rgba(0,0,0,.45);
 }
 .sheet.open .inner { transform: translateY(0); }
+/* never wider than the panel: a grid column sized to its content (long select options, number inputs) would scroll sideways */
+.sheet .inner { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
+.sheet fieldset, .sheet label { min-width: 0; }
+.sheet input, .sheet select, .sheet textarea { min-width: 0; max-width: 100%; }
+.sheet select { text-overflow: ellipsis; }
+.settabs { padding-top: 2px; }
+.settabs .chip.sel { border-color: var(--accent); color: var(--accent); }
+.sheet [data-stab].off { display: none; }
 .sheet.dragging .inner { transition: none; }
 .sheet.tall .inner { height: 88%; }
 @media (prefers-reduced-motion: reduce) { .sheet, .sheet .inner { transition: none; } }
@@ -853,9 +863,9 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><span>Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="setTitle"><span>Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
-    <fieldset>
+    <fieldset data-stab="general">
       <legend>Location</legend>
       <div class="row">
         <label>Latitude (°N)<input type="number" id="lat" step="0.01"></label>
@@ -863,44 +873,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <button class="btn" id="btnGps">GPS</button>
       </div>
     </fieldset>
-    <fieldset>
-      <legend>Pointing</legend>
-      <div class="row">
-        <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
-        <label class="check"><input type="radio" name="pointer" value="top"> Top edge: the top of the phone points along the telescope</label>
-      </div>
-      <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (when you start the camera, the app asks whether the optic mirrors the image).</p>
-    </fieldset>
-    <fieldset>
-      <legend>Camera</legend>
-      <div class="row"><label>Camera to use<select id="camSel"><option value="">Back camera (automatic)</option></select></label></div>
-      <label class="check"><input type="checkbox" id="optMirror"> Mirrored image (the camera looks through a mirror or prism)</label>
-      <p class="note" id="camNote">You can also use a USB webcam or an HDMI capture device mounted on the telescope with its own lens. Field of view and eyepiece point are remembered per camera.</p>
-    </fieldset>
-    <fieldset>
-      <legend>Camera field of view</legend>
-      <div class="row">
-        <label>Field of view, long side (°)<input type="number" id="fov" step="0.1" placeholder="unknown"></label>
-        <button class="btn" id="btnFovReset">Measure again</button>
-      </div>
-      <p class="note">Measured automatically on the first successful solve. Typical for main phone cameras: 60–75°. For gallery photos the app searches the field of view every time, since lens and crop can differ.</p>
-      <div class="row"><label>Search range min / max (°)<input type="text" id="fovRange" value="25-85"></label></div>
-    </fieldset>
-    <fieldset>
-      <legend>Compass</legend>
-      <p class="note" id="compassCalInfo"></p>
-      <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
-      <p class="note">After a camera solve with the motion sensor on, the app compares the compass with the exact solved direction and offers to correct it. The correction is used in compass mode and shown at the bottom left while active.</p>
-    </fieldset>
-    <fieldset>
-      <legend>Capture</legend>
-      <div class="row">
-        <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="24" step="1"></label>
-        <label>Sensitivity: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
-      </div>
-      <div class="row camctl" id="camctl"></div>
-    </fieldset>
-    <fieldset>
+    <fieldset data-stab="general">
       <legend>Display</legend>
       <div class="row">
         <label class="check"><input type="checkbox" id="optFill"> Fill the screen with the image</label>
@@ -909,15 +882,18 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
       </div>
     </fieldset>
-    <fieldset>
-      <legend>Eyepiece point</legend>
-      <p class="note" id="teleInfo"></p>
-      <div class="row"><button class="btn" id="btnTeleReset">Reset to image centre</button></div>
+    <fieldset data-stab="general" id="backup">
+      <legend>Backup and restore</legend>
+      <p class="note" id="backupInfo"></p>
+      <div class="row"><button class="btn" id="bkLists">Back up lists</button><button class="btn" id="bkAll">Back up lists and settings</button></div>
+      <div class="row"><button class="btn" id="bkImport">Restore from a backup</button><button class="btn" id="bkCsv">Logbook for a spreadsheet (CSV)</button></div>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include telescope and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm.</p>
     </fieldset>
-    <fieldset id="optics">
+    <fieldset data-stab="scope" id="optics">
       <legend>Telescope and eyepieces</legend>
       <div class="row">
-        <label>Telescope focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
+        <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
         <label>Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.5"></label>
       </div>
       <div class="eps" id="oEps"></div>
@@ -938,15 +914,49 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to magnitude 9, deep-sky objects, the Moon and planets.</p>
     </fieldset>
-    <fieldset id="backup">
-      <legend>Backup</legend>
-      <p class="note" id="backupInfo"></p>
-      <div class="row"><button class="btn" id="bkLists">Export lists</button><button class="btn" id="bkAll">Export everything</button></div>
-      <div class="row"><button class="btn" id="bkImport">Import a backup</button><button class="btn" id="bkCsv">Logbook as CSV</button></div>
-      <input type="file" id="bkFile" accept=".json,application/json" hidden>
-      <p class="note"><b>Lists</b>: observing list, starred objects and logbook. <b>Everything</b> adds all settings: telescope and eyepieces, location, pointing, camera and display. Importing adds what is missing and never deletes anything; settings in a backup replace the current ones only if you confirm. The CSV opens in a spreadsheet.</p>
+    <fieldset data-stab="scope">
+      <legend>Pointing</legend>
+      <div class="row">
+        <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
+        <label class="check"><input type="radio" name="pointer" value="top"> Top edge: the top of the phone points along the telescope</label>
+      </div>
+      <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (when you start the camera, the app asks whether the optic mirrors the image).</p>
     </fieldset>
-    <p class="note">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
+    <fieldset data-stab="scope">
+      <legend>Eyepiece point</legend>
+      <p class="note" id="teleInfo"></p>
+      <div class="row"><button class="btn" id="btnTeleReset">Reset to image centre</button></div>
+    </fieldset>
+    <fieldset data-stab="cam">
+      <legend>Camera</legend>
+      <div class="row"><label>Camera to use<select id="camSel"><option value="">Back camera (automatic)</option></select></label></div>
+      <label class="check"><input type="checkbox" id="optMirror"> Mirrored image (the camera looks through a mirror or prism)</label>
+      <p class="note" id="camNote">You can also use a USB webcam or an HDMI capture device mounted on the telescope with its own lens. Field of view and eyepiece point are remembered per camera.</p>
+    </fieldset>
+    <fieldset data-stab="cam">
+      <legend>Camera field of view</legend>
+      <div class="row">
+        <label>Field of view, long side (°)<input type="number" id="fov" step="0.1" placeholder="unknown"></label>
+        <button class="btn" id="btnFovReset">Measure again</button>
+      </div>
+      <p class="note">Measured automatically on the first successful solve. Typical for main phone cameras: 60–75°. For gallery photos the app searches the field of view every time, since lens and crop can differ.</p>
+      <div class="row"><label>Search range min / max (°)<input type="text" id="fovRange" value="25-85"></label></div>
+    </fieldset>
+    <fieldset data-stab="cam">
+      <legend>Capture</legend>
+      <div class="row">
+        <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="24" step="1"></label>
+        <label>Sensitivity: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
+      </div>
+      <div class="row camctl" id="camctl"></div>
+    </fieldset>
+    <fieldset data-stab="cam">
+      <legend>Compass</legend>
+      <p class="note" id="compassCalInfo"></p>
+      <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
+      <p class="note">After a camera solve with the motion sensor on, the app compares the compass with the exact solved direction and offers to correct it. The correction is used in compass mode and shown at the bottom left while active.</p>
+    </fieldset>
+    <p class="note" data-stab="general">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
 </div>
 
@@ -2987,6 +2997,18 @@ function exportBackup(all) {
   obs.exportedAt = Date.now(); saveObs(); syncBackup();
 }
 try { if (sessionStorage.getItem("zenigo-restored")) { sessionStorage.removeItem("zenigo-restored"); setTimeout(() => hint("Settings and lists restored from the backup.", 4000), 800); } } catch (e) {}
+/* Settings sections as tabs; the last one is kept */
+function setSetTab(t) {
+  if (!["general", "scope", "cam"].includes(t)) t = "general";
+  cfg.setTab = t; save();
+  document.querySelectorAll("#sheet [data-stab]").forEach(el => {
+    if (el.classList.contains("chip")) { const on = el.dataset.stab === t; el.classList.toggle("sel", on); el.setAttribute("aria-selected", on); }
+    else el.classList.toggle("off", el.dataset.stab !== t);
+  });
+  $("sheet").querySelector(".inner").scrollTop = 0;
+}
+document.querySelectorAll("#sheet .settabs .chip").forEach(b => b.onclick = () => setSetTab(b.dataset.stab));
+setSetTab(cfg.setTab);
 $("bkLists").onclick = () => exportBackup(false);
 $("bkAll").onclick = () => exportBackup(true);
 $("bkCsv").onclick = () => {
