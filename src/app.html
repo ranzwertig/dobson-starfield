@@ -681,6 +681,8 @@ document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.tar
 const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
+// Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
+if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
 // What the map shows (filter). Old separate switches are migrated once.
 const SHOW_DEF = { solar: true, stars: true, mag: 6.5, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true };
@@ -770,8 +772,7 @@ async function captureVideo() {
   const acc = new Float32Array(w * h), n = Math.max(1, cfg.stack | 0);
   for (let k = 0; k < n; k++) {
     await new Promise(r => video.requestVideoFrameCallback ? video.requestVideoFrameCallback(() => r()) : setTimeout(r, 70));
-    if (mirrored()) { ctx.setTransform(-1, 0, 0, 1, w, 0); ctx.drawImage(video, 0, 0, w, h); ctx.setTransform(1, 0, 0, 1, 0, 0); }
-    else ctx.drawImage(video, 0, 0, w, h);
+    drawCam(ctx, video, 0, 0, w, h);
     toGray(ctx, w, h, acc);
   }
   for (let i = 0; i < acc.length; i++) acc[i] /= n;
@@ -866,14 +867,23 @@ function buildCamControls() {
 /* ---------------- Camera choice ---------------- */
 // Field of view and eyepiece point belong to a camera: kept per camera, keyed by its name
 const camKey = () => cfg.camId ? "cam:" + (cfg.camLabel || cfg.camId) : "default";
-function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror, mirrorK: cfg.mirrorK || null }; }
-function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; }
+function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { fov: cfg.fov.video, tele: { ...cfg.tele }, mirror: !!cfg.mirror, mirrorK: cfg.mirrorK || null, mirrorKTop: cfg.mirrorKTop || null }; }
+function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; cfg.mirrorKTop = p ? p.mirrorKTop || null : null; }
 // Through a mirror the camera image is mirror-inverted: flip it before solving and showing it.
 // The phone's own orientation then no longer tells where the view goes, so the motion sensors are not used with it.
 const mirrored = () => !!cfg.mirror;
-// Top edge mode with camera: a periscope mirror turns the back camera's view along the top of the phone.
-// Expected camera axes (after flipping the image back): x = -x, down = +z, view = +y of the phone. A Locate refines it.
-const TOP_MIRROR_K = [[-1, 0, 0], [0, 0, 1], [0, 1, 0]];
+// Top edge mode with camera: a periscope mirror turns the back camera's view along the top of the phone. Its image is
+// flipped top to bottom (not left to right), so that "up" in the image is the screen side of the phone, the same as on the
+// map in top edge mode: with the phone on top of the tube, the zenith is up either way.
+// Expected camera axes then: x = +x, down = -z, view = +y of the phone. A Locate refines it.
+const TOP_MIRROR_K = [[1, 0, 0], [0, 0, 1], [0, -1, 0]];
+const flipV = () => mirrored() && topMode();
+function drawCam(c, src, x, y, w, h) {   // draw a camera frame, flipped back if it comes through a mirror
+  if (!mirrored()) { c.drawImage(src, x, y, w, h); return; }
+  c.save();
+  if (flipV()) { c.translate(x, y + h); c.scale(1, -1); } else { c.translate(x + w, y); c.scale(-1, 1); }
+  c.drawImage(src, 0, 0, w, h); c.restore();
+}
 function setMirror(on) {
   cfg.mirror = !!on; save(); storeCamProfile(); save();
   st.sol = null; st.base = null; st.stars = []; st.frame = st.source === "video" ? null : st.frame; lastSig = [];
@@ -937,7 +947,7 @@ async function solveNow() {
       const b = st.base, age = b ? Date.now() - b.at : Infinity;
       if (b && b.sol.w === fr.w && b.sol.h === fr.h && age < (b.dev && devAtCapture ? 180000 : 15000)) {
         let R = b.sol.R;
-        if (b.dev && devAtCapture && camK()) { const C = camK(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(C)), tr3(b.dev)), devAtCapture), C); }
+        if (b.dev && devAtCapture && camK()) { const C = camK(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(b.K || C)), tr3(b.dev)), devAtCapture), C); }
         const s0 = b.sol;
         opts.near = { R, f: s0.f, k1: s0.k1, poly: s0.poly, w: s0.w, h: s0.h, cx: s0.cx, cy: s0.cy, fov: s0.fov, fovV: s0.fovV };
       }
@@ -962,6 +972,7 @@ async function solveNow() {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
       st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
       if (st.base && devAtCapture && mirrored()) learnMirrorK(sol, devAtCapture);
+      if (st.base) st.base.K = camK();
       if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
       if (sol.near) { setStatus("Tracked · " + sol.nMatch + " stars · " + Math.max(1, Math.round(sol.ms)) + " ms", "ok"); updateGuide(); renderReadout(); return; }
       if (isPhoto) { cfg.fov.photo = +longFromSol(sol).toFixed(2); save(); }
@@ -1137,14 +1148,25 @@ function devMatrix(a, b, g) {   // W3C: R = Rz(alpha)·Rx(beta)·Ry(gamma), devi
   return mm3(mm3([[cA, -sA, 0], [sA, cA, 0], [0, 0, 1]], [[1, 0, 0], [0, cB, -sB], [0, sB, cB]]), [[cG, 0, sG], [0, 1, 0], [-sG, 0, cG]]);
 }
 function camAxes() {             // camera axes (x right, y down, z view direction) in device frame, depending on screen rotation
-  // Pointer mode: the top edge of the phone points at the sky (no camera); map "up" is the back of the phone
+  // Pointer mode: the top edge of the phone points at the sky; map "up" is the screen side of the phone
   if (topMode()) return [[1, 0, 0], [0, 0, 1], [0, -1, 0]];
   const th = ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R, c = Math.cos(th), s = Math.sin(th);
   return [[c, -s, 0], [-s, -c, 0], [0, 0, -1]];
 }
 // Camera axes used with the motion sensors. Through a mirror the view no longer comes out of the back of the
 // phone: the app learns the turned direction from a Locate (see learnMirrorK) and uses it from then on.
-function camK() { return mirrored() ? (cfg.mirrorK || (topMode() ? TOP_MIRROR_K : null)) : camAxes(); }
+function camK() { return mirrored() ? (topMode() ? cfg.mirrorKTop || TOP_MIRROR_K : cfg.mirrorK || null) : camAxes(); }
+// Axes for the view that follows the phone. In top edge mode without a camera image the map is kept upright like in a
+// planetarium: up is always towards the zenith, however the phone is held or turned about its top edge (pointing down,
+// screen facing you, phone on the side of the tube). Pointing at the zenith itself "up" is undefined: the last one is kept.
+const liveCam = () => st.source === "video" && !!st.stream;
+function viewK() {
+  if (!topMode() || liveCam() || !sens.rel) return camK();
+  const ux = sens.rel[2][0], uz = sens.rel[2][2], n = Math.hypot(ux, uz);   // zenith in the phone frame, across the top edge
+  if (n > 0.08) sens.topUp = [ux / n, uz / n];
+  const [x, z] = sens.topUp || [0, 1];
+  return [[z, -x, 0], [0, 0, 1], [-x, -z, 0]];
+}
 // the 24 rotations that map the phone's axes onto each other (mirrors and holders turn the view by multiples of 90°)
 const AXIS_ROTS = (() => {
   const out = [], perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
@@ -1163,8 +1185,8 @@ function learnMirrorK(sol, dev) {
   const est = mm3(mm3(tr3(abs), tr3(mm3(H2E, E2H))), sol.R);   // camera axes in the phone frame, with the compass error
   let best = null, bs = -Infinity;
   for (const m of AXIS_ROTS) { let sc = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sc += m[i][j] * est[i][j]; if (sc > bs) { bs = sc; best = m; } }
-  const changed = JSON.stringify(best) !== JSON.stringify(cfg.mirrorK);
-  cfg.mirrorK = best; storeCamProfile(); save();
+  const key = topMode() ? "mirrorKTop" : "mirrorK", changed = JSON.stringify(best) !== JSON.stringify(cfg[key]);
+  cfg[key] = best; storeCamProfile(); save();
   if (changed) hint("Learned how the mirror turns the view. Align now follows the phone.", 5000);
 }
 const sens = { rel: null, abs: null, raw: null, pend: null, pendN: 0, off: null, offN: 0, offOut: 0, listening: false, lastGuide: 0, raf: 0 };
@@ -1343,14 +1365,16 @@ function approxCamera() {
 }
 function sensorUpdate() {
   if (!st.sensor) return;
-  const C = camK();
+  const C = viewK();
   if (!C) {   // mirror without a learned direction yet
     if (!st.busy && !/Locate once/.test($("statusText").textContent)) setStatus("Mirror: tap Locate once so Align can follow", "");
     return;
   }
   if (st.base && st.base.dev && sens.rel) {
-    // R = R0 · Cᵀ · D0ᵀ · D · C   (apply the phone's rotation since capture to the solved orientation)
-    const R = mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C)), tr3(st.base.dev)), sens.rel), C);
+    // R = R0 · C0ᵀ · D0ᵀ · D · C   (apply the phone's rotation since capture to the solved orientation; C0 = axes of the
+    // solved image, C = axes of the current view, which differ in top edge mode once the camera is off)
+    const C0 = st.base.K || camK() || C;
+    const R = mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C0)), tr3(st.base.dev)), sens.rel), C);
     const z0 = Solver.mul(st.base.sol.R, [0, 0, 1]), z1 = Solver.mul(R, [0, 0, 1]);
     st.moved = Solver.angDeg(z0, z1) > 0.3;
     st.sol = Object.assign({}, st.base.sol, { R }); st.solMode = "track"; st.solAt = Date.now();
@@ -1568,7 +1592,7 @@ function draw() {
       const tp = telePix(st.sol);
       ox += (ref.w / 2 - tp.x) * fsc; oy += (ref.h / 2 - tp.y) * fsc;
     }
-    if (showImg && src === video && mirrored()) { vctx.save(); vctx.translate(ox + dw, oy); vctx.scale(-1, 1); vctx.drawImage(src, 0, 0, dw, dh); vctx.restore(); }
+    if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
     else if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
     fit = { sc: fsc, ox, oy, w: ref.w, h: ref.h, dpr };
     drawOverlay(dpr);
@@ -1798,8 +1822,9 @@ function syncSettings() {
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   const tx = +curTele().x || 0, ty = +curTele().y || 0;
-  $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? "The telescope is set to point at the centre of the camera image." :
-    "The telescope points " + fmtDeg(Math.abs(Math.atan(tx) * R2D)) + (tx >= 0 ? " right" : " left") + " and " + fmtDeg(Math.abs(Math.atan(ty) * R2D)) + (ty >= 0 ? " below" : " above") + " the image centre.";
+  const ref = topMode() && !liveCam() ? "where the top edge points" : "the image centre";
+  $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? (topMode() && !liveCam() ? "The telescope is set to point where the top edge of the phone points." : "The telescope is set to point at the centre of the camera image.") :
+    "The telescope points " + fmtDeg(Math.abs(Math.atan(tx) * R2D)) + (tx >= 0 ? " right" : " left") + " and " + fmtDeg(Math.abs(Math.atan(ty) * R2D)) + (ty >= 0 ? " below" : " above") + " " + ref + ".";
 }
 /* ---------------- Sheets: menu, target search, settings, object info ---------------- */
 // Like on iOS: slide in from the bottom, can be dragged down by the handle (or from the very top of the content).
