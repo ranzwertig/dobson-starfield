@@ -779,10 +779,6 @@ a.btn { text-decoration: none; color: var(--fg); }
     <button class="lsuggest" id="logSuggest" hidden></button>
     <div class="chips" id="logFilter" hidden></div>
     <div id="logBody"></div>
-    <p class="note" id="logBackup"></p>
-    <div class="actions"><button class="btn" id="logCsv">Export CSV</button><button class="btn" id="logJson">Export backup (JSON)</button></div>
-    <button class="btn" id="logImport">Import a backup</button>
-    <input type="file" id="logFile" accept=".json,application/json" hidden>
   </div>
 </div>
 
@@ -941,6 +937,14 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label>Turn the view by: <span id="oRotV"></span><input type="range" id="oRot" min="-180" max="180" step="5"></label>
       </div>
       <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to magnitude 9, deep-sky objects, the Moon and planets.</p>
+    </fieldset>
+    <fieldset id="backup">
+      <legend>Backup</legend>
+      <p class="note" id="backupInfo"></p>
+      <div class="row"><button class="btn" id="bkLists">Export lists</button><button class="btn" id="bkAll">Export everything</button></div>
+      <div class="row"><button class="btn" id="bkImport">Import a backup</button><button class="btn" id="bkCsv">Logbook as CSV</button></div>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+      <p class="note"><b>Lists</b>: observing list, starred objects and logbook. <b>Everything</b> adds all settings: telescope and eyepieces, location, pointing, camera and display. Importing adds what is missing and never deletes anything; settings in a backup replace the current ones only if you confirm. The CSV opens in a spreadsheet.</p>
     </fieldset>
     <p class="note">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
@@ -2505,7 +2509,7 @@ let obs = { list: [], starred: [], log: [], exportedAt: 0 };
 try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || "null"); if (o && Array.isArray(o.log)) obs = Object.assign(obs, o); } catch (e) {}
 if (!Array.isArray(obs.starred)) obs.starred = [];
 function saveObs() {
-  try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup.", 7000); }
+  try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup in the settings.", 7000); }
   st.obsVer = (st.obsVer || 0) + 1; lastSig = []; syncListFab(); syncHudNext();
 }
 const pad2 = n => String(n).padStart(2, "0");
@@ -2964,35 +2968,54 @@ function renderLog() {
     r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
     body.append(r);
   });
-  const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
-  $("logBackup").textContent = "Stored only on this device. Clearing the browser’s website data deletes it. Last backup: " + (ago == null ? "never" : ago === 0 ? "today" : ago === 1 ? "yesterday" : ago + " days ago") + ".";
-  $("logCsv").disabled = $("logJson").disabled = !obs.log.length;
 }
 function download(name, text, type) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
   document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 const stamp = () => new Date().toISOString().slice(0, 10);
-$("logCsv").onclick = () => {
+/* ---------------- Backup (in the settings): lists, or everything including the settings ---------------- */
+function syncBackup() {
+  const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
+  $("backupInfo").textContent = "Lists and settings are stored only on this device. Clearing the browser’s website data deletes them. Last backup: " + (ago == null ? "never" : ago === 0 ? "today" : ago === 1 ? "yesterday" : ago + " days ago") + ".";
+  $("bkCsv").disabled = !obs.log.length;
+}
+function exportBackup(all) {
+  const d = { app: "Zenigo", version: 3, kind: all ? "all" : "lists", exportedAt: new Date().toISOString(), list: obs.list, starred: obs.starred, log: obs.log };
+  if (all) d.settings = cfg;
+  download("zenigo-" + (all ? "backup" : "lists") + "-" + stamp() + ".json", JSON.stringify(d, null, 1), "application/json");
+  obs.exportedAt = Date.now(); saveObs(); syncBackup();
+}
+try { if (sessionStorage.getItem("zenigo-restored")) { sessionStorage.removeItem("zenigo-restored"); setTimeout(() => hint("Settings and lists restored from the backup.", 4000), 800); } } catch (e) {}
+$("bkLists").onclick = () => exportBackup(false);
+$("bkAll").onclick = () => exportBackup(true);
+$("bkCsv").onclick = () => {
   const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const rows = [["date", "time", "object", "name", "result", "seeing", "transparency", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
   obs.log.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), e.result, e.seeing, e.transp, e.ep, e.alt, e.moon, e.lat, e.lon, e.note]); });
   download("zenigo-logbook-" + stamp() + ".csv", "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
-  obs.exportedAt = Date.now(); saveObs(); renderLog();
 };
-$("logJson").onclick = () => { download("zenigo-backup-" + stamp() + ".json", JSON.stringify({ app: "Zenigo", version: 2, list: obs.list, starred: obs.starred, log: obs.log }, null, 1), "application/json"); obs.exportedAt = Date.now(); saveObs(); renderLog(); };
-$("logImport").onclick = () => $("logFile").click();
-$("logFile").onchange = async () => {
-  const f = $("logFile").files[0]; $("logFile").value = ""; if (!f) return;
-  try {
-    const d = JSON.parse(await f.text()); if (!d || !Array.isArray(d.log)) throw new Error("format");
-    const have = new Set(obs.log.map(e => e.uid)); let n = 0;
-    d.log.forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); n++; } });
-    const lh = new Set(obs.list.map(x => x.id)); let m = 0;
-    (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); m++; } });
-    const sh = new Set(obs.starred.map(x => x.id)); (d.starred || []).forEach(x => { if (x && x.id && !sh.has(x.id)) { obs.starred.push(x); sh.add(x.id); m++; } });
-    saveObs(); renderLog(); hint("Imported " + n + (n === 1 ? " entry" : " entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects."), 4000);
-  } catch (e) { hint("That file is not a Zenigo backup.", 4000); }
+$("bkImport").onclick = () => $("bkFile").click();
+$("bkFile").onchange = async () => {
+  const f = $("bkFile").files[0]; $("bkFile").value = ""; if (!f) return;
+  let d;
+  try { d = JSON.parse(await f.text()); if (!d || (!Array.isArray(d.log) && !d.settings)) throw new Error("format"); }
+  catch (e) { hint("That file is not a Zenigo backup.", 4000); return; }
+  // lists: add what is missing, never delete
+  const have = new Set(obs.log.map(e => e.uid)); let n = 0, m = 0;
+  (d.log || []).forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); have.add(e.uid); n++; } });
+  const lh = new Set(obs.list.map(x => x.id)); (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); lh.add(x.id); m++; } });
+  const sh = new Set(obs.starred.map(x => x.id)); (d.starred || []).forEach(x => { if (x && x.id && !sh.has(x.id)) { obs.starred.push(x); sh.add(x.id); m++; } });
+  saveObs(); syncBackup(); if (!$("logSheet").hidden) renderLog();
+  const lists = !n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects.");
+  if (d.settings && typeof d.settings === "object") {
+    const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: telescope and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
+    if (r === true) {
+      try { localStorage.setItem("dobson-lotse", JSON.stringify(d.settings)); sessionStorage.setItem("zenigo-restored", "1"); } catch (e) { hint("Could not store the settings.", 4000); return; }
+      location.reload(); return;
+    }
+  }
+  hint(lists, 4000);
 };
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
 
@@ -3231,6 +3254,7 @@ function setTeleMode(on) {
 
 /* ---------------- Settings UI ---------------- */
 function syncSettings() {
+  syncBackup();
   $("lat").value = cfg.lat; $("lon").value = cfg.lon;
   const k = fovKey(); $("fov").value = cfg.fov[k] ?? ""; $("fov").placeholder = "unknown";
   $("fovRange").value = cfg.fovRange;
