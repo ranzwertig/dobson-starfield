@@ -1,15 +1,18 @@
 {
-  // Static site: Cloudflare serves dist/ directly, without Worker code.
+  // Static site from dist/ (website at /, app at /app/, unknown paths get dist/404.html).
+  // The Worker (worker/index.js) only runs for /api/*: satellite orbital data for the app.
   // "build" makes wrangler deploy/dev run npm run build first.
-  // Website at /, app at /app/, unknown paths get dist/404.html.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dobson-starfield",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "build": {
     "command": "npm run build"
   },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   }
 }

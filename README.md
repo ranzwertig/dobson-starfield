@@ -23,6 +23,8 @@ Everything runs locally in the browser: no server, no sign-in. The website lives
 
 **Deeper catalogue:** zoomed in, the map shows stars down to magnitude 9 and NGC/IC objects (about 1,900, galaxies to 12 mag, others to 11.5 mag), more the further you zoom in; large objects are drawn at their true size. They are searchable as targets ("NGC 869", "North America Nebula") and can be switched off in the filter ("Beyond Messier"). Locate still matches against the stars to magnitude 6.
 
+**Satellites** (online only): the ISS, Tiangong and about 150 bright satellites on the map, computed on the device with SGP4 (satellite.js) from orbital elements that the Worker (`worker/index.js`, route `/api/tle`) fetches from CelesTrak at most every 2 hours and caches at the edge. Lit satellites are drawn bright with a tail, those in Earth's shadow dim; tappable, searchable and usable as a target. Switchable in the filter (on by default, off in the Solar system and Deep sky presets). Offline they are not shown; the elements are not stored and the service worker never caches `/api/`.
+
 **Time** (menu): show the sky at another time, slider from 12 h back to 24 h ahead, shortcuts (dark tonight, midnight, end of darkness) or any date. Map, directions, search and object details follow; a chip at the bottom left shows the time and returns to now. Locate, eyepiece point and star alignment switch back to the current time.
 
 **Tonight** (menu) computes darkness times, Moon phase and rise/set, planets and the best Messier objects for the coming night on the device, and links one external source per topic for the current location: meteoblue (seeing and clouds), lightpollutionmap.info, Heavens-Above (ISS passes). On tablets and desktops (from 900 px width) panels open on the right instead of as bottom sheets; they float over the map, which stays in place, and the buttons move left next to them.
@@ -59,6 +61,7 @@ Selecting the Sun asks you to confirm a certified full-aperture solar filter and
 | `scripts/hero.mjs` | draws the landing page star chart from the catalogue at build time |
 | `public/` | static files copied to `dist/`: `app/` logo, web app manifest and icons, `robots.txt` |
 | `scripts/icons.cjs` | renders the PNG icons from `public/app/logo.svg` (needs Playwright; only after logo changes) |
+| `worker/index.js` | Cloudflare Worker for `/api/tle` only (satellite orbital elements from CelesTrak, edge-cached, last good copy as fallback); everything else is served from `dist/` |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6 (also used by the solver), names, designations, Messier objects with sizes, constellation lines; plus `public/app/deep-stars.bin` (78,000 stars 6–9 mag, 7 bytes each) and `public/app/dso.json` (about 1,900 NGC/IC and other deep-sky objects), loaded after start and precached for offline use |
 | `scripts/build.mjs` | builds the website and `dist/app/index.html` with Astronomy Engine, catalogue and solver inlined, copies the fonts |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |

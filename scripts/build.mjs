@@ -42,12 +42,17 @@ const aeDir = path.dirname(require.resolve('astronomy-engine'));
 const aePkg = JSON.parse(readFileSync(path.join(aeDir, 'package.json'), 'utf8'));
 const astronomy = `/*! Astronomy Engine ${aePkg.version} (c) Don Cross, MIT License, https://github.com/cosinekitty/astronomy */\n`
   + readFileSync(path.join(aeDir, 'astronomy.browser.min.js'), 'utf8');
+// SGP4 satellite propagation (ISS and bright satellites): satellite.js, MIT
+const satDir = path.dirname(require.resolve('satellite.js/package.json'));
+const satPkg = JSON.parse(readFileSync(path.join(satDir, 'package.json'), 'utf8'));
+const satjs = `/*! satellite.js ${satPkg.version} (c) Shashwat Kandadai and contributors, MIT License, https://github.com/shashwatak/satellite-js */\n`
+  + readFileSync(path.join(satDir, 'dist', 'satellite.min.js'), 'utf8');
 const data = read('src/data.js');
 const core = ('/* Star catalogue: d3-celestial data (c) Olaf Frohn, BSD-3-Clause */\n' + data + read('src/solver.js'))
   .replace("if (typeof module !== 'undefined') module.exports = Solver;", '');
-for (const chunk of [astronomy, core]) if (/<\/script/i.test(chunk)) throw new Error('Inline script contains </script');
+for (const chunk of [astronomy, core, satjs]) if (/<\/script/i.test(chunk)) throw new Error('Inline script contains </script');
 
-const page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss).replace('/*__ASTRONOMY__*/', () => astronomy).replace('/*__CORE__*/', () => core);
+const page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss).replace('/*__ASTRONOMY__*/', () => astronomy).replace('/*__SATELLITE__*/', () => satjs).replace('/*__CORE__*/', () => core);
 const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
   + '<meta name="robots" content="noindex">'

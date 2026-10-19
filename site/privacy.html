@@ -15,7 +15,7 @@
 <main class="wrap">
   <article class="legal">
     <h1>Privacy policy</h1>
-    <p class="stamp">Last updated: 18 October 2026</p>
+    <p class="stamp">Last updated: 19 October 2026</p>
 
     <p>Zenigo is built so that your data stays on your device. The app works entirely in your browser: camera images, your location and motion sensor data are processed locally and are never sent to us or to anyone else. This policy explains the little data that is processed anyway.</p>
 
@@ -46,6 +46,8 @@
     <p>The app needs your approximate position to convert star positions into directions for your telescope. You can enter it by hand or let the browser determine it (the “GPS” button in Settings), which asks for your permission first. The position is only stored on your device.</p>
     <h3>Motion sensors and compass</h3>
     <p>If you turn on “Align”, the app reads the orientation sensors of your device to move the map with the phone. This data is processed in the moment and not stored, except for a compass correction you choose to save.</p>
+    <h3>Satellites</h3>
+    <p>When you are online and satellites are switched on in the map filter, the app loads the current orbital elements of the ISS and other bright satellites from our own server (zenigo.app), which gets them from CelesTrak (celestrak.org). No location or other personal data is sent with this request; it is an ordinary page request handled by Cloudflare as described under Hosting. The positions are calculated on your device. The orbital elements are not stored, so satellites are not shown offline.</p>
     <h3>Settings stored on your device</h3>
     <p>Your settings (location, pointing mode, chosen camera, camera field of view, eyepiece point, compass correction, map filter, chosen target and display options) are saved in your browser’s local storage, so they are still there next time. For offline use the browser also keeps a copy of the app (service worker cache). This data never leaves your device. You can delete it at any time by clearing the website data for Zenigo in your browser settings.</p>
 

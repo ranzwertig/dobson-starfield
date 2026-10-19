@@ -535,6 +535,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9.5" ry="4"/></svg></span><span class="flab">Sun, Moon and planets</span><input type="checkbox" data-show="solar"></label>
     </fieldset>
     <fieldset>
+      <legend>Satellites</legend>
+        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="9.5" y="9.5" width="5" height="5" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M3 8l5-5M16 21l5-5"/></svg></span><span class="flab">ISS and bright satellites<small id="satState">only with an internet connection</small></span><input type="checkbox" data-show="sats"></label>
+    </fieldset>
+    <fieldset>
       <legend>Stars</legend>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l1.6 5.2L19 10.8l-5.4 1.6L12 18l-1.6-5.6L5 10.8l5.4-1.6z"/></svg></span><span class="flab">Stars</span><input type="checkbox" data-show="stars"></label>
         <label class="fmag">Faintest stars: <b id="magV"></b><input type="range" id="showMag" min="2" max="9" step="0.5"></label>
@@ -743,6 +747,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 </div>
 
 <script>/*__ASTRONOMY__*/</script>
+<script>/*__SATELLITE__*/</script>
 <script id="core">/*__CORE__*/</script>
 <script>
 "use strict";
@@ -767,17 +772,19 @@ cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {}
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
 // What the map shows (filter). Old separate switches are migrated once.
-const SHOW_DEF = { solar: true, stars: true, mag: 9, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true };
+const SHOW_DEF = { solar: true, stars: true, mag: 9, names: true, lines: true, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true, sats: true };
 const DSO_KEYS = ["gal", "glob", "open", "neb", "pn"];
 const PRESETS = {
   all: { label: "Everything", show: { ...SHOW_DEF } },
-  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, names: false, lines: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
-  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, names: false } },
+  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, names: false, lines: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false, sats: false } },
+  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, names: false, sats: false } },
   eye: { label: "Naked eye", show: { ...SHOW_DEF, mag: 5, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
 };
 if (!cfg.show) cfg.show = { ...SHOW_DEF, stars: cfg.map !== false, lines: cfg.lines !== false, names: cfg.names !== false };
 // Deeper catalogue: "all stars" was 6.5 mag, now 9; objects beyond Messier follow the deep-sky classes
 if (!("ngc" in cfg.show)) { cfg.show.ngc = DSO_KEYS.some(k => cfg.show[k] !== false); if (cfg.show.mag >= 6.5) cfg.show.mag = 9; }
+// Satellites are new: on, unless the saved filter is one of the presets that leaves them out
+if (!("sats" in cfg.show)) { const k = Object.keys(PRESETS).find(k => Object.keys(SHOW_DEF).every(x => x === "sats" || cfg.show[x] === PRESETS[k].show[x])); cfg.show.sats = k ? PRESETS[k].show.sats : true; }
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
   const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
@@ -1130,7 +1137,10 @@ function showResults() {
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
     const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (above 15°)"; box.append(g);
   } else {
-    list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).slice(0, 30).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
+    // exact names first, then names starting with the query, then matches anywhere (also in the description)
+    const rank = T => { const n = norm(T.name); return n === q || norm(T.id) === q ? 0 : n.startsWith(q) ? 1 : n.includes(q) ? 2 : 3; };
+    list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).map(T => ({ T, r: rank(T) })).sort((a, b) => a.r - b.r).slice(0, 30)
+      .map(({ T }) => ({ T, alt: horiz(T.vec(t), t).alt }));
     if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nichts gefunden"; box.append(g); }
   }
   list.forEach(({ T, alt }) => {
@@ -1538,6 +1548,65 @@ function deepNear(c, radDeg, maxMag, fn) {
     }
   }
 }
+/* ---------------- Satellites (only online): ISS and bright satellites ---------------- */
+// Orbital elements come from our own server (/api/tle, which gets them from CelesTrak), positions are computed here
+// with SGP4 (satellite.js). Elements age quickly, so they are only used while there is a connection and are not kept.
+const SAT = { list: [], at: 0, loading: false, ok: false, pos: [], posAt: 0, posKey: "" };
+const satShort = n => /^ISS \(/.test(n) ? "ISS" : /^CSS \(/.test(n) ? "Tiangong" : n.replace(/\s+\(.*\)$/, "");
+const satsOn = () => !!(cfg.show.sats && SAT.ok && navigator.onLine);
+async function loadSats(force) {
+  if (!cfg.show.sats || !navigator.onLine || SAT.loading || typeof satellite === "undefined") { syncSatState(); return; }
+  if (!force && SAT.ok && Date.now() - SAT.at < 2 * 3600e3) return;
+  SAT.loading = true; syncSatState();
+  try {
+    const r = await fetch("/api/tle", { cache: "no-store" }); if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const list = (d.sats || []).map(x => { const rec = satellite.twoline2satrec(x.l1, x.l2); return { norad: +x.l1.slice(2, 7), full: x.name, name: satShort(x.name), rec }; })
+      .filter(x => x.rec && !x.rec.error);
+    if (!list.length) throw new Error("empty");
+    SAT.list = list; SAT.ok = true; SAT.at = Date.now(); SAT.posAt = 0;
+    for (let i = TARGETS.length - 1; i >= 0; i--) if (TARGETS[i].kind === "sat" && !list.some(x => "SAT" + x.norad === TARGETS[i].id)) TARGETS.splice(i, 1);
+    list.forEach(x => { if (!TARGETS.some(T => T.id === "SAT" + x.norad)) TARGETS.push({ id: "SAT" + x.norad, name: x.name, sub: "Satellite" + (x.name !== x.full ? " · " + x.full : "") + " · moves fast", kind: "sat", vec: t => satVec(x, t.date) }); });
+  } catch (e) { SAT.ok = false; }
+  SAT.loading = false; syncSatState(); st.filterVer++; lastSig = []; updateGuide();
+}
+function syncSatState() {
+  const el = $("satState"); if (!el) return;
+  el.textContent = !navigator.onLine ? "offline: not shown, needs an internet connection" : SAT.loading ? "loading orbits …" : SAT.ok ? SAT.list.length + " satellites, orbits from CelesTrak" : "only with an internet connection";
+}
+const R_EARTH = 6371;
+// Position of a satellite at a date: direction (unit vector, same frame as the stars), altitude above the horizon,
+// height and whether the Sun lights it. null when the orbit can't be computed.
+function satState(x, date) {
+  const pv = satellite.propagate(x.rec, date); const r = pv && pv.position; if (!r || typeof r === "boolean") return null;
+  const gmst = satellite.gstime(date), gd = { longitude: cfg.lon * D2R, latitude: cfg.lat * D2R, height: 0.3 };
+  const la = satellite.ecfToLookAngles(gd, satellite.eciToEcf(r, gmst));
+  const az = la.azimuth * R2D, alt = la.elevation * R2D;
+  const sec = Math.floor(date.getTime() / 1000);
+  if (satState.sec !== sec) {   // Sun direction and horizon rotation change slowly: once per second for all satellites
+    const t = A.MakeTime(date), sv = A.GeoVector(A.Body.Sun, t, true), sn = Math.hypot(sv.x, sv.y, sv.z);
+    satState.sec = sec; satState.sh = [sv.x / sn, sv.y / sn, sv.z / sn]; satState.H = horToEqj(t); satState.key = cfg.lat + "|" + cfg.lon;
+  }
+  const sh = satState.sh;
+  const s = r.x * sh[0] + r.y * sh[1] + r.z * sh[2], perp = Math.hypot(r.x - s * sh[0], r.y - s * sh[1], r.z - s * sh[2]);
+  const lit = s > 0 || perp > R_EARTH;
+  if (satState.key !== cfg.lat + "|" + cfg.lon) { satState.sec = null; return satState(x, date); }
+  return { v: Solver.mul(satState.H, hv(az, alt)), az, alt, height: Math.hypot(r.x, r.y, r.z) - R_EARTH, range: la.rangeSat, lit };
+}
+function satVec(x, date) { const s = satState(x, date); return s ? s.v : [0, 0, -1]; }
+// All satellites above the horizon, recomputed at most 4 times a second (they move up to about 1° per second)
+function satsNow() {
+  if (!satsOn()) return [];
+  const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + st.tOff;
+  if (now - SAT.posAt < 250 && SAT.posKey === key) return SAT.pos;
+  SAT.posAt = now; SAT.posKey = key;
+  const d = skyDate(), out = [];
+  for (const x of SAT.list) { const s = satState(x, d); if (s && s.alt > -1) out.push(Object.assign(s, { x })); }
+  return SAT.pos = out;
+}
+addEventListener("online", () => loadSats(true));
+addEventListener("offline", () => { syncSatState(); st.filterVer++; lastSig = []; updateGuide(); });
+setInterval(() => loadSats(false), 10 * 60e3);
 async function loadDeep() {
   try {
     const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);
@@ -1678,7 +1747,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -1860,6 +1929,25 @@ function drawOverlay(dpr) {
       }
       c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); label(c, de, x + 10 * dpr, y + 12 * dpr);
     });
+  }
+  // Satellites: lit ones bright with a short tail showing where they move, those in Earth's shadow dim
+  st.drawnSats = [];
+  if (show.sats && satsOn()) {
+    const sats = satsNow(), d0 = skyDate();
+    c.font = `${11.5 * dpr}px ${col("--font-ui")}`;
+    for (const s of sats) {
+      if (s.alt < 0) continue;
+      const p = Solver.skyToPix(sol, s.v); if (!p || p.z < 0.2 || !inView(p)) continue;
+      const [x, y] = P(p.x, p.y), iss = s.x.name === "ISS", tgt = "SAT" + s.x.norad === cfg.target;
+      if (s.lit) {
+        const back = satState(s.x, new Date(d0.getTime() - 20000)), q = back && Solver.skyToPix(sol, back.v);
+        if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = "rgba(140,220,255,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
+        c.fillStyle = "#9be3ff"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
+      } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
+      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; label(c, s.x.name, x + 8 * dpr, y - 8 * dpr); }
+      st.drawnSats.push(s);
+    }
+    c.fillStyle = col("--fg");
   }
   // Telescope crosshair
   // Horizon and cardinal directions
@@ -2330,6 +2418,12 @@ function messierObj(row) {
       ["In-The-Sky", "https://in-the-sky.org/data/object.php?id=" + id],
       ["Wikipedia", "https://en.wikipedia.org/wiki/Messier_" + id.slice(1)]] };
 }
+function satObj(x) {
+  const s = satState(x, skyDate());
+  return { id: "SAT" + x.norad, kind: "sat", name: x.name, desig: [x.full !== x.name ? x.full : "", "Satellite", s ? Math.round(s.height) + " km high, " + Math.round(s.range) + " km away" : "", s ? (s.lit ? "lit by the Sun" : "in Earth’s shadow") : ""].filter(Boolean).join(" · "),
+    vec: t => satVec(x, t.date),
+    links: [["Heavens-Above", "https://www.heavens-above.com/orbit.aspx?satid=" + x.norad]] };
+}
 function ngcObj(o) {
   const size = o.size ? (o.size >= 60 ? (o.size / 60).toFixed(1) + "°" : Math.round(o.size) + "′") : "";
   return { id: o.id, kind: "dso", name: o.name ? o.id + " · " + o.name : o.id, desig: [o.type, size && "size " + size].filter(Boolean).join(" · "), mag: o.mag,
@@ -2355,6 +2449,7 @@ function pickAt(clientX, clientY, pointsOnly) {
   if (show.solar) PLANETS.forEach(([de, en]) => consider(targetById(en).vec(t), 14, () => planetObj(de, en)));
   if (!pointsOnly) MESSIER.forEach((row, i) => { if (show[MSV[i].cls]) consider(MSV[i].v, 8, () => messierObj(row)); });
   if (!pointsOnly) (st.drawnNgc || []).forEach(o => consider(o.v, 4, () => ngcObj(o)));
+  if (!pointsOnly) (st.drawnSats || []).forEach(s => consider(s.v, 10, () => satObj(s.x)));
   for (let k = 0; show.stars && k < Solver.cat.n; k++) {
     const m = STARS[3 * k + 2]; if (m > Math.min(5.5, show.mag)) break;          // catalog is sorted by brightness
     consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
@@ -2597,7 +2692,7 @@ async function setPointer(v) {
 const same = (a, b) => Object.keys(SHOW_DEF).every(k => a[k] === b[k]);
 function presetOf(show) { return Object.keys(PRESETS).find(k => same(show, PRESETS[k].show)) || null; }
 function filterName() { const k = presetOf(cfg.show); return k ? PRESETS[k].label : "Custom"; }
-function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); }
+function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); if (show.sats) loadSats(false); }
 function syncFilter() {
   const sh = cfg.show, pk = presetOf(sh);
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);
@@ -2687,7 +2782,7 @@ resize(); syncSettings(); renderChips();
 st.solMode = "map";
 updateGuide(); renderReadout();
 requestAnimationFrame(draw);
-loadDeep();
+loadDeep(); loadSats(true);
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
 </script>
