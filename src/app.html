@@ -1398,8 +1398,15 @@ function selectTarget(id, confirmed) {
 // centre), so it stays valid for any image size, zoom level and for the sky map in tracking mode.
 const topMode = () => cfg.pointer === "top";
 // The eyepiece point is kept separately for the two pointing modes (camera / top edge of the phone)
-function curTele() { return (topMode() ? cfg.teleTop : cfg.tele) || { x: 0, y: 0 }; }
-function setTele(t) { if (topMode()) cfg.teleTop = t; else cfg.tele = t; save(); }
+// The telescope sits fixed against the phone, but the camera image turns with the screen (portrait / landscape).
+// So the camera-mode point is stored as seen in portrait and turned to the current screen rotation when used.
+function scrTurn() { return topMode() || mirrored() ? 0 : ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R; }
+function turnTele(t, th) { const x = +t.x || 0, y = +t.y || 0, c = Math.cos(th), s = Math.sin(th); return { x: c * x + s * y, y: -s * x + c * y }; }
+function curTele() {
+  if (topMode()) return cfg.teleTop || { x: 0, y: 0 };
+  const t = cfg.tele || { x: 0, y: 0 }, th = scrTurn(); return th ? turnTele(t, th) : t;
+}
+function setTele(t) { if (topMode()) cfg.teleTop = t; else { const th = scrTurn(); cfg.tele = th ? turnTele(t, -th) : t; } save(); }
 function teleCam() { const t = curTele(), x = +t.x || 0, y = +t.y || 0, n = Math.hypot(x, y, 1); return [x / n, y / n, 1 / n]; }
 function telePix(sol) {
   const p = Solver.skyToPix(sol, Solver.mul(sol.R, teleCam()));
@@ -1713,8 +1720,8 @@ const onScreenTurn = () => {
 if (screen.orientation) screen.orientation.addEventListener("change", onScreenTurn); else addEventListener("orientationchange", onScreenTurn);
 // Camera model for the compass view without a solution
 function approxCamera() {
-  if (st.source === "map") { const W = view.width, H = view.height, f = (W / 2) / Math.tan(st.mapView.fov / 2 * D2R);
-    return { w: W, h: H, cx: W / 2, cy: H / 2, f, k1: 0, poly: null, matches: [], fov: st.mapView.fov, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0 }; }
+  if (st.source === "map") { const W = view.width, H = view.height, f = mapF(W, H);
+    return { w: W, h: H, cx: W / 2, cy: H / 2, f, k1: 0, poly: null, matches: [], fov: 2 * Math.atan(W / 2 / f) * R2D, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0 }; }
   let w = 1280, h = 720;
   if (st.stream && video.videoWidth) [w, h] = sizeFor(video.videoWidth, video.videoHeight, MAXLONG);
   else if (st.frame) { w = st.frame.w; h = st.frame.h; }
@@ -1913,6 +1920,9 @@ function dsoSymbol(c, cls, x, y, r) {
 }
 const NAMED = Object.entries(STARINFO).map(([i, inf]) => ({ k: +i, inf, mag: STARS[3 * +i + 2], lab: STARLABELS[i] || inf[0] || "" })).sort((a, b) => a.mag - b.mag);
 function hv(az, alt) { const a = az * D2R, h = alt * D2R; return [Math.cos(h) * Math.cos(a), -Math.cos(h) * Math.sin(a), Math.sin(h)]; }  // north-west-zenith
+// The map's field of view spans the shorter screen side: turning the phone to landscape must not change the scale
+// (rings, eyepiece and finder circles keep their size relative to the stars and to the screen)
+function mapF(W, H) { return (Math.min(W, H) / 2) / Math.tan(st.mapView.fov / 2 * D2R); }
 function mapSol() {
   const M = skyNow().M, W = view.width, H = view.height, mv = st.mapView;
   const z = hv(mv.az, mv.alt);
@@ -1920,8 +1930,8 @@ function mapSol() {
   let n = Math.hypot(...up); if (n < 1e-6) { up = hv(mv.az + 180, 0); n = 1; }
   const y = up.map(q => -q / n), x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
   const Rh = [[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]];
-  const f = (W / 2) / Math.tan(mv.fov / 2 * D2R);
-  return { R: mm3(M, Rh), f, w: W, h: H, cx: W / 2, cy: H / 2, k1: 0, poly: null, matches: [], fov: mv.fov, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0, approx: true };
+  const f = mapF(W, H);
+  return { R: mm3(M, Rh), f, w: W, h: H, cx: W / 2, cy: H / 2, k1: 0, poly: null, matches: [], fov: 2 * Math.atan(W / 2 / f) * R2D, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0, approx: true };
 }
 // A solved photo without Align: drag and pinch move the sky around it like on the map (the photo stays in place on the sky)
 const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
@@ -3185,9 +3195,9 @@ function handleTap(e) {
   }
   const c = Solver.mulT(sol.R, v);
   if (!(c[2] > 0.2)) { hint("That point is outside the camera’s view.", 3000); return; }
-  cfg.tele = { x: c[0] / c[2], y: c[1] / c[2] }; save();
+  setTele({ x: c[0] / c[2], y: c[1] / c[2] });
   setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
-  const off = Math.atan(Math.hypot(cfg.tele.x, cfg.tele.y)) * R2D;
+  const off = Math.atan(Math.hypot(curTele().x, curTele().y)) * R2D;
   hint("Eyepiece point set" + (name ? " on " + name : "") + " · " + fmtDeg(off) + " from the image centre.", 4000);
 }
 // Without image detection (Align, compass mode): the star centred in the eyepiece is tapped on the map.
