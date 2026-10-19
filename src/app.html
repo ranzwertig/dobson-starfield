@@ -153,6 +153,17 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip svg { width: 15px; height: 15px; flex: none; }
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
+/* Eyepiece view: a round inset at the bottom left showing the field of the eyepiece or finder */
+.epview { --ep: 168px; pointer-events: auto; display: grid; gap: 4px; justify-items: start; margin-bottom: 4px; }
+.stage .epview canvas { position: static; inset: auto; width: var(--ep); height: var(--ep); border-radius: 50%; display: block; background: #000; border: 1px solid var(--line); box-shadow: 0 2px 14px rgba(0,0,0,.55); cursor: pointer; }
+.epview .calchip { color: var(--fg); border-color: var(--line); }
+@media (min-width: 900px) and (min-height: 500px) { .epview { --ep: 230px; } }
+@media (max-height: 560px) { .epview { --ep: 128px; } }
+.eps { display: grid; gap: 8px; margin: 4px 0 8px; }
+.eprow { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 8px; align-items: end; }
+.eprow .epsel { padding-bottom: 10px; }
+.eprow .epsel input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.eprow small { grid-column: 2 / 4; color: var(--muted); font-size: 12.5px; margin-top: -4px; }
 @media (prefers-reduced-motion: reduce) { .update { animation: none; } }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand img { border-radius: 8px; }
@@ -384,6 +395,10 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="hint" id="hint" hidden></div>
     <div class="corner">
+      <div class="epview" id="epView" hidden>
+        <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
+        <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      </div>
       <div class="calchip" id="filterChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>
         <button class="chiplabel" id="filterChipTxt" aria-label="Change filter"></button>
@@ -581,6 +596,14 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="switch"><input type="checkbox" id="qMirror" aria-label="Mirrored image"><i></i></label>
       </div>
     </div>
+    <div class="qrow">
+      <div class="qlabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
+      <select id="qEp" aria-label="Eyepiece in use"></select>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Eyepiece view <span class="qsub">what you should see, bottom left</span></div>
+        <label class="switch"><input type="checkbox" id="qView" aria-label="Eyepiece view"><i></i></label>
+      </div>
+    </div>
     <div class="qrow qline" id="qTeleRow">
       <div class="qlabel">Eyepiece point <span class="qsub" id="qTeleTxt"></span></div>
       <button class="btn" id="qTeleReset">Reset</button>
@@ -615,7 +638,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
         <label class="check"><input type="radio" name="pointer" value="top"> Top edge: the top of the phone points along the telescope</label>
       </div>
-      <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (“Mirrored image” is switched on when you start the camera).</p>
+      <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (when you start the camera, the app asks whether the optic mirrors the image).</p>
     </fieldset>
     <fieldset>
       <legend>Camera</legend>
@@ -660,6 +683,30 @@ a.btn { text-decoration: none; color: var(--fg); }
       <p class="note" id="teleInfo"></p>
       <div class="row"><button class="btn" id="btnTeleReset">Reset to image centre</button></div>
     </fieldset>
+    <fieldset id="optics">
+      <legend>Telescope and eyepieces</legend>
+      <div class="row">
+        <label>Telescope focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
+        <label>Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.5"></label>
+      </div>
+      <div class="eps" id="oEps"></div>
+      <div class="row"><button class="btn" id="oEpAdd">Add eyepiece</button></div>
+      <p class="note">The selected eyepiece is used on the map and in the eyepiece view. Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces. True field = apparent field × eyepiece focal length ÷ telescope focal length.</p>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
+        <label class="check"><input type="checkbox" id="oRing"> Eyepiece and finder field on the map</label>
+        <label class="check"><input type="checkbox" id="oView"> Eyepiece view at the bottom left</label>
+      </div>
+      <div class="row">
+        <label style="flex-basis:100%">Eyepiece view orientation<select id="oOrient">
+          <option value="newton">Upside down (Newtonian, Dobson, straight finder)</option>
+          <option value="upright">Upright, as with the naked eye (right-angle correct-image finder)</option>
+          <option value="mirror">Mirrored (star diagonal on a refractor or SCT)</option>
+        </select></label>
+        <label>Turn the view by: <span id="oRotV"></span><input type="range" id="oRot" min="-180" max="180" step="5"></label>
+      </div>
+      <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to about magnitude 6, Messier objects, the Moon and planets.</p>
+    </fieldset>
     <p class="note">Star catalogue: Hipparcos/Yale to magnitude 6 from d3-celestial (BSD). Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
 </div>
@@ -682,6 +729,9 @@ document.addEventListener("touchmove", e => { if (e.touches.length > 1 && !e.tar
 const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 }, fovRange: "25-85", stack: 6, sigma: 5, lines: true, names: true, det: true, red: false, fill: true, compassCal: 0, fabLabels: true, map: true, tele: { x: 0, y: 0 }, target: "M31" };
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
+// Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
+const OPT_DEF = { scope: 1200, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
+cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
@@ -1113,7 +1163,7 @@ function updateGuide() {
   $("altW").textContent = Math.abs(dAlt) < 0.1 ? "altitude on target" : dAlt > 0 ? "tilt up" : "tilt down";
   $("azArrow").style.transform = dAz < 0 ? "scaleX(-1)" : "";
   $("altArrow").style.transform = dAlt < 0 ? "scaleY(-1)" : "";
-  const hit = sep < 0.4;
+  const hit = sep < hitRadius();
   g.classList.toggle("hit", hit);
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
   $("totalTxt").textContent = th.alt < 0 ? T.name + " is below the horizon right now" : hit ? T.name + " should be in the eyepiece" : fmtDeg(sep) + " to " + T.name;
@@ -1540,7 +1590,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
-    st.filterVer, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -1604,6 +1654,7 @@ function draw() {
     fit = { sc: fsc, ox, oy, w: ref.w, h: ref.h, dpr };
     drawOverlay(dpr);
   }
+  drawEyepiece();
 }
 const P = (x, y) => [fit.ox + x * fit.sc, fit.oy + y * fit.sc];
 let insetCache = null;
@@ -1713,6 +1764,7 @@ function drawOverlay(dpr) {
     [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); });
     c.stroke(); c.globalAlpha = 1;
   }
+  drawRings(c, sol, tx, ty, dpr, col);
   // Target + arrow
   const T = targetById(cfg.target), tvec = T && vecNow(T);
   if (T) {
@@ -1759,6 +1811,131 @@ function drawOverlay(dpr) {
   }
   c.globalAlpha = 1;
 }
+
+/* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
+function opt() { return cfg.optics; }
+function curEp() { const o = opt(); return o.eps.length ? o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))] : null; }
+function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
+function fmtField(d) { return d < 1 ? Math.round(d * 60) + "′" : (d < 10 ? d.toFixed(1) : d.toFixed(0)) + "°"; }
+function epLabel(e) { const d = epData(e); return e.f + " mm · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
+// "Should be in the eyepiece": within the inner part of the selected eyepiece's field
+function hitRadius() { const e = curEp(); return e ? Math.max(0.05, epData(e).fov / 2 * 0.7) : 0.4; }
+function setOptics(patch) { Object.assign(cfg.optics, patch); save(); st.opticsVer = (st.opticsVer || 0) + 1; syncOptics(); updateGuide(); }
+// Telrad rings (0.5°, 2°, 4°) and the true field of eyepiece and finder, centred on the crosshair
+function drawRings(c, sol, tx, ty, dpr, col) {
+  const o = opt(); if (!o.telrad && !o.ring) return;
+  const rad = d => Math.tan(d / 2 * D2R) * sol.f * fit.sc, maxR = Math.hypot(view.width, view.height);
+  const ring = (d, txt) => { const r = rad(d); if (r < 5 * dpr || r > maxR) return; c.beginPath(); c.arc(tx, ty, r, 0, 7); c.stroke();
+    if (txt) { c.fillText(txt, tx + r * 0.71 + 4 * dpr, ty - r * 0.71 - 4 * dpr); } };
+  c.save(); c.font = `${11 * dpr}px ${col("--font-ui")}`; c.textBaseline = "alphabetic";
+  if (o.telrad) { c.strokeStyle = c.fillStyle = col("--target"); c.globalAlpha = 0.55; c.lineWidth = 1.2 * dpr; [0.5, 2, 4].forEach(d => ring(d, null)); }
+  if (o.ring) {
+    c.globalAlpha = 0.8; c.strokeStyle = c.fillStyle = col("--fg"); c.lineWidth = 1.2 * dpr;
+    const e = curEp(); if (e) ring(epData(e).fov, e.f + " mm");
+    c.setLineDash([5 * dpr, 5 * dpr]); if (+o.finder > 0) ring(+o.finder, "finder"); c.setLineDash([]);
+  }
+  c.restore();
+}
+// Eyepiece view: the field around where the telescope points, oriented like in the eyepiece. Up is the zenith (as seen
+// with the naked eye), turned upside down for a Newtonian or mirrored for a star diagonal, plus a fine rotation.
+function drawEyepiece() {
+  const box = $("epView"), o = opt(), on = !!(o.view && st.sol);
+  if (box.hidden === on) box.hidden = !on;
+  if (!on) return;
+  const cv = $("epCanvas"), dpr = Math.min(2, devicePixelRatio || 1), S = Math.round(cv.clientWidth * dpr) || 1;
+  if (cv.width !== S) { cv.width = S; cv.height = S; }
+  const c = cv.getContext("2d"), sk = skyNow(), col = n => sk.col[n], sol = st.sol;
+  const ep = curEp(), finder = o.src === "finder" || !ep, fov = finder ? Math.max(0.5, +o.finder || 6) : epData(ep).fov;
+  const lab = finder ? "Finder · " + fmtField(fov) : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const v = teleVec() || Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(sk.M, [0, 0, 1]);
+  let up = zen.map((q, i) => q - dot(zen, v) * v[i]), n = Math.hypot(...up);
+  if (n < 1e-4) { up = Solver.mul(sol.R, [0, -1, 0]); n = Math.hypot(...up); }
+  up = up.map(q => q / n);
+  const right = [v[1] * up[2] - v[2] * up[1], v[2] * up[0] - v[0] * up[2], v[0] * up[1] - v[1] * up[0]];
+  const R = S / 2, Rf = R - 2 * dpr, k = Rf / Math.tan(fov / 2 * D2R), cosLim = Math.cos(Math.min(89, fov * 0.75) * D2R);
+  const th = ((+o.rot || 0) + (o.orient === "newton" ? 180 : 0)) * D2R, ct = Math.cos(th), sn = Math.sin(th), mir = o.orient === "mirror" ? -1 : 1;
+  const toScr = (X, Y) => { X *= mir; return [R + k * (X * ct - Y * sn), R - k * (X * sn + Y * ct)]; };
+  const proj = w => { const d = dot(w, v); return d < cosLim ? null : toScr(dot(w, right) / d, dot(w, up) / d); };
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, S, S);
+  c.save(); c.beginPath(); c.arc(R, R, Rf, 0, 7); c.fillStyle = "#04060a"; c.fill(); c.clip();
+  c.font = `${11 * dpr}px ${col("--font-ui")}`; c.textBaseline = "middle";
+  // stars: brighter ones larger; in a narrow field the few visible stars are drawn a bit bigger
+  const big = Math.max(1, Math.min(1.8, 3 / Math.sqrt(fov))), cvs = Solver.cat.v, N = Solver.cat.n;
+  c.fillStyle = "rgba(225,232,255,.95)";
+  for (let i = 0; i < N; i++) {
+    const w = cvs[i]; if (dot(w, v) < cosLim) continue;
+    const p = proj(w); if (!p) continue; const m = STARS[3 * i + 2];
+    const r = Math.max(0.7, (6.8 - m) * 0.55 * big) * dpr; c.beginPath(); c.arc(p[0], p[1], r, 0, 7); c.fill();
+  }
+  c.fillStyle = col("--fg");
+  for (const S2 of NAMED) { if (S2.mag > 3.5) break; if (!S2.lab) continue; const p = proj(cvs[S2.k]); if (p) c.fillText(S2.lab, p[0] + 7 * dpr, p[1]); }
+  c.strokeStyle = col("--accent"); c.fillStyle = col("--accent"); c.lineWidth = 1.3 * dpr;
+  MSV.forEach(({ id, cls, v: w }) => { const p = proj(w); if (!p) return; dsoSymbol(c, cls, p[0], p[1], 7 * dpr); c.fillText(id, p[0] + 10 * dpr, p[1] - 9 * dpr); });
+  PLANETS.forEach(([de, en]) => {
+    const w = sk.planets.get(en); const p = w && proj(w); if (!p) return;
+    if (en === "Sun" || en === "Moon") { c.fillStyle = en === "Sun" ? "#ffd34d" : "#d9d6cc"; c.beginPath(); c.arc(p[0], p[1], Math.max(4 * dpr, Math.tan(0.26 * D2R) * k), 0, 7); c.fill(); }
+    else { c.fillStyle = "#f4ead0"; c.beginPath(); c.arc(p[0], p[1], 2.6 * dpr * big, 0, 7); c.fill(); }
+    c.fillStyle = col("--fg"); c.fillText(de, p[0] + 8 * dpr, p[1] + 10 * dpr);
+  });
+  // target: ring inside the field, otherwise an arrow at the edge pointing towards it
+  const T = targetById(cfg.target), tv = T && vecNow(T);
+  if (tv) {
+    c.strokeStyle = c.fillStyle = col("--target"); c.lineWidth = 2 * dpr;
+    const p = proj(tv), inside = p && Math.hypot(p[0] - R, p[1] - R) < Rf - 6 * dpr;
+    if (inside) { c.beginPath(); c.arc(p[0], p[1], 11 * dpr, 0, 7); c.stroke(); }
+    else {
+      const q = toScr(dot(tv, right), dot(tv, up)), a = Math.atan2(q[1] - R, q[0] - R), ex = R + Math.cos(a) * (Rf - 4 * dpr), ey = R + Math.sin(a) * (Rf - 4 * dpr), s = 11 * dpr;
+      c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex - s * Math.cos(a - 0.5), ey - s * Math.sin(a - 0.5)); c.lineTo(ex - s * Math.cos(a + 0.5), ey - s * Math.sin(a + 0.5)); c.closePath(); c.fill();
+    }
+  }
+  c.restore();
+  // field stop and a fine centre mark
+  c.strokeStyle = col("--line") || "#333"; c.lineWidth = 2 * dpr; c.globalAlpha = sol.approx ? 0.5 : 1; c.beginPath(); c.arc(R, R, Rf, 0, 7); c.stroke(); c.globalAlpha = 1;
+  c.strokeStyle = col("--accent"); c.globalAlpha = 0.7; c.lineWidth = 1 * dpr; c.beginPath();
+  [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(R + a * 5 * dpr, R + b * 5 * dpr); c.lineTo(R + a * 13 * dpr, R + b * 13 * dpr); }); c.stroke(); c.globalAlpha = 1;
+}
+function syncOptics() {
+  const o = opt(), box = $("oEps");
+  if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
+  if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
+  $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!o.view;
+  $("oOrient").value = o.orient; $("oRot").value = o.rot; $("oRotV").textContent = (o.rot > 0 ? "+" : "") + o.rot + "°";
+  if (!box.contains(document.activeElement)) {
+    box.textContent = "";
+    o.eps.forEach((e, i) => {
+      const row = document.createElement("div"); row.className = "eprow";
+      row.innerHTML = `<label class="epsel"><input type="radio" name="epSel" aria-label="Use this eyepiece"></label>
+        <label>Eyepiece (mm)<input type="number" min="2" max="60" step="0.5" data-k="f"></label>
+        <label>Apparent field (°)<input type="number" min="30" max="120" step="1" data-k="a"></label>
+        <button class="iconbtn" aria-label="Remove eyepiece"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button><small></small>`;
+      row.querySelector("[type=radio]").checked = i === (o.ep | 0);
+      row.querySelector("[type=radio]").onchange = () => setOptics({ ep: i });
+      row.querySelectorAll("[data-k]").forEach(inp => { inp.value = e[inp.dataset.k];
+        inp.onchange = () => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setOptics({}); }; });
+      row.querySelector("button").onclick = () => { o.eps.splice(i, 1); setOptics({ ep: Math.min(o.ep | 0, Math.max(0, o.eps.length - 1)) }); };
+      row.querySelector("small").textContent = Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov);
+      box.append(row);
+    });
+  }
+  const q = $("qEp"); q.textContent = "";
+  o.eps.forEach((e, i) => { const op = document.createElement("option"); op.value = i; op.textContent = epLabel(e); q.append(op); });
+  const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = "Finder · " + fmtField(+o.finder || 6); q.append(fo);
+  q.value = o.src === "finder" || !o.eps.length ? "finder" : String(o.ep | 0);
+}
+$("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
+$("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
+$("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
+$("oTelrad").onchange = () => setOptics({ telrad: $("oTelrad").checked });
+$("oRing").onchange = () => setOptics({ ring: $("oRing").checked });
+$("oView").onchange = () => setOptics({ view: $("oView").checked });
+$("qView").onchange = () => setOptics({ view: $("qView").checked });
+$("oOrient").onchange = () => setOptics({ orient: $("oOrient").value });
+$("oRot").oninput = () => setOptics({ rot: +$("oRot").value });
+$("qEp").onchange = () => { const v = $("qEp").value; setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: +v }); };
+$("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
+$("epSrc").onclick = () => $("epCanvas").onclick();
+$("epClose").onclick = () => setOptics({ view: false });
 
 /* ---------------- Tap telescope point ---------------- */
 // The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
@@ -1828,6 +2005,7 @@ function syncSettings() {
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
+  if (typeof syncOptics === "function") syncOptics();
   const tx = +curTele().x || 0, ty = +curTele().y || 0;
   const ref = topMode() && !liveCam() ? "where the top edge points" : "the image centre";
   $("teleInfo").textContent = Math.hypot(tx, ty) < 1e-5 ? (topMode() && !liveCam() ? "The telescope is set to point where the top edge of the phone points." : "The telescope is set to point at the centre of the camera image.") :
@@ -2094,6 +2272,7 @@ function syncQuick() {
   const cal = +cfg.compassCal || 0;
   $("qCalTxt").textContent = cal ? fmtSigned(cal) : "none";
   $("qCalOff").disabled = !cal;
+  syncOptics();
   const src = $("camSel"), dst = $("qCam");
   if (src) { dst.innerHTML = src.innerHTML; dst.value = src.value; }
 }
