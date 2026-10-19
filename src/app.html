@@ -1469,9 +1469,15 @@ function draw() {
   if (ref) {
     const bw = src ? sw : ref.w, bh = src ? sh : ref.h;
     const sc0 = (cfg.fill ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;
-    const dw = bw * sc, dh = bh * sc, ox = W / 2 - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
+    const dw = bw * sc, dh = bh * sc, fsc = dw / ref.w;
+    let ox = W / 2 - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
+    // Keep the telescope in the middle: shift map and image so the crosshair (eyepiece point) sits at the centre
+    if (st.sol && st.solMode !== "map" && st.sol === ref) {
+      const tp = telePix(st.sol);
+      ox += (ref.w / 2 - tp.x) * fsc; oy += (ref.h / 2 - tp.y) * fsc;
+    }
     if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
-    fit = { sc: dw / ref.w, ox, oy, w: ref.w, h: ref.h, dpr };
+    fit = { sc: fsc, ox, oy, w: ref.w, h: ref.h, dpr };
     drawOverlay(dpr);
   }
 }
