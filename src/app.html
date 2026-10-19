@@ -1253,6 +1253,9 @@ async function solveNow() {
     const sol = res.sol;
     if (sol && sol.ok) {
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
+      // a solved photo: keep its solution, the view (st.sol) can then be turned and zoomed around it
+      st.photoSol = isPhoto ? sol : null; st.photoMoved = false;
+      if (isPhoto) { st.sol = Object.assign({}, sol, { R: sol.R.map(r => r.slice()) }); zoom.z = 1; zoom.x = 0; zoom.y = 0; }
       st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
       if (st.base && devAtCapture && (mirrored() || topMode())) learnMirrorK(sol, devAtCapture);
       if (st.base) st.base.K = camK();
@@ -1858,14 +1861,26 @@ function mapSol() {
   const f = (W / 2) / Math.tan(mv.fov / 2 * D2R);
   return { R: mm3(M, Rh), f, w: W, h: H, cx: W / 2, cy: H / 2, k1: 0, poly: null, matches: [], fov: mv.fov, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0, approx: true };
 }
-function mapGestures() { return st.source === "map" && st.solMode !== "track"; }
+// A solved photo without Align: drag and pinch move the sky around it like on the map (the photo stays in place on the sky)
+const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
+function mapGestures() { return (st.source === "map" && st.solMode !== "track") || photoSky(); }
+function photoRotate(dx, dy) {
+  const sol = st.sol, k = 1 / (sol.f * fit.sc), a = -dx * k, b = dy * k, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  sol.R = mm3(mm3(sol.R, [[ca, 0, sa], [0, 1, 0], [-sa, 0, ca]]), [[1, 0, 0], [0, cb, -sb], [0, sb, cb]]);
+  st.photoMoved = true;
+}
+function photoZoom(factor) {
+  const sol = st.sol, f0 = st.photoSol.f; sol.f = Math.max(f0 * 0.12, Math.min(f0 * 10, sol.f * factor));
+  sol.fov = 2 * Math.atan(sol.w / 2 / sol.f) * R2D; sol.fovV = 2 * Math.atan(sol.h / 2 / sol.f) * R2D; st.photoMoved = true;
+}
 function mapRotate(dx, dy) {   // finger drag: sky follows the finger
+  if (photoSky()) return photoRotate(dx, dy);
   if (st.sensor) return;
   const mv = st.mapView, k = mv.fov / view.width;
   mv.az = (mv.az - dx * k / Math.max(0.25, Math.cos(mv.alt * D2R)) + 360) % 360;
   mv.alt = Math.max(-30, Math.min(90, mv.alt + dy * k));
 }
-function mapZoom(factor) { st.mapView.fov = Math.max(4, Math.min(140, st.mapView.fov / factor)); }
+function mapZoom(factor) { if (photoSky()) return photoZoom(factor); st.mapView.fov = Math.max(4, Math.min(140, st.mapView.fov / factor)); }
 function drawHorizon(c, sol, dpr, t, col) {
   const M = skyNow().M, W = view.width, H = view.height;
   const toPix = (az, alt) => { const p = Solver.skyToPix(sol, Solver.mul(M, hv(az, alt))); return p && p.z > 0.05 ? P(p.x, p.y) : null; };
@@ -1922,7 +1937,10 @@ view.addEventListener("pointermove", e => {
     else if (zoom.z > 1) { zoom.x = gest.px + x - gest.x0; zoom.y = gest.py + y - gest.y0; clampPan(); }
   } else if (gest.kind === "pinch" && ptrs.size >= 2) {
     const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
-    if (mapGestures()) { if (gest.f0 == null) gest.f0 = st.mapView.fov; st.mapView.fov = Math.max(4, Math.min(140, gest.f0 * gest.d0 / d)); return; }
+    if (mapGestures()) {
+      if (photoSky()) { if (gest.f0 == null) gest.f0 = st.sol.f; photoZoom(gest.f0 * d / gest.d0 / st.sol.f); return; }
+      if (gest.f0 == null) gest.f0 = st.mapView.fov; st.mapView.fov = Math.max(4, Math.min(140, gest.f0 * gest.d0 / d)); return;
+    }
     zoom.z = gest.z0; zoom.x = gest.px; zoom.y = gest.py;
     zoomAbout(gest.mx, gest.my, gest.z0 * d / gest.d0);
     zoom.x += mx - gest.mx; zoom.y += my - gest.my; clampPan();
@@ -1934,7 +1952,8 @@ const endPtr = e => {
   if (gest && gest.kind === "pan" && !gest.moved && e.type === "pointerup") {
     const now = performance.now();
     if (now - lastTap < 300 && !st.teleMode) { lastTap = 0;
-      if (mapGestures()) mapZoom(st.mapView.fov > 30 ? 2.5 : 0.4);
+      if (photoSky()) { if (st.photoMoved) { st.sol = Object.assign({}, st.photoSol, { R: st.photoSol.R.map(r => r.slice()) }); st.photoMoved = false; } else photoZoom(0.4); }   // double tap: back to the photo, or zoom out
+      else if (mapGestures()) mapZoom(st.mapView.fov > 30 ? 2.5 : 0.4);
       else if (zoom.z > 1) zoomAbout(0, 0, 1); else { const [x, y] = canvasXY(e); zoomAbout(x, y, 3); } }
     else { lastTap = now; handleTap(e); }
   }
@@ -2016,14 +2035,26 @@ function draw() {
       const tp = telePix(st.sol);
       ox += (ref.w / 2 - tp.x) * fsc; oy += (ref.h / 2 - tp.y) * fsc;
     }
-    if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
-    else if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
     fit = { sc: fsc, ox, oy, w: ref.w, h: ref.h, dpr };
+    if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
+    else if (showImg && st.photoSol && st.source === "photo" && st.sol && st.photoMoved) drawPhotoInView(src, sw, sh);
+    else if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
     drawOverlay(dpr);
   }
   drawEyepiece();
 }
 const P = (x, y) => [fit.ox + x * fit.sc, fit.oy + y * fit.sc];
+// The solved photo placed on the sky of the current view: photo pixel -> sky (its solution) -> view pixel -> screen,
+// approximated by an affine map around the photo centre (good enough for the usual camera fields)
+function drawPhotoInView(src, sw, sh) {
+  const ps = st.photoSol, sol = st.sol, d = ps.w / 4;
+  const at = (x, y) => { const p = Solver.skyToPix(sol, Solver.pixToSky(ps, x, y)); return p && p.z > 0.2 ? P(p.x, p.y) : null; };
+  const c0 = at(ps.cx, ps.cy), cx = at(ps.cx + d, ps.cy), cy = at(ps.cx, ps.cy + d); if (!c0 || !cx || !cy) return;
+  const a = (cx[0] - c0[0]) / d, b = (cx[1] - c0[1]) / d, c = (cy[0] - c0[0]) / d, e = (cy[1] - c0[1]) / d;
+  const kx = ps.w / sw, ky = ps.h / sh;
+  vctx.save(); vctx.setTransform(a * kx, b * kx, c * ky, e * ky, c0[0] - a * ps.cx - c * ps.cy, c0[1] - b * ps.cx - e * ps.cy);
+  vctx.drawImage(src, 0, 0, sw, sh); vctx.restore();
+}
 let insetCache = null;
 function overlayInsets(dpr) {   // layout reads are cached briefly: reading them every frame forces a layout
   const now = performance.now();
@@ -2043,7 +2074,7 @@ function drawOverlay(dpr) {
   const c = vctx, sol = st.sol, sk = skyNow();
   const col = n => sk.col[n];
   c.lineWidth = 1.2 * dpr; c.font = `${12 * dpr}px ${col("--font-ui")}`;
-  if (cfg.det && st.stars.length && !st.moved) {
+  if (cfg.det && st.stars.length && !st.moved && !st.photoMoved) {
     c.strokeStyle = "rgba(200,210,220,.45)";
     st.stars.slice(0, 60).forEach(s => { const [x, y] = P(s.x, s.y); c.beginPath(); c.arc(x, y, 6 * dpr, 0, 7); c.stroke(); });
   }
@@ -2098,7 +2129,7 @@ function drawOverlay(dpr) {
     c.stroke(); c.globalAlpha /= 0.55;
   }
   c.strokeStyle = col("--ok"); c.lineWidth = 1.5 * dpr;
-  if (!st.moved) sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
+  if (!st.moved && !st.photoMoved) sol.matches.forEach(m => { const [x, y] = P(m.x, m.y); c.beginPath(); c.arc(x, y, 9 * dpr, 0, 7); c.stroke(); });
   c.fillStyle = col("--fg"); c.textBaseline = "middle";
   if (show.stars && show.names) {
     for (const S of NAMED) {
@@ -2334,7 +2365,8 @@ function rowPlan(id, tn) {
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
-const listTab = { v: "todo" }, listState = { scroll: 0 };
+// The list opens on the tab used last (remembered across starts)
+const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
 // Back from details or the target panel that were opened from the list: same tab, same place
 function backToList() { renderList(); openSheet("listSheet"); const inner = $("listSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = listState.scroll; }); }
 function todoItems() {
@@ -2556,8 +2588,7 @@ const isNew = x => x && Date.now() - (x.added || 0) < 10 * 60e3;
 function revealNew() {
   const np = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0], ns = obs.starred.filter(isNew).sort((a, b) => b.added - a.added)[0];
   const newest = np && (!ns || np.added >= ns.added) ? np : ns; if (!newest) return;
-  const tab = newest === ns ? "starred" : sets().tonight.has(newest.id) ? "seen" : "todo";
-  if (tab !== listTab.v) { listTab.v = tab; renderList(); }
+  // stays on the last used tab; scrolls to the new object when it is in this tab
   setTimeout(() => { const row = [...document.querySelectorAll("#listBody .orow")].find(r => r.dataset.id === newest.id); row && row.scrollIntoView({ block: "center", behavior: "smooth" }); }, 380);
 }
 $("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromList = true; hint("Tap the list icon to plan an object for tonight, the star to keep it for some day.", 4000); };
@@ -3492,7 +3523,7 @@ $("fileIn").onchange = async () => {
     const bmp = await createImageBitmap(f);
     if (st.stream) stopCamera();
     st.frame = imageToFrame(bmp, bmp.width, bmp.height, 1600);
-    st.source = "photo"; st.sol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
+    st.source = "photo"; st.sol = null; st.photoSol = null; st.base = null; st.moved = false; st.stars = []; st.photoName = f.name; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     $("fileIn").value = ""; updateGuide(); renderReadout(); solveNow();
   } catch (e) { hint("Could not open the image.", 4000); }
 };
