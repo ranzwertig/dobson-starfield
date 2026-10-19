@@ -525,6 +525,14 @@ a.btn { text-decoration: none; color: var(--fg); }
   </div>
 </div>
 
+<div class="sheet" id="confirmSheet" hidden>
+  <div class="inner" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="note" id="confirmText"></p>
+    <div class="actions"><button class="btn primary" id="confirmOk"></button><button class="btn" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+
 <div class="sheet" id="quickSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
     <div class="grab"><h2 id="quickTitle"><span>Quick settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
@@ -589,7 +597,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
         <label class="check"><input type="radio" name="pointer" value="top"> Top edge: the top of the phone points along the telescope</label>
       </div>
-      <p class="note">Use “Top edge” without camera, for example with the phone strapped along the tube or held like a pointer. Position then comes from compass and motion sensor only (Locate is not available); to make it more accurate, point at a bright star and choose “I’m pointing at it” in its details.</p>
+      <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (“Mirrored image” is switched on when you start the camera).</p>
     </fieldset>
     <fieldset>
       <legend>Camera</legend>
@@ -768,6 +776,13 @@ function imageToFrame(src, sw, sh, maxLong) {
 /* ---------------- Camera ---------------- */
 async function startCamera() {
   if (st.stream) { stopCamera(); return; }
+  if (topMode() && !cfg.mirror) {
+    const ok = await askConfirm("Camera in top edge mode",
+      "The top edge of the phone points along the telescope, so the camera can only see the same sky through a mirror or prism that turns its view over the top of the phone. Turn on “Mirrored image” and start the camera?",
+      "Turn on and start");
+    if (!ok) return;
+    setMirror(true);
+  }
   try {
     const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
     let stream;
@@ -835,11 +850,15 @@ function storeCamProfile() { cfg.cams = cfg.cams || {}; cfg.cams[camKey()] = { f
 function loadCamProfile() { const p = (cfg.cams || {})[camKey()]; cfg.fov.video = p ? p.fov : null; cfg.tele = p ? { ...p.tele } : { x: 0, y: 0 }; cfg.mirror = !!(p && p.mirror); cfg.mirrorK = p ? p.mirrorK || null : null; }
 // Through a mirror the camera image is mirror-inverted: flip it before solving and showing it.
 // The phone's own orientation then no longer tells where the view goes, so the motion sensors are not used with it.
-const mirrored = () => !!cfg.mirror && !topMode();
+const mirrored = () => !!cfg.mirror;
+// Top edge mode with camera: a periscope mirror turns the back camera's view along the top of the phone.
+// Expected camera axes (after flipping the image back): x = -x, down = +z, view = +y of the phone. A Locate refines it.
+const TOP_MIRROR_K = [[-1, 0, 0], [0, 0, 1], [0, 1, 0]];
 function setMirror(on) {
   cfg.mirror = !!on; save(); storeCamProfile(); save();
   st.sol = null; st.base = null; st.stars = []; st.frame = st.source === "video" ? null : st.frame; lastSig = [];
   syncSettings(); updateGuide();
+  if (!on && topMode() && st.stream) { stopCamera(); hint("Mirrored image off: without a mirror the camera doesn’t look along the top edge, so it was switched off.", 6000); return; }
   hint(on ? "Mirrored image on: the camera image is flipped before solving. With Align on, the next Locate also teaches the app where the mirror sends the view." : "Mirrored image off.", 6000);
 }
 async function listCameras() {
@@ -1105,7 +1124,7 @@ function camAxes() {             // camera axes (x right, y down, z view directi
 }
 // Camera axes used with the motion sensors. Through a mirror the view no longer comes out of the back of the
 // phone: the app learns the turned direction from a Locate (see learnMirrorK) and uses it from then on.
-function camK() { return mirrored() ? (cfg.mirrorK || null) : camAxes(); }
+function camK() { return mirrored() ? (cfg.mirrorK || (topMode() ? TOP_MIRROR_K : null)) : camAxes(); }
 // the 24 rotations that map the phone's axes onto each other (mirrors and holders turn the view by multiples of 90°)
 const AXIS_ROTS = (() => {
   const out = [], perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
@@ -1479,8 +1498,6 @@ function updateAvailability() {
   setAvail("btnTele", st.teleMode || teleModeAllowed(), topMode()
     ? "Turn on Align first: the eyepiece point is set on the map that follows the phone."
     : "Eyepiece point needs a known position: tap “Locate”, or turn on Align to set it on the map.");
-  const topWhy = "Not available while the top edge of the phone is the pointer (Settings → Pointing).";
-  if (topMode()) { ["btnAuto", "btnCam", "btnSolve"].forEach(id => setAvail(id, false, topWhy)); setAvail("btnSensor", hasOri, "This device or page provides no orientation sensor (needs HTTPS)."); return; }
   setAvail("btnAuto", st.auto || !!st.stream, "Continuous needs the live camera: turn on the camera first.");
   setAvail("btnCam", hasCam, "No camera access on this page (needs HTTPS and a camera).");
   const noSensorCam = st.stream && st.extCam;
@@ -1779,8 +1796,19 @@ function setPanelOpen(on) {
   const step = () => { resize(); insetCache = null; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
+// Small confirmation dialog; resolves true for the confirm button, false for cancel, ✕, Esc or tapping outside
+function askConfirm(title, text, okLabel) {
+  return new Promise(res => {
+    $("confirmTitleTxt").textContent = title; $("confirmText").textContent = text; $("confirmOk").textContent = okLabel;
+    const sh = $("confirmSheet"); sh._res = res;
+    $("confirmOk").onclick = () => { sh._res = null; closeSheet("confirmSheet"); res(true); };
+    $("confirmCancel").onclick = () => closeSheet("confirmSheet");
+    openSheet("confirmSheet");
+  });
+}
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
+  if (sh._res) { const r = sh._res; sh._res = null; r(false); }
   sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   if (id === "infoSheet") st.picked = null;
   if (!SHEETS.some(x => x.id !== id && !x.hidden && x.classList.contains("open"))) setPanelOpen(false);
@@ -1961,7 +1989,6 @@ function syncQuick() {
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
   $("qLocTxt").textContent = Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
   $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qMirror").checked = !!cfg.mirror;
-  $("qCamRow").hidden = topMode();
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
   $("qTeleReset").disabled = off < 0.01;
@@ -2106,14 +2133,15 @@ $("qTeleReset").onclick = () => { $("btnTeleReset").click(); syncQuick(); };
 $("qCalOff").onclick = () => { setCompassCal(0); syncQuick(); };
 $("qAll").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 document.querySelectorAll('input[name="pointer"]').forEach(r => r.onchange = () => setPointer(r.value));
-function setPointer(v) {
+async function setPointer(v) {
   cfg.pointer = v === "top" ? "top" : "camera"; save();
+  st.base = null;
   if (topMode()) {
-    if (st.stream) stopCamera(); else if (st.source !== "map") showMap();
-    st.base = null; setAuto(false);
-    if (!st.sensor) setSensor(true);
-    hint("Top edge mode: point the top of the phone at the sky. Compass and motion sensor show where it points.", 6000);
-  } else hint("Camera mode: Locate makes the position exact.", 3000);
+    if (st.stream && !cfg.mirror) { stopCamera(); setAuto(false); } else if (!st.stream && st.source !== "map") showMap();
+    if (!st.sensor) await setSensor(true);
+    hint(cfg.mirror ? "Top edge mode with mirror: the camera looks over the top of the phone. Locate makes the position exact."
+      : "Top edge mode: point the top of the phone at the sky. Compass and motion sensor show where it points. To use the camera as well, it needs a mirror.", 7000);
+  } else hint("Camera mode: the back camera looks along the telescope. Locate makes the position exact.", 4000);
   lastSig = []; sensorUpdate(); updateGuide(); syncSettings();
 }
 /* ---------------- Filter ---------------- */
