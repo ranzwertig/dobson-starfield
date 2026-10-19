@@ -1433,13 +1433,25 @@ function showResults() {
     const n = document.createElement("b"); n.textContent = T.name;
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
-    b.append(n, s, a); b.onclick = () => { st.fromList = false; selectTarget(T.id); $("q").value = ""; closeSheet("searchSheet"); };
+    b.append(n, s, a); b.onclick = () => openFromSearch(T);
     if (T.kind === "sat") { box.append(b); return; }
     const pl = T.kind === "sun" ? null : memoPlan(T); if (pl) { b.classList.add("wbar"); b.append(nightBar(pl)); }
     const row = document.createElement("div"); row.className = "rrow";
     const make = () => ({ id: T.id, name: T.name });
     row.append(b, toggleButton("plan", T.id, make), toggleButton("star", T.id, make)); box.append(row);
   });
+}
+// A search result opens its details; ← (or closing them) goes back to the search, same query and place.
+// "Set as target" in the details sets it and closes both.
+const searchState = { scroll: 0, fromList: false };
+function openFromSearch(T) {
+  const o = objById(T.id) || { id: T.id, name: T.name, kind: T.kind, desig: T.sub, mag: T.mag, vec: T.vec };
+  searchState.scroll = $("searchSheet").querySelector(".inner").scrollTop; searchState.fromList = st.fromList;
+  st.fromList = false; closeSheet("searchSheet"); showInfo(o, "search");
+}
+function backToSearch() {
+  st.fromList = searchState.fromList; showResults(); openSheet("searchSheet");
+  const inner = $("searchSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = searchState.scroll; });
 }
 // No target: the red ring, the arrow and the directions disappear
 function clearTarget() {
@@ -3545,9 +3557,10 @@ function askConfirm(title, text, okLabel, altLabel) {
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
-  if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list: back to it
+  if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
+    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : backToList;
     st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
-    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) backToList(); }, 60);
+    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) back(); }, 60);
   }
   if (id === "seenSheet" && seenState.fromLog) {   // an entry opened from the logbook: changes are kept, back to the logbook
     keepSeenEdits(); seenState.fromLog = false;
@@ -3678,7 +3691,8 @@ function pickAt(clientX, clientY, pointsOnly) {
   return best ? best() : null;
 }
 function showInfo(o, fromList) {
-  st.infoFromList = !!fromList; $("infoBack").hidden = !fromList;
+  st.infoFromList = fromList === "search" ? "search" : !!fromList; $("infoBack").hidden = !fromList;
+  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : "Back to the list");
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o;
