@@ -453,6 +453,9 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .tn-bar .now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--target); }
 .tn-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
 .tn-legend i { display: inline-block; width: 12px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+.mphase { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; background: var(--raise); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.mphase svg { width: 54px; height: 54px; }
+.mphase div { display: grid; gap: 2px; } .mphase small { color: var(--muted); font-size: 12.5px; }
 .tn-moon { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; }
 .tn-moon svg { width: 54px; height: 54px; }
 .tn-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; text-align: left; width: 100%; background: none; border: 0; border-radius: 9px; padding: 8px 6px; cursor: pointer; color: inherit; font: inherit; }
@@ -656,6 +659,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
+    <div class="mphase" id="infoMoon" hidden></div>
     <div class="ttonight" id="infoTonight" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
@@ -751,6 +755,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="info-sub" id="tgtSub"></div>
     <p class="warn" id="tgtWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope.</p>
     <div class="tguide" id="tgtGuide"></div>
+    <div class="mphase" id="tgtMoon" hidden></div>
     <div class="ttonight" id="tgtTonight"></div>
     <div class="facts" id="tgtFacts"></div>
     <div class="ohist" id="tgtHist" hidden></div>
@@ -2383,6 +2388,25 @@ function overlayInsets(dpr) {   // layout reads are cached briefly: reading them
 }
 let placed = [];
 // names of objects on the map: can be switched off (settings, quick settings); ring and target labels stay
+// The Moon on the map: its phase, at true size (0.52°) once that is bigger than 7 px, the lit side turned towards the Sun
+function drawMoonPhase(c, sol, sk, x, y, dpr) {
+  const t = sk.t, mv = sk.planets.get("Moon"), sv = sk.planets.get("Sun");
+  const r = Math.max(7 * dpr, 0.259 * D2R * sol.f * fit.sc);
+  let k = 0.5, ph = 90; try { k = A.Illumination(A.Body.Moon, t).phase_fraction; ph = A.MoonPhase(t); } catch (e) {}
+  // direction of the Sun on the screen: a small step from the Moon towards the Sun, projected
+  const dot = mv[0] * sv[0] + mv[1] * sv[1] + mv[2] * sv[2], tw = [sv[0] - dot * mv[0], sv[1] - dot * mv[1], sv[2] - dot * mv[2]], n = Math.hypot(...tw) || 1;
+  const q = Solver.skyToPix(sol, [mv[0] + tw[0] / n * 0.01, mv[1] + tw[1] / n * 0.01, mv[2] + tw[2] / n * 0.01]);
+  let ang = 0; if (q) { const [qx, qy] = P(q.x, q.y); ang = Math.atan2(qy - y, qx - x); }
+  c.save(); c.translate(x, y); c.rotate(ang);
+  c.fillStyle = "#2a3048"; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+  const ex = Math.abs(1 - 2 * k) * r;
+  c.fillStyle = "#e8e3c8"; c.beginPath();
+  c.arc(0, 0, r, -Math.PI / 2, Math.PI / 2);   // the half towards the Sun (+x)
+  if (k > 0.5) c.ellipse(0, 0, ex, r, 0, Math.PI / 2, -Math.PI / 2, false);   // gibbous: terminator bulges away from the Sun
+  else c.ellipse(0, 0, ex, r, 0, Math.PI / 2, -Math.PI / 2, true);           // crescent: it bulges towards the Sun
+  c.fill(); c.restore();
+  return r;
+}
 function objLabel(c, txt, x, y) { if (cfg.objLabels !== false) label(c, txt, x, y); }
 function label(c, txt, x, y) {   // only draw a label if it doesn't cover anything
   const w = c.measureText(txt).width, h = parseFloat(c.font) * 1.1, r = [x, y - h / 2, x + w, y + h / 2];
@@ -2490,6 +2514,7 @@ function drawOverlay(dpr) {
         c.fillStyle = "#ffd34d"; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
         c.fillStyle = col("--fg"); objLabel(c, "Sun", x + r + 6 * dpr, y); return;
       }
+      if (en === "Moon") { const r = drawMoonPhase(c, sol, sk, x, y, dpr); c.fillStyle = col("--fg"); objLabel(c, de, x + r + 6 * dpr, y + r * 0.6 + 6 * dpr); obsMark(c, en, x, y, r, dpr); return; }
       c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, 3 * dpr, 0, 7); c.fill(); objLabel(c, de, x + 10 * dpr, y + 12 * dpr); obsMark(c, en, x, y, 5 * dpr, dpr);
     });
   }
@@ -2709,6 +2734,33 @@ function planFor(T, tn) {
   const warn = !later && leave && leave.d - now < 3 * 3600e3 ? "low after " + fmt(leave.d) : "";
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, pts, best, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
+}
+/* ---------------- Moon phase (computed on the phone, no data from outside) ---------------- */
+function moonPhaseName(ph) {
+  return ph < 10 || ph > 350 ? "New Moon" : ph < 80 ? "Waxing crescent" : ph < 100 ? "First quarter" : ph < 170 ? "Waxing gibbous" : ph < 190 ? "Full Moon" : ph < 260 ? "Waning gibbous" : ph < 280 ? "Last quarter" : "Waning crescent";
+}
+// The Moon as seen from the northern hemisphere: lit on the right while waxing, on the left while waning
+function moonPhaseSvg(ph, k) {
+  const r = 24, cx = 27, cy = 27, ex = Math.abs(1 - 2 * k) * r, waxing = ph < 180;
+  // lit part: half disc on the lit side plus/minus an ellipse; the terminator bulges into the dark side when gibbous
+  const lit = waxing ? 1 : 0, sweep = k > 0.5 ? (waxing ? 1 : 0) : (waxing ? 0 : 1);
+  return `<svg viewBox="0 0 54 54" role="img" aria-label="${moonPhaseName(ph)}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="#2a3048"/><path fill="#e8e3c8" d="M${cx} ${cy - r}A${r} ${r} 0 0 ${lit} ${cx} ${cy + r}A${ex.toFixed(2)} ${r} 0 0 ${sweep} ${cx} ${cy - r}Z"/></svg>`;
+}
+// Phase box for the Moon's details and the target panel: picture, name, lit fraction, age, next quarter phases
+function fillMoonPhase(box) {
+  const d = skyDate(), key = Math.floor(d / 60000);
+  if (box._key === key && !box.hidden) return;   // the target panel refreshes often: once a minute is plenty
+  box._key = key;
+  const t = A.MakeTime(d), ph = A.MoonPhase(t), k = A.Illumination(A.Body.Moon, t).phase_fraction;
+  const day = x => x ? x.date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }) + ", " + x.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  const next = lon => { try { return A.SearchMoonPhase(lon, t, 40); } catch (e) { return null; } };
+  const age = ph / 360 * 29.53;
+  box.innerHTML = moonPhaseSvg(ph, k) + '<div><b></b><small></small><small></small></div>';
+  box.querySelector("b").textContent = moonPhaseName(ph) + ", " + Math.round(k * 100) + " % lit";
+  const sm = box.querySelectorAll("small");
+  sm[0].textContent = "Age " + age.toFixed(1) + " days since new Moon";
+  sm[1].textContent = "Full Moon " + day(next(180)) + " · New Moon " + day(next(0));
+  box.hidden = false;
 }
 // The night bar: sunset (left) to sunrise (right), amber while the object is well placed, red tick = now
 const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v7M9 7.5l3 3 3-3"/></svg>';
@@ -2948,6 +3000,7 @@ function syncTargetPanel(force) {
   pos.textContent = h.alt < 0 ? "Below the horizon " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + "." : "Now " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + " (azimuth " + fmtDeg(h.az, 0) + ").";
   g.append(w, pos);
   // tonight
+  if (T.id === "Moon") fillMoonPhase($("tgtMoon")); else $("tgtMoon").hidden = true;
   const tn = nightPlan(), p = T.kind === "sat" ? null : rowPlan(T.id, tn), box = $("tgtTonight"); box.textContent = "";
   if (p) fillTonight(box, p);
   else { const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(k, d); }
@@ -3714,6 +3767,7 @@ function showInfo(o, fromList) {
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
   // tonight: when it is well placed, rising / highest / setting, night bar
+  if (o.body === "Moon" || o.id === "Moon") fillMoonPhase($("infoMoon")); else $("infoMoon").hidden = true;
   const tb = $("infoTonight"); tb.textContent = "";
   let pl = null; try { pl = o.kind === "sat" || o.body === "Sun" ? null : planFor(o, nightPlan()); } catch (e) {}
   tb.hidden = !pl; if (pl) fillTonight(tb, pl);
@@ -3886,11 +3940,7 @@ function showTonight() {
   box.append(s1);
   // Moon
   const s2 = el("section", "tn-sec"); s2.append(el("h3", "", "Moon"));
-  const k = t.illum, waxing = t.phase < 180, r = 24, cx = 27, cy = 27, ex = Math.abs(1 - 2 * k) * r;
-  // lit part: half disc on the lit side plus/minus an ellipse
-  const lit = waxing ? 1 : 0, sweep = k > 0.5 ? (waxing ? 1 : 0) : (waxing ? 0 : 1);   // terminator bulges into the dark side when gibbous
-  const moonSvg = `<svg viewBox="0 0 54 54"><circle cx="${cx}" cy="${cy}" r="${r}" fill="#2a3048"/><path fill="#e8e3c8" d="M${cx} ${cy - r}A${r} ${r} 0 0 ${lit} ${cx} ${cy + r}A${ex.toFixed(2)} ${r} 0 0 ${sweep} ${cx} ${cy - r}Z"/></svg>`;
-  const name = t.phase < 10 || t.phase > 350 ? "New Moon" : t.phase < 80 ? "Waxing crescent" : t.phase < 100 ? "First quarter" : t.phase < 170 ? "Waxing gibbous" : t.phase < 190 ? "Full Moon" : t.phase < 260 ? "Waning gibbous" : t.phase < 280 ? "Last quarter" : "Waning crescent";
+  const k = t.illum, moonSvg = moonPhaseSvg(t.phase, k), name = moonPhaseName(t.phase);
   s2.append(el("div", "tn-moon", moonSvg + "<div><b>" + name + "</b>, " + Math.round(k * 100) + " % lit<br><small class=\"tn-note\">Rises " + fmt(t.moonRise) + " · sets " + fmt(t.moonSet) + "</small></div>"));
   box.append(s2);
   // planets
