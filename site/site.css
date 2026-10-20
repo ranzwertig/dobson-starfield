@@ -247,3 +247,9 @@ footer a:hover { color: var(--amber); }
 .kicker { margin: 0 0 8px; font: 600 14px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
 .diybox { border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 12px; padding: 14px 18px; margin: 0 0 8px; background: rgba(240, 168, 69, .05); }
 .diybox p { margin: 0; color: #ccd3de; }
+.dg-n path { stroke: var(--amber); stroke-width: 1.5; fill: none; }
+.dg-n circle { fill: var(--amber); }
+.dg-n text { fill: #1b1206; font: 700 15px var(--ui); text-anchor: middle; }
+.diagram figcaption ol { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; padding: 0 !important; margin: 10px 0 0; counter-reset: dg; font-size: 15px; color: var(--mist); }
+.diagram figcaption li { counter-increment: dg; display: flex; align-items: center; gap: 8px; margin: 0; }
+.diagram figcaption li::before { content: counter(dg); display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--amber); color: #1b1206; font: 700 12px var(--ui); }

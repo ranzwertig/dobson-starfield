@@ -40,31 +40,68 @@
     </ul>
 
     <figure class="diagram">
-      <svg viewBox="0 0 720 300" role="img" aria-labelledby="dg-t">
-        <title id="dg-t">Side view: the printed adapter sits in the finder shoe and carries a Picatinny rail; the phone stands in its holder on a camera mount, its back camera looking along the tube.</title>
-        <defs><marker id="dg-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#f0a845"/></marker></defs>
-        <rect x="20" y="206" width="680" height="76" rx="12" fill="#121a36" stroke="#232b45"/>
-        <text x="40" y="252" class="dg-l">Telescope tube</text>
-        <text x="690" y="252" class="dg-l" text-anchor="end">opening →</text>
-        <rect x="300" y="194" width="74" height="12" fill="#232b45"/>
-        <rect x="304" y="176" width="66" height="18" rx="2" fill="#7a5a2c"/>
-        <rect x="200" y="164" width="300" height="12" fill="#5a6378"/>
-        <g fill="#3a4256">
-          <rect x="212" y="164" width="5" height="4"/><rect x="232" y="164" width="5" height="4"/><rect x="252" y="164" width="5" height="4"/><rect x="272" y="164" width="5" height="4"/><rect x="292" y="164" width="5" height="4"/><rect x="312" y="164" width="5" height="4"/><rect x="332" y="164" width="5" height="4"/><rect x="352" y="164" width="5" height="4"/><rect x="372" y="164" width="5" height="4"/><rect x="392" y="164" width="5" height="4"/><rect x="412" y="164" width="5" height="4"/><rect x="432" y="164" width="5" height="4"/><rect x="452" y="164" width="5" height="4"/><rect x="472" y="164" width="5" height="4"/>
+      <svg viewBox="0 0 720 330" role="img" aria-labelledby="dg-t">
+        <title id="dg-t">Side view of the phone holder: (1) printed adapter in the finder shoe, (2) Picatinny rail, (3) camera mount, (4) phone holder with the phone; its back camera looks along the tube towards the opening.</title>
+        <defs>
+          <linearGradient id="dg-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3558"/><stop offset=".18" stop-color="#18213f"/><stop offset="1" stop-color="#0b1022"/></linearGradient>
+          <linearGradient id="dg-alu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9c2d3"/><stop offset="1" stop-color="#6d778b"/></linearGradient>
+          <linearGradient id="dg-print" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3b45a"/><stop offset="1" stop-color="#b9782a"/></linearGradient>
+          <linearGradient id="dg-dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3b4459"/><stop offset=".5" stop-color="#4f5a73"/><stop offset="1" stop-color="#2e3647"/></linearGradient>
+          <linearGradient id="dg-fov" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0a845" stop-opacity=".35"/><stop offset="1" stop-color="#f0a845" stop-opacity="0"/></linearGradient>
+          <pattern id="dg-knurl" width="3" height="10" patternUnits="userSpaceOnUse"><rect width="3" height="10" fill="#4f5a73"/><rect width="1.2" height="10" fill="#2e3647"/></pattern>
+          <marker id="dg-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#f0a845"/></marker>
+        </defs>
+
+        <!-- telescope tube with its open end on the right -->
+        <path d="M20 232 H676 V330 H20 Z" fill="url(#dg-tube)"/>
+        <ellipse cx="676" cy="281" rx="14" ry="49" fill="#0b1022" stroke="#3a4670" stroke-width="2"/>
+        <path d="M20 232 H676" stroke="#3a4670" stroke-width="2"/>
+        <text x="40" y="292" class="dg-l">Telescope tube</text>
+        <text x="640" y="292" class="dg-s" text-anchor="end">opening</text>
+
+        <!-- finder shoe on the tube, with its clamping screw -->
+        <path d="M286 232 L292 214 H372 L378 232 Z" fill="#2b3349" stroke="#46516b"/>
+        <circle cx="380" cy="221" r="5" fill="#46516b"/>
+
+        <!-- (1) printed adapter: foot in the shoe, chamfered transition, slotted plate -->
+        <path d="M300 214 V206 L284 196 H392 L376 206 V214 Z" fill="url(#dg-print)"/>
+        <rect x="238" y="186" width="200" height="12" rx="3" fill="url(#dg-print)"/>
+
+        <!-- (2) Picatinny rail with its cross slots -->
+        <rect x="214" y="170" width="300" height="16" rx="2" fill="url(#dg-alu)"/>
+        <g fill="#5d6679">
+          <rect x="224" y="170" width="6" height="4"/><rect x="240" y="170" width="6" height="4"/><rect x="256" y="170" width="6" height="4"/><rect x="272" y="170" width="6" height="4"/><rect x="288" y="170" width="6" height="4"/><rect x="304" y="170" width="6" height="4"/><rect x="320" y="170" width="6" height="4"/><rect x="336" y="170" width="6" height="4"/><rect x="352" y="170" width="6" height="4"/><rect x="368" y="170" width="6" height="4"/><rect x="384" y="170" width="6" height="4"/><rect x="400" y="170" width="6" height="4"/><rect x="416" y="170" width="6" height="4"/><rect x="432" y="170" width="6" height="4"/><rect x="448" y="170" width="6" height="4"/><rect x="464" y="170" width="6" height="4"/><rect x="480" y="170" width="6" height="4"/><rect x="496" y="170" width="6" height="4"/>
         </g>
-        <rect x="392" y="150" width="34" height="14" rx="2" fill="#98a3b8"/>
-        <rect x="402" y="132" width="14" height="18" fill="#98a3b8"/>
-        <rect x="396" y="118" width="26" height="14" rx="3" fill="#98a3b8"/>
-        <rect x="402" y="16" width="14" height="106" rx="4" fill="#0c1124" stroke="#eef1f6" stroke-width="2"/>
-        <rect x="416" y="26" width="5" height="16" rx="1" fill="#eef1f6"/>
-        <path d="M424 34 H700" fill="none" stroke="#f0a845" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#dg-a)"/>
-        <text x="380" y="40" class="dg-l" text-anchor="end">Phone</text>
-        <text x="560" y="24" class="dg-l c-amber" text-anchor="middle">camera view</text>
-        <text x="436" y="128" class="dg-s">phone holder</text>
-        <text x="436" y="160" class="dg-s">camera mount</text>
-        <text x="510" y="174" class="dg-s">Picatinny rail</text>
-        <text x="290" y="190" class="dg-s" text-anchor="end">printed adapter in the finder shoe</text>
+
+        <!-- (3) camera mount: clamp around the rail, knurled lock ring, 1/4" screw -->
+        <path d="M396 186 V164 H452 V186 H446 V172 H402 V186 Z" fill="url(#dg-dark)"/>
+        <rect x="404" y="152" width="40" height="12" rx="2" fill="url(#dg-knurl)"/>
+        <rect x="420" y="146" width="8" height="6" fill="#98a3b8"/>
+
+        <!-- (4) phone holder: a clamp on the back (camera side) that grips the phone at its two long sides -->
+        <rect x="406" y="132" width="36" height="14" rx="3" fill="url(#dg-dark)"/>
+        <rect x="430" y="96" width="12" height="38" rx="2" fill="url(#dg-dark)"/>
+        <!-- phone, seen edge-on: screen faces left, camera bump on the back faces the opening -->
+        <rect x="410" y="22" width="16" height="106" rx="5" fill="#0c1124" stroke="#eef1f6" stroke-width="2"/>
+        <rect x="426" y="34" width="6" height="22" rx="2" fill="#eef1f6"/>
+        <!-- clamp band across the phone: the near jaw covers the phone's side edge -->
+        <path d="M446 70 H418 a8 8 0 0 0 -8 8 V98 a8 8 0 0 0 8 8 H446 Z" fill="url(#dg-dark)" stroke="#6d778b" stroke-width="1"/>
+        <rect x="438" y="66" width="10" height="44" rx="3" fill="url(#dg-dark)"/>
+
+        <!-- camera view along the tube -->
+        <path d="M434 45 L700 4 V86 Z" fill="url(#dg-fov)"/>
+        <path d="M434 45 H700" fill="none" stroke="#f0a845" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#dg-a)"/>
+        <text x="600" y="38" class="dg-l c-amber" text-anchor="middle">camera view</text>
+
+        <!-- numbered callouts, matching the parts list -->
+        <g class="dg-n">
+          <path d="M300 192 L260 160"/><circle cx="252" cy="152" r="12"/><text x="252" y="157">1</text>
+          <path d="M500 178 L540 160"/><circle cx="548" cy="152" r="12"/><text x="548" y="157">2</text>
+          <path d="M452 168 L486 136"/><circle cx="494" cy="128" r="12"/><text x="494" y="133">3</text>
+          <path d="M410 88 L352 88"/><circle cx="340" cy="88" r="12"/><text x="340" y="93">4</text>
+        </g>
       </svg>
+      <figcaption><ol><li>Printed adapter in the finder shoe</li><li>Picatinny rail</li><li>Camera mount</li><li>Phone holder</li></ol></figcaption>
     </figure>
 
     <h2 id="parts">What you need</h2>
