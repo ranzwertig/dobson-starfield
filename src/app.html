@@ -657,6 +657,11 @@ a.btn { text-decoration: none; color: var(--fg); }
         <button class="iconbtn" id="btnCalOff" aria-label="Remove compass correction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <button class="hnext" id="hudNext" hidden></button>
+      <div class="calchip" id="teleChip" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>
+        <span id="teleChipTxt"></span>
+        <button class="iconbtn" id="btnTeleOff" aria-label="Reset the eyepiece point to the image centre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
       <div class="calchip tgtchip" id="tgtChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
         <button class="chiplabel" id="tgtChipTxt" aria-label="Target details"><b id="tgtChipName"></b> <span id="tgtChipState"></span></button>
@@ -2605,6 +2610,11 @@ function updateAvailability() {
     sb.setAttribute("aria-label", stopping ? "Stop locating" : "Locate");
   }
   setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
+  // An eyepiece point far from the image centre moves the whole view (the horizon too): shown as a pill with ✕,
+  // unless the map alignment pill already covers it. A phone on the tube is rarely more than a few degrees off.
+  const teleOff = Math.atan(Math.hypot(+curTele().x || 0, +curTele().y || 0)) * R2D, showTele = teleOff > 5 && !cfg.calTeleBak;
+  const tk = showTele ? teleOff.toFixed(0) : "";
+  if (updateAvailability.tk !== tk) { updateAvailability.tk = tk; $("teleChip").hidden = !showTele; $("teleChipTxt").textContent = "Eyepiece point " + tk + "° off centre"; }
 }
 document.addEventListener("click", e => {
   updateAvailability();   // the frame loop refreshes it only every 150 ms
@@ -4293,19 +4303,24 @@ function alignOnMap(e) {
   const o = pickAt(e.clientX, e.clientY, true);
   if (!o) { hint("Tap a star or planet on the map: the one that is centred in the eyepiece.", 4000); return; }
   const t = skyNow().t, want = horiz(o.vec(t), t);
-  let tele = { ...curTele() }, dAz = 0, dAlt = 0;
+  let tele = { ...curTele() }, dAz = 0, dAlt = 0, altBig = false, altDiff = 0;
   // the alignment changes the compass correction and the altitude of the eyepiece point: removing the correction undoes both
   const bak = cfg.calTeleBak || { tele: cfg.tele || null, teleTop: cfg.teleTop || null };
   for (let i = 0; i < 4; i++) {   // a few rounds: azimuth and altitude influence each other slightly
     sensorUpdate(); const tv = teleVec(); if (!tv) return;
     const have = horiz(tv, t);
     dAz = ((want.az - have.az) + 540) % 360 - 180; dAlt = want.alt - have.alt;
+    // a phone on the tube points within a few degrees of the telescope: a large altitude difference means another star
+    // or a phone held in the hand. Then only the compass is corrected (moving the eyepiece point would shift the horizon).
+    if (i === 0) { altDiff = dAlt; altBig = Math.abs(dAlt) > 15; }
+    if (altBig) dAlt = 0;
     if (Math.abs(dAz) < 0.02 && Math.abs(dAlt) < 0.02) break;
     setCompassCal(+((((+cfg.compassCal || 0) - dAz) + 540) % 360 - 180).toFixed(2));
-    tele.y = Math.tan(Math.atan(+tele.y || 0) - dAlt * D2R); setTele({ ...tele });
+    if (dAlt) { tele.y = Math.tan(Math.atan(+tele.y || 0) - dAlt * D2R); setTele({ ...tele }); }
   }
-  cfg.calTeleBak = bak; save(); syncCompassCal();
+  if (!altBig) cfg.calTeleBak = bak; save(); syncCompassCal();
   sensorUpdate(); setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
+  if (altBig) { hint("Compass aligned on " + o.name + ". Its altitude differs by " + fmtDeg(Math.abs(altDiff), 0) + ": too much for a phone on the tube, so the eyepiece point was left as it was. Is it the star in the eyepiece?", 7000); return; }
   hint("Aligned on " + o.name + ". The crosshair now marks where the telescope points. Tap the button again whenever you want to repeat it.", 5000);
 }
 function setTeleMode(on) {
@@ -5194,6 +5209,7 @@ $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textCont
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 [["optFill", "fill"], ["optDet", "det"], ["optRed", "red"], ["optLabels", "fabLabels"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
 $("btnTeleReset").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); };
+$("btnTeleOff").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); lastSig = []; hint("Eyepiece point reset to the image centre. Set it again with Eyepiece point on a star in the eyepiece.", 4000); };
 
 /* ---------------- Controls ---------------- */
 // Camera button: on -> off; off -> a small menu: live camera, night photo (camera app), photo from the gallery

@@ -304,6 +304,11 @@ const TESTS = {
     ok(await ev(p, () => !$('calChip').hidden && /Aligned on the map/.test($('calChipTxt').textContent)), 'the pill names the map alignment', await ev(p, () => $('calChipTxt').textContent));
     await p.tap('#btnCalOff'); await wait(p, 200);
     ok(await ev(p, () => !+cfg.compassCal && !cfg.calTeleBak && Math.abs(cfg.tele.y) < 1e-9 && $('calChip').hidden), 'removing it restores the compass and the eyepiece point', await ev(p, () => [cfg.compassCal, cfg.tele]));
+    // an eyepiece point far off the centre (set before the map alignment kept a backup) shows its own pill; ✕ resets it
+    await ev(p, () => { cfg.tele = { x: 0, y: -0.8 }; save(); }); await wait(p, 400);
+    ok(await ev(p, () => !$('teleChip').hidden && /39° off/.test($('teleChipTxt').textContent)), 'an eyepiece point far off the centre shows a pill', await ev(p, () => $('teleChipTxt').textContent));
+    await p.tap('#btnTeleOff'); await wait(p, 400);
+    ok(await ev(p, () => Math.hypot(cfg.tele.x, cfg.tele.y) < 1e-9 && $('teleChip').hidden), '✕ resets the eyepiece point to the image centre');
     // compass mode with the eyepiece point 50° off the camera axis: the view is shifted, stars must still fill the screen
     const halves = await ev(p, async () => {
       const v = $('view'), sol = mapSolCompute(skyNow().M, v.width, v.height, { az: 200, alt: 35, fov: 60 });
