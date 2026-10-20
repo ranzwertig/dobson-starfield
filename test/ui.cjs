@@ -249,8 +249,8 @@ const TESTS = {
     await ev(p, () => { selectTarget('SAT25544'); cfg.show.sats = false; st.filterVer++; const t = skyNow().t, h = horiz(vecNow(targetById('SAT25544')), t); st.mapView = { az: h.az, alt: h.alt, fov: 60 }; lastSig = []; updateGuide(); });
     await wait(p, 600);
     ok(await ev(p, () => st.drawnSats.length) === 1, 'the target satellite is drawn below the horizon, with satellites filtered out');
-    const sub = await ev(p, () => $('totalSub').textContent);
-    ok(/^Next above the horizon (at|tomorrow at) .+, rising in the .+, up to \d+° high/.test(sub), 'the line at the top gives the next pass', sub);
+    const sub = await ev(p, () => $('tgtChipState').textContent);
+    ok(/next pass \d/.test(sub), 'the target pill gives the next pass', sub);
     // not the target: details and Show on map still draw it, below the horizon too
     await ev(p, () => { selectTarget('M31'); showInfo(objById('SAT25544')); }); await wait(p, 400);
     await p.tap('#infoShowMap'); await wait(p, 600);
@@ -292,7 +292,8 @@ const TESTS = {
   async compass() {
     const p = await page();
     await ev(p, () => { cfg.target = 'M45'; save(); updateGuide(); }); await wait(p, 200);
-    ok(await ev(p, () => !$('tgtChip').hidden && /M45|Pleiades/.test($('tgtChipTxt').textContent)), 'the target shows as a pill bottom left', await ev(p, () => $('tgtChipTxt').textContent));
+    ok(await ev(p, () => !$('tgtChip').hidden && /M45|Pleiades/.test($('tgtChipName').textContent) && /high|horizon/.test($('tgtChipState').textContent)), 'the target shows as a pill bottom left, with where it stands', await ev(p, () => $('tgtChipTxt').textContent));
+    ok(await ev(p, () => !document.querySelector('#guide .htotal')), 'no target line under the directions any more');
     await p.tap('#tgtChipTxt'); await wait(p);
     ok((await openSheets(p)).includes('targetSheet'), 'tapping the pill opens the target panel', await openSheets(p));
     await ev(p, () => SHEETS.forEach(x => !x.hidden && closeSheet(x.id))); await wait(p);

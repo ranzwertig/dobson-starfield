@@ -92,18 +92,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hcell svg { width: 30px; height: 30px; flex: none; color: var(--accent); transition: transform .3s; }
 .hcell .v { font-family: var(--font-num); font-size: 22px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
 .hcell .w { font-size: 13px; color: var(--muted); line-height: 1.15; }
-.htrow { grid-column: 1 / -1; justify-self: center; display: flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; }
-.hclear { pointer-events: auto; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--glass); color: var(--muted); display: grid; place-items: center; cursor: pointer; padding: 0; }
-.hclear svg { width: 13px; height: 13px; }
-.hclear:hover { color: var(--fg); }
-.htotal {
-  min-width: 0; max-width: 100%; box-sizing: border-box;
-  background: var(--glass); border-radius: 99px; padding: 3px 12px; font-size: 13px; color: var(--muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; cursor: pointer; border: 0;
-}
-.htotal strong { color: var(--fg); font-weight: 600; }
 .hud.hit .hcell { border-color: var(--ok); }
-.hud.hit .htotal strong { color: var(--ok); }
 .hud.stale { opacity: .55; }
 .hud.idle .hcell { display: none; }
 
@@ -172,10 +161,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
 .calchip.tgtchip { color: var(--fg); border-color: rgba(255,106,92,.55); } .tgtchip > svg { color: var(--target); }
-.tgtchip .chiplabel { max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
+.tgtchip .chiplabel { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; }
+.tgtchip .chiplabel b { font-weight: 600; } .tgtchip #tgtChipState { color: var(--muted); }
+.tgtchip.hit { border-color: var(--ok); } .tgtchip.hit #tgtChipState { color: var(--ok); } .tgtchip.warn #tgtChipState { color: var(--target); }
 /* Observing list and logbook */
 .fab .badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: var(--accent); color: #17110a; font: 600 11px/18px var(--font-num); text-align: center; }
-.hnext { pointer-events: auto; flex: none; border: 1px solid #3a3222; background: var(--glass); color: var(--accent); border-radius: 99px; padding: 2px 10px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.hnext { pointer-events: auto; flex: none; border: 1px solid #3a3222; background: var(--glass); color: var(--accent); border-radius: 99px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .olist { display: grid; }
 .orow { display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; column-gap: 6px; border-bottom: 1px solid var(--line); }
 .orow:last-child { border-bottom: 0; }
@@ -347,8 +338,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Round buttons bottom right */
 .fabs {
-  position: absolute; right: calc(max(10px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
-  display: flex; flex-direction: column; gap: 10px; align-items: center;
+  position: absolute; right: calc(max(6px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;   /* flush with the right edge, the big Locate button too */
 }
 .fab {
   width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass);
@@ -619,11 +610,6 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
         <div><div class="v" id="altV">–</div><div class="w" id="altW">Altitude</div></div>
       </div>
-      <div class="htrow">
-        <button class="htotal" id="hudTarget" aria-label="Change target"><strong id="totalTxt">No position yet</strong> <span id="totalSub"></span></button>
-        <button class="hnext" id="hudNext" hidden></button>
-        <button class="hclear" id="hudClear" aria-label="Clear target" title="Clear target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
-      </div>
     </div>
     <div class="maprd" id="readout" hidden>
       <button class="rdhead" id="rdHead" aria-expanded="false"><span id="rdShort"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -670,9 +656,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <span id="calChipTxt"></span>
         <button class="iconbtn" id="btnCalOff" aria-label="Remove compass correction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
+      <button class="hnext" id="hudNext" hidden></button>
       <div class="calchip tgtchip" id="tgtChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
-        <button class="chiplabel" id="tgtChipTxt" aria-label="Target details"></button>
+        <button class="chiplabel" id="tgtChipTxt" aria-label="Target details"><b id="tgtChipName"></b> <span id="tgtChipState"></span></button>
         <button class="iconbtn" id="btnTgtOff" aria-label="Clear the target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="status" id="statusBox" aria-live="polite"><i class="dot" id="dot"></i><span id="statusText">Ready</span></div>
@@ -1723,21 +1710,25 @@ function fmtRA(ra) { const T = Math.round(ra / 15 * 3600) % 86400, H = Math.floo
 function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) * 60), D = Math.floor(T / 60), M = T % 60; return `${s}${D}° ${String(M).padStart(2, "0")}′`; }
 
 let lastGuide = null;
+// state of the target in its pill bottom left (the line under the directions is gone)
+function belowTxt(T) {
+  const x = T.kind === "sat" && SAT.list.find(q => "SAT" + q.norad === T.id);
+  if (x) { const pp = nextPass(x); return pp ? "next pass " + fmtClock(pp.at) : "no pass in 24 h"; }
+  return "below the horizon";
+}
+function tgtPill(txt, cls) {
+  const k = txt + "|" + (cls || ""); if (tgtPill.k === k) return; tgtPill.k = k;
+  $("tgtChipState").textContent = txt ? "· " + txt : ""; const c = $("tgtChip"); c.classList.toggle("hit", cls === "hit"); c.classList.toggle("warn", cls === "warn");
+}
 function updateGuide() {
   syncHudNext(); syncTargetPanel(false); syncTargetFab();
   const T = targetById(cfg.target), tv = teleVec(), t = skyNow().t;
   const g = $("guide"); g.classList.remove("hit", "stale"); g.classList.toggle("idle", !teleVec());
-  $("hudClear").hidden = !T;
-  if (!T) {
-    g.classList.add("idle"); lastGuide = null;
-    $("totalTxt").textContent = "No target"; $("totalSub").textContent = "Tap here to choose one.";
-    return;
-  }
+  if (!T) { g.classList.add("idle"); lastGuide = null; tgtPill(""); return; }
   const tgt = vecNow(T), th = horiz(tgt, t);
   if (!tv) {
     $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimuth"; $("altW").textContent = "Altitude";
-    $("totalTxt").textContent = T.name + (th.alt < 0 ? " is below the horizon" : " is " + fmtDeg(th.alt, 0) + " high, towards " + compass(th.az));
-    $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + (T.kind === "sat" && th.alt < 0 ? passText(T) : "Tap Locate and the arrows will show the way.");
+    tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : fmtDeg(th.alt, 0) + " high, " + compass(th.az), T.id === "Sun" ? "warn" : "");
     lastGuide = null; return;
   }
   const ph = horiz(tv, t);
@@ -1752,11 +1743,7 @@ function updateGuide() {
   const hit = sep < hitRadius();
   g.classList.toggle("hit", hit);
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
-  $("totalTxt").textContent = th.alt < 0 ? T.name + " is below the horizon " + (st.tOff ? "at " + fmtClock(skyDate()) : "right now") : hit ? T.name + " should be in the eyepiece" : fmtDeg(sep) + " to " + T.name;
-  const age = Math.round((Date.now() - st.solAt) / 1000);
-  if (T.kind === "sat" && th.alt < 0) { $("totalSub").textContent = passText(T); lastGuide = { ph, th, sep }; return; }
-  $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + (ph.alt > 80 ? "Near the zenith: small nudges change the azimuth a lot. " : "")
-    + (st.solMode === "compass" ? "by compass, approximate" : st.solMode === "track" ? "via motion sensor" : st.source === "video" ? age + " s ago" : "");
+  tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : hit ? "in the eyepiece" : fmtDeg(sep) + " away", T.id === "Sun" ? "warn" : hit ? "hit" : "");
   lastGuide = { ph, th, sep };
 }
 /* ---------------- Sound guidance: one axis after the other ---------------- */
@@ -3690,7 +3677,7 @@ function syncTargetFab() {
   const f = $("fabTarget"); if (f) f.classList.toggle("tgt-on", !!cfg.target);
   // the current target as a pill bottom left: tap for the target panel, ✕ clears it
   const T = cfg.target ? targetById(cfg.target) : null, nm = T ? T.name : "";
-  if (syncTargetFab.nm !== nm) { syncTargetFab.nm = nm; $("tgtChip").hidden = !T; $("tgtChipTxt").textContent = nm; $("tgtChipTxt").setAttribute("aria-label", "Target " + nm + ": details"); }
+  if (syncTargetFab.nm !== nm) { syncTargetFab.nm = nm; $("tgtChip").hidden = !T; $("tgtChipName").textContent = nm; $("tgtChipTxt").setAttribute("aria-label", "Target " + nm + ": details"); }
   const sb = $("fabSound"); if (sb && sb.hidden === !!cfg.target) { sb.hidden = !cfg.target; if (typeof layoutFabs === "function") requestAnimationFrame(layoutFabs); }
   if (!cfg.target && sound.on) setSound(false);
 }
@@ -4684,8 +4671,6 @@ $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("she
 // the search field gets the focus right away (within the tap, so phones also open the keyboard)
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); try { $("q").focus({ preventScroll: true }); } catch (e) {} };
 $("fabSearch").onclick = openSearch;
-$("hudTarget").onclick = () => cfg.target ? openTargetPanel(false) : openSearch();
-$("hudClear").onclick = clearTarget;
 $("searchClear").onclick = () => { clearTarget(); if (!sidePanels()) closeSheet("searchSheet"); };
 $("lat").onchange = () => { cfg.lat = +$("lat").value; cfg.loc = { src: "manual", at: new Date().toISOString() }; save(); updateGuide(); renderChips(); renderReadout(); };
 $("lon").onchange = () => { cfg.lon = +$("lon").value; cfg.loc = { src: "manual", at: new Date().toISOString() }; save(); updateGuide(); renderChips(); renderReadout(); };
