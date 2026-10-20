@@ -251,6 +251,12 @@ const TESTS = {
     ok(await ev(p, () => st.drawnSats.length) === 1, 'the target satellite is drawn below the horizon, with satellites filtered out');
     const sub = await ev(p, () => $('totalSub').textContent);
     ok(/^Next above the horizon (at|tomorrow at) .+, rising in the .+, up to \d+° high/.test(sub), 'the line at the top gives the next pass', sub);
+    // not the target: details and Show on map still draw it, below the horizon too
+    await ev(p, () => { selectTarget('M31'); showInfo(objById('SAT25544')); }); await wait(p, 400);
+    ok(/Next above the horizon/.test(await ev(p, () => $('infoTonight').textContent)), 'details of a satellite below the horizon give the next pass');
+    await p.tap('#infoShowMap'); await wait(p, 600);
+    const off = await ev(p, () => { const s = st.drawnSats.find(q => q.x.norad === 25544); if (!s) return null; const q = Solver.skyToPix(st.sol, s.v), [x, y] = P(q.x, q.y); return Math.hypot(x - view.width / 2, y - view.height / 2); });
+    ok(off != null && off < 30, 'Show on map draws the satellite in its ring, also when it isn’t the target', off);
     await done(p);
   },
 

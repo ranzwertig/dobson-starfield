@@ -49,7 +49,7 @@ Everything runs locally in the browser: no server, no sign-in. The website lives
 
 **Sound guidance** (round button, shown with a target; `setSound`, `soundStep`, Web Audio, no files): one axis after the other. Azimuth first as clicks (high tick = turn right, low tock = left), once within ~1° (scaled with the eyepiece field, with hysteresis) the altitude as chirps (rising = up, falling = down); the gap between sounds shrinks logarithmically from ~1 s at 90° to ~0.1 s; a soft chord when within the "should be in the eyepiece" radius, then silence until it drifts out. Needs a position (Align or locate), pauses while the app is hidden or another time is shown; a wake lock keeps the screen on, `navigator.audioSession.type = "playback"` lets iPhones play with the silent switch on.
 
-**Satellite target:** always drawn (below the horizon dimmed, also with satellites filtered out); below the horizon the HUD line and target panel give the next pass within 24 h (`nextPass`: 30 s scan with SGP4, then rise time, direction, peak altitude, visible = lit while the Sun is below −6°; cached per minute).
+**Satellite target** (also the one whose details are open or shown with Show on map): always drawn (below the horizon dimmed, also with satellites filtered out); below the horizon the HUD line and target panel give the next pass within 24 h (`nextPass`: 30 s scan with SGP4, then rise time, direction, peak altitude, visible = lit while the Sun is below −6°; cached per minute).
 
 **Show on map** (details, only without Align and live camera; `showOnMap`): centres the free map on the object (az/alt now or at the chosen time), sets the field to 20–40°, marks it with the selection ring (`st.focus`, cleared by the next tap on the map) and closes the details on phones.
 

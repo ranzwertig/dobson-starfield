@@ -2906,15 +2906,17 @@ function drawOverlay(dpr) {
   }
   // Satellites: lit ones bright with a short tail showing where they move, those in Earth's shadow dim
   st.drawnSats = [];
-  const tSat = /^SAT\d+$/.test(cfg.target || "") && SAT.list.find(x => "SAT" + x.norad === cfg.target);
-  if ((show.sats && satsOn()) || tSat) {
+  // satellites you are dealing with: the target, the one whose details are open, the one shown with "Show on map"
+  const keyIds = new Set([cfg.target, st.picked && st.picked.id, st.focus && st.focus.id].filter(id => /^SAT\d+$/.test(id || "")));
+  const keySats = SAT.list.filter(x => keyIds.has("SAT" + x.norad));
+  if ((show.sats && satsOn()) || keySats.length) {
     const d0 = skyDate(), sats = show.sats && satsOn() ? satsNow().slice() : [];
-    // the target is always drawn: also below the horizon (dimmed) and with satellites switched off in the filter
-    if (tSat && !sats.some(q => q.x === tSat)) { const q = satState(tSat, d0); if (q) sats.push(Object.assign(q, { x: tSat })); }
+    // those are always drawn: also below the horizon (dimmed) and with satellites switched off in the filter
+    keySats.forEach(k => { if (!sats.some(q => q.x === k)) { const q = satState(k, d0); if (q) sats.push(Object.assign(q, { x: k })); } });
     c.font = `${11.5 * dpr}px ${col("--font-ui")}`;
     for (const s of sats) {
-      const tgt = "SAT" + s.x.norad === cfg.target;
-      if (s.alt < 0 && !tgt) continue;
+      const tgt = "SAT" + s.x.norad === cfg.target, key = keyIds.has("SAT" + s.x.norad);
+      if (s.alt < 0 && !key) continue;
       const p = Solver.skyToPix(sol, s.v); if (!p || p.z < 0.2 || !inView(p)) continue;
       const [x, y] = P(p.x, p.y), iss = s.x.name === "ISS";
       c.globalAlpha = s.alt < 0 ? 0.55 : 1;
@@ -2923,7 +2925,7 @@ function drawOverlay(dpr) {
         if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = "rgba(140,220,255,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
         c.fillStyle = "#9be3ff"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
       } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
-      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr); }
+      if (iss || key || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr); }
       c.globalAlpha = 1; st.drawnSats.push(s);
     }
     c.fillStyle = col("--fg");
@@ -4543,7 +4545,7 @@ function showOnMap(o) {
   mv.az = h.az; mv.alt = Math.max(-90, Math.min(90, h.alt)); mv.fov = Math.max(20, Math.min(40, mv.fov || 40));
   st.focus = o; st.sol = mapSol(); st.solMode = "map"; lastSig = []; updateGuide();
   if (!sidePanels()) { st.infoFromList = false; closeSheet("infoSheet"); }
-  hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
+  hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." + (o.kind === "sat" ? " " + passText({ kind: "sat", id: o.id }) : "") : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
 }
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = $("infoSheet").querySelector(".inner"), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
@@ -4577,6 +4579,10 @@ function showInfo(o, fromList) {
   const tb = $("infoTonight"); tb.textContent = "";
   let pl = null; try { pl = o.kind === "sat" || o.body === "Sun" ? null : planFor(o, nightPlan()); } catch (e) {}
   tb.hidden = !pl; if (pl) fillTonight(tb, pl);
+  if (o.kind === "sat" && h.alt < 0) {   // a satellite below the horizon: when it comes up next
+    const k = document.createElement("div"); k.className = "k"; k.textContent = "Next pass";
+    const d = document.createElement("div"); d.textContent = passText({ kind: "sat", id: o.id }); tb.append(k, d); tb.hidden = false;
+  }
   const box = $("infoFacts"); box.textContent = "";
   facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; const a = document.createElement("div"); a.className = "k"; a.textContent = k; const b = document.createElement("div"); b.className = "v"; b.textContent = val; d.append(a, b); box.append(d); });
   const lb = $("infoLinks"); lb.textContent = "";
