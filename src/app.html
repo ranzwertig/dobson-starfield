@@ -241,7 +241,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .actions.iconbar .btn svg { width: 22px; height: 22px; flex: none; }
 .actions.iconbar .btn span { white-space: normal; overflow-wrap: anywhere; }
 .actions.iconbar .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-#infoSheet .actions { position: relative; z-index: 3; background: var(--panel); margin-inline: -16px; padding: 10px 16px max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px)); box-shadow: 0 -10px 16px -6px var(--panel); }   /* close to the bottom edge, just clear of the home indicator */
+#infoSheet .actions { position: relative; z-index: 3; background: var(--panel); margin-inline: -16px; padding: 8px 16px; box-shadow: 0 -10px 16px -6px var(--panel); }   /* the same small padding above and below, close to the bottom edge */
 #tgtActs { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel);
   margin-inline: -16px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 16px -6px var(--panel); }
 .actions.three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: -6px; }
