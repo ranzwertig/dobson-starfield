@@ -634,7 +634,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="corner">
       <div class="epview" id="epView" hidden>
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
-        <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epSet" aria-label="Telescope, eyepiece and finder settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       </div>
       <div class="calchip" id="timeChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>
@@ -1059,7 +1059,22 @@ a.btn { text-decoration: none; color: var(--fg); }
         </select></label>
         <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
         <label>Aperture (mm)<input type="number" id="oAp" min="30" max="1500" step="1"></label>
-        <label>Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.5"></label>
+        <label style="flex-basis:100%">Finder<select id="oFinderType">
+          <option value="reddot">Red-dot or LED finder (no magnification)</option>
+          <option value="telrad">Telrad (rings 0.5°, 2°, 4°)</option>
+          <option value="6x30">6×30 finder scope (about 7°)</option>
+          <option value="8x50">8×50 finder scope (about 6°)</option>
+          <option value="9x50">9×50 finder scope (about 5.5°)</option>
+          <option value="9x50raci">9×50 right-angle finder, correct image (about 5.5°)</option>
+          <option value="custom">Other finder scope</option>
+        </select></label>
+        <label id="oFinderFovL">Finder field of view (°)<input type="number" id="oFinder" min="0.5" max="20" step="0.1"></label>
+        <label id="oFinderOrientL">Finder image<select id="oFinderOrient">
+          <option value="newton">Upside down (straight finder)</option>
+          <option value="upright">Upright (right-angle, correct image)</option>
+          <option value="mirror">Mirrored (right-angle, not correcting)</option>
+        </select></label>
+        <p class="note" id="oFinderNote" style="flex-basis:100%;margin:0"></p>
       </div>
       <p class="note" id="oScopeInfo"></p>
       <div class="eps" id="oEps"></div>
@@ -1073,8 +1088,8 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <div class="row">
         <label style="flex-basis:100%">Eyepiece view orientation<select id="oOrient">
-          <option value="newton">Upside down (Newtonian, Dobson, straight finder)</option>
-          <option value="upright">Upright, as with the naked eye (right-angle correct-image finder)</option>
+          <option value="newton">Upside down (Newtonian, Dobson)</option>
+          <option value="upright">Upright, as with the naked eye</option>
           <option value="mirror">Mirrored (star diagonal on a refractor or SCT)</option>
         </select></label>
         <label>Turn the view by: <span id="oRotV"></span><input type="range" id="oRot" min="-180" max="180" step="5"></label>
@@ -1149,7 +1164,7 @@ const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
-const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
+const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, finderType: null, finderOrient: "newton", eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
 cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
@@ -3768,6 +3783,17 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
 function opt() { return cfg.optics; }
+// Finders: optical finder scopes have a field (shown on the map and in the eyepiece view); red-dot finders and the
+// Telrad have none (the Telrad's rings are drawn instead). Old settings: 6° was the default, other values are "other".
+const FINDERS = {
+  reddot: { name: "red-dot finder", fov: 0 }, telrad: { name: "Telrad", fov: 0 },
+  "6x30": { name: "6×30 finder", fov: 7, orient: "newton" }, "8x50": { name: "8×50 finder", fov: 6, orient: "newton" },
+  "9x50": { name: "9×50 finder", fov: 5.5, orient: "newton" }, "9x50raci": { name: "9×50 right-angle finder", fov: 5.5, orient: "upright" },
+  custom: { name: "finder", fov: null },
+};
+function finderType() { const o = opt(); if (!FINDERS[o.finderType]) o.finderType = +o.finder === 6 || !o.finder ? "8x50" : "custom"; return o.finderType; }
+function finderFov() { const t = finderType(), F = FINDERS[t]; return F.fov == null ? Math.max(0.5, +opt().finder || 6) : F.fov; }   // 0: no optical field
+const finderName = () => FINDERS[finderType()].name;
 // Barlow lens: an eyepiece with a Barlow works like one with the focal length divided by the factor (same apparent field)
 const barlowF = () => (+opt().barlow > 1 ? +opt().barlow : 0);
 function withBarlow(e, b) { return b > 1 ? { f: e.f / b, a: e.a, base: e.f, b } : e; }
@@ -3778,7 +3804,7 @@ function epCombos() {
   return out;
 }
 function curEp() { const o = opt(); if (!o.eps.length) return null; const e = o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))]; return o.useB && barlowF() ? withBarlow(e, barlowF()) : e; }
-const curEpKey = () => { const o = opt(); return o.src === "finder" || !o.eps.length ? "finder" : Math.min(o.ep | 0, o.eps.length - 1) + ":" + (o.useB && barlowF() ? barlowF() : 1); };
+const curEpKey = () => { const o = opt(); return (o.src === "finder" && finderFov() > 0) || !o.eps.length ? "finder" : Math.min(o.ep | 0, o.eps.length - 1) + ":" + (o.useB && barlowF() ? barlowF() : 1); };
 const epName = e => (e.b ? e.base + " mm + " + e.b + "× Barlow" : e.f + " mm");
 const epNameShort = e => (e.b ? e.base + " mm + " + e.b + "×" : e.f + " mm");
 function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
@@ -3896,7 +3922,9 @@ function fillEpBox(box, o, keep) {
   }
   const tips = [];
   if (a.alt && sel === a.best) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
-  if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push("Find it with the " + epName(a.widest.e) + " (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + epName(sel.e) + ".");
+  const aim = "Aim with the " + finderName() + ", ";
+  if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push(aim + "find it with the " + epName(a.widest.e) + " (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + epName(sel.e) + ".");
+  else tips.push(aim + "then look through the " + epName(sel.e) + ".");
   tips.forEach(txt => { const d = document.createElement("div"); d.className = "course"; d.textContent = txt; box.append(d); });
   return true;
 }
@@ -3912,7 +3940,7 @@ function drawRings(c, sol, tx, ty, dpr, col) {
   if (o.ring) {
     c.globalAlpha = 0.8; c.strokeStyle = c.fillStyle = col("--fg"); c.lineWidth = 1.2 * dpr;
     const e = curEp(); if (e) ring(epData(e).fov, epNameShort(e));
-    c.setLineDash([5 * dpr, 5 * dpr]); if (+o.finder > 0) ring(+o.finder, "finder"); c.setLineDash([]);
+    c.setLineDash([5 * dpr, 5 * dpr]); if (finderFov() > 0) ring(finderFov(), "finder"); c.setLineDash([]);
   }
   c.restore();
 }
@@ -3925,7 +3953,9 @@ function drawEyepiece() {
   const cv = $("epCanvas"), dpr = Math.min(2, devicePixelRatio || 1), S = Math.round(cv.clientWidth * dpr) || 1;
   if (cv.width !== S) { cv.width = S; cv.height = S; }
   const c = cv.getContext("2d"), sk = skyNow(), col = n => sk.col[n], sol = st.sol;
-  const ep = curEp(), finder = o.src === "finder" || !ep, fov = finder ? Math.max(0.5, +o.finder || 6) : epData(ep).fov;
+  const ep = curEp(), fFov = finderFov(), finder = (o.src === "finder" && fFov > 0) || !ep;
+  if (finder && !(fFov > 0)) { box.hidden = true; return; }   // nothing to show: no eyepiece and no finder scope
+  const fov = finder ? fFov : epData(ep).fov, orient = finder ? o.finderOrient || "newton" : o.orient, rotDeg = finder ? 0 : +o.rot || 0;
   const lab = finder ? "Finder · " + fmtField(fov) : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const v = teleVec() || Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(sk.M, [0, 0, 1]);
@@ -3934,7 +3964,7 @@ function drawEyepiece() {
   up = up.map(q => q / n);
   const right = [v[1] * up[2] - v[2] * up[1], v[2] * up[0] - v[0] * up[2], v[0] * up[1] - v[1] * up[0]];
   const R = S / 2, Rf = R - 2 * dpr, k = Rf / Math.tan(fov / 2 * D2R), cosLim = Math.cos(Math.min(89, fov * 0.75) * D2R);
-  const th = ((+o.rot || 0) + (o.orient === "newton" ? 180 : 0)) * D2R, ct = Math.cos(th), sn = Math.sin(th), mir = o.orient === "mirror" ? -1 : 1;
+  const th = (rotDeg + (orient === "newton" ? 180 : 0)) * D2R, ct = Math.cos(th), sn = Math.sin(th), mir = orient === "mirror" ? -1 : 1;
   const toScr = (X, Y) => { X *= mir; return [R + k * (X * ct - Y * sn), R - k * (X * sn + Y * ct)]; };
   const proj = w => { const d = dot(w, v); return d < cosLim ? null : toScr(dot(w, right) / d, dot(w, up) / d); };
   c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, S, S);
@@ -3992,6 +4022,11 @@ function syncOptics() {
   const o = opt(), box = $("oEps");
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
+  const ft = finderType(), F = FINDERS[ft];
+  $("oFinderType").value = ft; $("oFinderOrient").value = o.finderOrient || "newton";
+  $("oFinderFovL").hidden = F.fov != null; $("oFinderOrientL").hidden = !F.fov && F.fov !== null;
+  $("oFinderNote").textContent = ft === "reddot" ? "A red-dot finder shows no field; turn on the Telrad rings below if you like a guide for its size." : ft === "telrad" ? "The Telrad’s rings (0.5°, 2°, 4°) are shown on the map." :
+    ft === "custom" ? "Field of view = apparent field of the finder’s eyepiece ÷ its magnification, for example 50° ÷ 8 = 6.3°." : "Field of view " + fmtField(F.fov) + " (typical for this finder).";
   if (document.activeElement !== $("oAp")) $("oAp").value = +o.ap > 0 ? o.ap : "";
   $("oBarlow").value = String(barlowF() || 0);
   $("oAp").placeholder = "e.g. 200";
@@ -4026,7 +4061,7 @@ function syncOptics() {
   }
   const q = $("qEp"); q.textContent = "";
   epCombos().forEach(c => { const op = document.createElement("option"); op.value = c.key; op.textContent = epLabel(c.e); q.append(op); });
-  const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = "Finder · " + fmtField(+o.finder || 6); q.append(fo);
+  if (finderFov() > 0) { const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = "Finder · " + fmtField(finderFov()); q.append(fo); }
   q.value = curEpKey();
 }
 $("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
@@ -4034,6 +4069,12 @@ $("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOp
 $("oBarlow").onchange = () => { const v = +$("oBarlow").value; setOptics(v > 1 ? { barlow: v } : { barlow: 0, useB: false }); };
 $("oAp").onchange = () => { const v = +$("oAp").value; setOptics({ ap: v >= 30 ? v : null }); };
 $("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
+$("oFinderType").onchange = () => { const t = $("oFinderType").value, F = FINDERS[t], o = opt(), patch = { finderType: t };
+  if (F.orient) patch.finderOrient = F.orient;
+  if (t === "telrad") patch.telrad = true;
+  if (!(F.fov == null ? +o.finder > 0 : F.fov > 0) && o.src === "finder") patch.src = "ep";
+  setOptics(patch); };
+$("oFinderOrient").onchange = () => setOptics({ finderOrient: $("oFinderOrient").value });
 $("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
 $("oTelrad").onchange = () => setOptics({ telrad: $("oTelrad").checked });
 $("oRing").onchange = () => setOptics({ ring: $("oRing").checked });
@@ -4042,9 +4083,10 @@ $("qView").onchange = () => setOptics({ view: $("qView").checked });
 $("oOrient").onchange = () => setOptics({ orient: $("oOrient").value });
 $("oRot").oninput = () => setOptics({ rot: +$("oRot").value });
 $("qEp").onchange = () => { const v = $("qEp").value, [i, b] = v.split(":").map(Number); setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: i, useB: b > 1 }); };
-$("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
+$("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length || !(finderFov() > 0)) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
 $("epSrc").onclick = () => $("epCanvas").onclick();
 $("epClose").onclick = () => setOptics({ view: false });
+$("epSet").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); setTimeout(() => $(opt().src === "finder" ? "oFinderType" : "oEps").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
 
 /* ---------------- Tap telescope point ---------------- */
 // The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
@@ -4133,7 +4175,8 @@ function openSheet(id) {
   const sh = $(id); clearTimeout(sh._t);
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   sh.querySelector(".inner").scrollTop = 0;
-  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
+  const tok = sh._tok = (sh._tok || 0) + 1;   // closed again before it slid in: stays closed
+  requestAnimationFrame(() => requestAnimationFrame(() => { if (sh._tok === tok && !sh.hidden) sh.classList.add("open"); }));
   syncPanels(id);
 }
 // Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
@@ -4212,6 +4255,7 @@ function askConfirm(title, text, okLabel, altLabel) {
 }
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
+  sh._tok = (sh._tok || 0) + 1;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
     const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : backToList;
