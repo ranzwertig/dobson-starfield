@@ -63,6 +63,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
 .stage canvas { touch-action: none; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
+/* the map with a mouse: the normal arrow, a closed hand while dragging, a fine crosshair while tapping the eyepiece point */
+.stage canvas#view { cursor: default; }
+.stage canvas#view.dragging { cursor: grabbing; }
+.stage canvas#view.picking { cursor: crosshair; }
 .stage video { display: none; }
 .tag {
   max-width: 100%; box-sizing: border-box;
@@ -2374,7 +2378,7 @@ view.addEventListener("pointermove", e => {
   if (gest.kind === "pan" && ptrs.size === 1) {
     const [x, y] = ptrs.get(e.pointerId), dpr = view.width / view.clientWidth;
     if (!gest.moved && Math.hypot(x - gest.x0, y - gest.y0) < 8 * dpr) return;
-    gest.moved = true; st.gestAt = performance.now();
+    gest.moved = true; st.gestAt = performance.now(); if (e.pointerType === "mouse") view.classList.add("dragging");
     if (mapGestures()) { mapRotate(x - (gest.lx ?? gest.x0), y - (gest.ly ?? gest.y0)); gest.lx = x; gest.ly = y; }
     else if (zoom.z > 1) { zoom.x = gest.px + x - gest.x0; zoom.y = gest.py + y - gest.y0; clampPan(); }
   } else if (gest.kind === "pinch" && ptrs.size >= 2) {
@@ -2400,7 +2404,7 @@ const endPtr = e => {
       else if (zoom.z > 1) zoomAbout(0, 0, 1); else { const [x, y] = canvasXY(e); zoomAbout(x, y, 3); } }
     else { lastTap = now; handleTap(e); }
   }
-  if (ptrs.size === 0) gest = null;
+  if (ptrs.size === 0) { gest = null; view.classList.remove("dragging"); }
   else if (ptrs.size === 1) { const [x, y] = [...ptrs.values()][0]; gest = { kind: "pan", x0: x, y0: y, px: zoom.x, py: zoom.y, moved: true }; }
 };
 view.addEventListener("pointerup", endPtr); view.addEventListener("pointercancel", endPtr);
@@ -4093,7 +4097,7 @@ function setTeleMode(on) {
     hint(topMode() || st.source === "map" ? "Turn on Align first, then set the eyepiece point on the map." : "Tap “Locate” first, or turn on Align to set the eyepiece point on the map.", 5000);
     on = false;
   }
-  st.teleMode = on; $("btnTele").classList.toggle("on", on); $("btnTele").setAttribute("aria-pressed", on);
+  st.teleMode = on; $("btnTele").classList.toggle("on", on); view.classList.toggle("picking", on); $("btnTele").setAttribute("aria-pressed", on);
   if (on) hint(st.solMode === "compass" ? "Centre a bright star in the eyepiece, then tap that star on the map. Tap the button again to cancel." : "Centre a star in the eyepiece, then tap that star here. Tap the button again to cancel.");
   else if (!on && st.teleMode === false && $("hint").textContent.startsWith("Centre a ")) hint(null);
 }
