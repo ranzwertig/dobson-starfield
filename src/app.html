@@ -1059,7 +1059,8 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <p class="note" id="oScopeInfo"></p>
       <div class="eps" id="oEps"></div>
-      <div class="row"><button class="btn" id="oEpAdd">Add eyepiece</button></div>
+      <div class="row"><button class="btn" id="oEpAdd">Add eyepiece</button>
+        <label>Barlow lens<select id="oBarlow"><option value="0">None</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="2.5">2.5×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option></select></label></div>
       <p class="note">The selected eyepiece is used on the map and in the eyepiece view. The details of an object say which of your eyepieces suits it best. Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces. True field = apparent field × eyepiece focal length ÷ telescope focal length.</p>
       <div class="row">
         <label class="check"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
@@ -1144,7 +1145,7 @@ const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
-const OPT_DEF = { scope: 1200, ap: null, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
+const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
 cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
@@ -3535,7 +3536,7 @@ function openSeen(o, entry, fromLog) {
   add("When", now.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
   // eyepiece: a small select with the user's eyepieces
   const lab = document.createElement("label"); lab.innerHTML = "<em>Eyepiece</em>"; const sel = document.createElement("select"); sel.id = "seenEp"; sel.setAttribute("aria-label", "Eyepiece");
-  const opts = opt().eps.map(epLabel).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder", "Naked eye", "Binoculars"]);
+  const opts = epCombos().map(c => epLabel(c.e)).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder", "Naked eye", "Binoculars"]);
   const cur = entry ? entry.ep : (opt().src === "finder" || !curEp() ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
   if (cur && !opts.includes(cur)) opts.unshift(cur);
   opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab);
@@ -3760,13 +3761,25 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
 function opt() { return cfg.optics; }
-function curEp() { const o = opt(); return o.eps.length ? o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))] : null; }
+// Barlow lens: an eyepiece with a Barlow works like one with the focal length divided by the factor (same apparent field)
+const barlowF = () => (+opt().barlow > 1 ? +opt().barlow : 0);
+function withBarlow(e, b) { return b > 1 ? { f: e.f / b, a: e.a, base: e.f, b } : e; }
+// every way to look: each eyepiece alone and, with a Barlow, each eyepiece with it
+function epCombos() {
+  const B = barlowF(), out = [];
+  opt().eps.forEach((e, i) => { out.push({ i, b: 1, key: i + ":1", e }); if (B) out.push({ i, b: B, key: i + ":" + B, e: withBarlow(e, B) }); });
+  return out;
+}
+function curEp() { const o = opt(); if (!o.eps.length) return null; const e = o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))]; return o.useB && barlowF() ? withBarlow(e, barlowF()) : e; }
+const curEpKey = () => { const o = opt(); return o.src === "finder" || !o.eps.length ? "finder" : Math.min(o.ep | 0, o.eps.length - 1) + ":" + (o.useB && barlowF() ? barlowF() : 1); };
+const epName = e => (e.b ? e.base + " mm + " + e.b + "× Barlow" : e.f + " mm");
+const epNameShort = e => (e.b ? e.base + " mm + " + e.b + "×" : e.f + " mm");
 function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
 // Aperture (mirror or lens diameter), from the settings; without it there are no exit pupils and no eyepiece advice
 function aperture() { return +opt().ap > 0 ? +opt().ap : null; }
 function exitPupil(e) { const ap = aperture(); return ap ? e.f * ap / Math.max(1, +opt().scope || 1200) : null; }   // mm
 function fmtField(d) { return d < 1 ? Math.round(d * 60) + "′" : (d < 10 ? d.toFixed(1) : d.toFixed(0)) + "°"; }
-function epLabel(e) { const d = epData(e); return e.f + " mm · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
+function epLabel(e) { const d = epData(e); return epNameShort(e) + " · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
 // "Should be in the eyepiece": within the inner part of the selected eyepiece's field
 function hitRadius() { const e = curEp(); return e ? Math.max(0.05, epData(e).fov / 2 * 0.7) : 0.4; }
 // Which of your eyepieces suits an object best. Deep-sky: the object should fit and fill a good part of the field
@@ -3785,9 +3798,10 @@ function epAdvice(o, t) {
   const eps = opt().eps;
   if (!eps.length || !aperture() || !epAdviceFor(o)) return null;
   const ap = aperture(), maxM = 2 * ap, body = o.kind === "planet" ? o.body || o.id : null;
-  const rows = eps.map((e, i) => { const d = epData(e); return { i, e, mag: d.mag, fov: d.fov, pupil: exitPupil(e), score: 0, note: "", why: "" }; });
+  const rows = epCombos().map(c => { const d = epData(c.e); return { i: c.i, b: c.b, key: c.key, e: c.e, mag: d.mag, fov: d.fov, pupil: exitPupil(c.e), score: 0, note: "", why: "" }; });
   const pick = list => list.reduce((a, b) => (b.score < a.score ? b : a));
-  const magPenalty = r => (r.mag > maxM ? 3 : 0) + (r.pupil > 7.5 ? 1 : 0);
+  // a Barlow adds glass: when it is about as good, the eyepiece alone wins
+  const magPenalty = r => (r.mag > maxM ? 3 : 0) + (r.pupil > 7.5 ? 1 : 0) + (r.b > 1 ? 0.08 : 0);
   const tooMuch = "More magnification than this aperture shows sharply (about " + Math.round(maxM / 10) * 10 + "× at most). ";
   let best, alt = null, kind;
   if (body === "Moon") {
@@ -3851,31 +3865,31 @@ function fillEpBox(box, o, keep) {
   }
   let a = null; try { a = epAdvice(o, skyNow().t); } catch (e) {}
   box.hidden = !a; if (!a) return false;
-  const O = opt(), cur = O.src === "finder" ? -1 : Math.min(O.ep | 0, O.eps.length - 1);
-  if (!keep || !a.rows[box._sel]) box._sel = a.best.i;
-  const sel = a.rows[box._sel], short = r => r.e.f + " mm · " + Math.round(r.mag) + "×";
+  const O = opt(), cur = curEpKey(), byKey = k => a.rows.find(r => r.key === k);
+  if (!keep || !byKey(box._sel)) box._sel = a.best.key;
+  const sel = byKey(box._sel), short = r => epNameShort(r.e) + " · " + Math.round(r.mag) + "×";
   const k = document.createElement("div"); k.className = "k"; k.textContent = O.eps.length > 1 ? "Which eyepiece" : "Eyepiece"; box.append(k);
   const head = document.createElement("div"); head.className = "eb";
   head.innerHTML = "<div><b></b><small></small></div>"; head.querySelector("b").textContent = short(sel) + " · " + fmtField(sel.fov);
-  if (sel === a.best && O.eps.length > 1) { const t = document.createElement("i"); t.className = "tbest"; t.textContent = "best"; head.querySelector("b").append(" ", t); }
+  if (sel === a.best && a.rows.length > 1) { const t = document.createElement("i"); t.className = "tbest"; t.textContent = "best"; head.querySelector("b").append(" ", t); }
   head.querySelector("small").textContent = sel.why;
-  if (sel.i !== cur) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use it"; b.setAttribute("aria-label", "Use the " + sel.e.f + " mm eyepiece");
-    b.onclick = () => { setOptics({ ep: sel.i, src: "ep" }); fillEpBox(box, o, true); hint("Now using the " + epLabel(sel.e), 2500); }; head.append(b); }
+  if (sel.key !== cur) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use it"; b.setAttribute("aria-label", "Use the " + epName(sel.e));
+    b.onclick = () => { setOptics({ ep: sel.i, useB: sel.b > 1, src: "ep" }); fillEpBox(box, o, true); hint("Now using the " + epLabel(sel.e), 2500); }; head.append(b); }
   else { const s = document.createElement("span"); s.className = "inuse"; s.textContent = "in use"; head.append(s); }
   box.append(head);
   if (a.rows.length > 1) {
     const list = document.createElement("div"); list.className = "ers"; list.setAttribute("role", "radiogroup");
     a.rows.forEach(r => {
-      const b = document.createElement("button"); b.className = "er" + (r === a.best ? " best" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(r === sel));
+      const b = document.createElement("button"); b.className = "er" + (r === a.best ? " best" : "") + (r.b > 1 ? " barlow" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(r === sel));
       b.innerHTML = "<span></span><span></span>"; b.firstChild.textContent = short(r) + " · " + fmtField(r.fov);
-      b.lastChild.textContent = (r.i === cur ? "in use · " : "") + (r === a.best ? "best" : r.note);
-      b.onclick = () => { box._sel = r.i; fillEpBox(box, o, true); }; list.append(b);
+      b.lastChild.textContent = (r.key === cur ? "in use · " : "") + (r === a.best ? "best" : r.note);
+      b.onclick = () => { box._sel = r.key; fillEpBox(box, o, true); }; list.append(b);
     });
     box.append(list);
   }
   const tips = [];
   if (a.alt && sel === a.best) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
-  if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push("Find it with the " + a.widest.e.f + " mm (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + sel.e.f + " mm.");
+  if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push("Find it with the " + epName(a.widest.e) + " (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + epName(sel.e) + ".");
   tips.forEach(txt => { const d = document.createElement("div"); d.className = "course"; d.textContent = txt; box.append(d); });
   return true;
 }
@@ -3890,7 +3904,7 @@ function drawRings(c, sol, tx, ty, dpr, col) {
   if (o.telrad) { c.strokeStyle = c.fillStyle = col("--target"); c.globalAlpha = 0.55; c.lineWidth = 1.2 * dpr; [0.5, 2, 4].forEach(d => ring(d, null)); }
   if (o.ring) {
     c.globalAlpha = 0.8; c.strokeStyle = c.fillStyle = col("--fg"); c.lineWidth = 1.2 * dpr;
-    const e = curEp(); if (e) ring(epData(e).fov, e.f + " mm");
+    const e = curEp(); if (e) ring(epData(e).fov, epNameShort(e));
     c.setLineDash([5 * dpr, 5 * dpr]); if (+o.finder > 0) ring(+o.finder, "finder"); c.setLineDash([]);
   }
   c.restore();
@@ -3965,12 +3979,14 @@ function drawEyepiece() {
   c.strokeStyle = col("--accent"); c.globalAlpha = 0.7; c.lineWidth = 1 * dpr; c.beginPath();
   [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(R + a * 5 * dpr, R + b * 5 * dpr); c.lineTo(R + a * 13 * dpr, R + b * 13 * dpr); }); c.stroke(); c.globalAlpha = 1;
 }
-const epLine = e => Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "");
+const epLine = e => Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "")
+  + (barlowF() ? " · with Barlow " + Math.round(epData(withBarlow(e, barlowF())).mag) + "×" : "");
 function syncOptics() {
   const o = opt(), box = $("oEps");
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
   if (document.activeElement !== $("oAp")) $("oAp").value = +o.ap > 0 ? o.ap : "";
+  $("oBarlow").value = String(barlowF() || 0);
   $("oAp").placeholder = "e.g. 200";
   const ap = aperture();
   $("oScopeInfo").textContent = ap ? "f/" + ((+o.scope || 1200) / ap).toFixed(1) + " · highest useful magnification about " + Math.round(2 * ap / 10) * 10 + "×."
@@ -4002,12 +4018,13 @@ function syncOptics() {
     });
   }
   const q = $("qEp"); q.textContent = "";
-  o.eps.forEach((e, i) => { const op = document.createElement("option"); op.value = i; op.textContent = epLabel(e); q.append(op); });
+  epCombos().forEach(c => { const op = document.createElement("option"); op.value = c.key; op.textContent = epLabel(c.e); q.append(op); });
   const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = "Finder · " + fmtField(+o.finder || 6); q.append(fo);
-  q.value = o.src === "finder" || !o.eps.length ? "finder" : String(o.ep | 0);
+  q.value = curEpKey();
 }
 $("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
 $("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
+$("oBarlow").onchange = () => { const v = +$("oBarlow").value; setOptics(v > 1 ? { barlow: v } : { barlow: 0, useB: false }); };
 $("oAp").onchange = () => { const v = +$("oAp").value; setOptics({ ap: v >= 30 ? v : null }); };
 $("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
 $("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
@@ -4017,7 +4034,7 @@ $("oView").onchange = () => setOptics({ view: $("oView").checked });
 $("qView").onchange = () => setOptics({ view: $("qView").checked });
 $("oOrient").onchange = () => setOptics({ orient: $("oOrient").value });
 $("oRot").oninput = () => setOptics({ rot: +$("oRot").value });
-$("qEp").onchange = () => { const v = $("qEp").value; setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: +v }); };
+$("qEp").onchange = () => { const v = $("qEp").value, [i, b] = v.split(":").map(Number); setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: i, useB: b > 1 }); };
 $("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
 $("epSrc").onclick = () => $("epCanvas").onclick();
 $("epClose").onclick = () => setOptics({ view: false });
