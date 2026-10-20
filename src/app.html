@@ -675,6 +675,8 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>
       <button class="fab" id="fabTarget" aria-label="Current target"><small>Target</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg></button>
+      <button class="fab" id="fabSound" aria-label="Sound guidance" aria-pressed="false" hidden><small>Sound</small>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w1" d="M15.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
       <button class="fab" id="fabList" aria-label="Observing list"><small>List</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg><span class="badge" id="listBadge" hidden></span></button>
       <button class="fab" id="fabSearch" aria-label="Find target"><small>Find target</small>
@@ -1730,6 +1732,74 @@ function updateGuide() {
     + (st.solMode === "compass" ? "by compass, approximate" : st.solMode === "track" ? "via motion sensor" : st.source === "video" ? age + " s ago" : "");
   lastGuide = { ph, th, sep };
 }
+/* ---------------- Sound guidance: one axis after the other ---------------- */
+// For pushing without looking at the screen. First the azimuth: clicks, a high "tick" = turn right, a low "tock" =
+// turn left. Once that is within about a degree: the altitude, a rising chirp = tilt up, a falling one = tilt down.
+// The closer, the faster they repeat. In the eyepiece field a soft chord, then silence until it drifts out again.
+const sound = { on: false, ctx: null, gain: null, timer: 0, phase: "az", found: false, wake: null };
+function guideNow() {
+  const T = targetById(cfg.target), tv = teleVec(); if (!T || !tv || st.tOff) return null;
+  const t = skyNow().t, tgt = vecNow(T), th = horiz(tgt, t), ph = horiz(tv, t);
+  const dAz = ((th.az - ph.az + 540) % 360) - 180, dAlt = th.alt - ph.alt;
+  return { dAz, dAlt, azSky: Math.abs(dAz) * Math.max(0.05, Math.cos(ph.alt * D2R)), sep: Solver.angDeg(tv, tgt), below: th.alt < 0 };
+}
+function tone(kind, arg) {
+  const c = sound.ctx; if (!c) return;
+  const t0 = c.currentTime + 0.01, o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(sound.gain);
+  const env = (peak, len) => { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len); o.start(t0); o.stop(t0 + len + 0.02); };
+  if (kind === "tick") {   // right: high, short; left: low, a bit longer, falling slightly like a wood block
+    if (arg > 0) { o.type = "triangle"; o.frequency.setValueAtTime(2000, t0); env(0.5, 0.03); }
+    else { o.type = "sine"; o.frequency.setValueAtTime(620, t0); o.frequency.exponentialRampToValueAtTime(480, t0 + 0.05); env(0.7, 0.06); }
+  } else if (kind === "chirp") {   // up: rising, down: falling
+    o.type = "sine"; const [a, b] = arg > 0 ? [520, 1100] : [1100, 520];
+    o.frequency.setValueAtTime(a, t0); o.frequency.exponentialRampToValueAtTime(b, t0 + 0.12); env(0.45, 0.14);
+  } else if (kind === "chord") {   // found: a soft major chord, its notes slightly after each other
+    o.disconnect(); [523.3, 659.3, 784, 1046.5].forEach((f, i) => { const oo = c.createOscillator(), gg = c.createGain(), ts = t0 + i * 0.06;
+      oo.type = "sine"; oo.frequency.value = f; oo.connect(gg); gg.connect(sound.gain);
+      gg.gain.setValueAtTime(0.0001, ts); gg.gain.exponentialRampToValueAtTime(0.22, ts + 0.02); gg.gain.exponentialRampToValueAtTime(0.0001, ts + 0.9); oo.start(ts); oo.stop(ts + 0.95); });
+  }
+}
+// the further away, the slower: 90° → about 1 s between sounds, a fraction of a degree → about 0.1 s
+const soundGap = (deg, min, max) => min + (max - min) * Math.min(1, Math.log1p(Math.max(0, deg)) / Math.log1p(90));
+function soundStep() {
+  sound.timer = 0; if (!sound.on) return;
+  let wait = 400;
+  const g = document.hidden ? null : guideNow();
+  if (g && !g.below) {
+    const hitR = hitRadius(), azTol = Math.max(0.3, hitR * 0.6);
+    if (g.sep < hitR) { if (!sound.found) { tone("chord"); sound.found = true; } wait = 300; }
+    else {
+      if (sound.found && g.sep > hitR * 1.3) sound.found = false;
+      // which axis: the azimuth until it is close, then the altitude (with some hysteresis, so it doesn't flip back and forth)
+      if (sound.phase === "az" && g.azSky < azTol * 0.6) sound.phase = "alt";
+      else if (sound.phase === "alt" && g.azSky > azTol * 1.6) sound.phase = "az";
+      if (sound.found) wait = 300;
+      else if (sound.phase === "az") { tone("tick", g.dAz); wait = soundGap(g.azSky, 90, 950); }
+      else { tone("chirp", g.dAlt); wait = soundGap(Math.abs(g.dAlt), 200, 1100); }
+    }
+  }
+  sound.timer = setTimeout(soundStep, wait);
+}
+async function setSound(on) {
+  if (on) {
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = "playback";   // iPhone: play even with the ring/silent switch on silent
+      if (!sound.ctx) { sound.ctx = new (window.AudioContext || window.webkitAudioContext)(); sound.gain = sound.ctx.createGain(); sound.gain.gain.value = 0.8; sound.gain.connect(sound.ctx.destination); }
+      if (sound.ctx.state !== "running") await sound.ctx.resume();
+    } catch (e) { hint("Sound isn’t available in this browser.", 3000); return; }
+    try { if (navigator.wakeLock) sound.wake = await navigator.wakeLock.request("screen"); } catch (e) {}   // keep the screen on: a locked phone stops the sound
+  } else { clearTimeout(sound.timer); sound.timer = 0; try { sound.wake && sound.wake.release(); } catch (e) {} sound.wake = null; }
+  sound.on = on; sound.phase = "az"; sound.found = false;
+  $("fabSound").classList.toggle("on", on); $("fabSound").setAttribute("aria-pressed", String(on));
+  if (on) {
+    soundStep();
+    hint(teleVec() ? "Sound on: clicks to turn (high = right, low = left), then chirps to tilt (rising = up, falling = down). A chord when it’s in the eyepiece." :
+      "Sound on. It starts once the position is known: turn on Align or tap Locate.", 6000);
+  }
+}
+$("fabSound").onclick = () => setSound(!sound.on);
+// back in the app: the screen lock was released while it was hidden, ask again
+document.addEventListener("visibilitychange", async () => { if (!document.hidden && sound.on && navigator.wakeLock && (!sound.wake || sound.wake.released)) { try { sound.wake = await navigator.wakeLock.request("screen"); } catch (e) {} } });
 function compass(az) { return ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][Math.round(az / 45) % 8]; }
 
 function renderReadout() {
@@ -3537,7 +3607,11 @@ function addTonightsBest() {
   if (n) saveObs(); return n;
 }
 document.querySelectorAll("[data-ltab]").forEach(b => b.onclick = () => { listTab.v = b.dataset.ltab; renderList(); });
-function syncTargetFab() { const f = $("fabTarget"); if (f) f.classList.toggle("tgt-on", !!cfg.target); }
+function syncTargetFab() {
+  const f = $("fabTarget"); if (f) f.classList.toggle("tgt-on", !!cfg.target);
+  const sb = $("fabSound"); if (sb && sb.hidden === !!cfg.target) sb.hidden = !cfg.target;
+  if (!cfg.target && sound.on) setSound(false);
+}
 $("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("listSheet"); revealNew(); };
 // Newly added objects (last 10 minutes) are marked "New"; the newest one is scrolled into view
 const isNew = x => x && Date.now() - (x.added || 0) < 10 * 60e3;
