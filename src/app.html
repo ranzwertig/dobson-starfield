@@ -2920,10 +2920,10 @@ function drawOverlay(dpr) {
       const p = Solver.skyToPix(sol, s.v); if (!p || p.z < 0.2 || !inView(p)) continue;
       const [x, y] = P(p.x, p.y), iss = s.x.name === "ISS";
       c.globalAlpha = s.alt < 0 ? 0.55 : 1;
-      if (s.lit) {
+      if (s.lit || key) {   // lit: cyan; the one you are dealing with also in Earth's shadow (then grey), so you always see it
         const back = satState(s.x, new Date(d0.getTime() - 20000)), q = back && Solver.skyToPix(sol, back.v);
-        if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = "rgba(140,220,255,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
-        c.fillStyle = "#9be3ff"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
+        if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = s.lit ? "rgba(140,220,255,.55)" : "rgba(170,185,200,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
+        c.fillStyle = s.lit ? "#9be3ff" : "#b4c0cc"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
       } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
       if (iss || key || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr); }
       c.globalAlpha = 1; st.drawnSats.push(s);
@@ -4545,7 +4545,7 @@ function showOnMap(o) {
   mv.az = h.az; mv.alt = Math.max(-90, Math.min(90, h.alt)); mv.fov = Math.max(20, Math.min(40, mv.fov || 40));
   st.focus = o; st.sol = mapSol(); st.solMode = "map"; lastSig = []; updateGuide();
   if (!sidePanels()) { st.infoFromList = false; closeSheet("infoSheet"); }
-  hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." + (o.kind === "sat" ? " " + passText({ kind: "sat", id: o.id }) : "") : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
+  hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
 }
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = $("infoSheet").querySelector(".inner"), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
@@ -4579,10 +4579,6 @@ function showInfo(o, fromList) {
   const tb = $("infoTonight"); tb.textContent = "";
   let pl = null; try { pl = o.kind === "sat" || o.body === "Sun" ? null : planFor(o, nightPlan()); } catch (e) {}
   tb.hidden = !pl; if (pl) fillTonight(tb, pl);
-  if (o.kind === "sat" && h.alt < 0) {   // a satellite below the horizon: when it comes up next
-    const k = document.createElement("div"); k.className = "k"; k.textContent = "Next pass";
-    const d = document.createElement("div"); d.textContent = passText({ kind: "sat", id: o.id }); tb.append(k, d); tb.hidden = false;
-  }
   const box = $("infoFacts"); box.textContent = "";
   facts.forEach(([k, val]) => { const d = document.createElement("div"); d.className = "fact"; const a = document.createElement("div"); a.className = "k"; a.textContent = k; const b = document.createElement("div"); b.className = "v"; b.textContent = val; d.append(a, b); box.append(d); });
   const lb = $("infoLinks"); lb.textContent = "";
