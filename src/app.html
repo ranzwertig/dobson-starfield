@@ -4354,7 +4354,8 @@ function showInfo(o, fromList) {
 
 $("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); openSheet("menu"); };
 $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
-const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); };
+// the search field gets the focus right away (within the tap, so phones also open the keyboard)
+const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); try { $("q").focus({ preventScroll: true }); } catch (e) {} };
 $("fabSearch").onclick = openSearch;
 $("hudTarget").onclick = () => cfg.target ? openTargetPanel(false) : openSearch();
 $("hudClear").onclick = clearTarget;
