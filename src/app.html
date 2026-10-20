@@ -988,7 +988,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="switch"><input type="checkbox" id="qListMarks" aria-label="List marks"><i></i></label>
       </div>
       <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
-        <div class="qlabel">Position numbers <span class="qsub">top right, tap for RA/Dec and more</span></div>
+        <div class="qlabel">Position numbers <span class="qsub">top right: field of view, accuracy, location</span></div>
         <label class="switch"><input type="checkbox" id="qReadout" aria-label="Position numbers"><i></i></label>
       </div>
     </div>
@@ -1034,7 +1034,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optStarNames"> Star names</label>
         <label class="check"><input type="checkbox" id="optObjLabels"> Names of other objects (Messier and NGC, planets, satellites)</label>
         <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
-        <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the top right (field of view and accuracy, tap for RA/Dec and more)</label>
+        <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the top right (field of view, accuracy, telescope position, location)</label>
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
       </div>
     </fieldset>
@@ -1716,9 +1716,13 @@ function renderReadout() {
     add("Telescope RA", fmtRA(rd.ra)); add("Telescope Dec", fmtDec(rd.dec));
     add("Altitude", fmtDeg(h.alt)); add("Azimuth", fmtDeg(h.az) + " " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]);
   }
-  const T = targetById(cfg.target);
-  if (T) { const rd = Solver.v2radec(T.vec(t)); add(T.name + " RA", fmtRA(rd.ra)); add(T.name + " Dec", fmtDec(rd.dec)); }
-  if (st.sol) { add("Field of view", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); add("Accuracy", "±" + (st.sol.rms * 60).toFixed(1) + "′"); add("Stars matched", String(st.sol.nMatch)); }
+  // where you are: the coordinates and where they come from (GPS with its accuracy, typed in, or the default)
+  const la = +cfg.lat, lo = +cfg.lon, L = cfg.loc || {};
+  add("Location", Math.abs(la).toFixed(3) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(3) + "° " + (lo >= 0 ? "E" : "W"));
+  const when = L.at ? new Date(L.at) : null, ago = when ? (Date.now() - when < 864e5 && when.getDate() === new Date().getDate() ? "today " + when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : when.toLocaleDateString([], { day: "numeric", month: "short" })) : "";
+  add("From", L.src === "gps" ? "GPS" + (L.acc ? " ±" + (L.acc >= 1000 ? (L.acc / 1000).toFixed(1) + " km" : Math.round(L.acc) + " m") : "") + (ago ? " · " + ago : "")
+    : L.src === "manual" ? "entered" + (ago ? " · " + ago : "") : la === DEF.lat && lo === DEF.lon ? "default, not set yet" : "saved");
+  if (st.sol) { add("Field of view", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); if (!st.sol.approx) { add("Accuracy", "±" + (st.sol.rms * 60).toFixed(1) + "′"); add("Stars matched", String(st.sol.nMatch)); } }
   else if (st.stars.length) add("Points of light", String(st.stars.length));
 }
 
@@ -4414,11 +4418,11 @@ $("fabSearch").onclick = openSearch;
 $("hudTarget").onclick = () => cfg.target ? openTargetPanel(false) : openSearch();
 $("hudClear").onclick = clearTarget;
 $("searchClear").onclick = () => { clearTarget(); if (!sidePanels()) closeSheet("searchSheet"); };
-$("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
-$("lon").onchange = () => { cfg.lon = +$("lon").value; save(); updateGuide(); renderChips(); renderReadout(); };
+$("lat").onchange = () => { cfg.lat = +$("lat").value; cfg.loc = { src: "manual", at: new Date().toISOString() }; save(); updateGuide(); renderChips(); renderReadout(); };
+$("lon").onchange = () => { cfg.lon = +$("lon").value; cfg.loc = { src: "manual", at: new Date().toISOString() }; save(); updateGuide(); renderChips(); renderReadout(); };
 $("btnGps").onclick = () => {
   if (!navigator.geolocation) return hint("No GPS available.", 3000);
-  navigator.geolocation.getCurrentPosition(p => { cfg.lat = +p.coords.latitude.toFixed(3); cfg.lon = +p.coords.longitude.toFixed(3); save(); syncSettings(); updateGuide(); renderChips(); },
+  navigator.geolocation.getCurrentPosition(p => { cfg.lat = +p.coords.latitude.toFixed(3); cfg.lon = +p.coords.longitude.toFixed(3); cfg.loc = { src: "gps", acc: p.coords.accuracy, at: new Date().toISOString() }; save(); syncSettings(); updateGuide(); renderChips(); renderReadout(); },
     () => hint("Location not shared. Please enter coordinates.", 4000), { timeout: 10000 });
 };
 $("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey()] = v > 1 ? v : null; save(); };
