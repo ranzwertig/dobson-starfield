@@ -2961,11 +2961,13 @@ function drawMoonPhase(c, sol, sk, x, y, dpr) {
   c.fill(); c.restore();
   return r;
 }
-function objLabel(c, txt, x, y) { if (cfg.objLabels !== false) label(c, txt, x, y); }
-function label(c, txt, x, y) {   // only draw a label if it doesn't cover anything
+function objLabel(c, txt, x, y, at) { if (cfg.objLabels !== false) label(c, txt, x, y, at); }
+// Names drawn on the map can be tapped too: each remembers the point of its object (at: canvas pixels)
+let labelHits = [];
+function label(c, txt, x, y, at) {   // only draw a label if it doesn't cover anything
   const w = c.measureText(txt).width, h = parseFloat(c.font) * 1.1, r = [x, y - h / 2, x + w, y + h / 2];
   if (placed.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1])) return false;
-  placed.push(r); c.fillText(txt, x, y); return true;
+  placed.push(r); c.fillText(txt, x, y); if (at) labelHits.push({ r, at }); return true;
 }
 // Star dots subtle over the real image, bold on the plain map
 function showImgAlpha() { const liveVideo = st.source === "video" && st.stream; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
@@ -2978,7 +2980,7 @@ function drawOverlay(dpr) {
     st.stars.slice(0, 60).forEach(s => { const [x, y] = P(s.x, s.y); c.beginPath(); c.arc(x, y, 6 * dpr, 0, 7); c.stroke(); });
   }
   if (!sol) return;
-  placed = [];
+  placed = []; labelHits = [];
   const t = sk.t, live = st.source === "video";
   c.globalAlpha = live && Date.now() - st.solAt > 6000 ? 0.4 : 1;
   const W = view.width, H = view.height;
@@ -3047,7 +3049,7 @@ function drawOverlay(dpr) {
       if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
       const nm = S.lab || (zoom.z >= 2 && inf[1] ? inf[1] + " " + inf[3] : ""); if (!nm) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < zs(0.3) || !inView(p)) continue;
-      const [x, y] = P(p.x, p.y); label(c, nm, x + 12 * dpr, y);
+      const [x, y] = P(p.x, p.y); label(c, nm, x + 12 * dpr, y, [x, y]);
     }
   }
   {
@@ -3056,7 +3058,7 @@ function drawOverlay(dpr) {
     MSV.forEach(({ id, mag, cls, v, size }) => {
       if (!show[cls] || (mag != null && mag > 9) || id === cfg.target) return;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < zs(0.3) || !inView(p)) return;
-      const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); objLabel(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75));
+      const [x, y] = P(p.x, p.y), r = symR(size); dsoSymbol(c, cls, x, y, r); objLabel(c, id, x + Math.max(10 * dpr, r * 0.75), y - Math.max(10 * dpr, r * 0.75), [x, y]);
       obsMark(c, id, x, y, r, dpr);
     });
     st.drawnNgc = [];
@@ -3066,7 +3068,7 @@ function drawOverlay(dpr) {
       const v = o.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < zs(0.3) || !inView(p)) continue;
       const [x, y] = P(p.x, p.y), r = symR(o.size) * 0.85; c.globalAlpha = 0.8; dsoSymbol(c, o.cls, x, y, r); c.globalAlpha = 1;
-      objLabel(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75)); st.drawnNgc.push(o); obsMark(c, o.id, x, y, r, dpr);
+      objLabel(c, o.id, x + Math.max(9 * dpr, r * 0.75), y - Math.max(9 * dpr, r * 0.75), [x, y]); st.drawnNgc.push(o); obsMark(c, o.id, x, y, r, dpr);
     }
   }
   if (show.solar) {
@@ -3076,14 +3078,14 @@ function drawOverlay(dpr) {
       if (en === "Sun") {   // Sun as a yellow disc at true size (0.53°), at least 7 px
         const r = Math.max(7 * dpr, 0.266 * D2R * sol.f * fit.sc);
         c.fillStyle = "#ffd34d"; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
-        c.fillStyle = col("--fg"); objLabel(c, "Sun", x + r + 6 * dpr, y); return;
+        c.fillStyle = col("--fg"); objLabel(c, "Sun", x + r + 6 * dpr, y, [x, y]); return;
       }
-      if (en === "Moon") { const r = drawMoonPhase(c, sol, sk, x, y, dpr); c.fillStyle = col("--fg"); objLabel(c, de, x + r + 6 * dpr, y + r * 0.6 + 6 * dpr); obsMark(c, en, x, y, r, dpr); return; }
+      if (en === "Moon") { const r = drawMoonPhase(c, sol, sk, x, y, dpr); c.fillStyle = col("--fg"); objLabel(c, de, x + r + 6 * dpr, y + r * 0.6 + 6 * dpr, [x, y]); obsMark(c, en, x, y, r, dpr); return; }
       // planets at true size once that is bigger than the dot; Jupiter's moons when zoomed in
       let pr = 3 * dpr; if (PLANET_R[en] && sol.fov < 10) { try { pr = Math.max(pr, planetDisc(en, sk.t).arcsec / 7200 * D2R * sol.f * fit.sc); } catch (e) {} }
       c.fillStyle = col("--fg"); c.beginPath(); c.arc(x, y, pr, 0, 7); c.fill();
       if (en === "Jupiter" && sol.fov < 8) drawJupiterMoons(c, sol, x, y, dpr);
-      c.fillStyle = col("--fg"); objLabel(c, de, x + pr + 7 * dpr, y + 12 * dpr); obsMark(c, en, x, y, Math.max(5 * dpr, pr), dpr);
+      c.fillStyle = col("--fg"); objLabel(c, de, x + pr + 7 * dpr, y + 12 * dpr, [x, y]); obsMark(c, en, x, y, Math.max(5 * dpr, pr), dpr);
     });
   }
   // Constellation names (optional): the big ones always, smaller ones when zoomed in; they give way to object names
@@ -3122,7 +3124,7 @@ function drawOverlay(dpr) {
         if (q && q.z > zs(0.2)) { const [bx, by] = P(q.x, q.y); c.strokeStyle = s.lit ? "rgba(140,220,255,.55)" : "rgba(170,185,200,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
         c.fillStyle = s.lit ? "#9be3ff" : "#b4c0cc"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
       } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
-      if (iss || key || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr); }
+      if (iss || key || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr, [x, y]); }
       c.globalAlpha = 1; st.drawnSats.push(s);
     }
     c.fillStyle = col("--fg");
@@ -4733,15 +4735,25 @@ function planetObj(de, en) {
     vec: targetById(en).vec,
     links: [["NASA", "https://science.nasa.gov/" + NASA[en] + "/"], ["Wikipedia", "https://en.wikipedia.org/wiki/" + PLANET_WIKI[en]]] };
 }
+// A tap on a name picks its object; anywhere else the object nearest the finger
 function pickAt(clientX, clientY, pointsOnly) {
-  const sol = st.sol; if (!sol) return null;
-  const r = view.getBoundingClientRect(), dpr = view.width / r.width, t = skyNow().t;
-  const px = (clientX - r.left) * dpr, py = (clientY - r.top) * dpr, lim = 30 * dpr;
-  let best = null, bs = Infinity;
+  if (!st.sol) return null;
+  const r = view.getBoundingClientRect(), dpr = view.width / r.width;
+  const px = (clientX - r.left) * dpr, py = (clientY - r.top) * dpr, m = 4 * dpr;
+  // on a name: that name's object (faint stars under the text stay tappable next to it); otherwise what is near
+  const h = labelHits.find(q => px >= q.r[0] - m && px <= q.r[2] + m && py >= q.r[1] - m && py <= q.r[3] + m);
+  const named = h && pickNear(h.at[0], h.at[1], 3 * dpr, pointsOnly);
+  if (named) return named.make();
+  const near = pickNear(px, py, 30 * dpr, pointsOnly);
+  return near ? near.make() : null;
+}
+function pickNear(px, py, lim, pointsOnly) {
+  const sol = st.sol, t = skyNow().t, dpr = view.width / Math.max(1, view.clientWidth);
+  let best = null, bs = Infinity, bd = 0;
   const consider = (vec, bonus, make) => {
     const p = Solver.skyToPix(sol, vec); if (!p || p.z < 0.03) return;   // the screen can reach far from the camera axis (eyepiece point off the axis)
     const [x, y] = P(p.x, p.y), d = Math.hypot(x - px, y - py); if (d > lim) return;
-    const sc = d - bonus * dpr; if (sc < bs) { bs = sc; best = make; }
+    const sc = d - bonus * dpr; if (sc < bs) { bs = sc; best = make; bd = d; }
   };
   const show = pointsOnly ? SHOW_DEF : cfg.show;   // the eyepiece point may use any star
   if (show.solar) PLANETS.forEach(([de, en]) => consider(targetById(en).vec(t), 14, () => planetObj(de, en)));
@@ -4762,7 +4774,7 @@ function pickAt(clientX, clientY, pointsOnly) {
       consider(v, -1 - (dm[k] - 6) * 0.5, () => { const rd = Solver.v2radec(v); return deepStarObj(rd.ra, rd.dec, dm[k]); });
     });
   }
-  return best ? best() : null;
+  return best ? { make: best, d: bd } : null;
 }
 // "Show on map": the free map (not while Align or the live camera follow the telescope) turns to the object and marks it.
 // The field becomes 20–40° wide: close enough to find it, wide enough to see the constellation around it.

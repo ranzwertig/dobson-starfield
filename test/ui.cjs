@@ -369,6 +369,23 @@ const TESTS = {
     await done(p);
   },
 
+  // names on the map can be tapped: they open the object they belong to
+  async labels() {
+    const p = await page({ w: 1000, h: 700, mobile: false });
+    await wait(p, 600);
+    const h = await ev(p, () => { const W = view.width; const ok = labelHits.filter(q => q.r[2] - q.r[0] > 40 && q.r[0] > 80 && q.r[2] < W - 300 && q.r[1] > 120);
+      const q = ok.find(q => Math.hypot((q.r[0] + q.r[2]) / 2 - q.at[0], (q.r[1] + q.r[3]) / 2 - q.at[1]) > 25) || ok[0]; if (!q) return null;
+      const want = pickNear(q.at[0], q.at[1], 3).make().name, dpr = view.width / view.clientWidth;
+      return { x: ((q.r[0] + q.r[2]) / 2 + Math.min(10, (q.r[2] - q.r[0]) / 4)) / dpr, y: (q.r[1] + q.r[3]) / 2 / dpr, want }; });
+    ok(!!h, 'the map has names to tap');
+    if (h) {
+      const box = await p.locator('#view').boundingBox(); await p.mouse.click(box.x + h.x, box.y + h.y); await wait(p, 600);
+      const title = await ev(p, () => $('infoSheet').hidden ? '' : $('infoTitle').textContent);
+      ok(title.includes(h.want), 'tapping a name opens its object', [title, h.want]);
+    }
+    await done(p);
+  },
+
   // offline: the service worker keeps page and scripts
   async offline() {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
