@@ -8,6 +8,7 @@
     "build": "node scripts/catalog.mjs && node scripts/build.mjs",
     "test": "npm run catalog && node test/synthetic.cjs 21 2",
     "test:photo": "node test/photo.cjs",
+    "test:ui": "node scripts/build.mjs && node test/ui.cjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
