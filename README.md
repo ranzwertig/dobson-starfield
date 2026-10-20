@@ -84,7 +84,8 @@ The map redraws only when something changed: for the passing time only once the 
 | `src/sw.js` | service worker of the app (`/app/sw.js`): offline use and update notices, version set by the build |
 | `src/sw-root.js` | retires the old service worker at `/sw.js` from when the app lived at `/` |
 | `src/finder-adapter.js` | JSCAD design of the 3D-printable finder shoe adapter (Explore Scientific / Vixen foot, T-slot base); runs in the browser, in Node and at openjscad.xyz |
-| `src/accessories.js` | configurator on `/accessories/`: form from the design's parameters, small WebGL preview, binary STL download |
+| `src/mirror-holder.js` | JSCAD design of the 45° mirror holder (captive 1/4" nut or screw) |
+| `src/accessories.js` | configurators on `/accessories/` (guide for the phone mount): form from each design's parameters, small WebGL preview, binary STL download |
 | `site/` | website: landing page, getting started, help, accessories, privacy policy, imprint, 404 page, shared `_header.html`/`_footer.html`, `site.css` |
 | `scripts/hero.mjs` | draws the landing page star chart from the catalogue at build time |
 | `public/` | static files copied to `dist/`: `app/` logo, web app manifest and icons, `robots.txt` |

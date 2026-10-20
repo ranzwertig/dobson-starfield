@@ -209,8 +209,8 @@ footer a:hover { color: var(--amber); }
 .doc.wide:last-child { padding-bottom: 80px; }
 .cfg { display: grid; grid-template-columns: minmax(0, 7fr) minmax(300px, 5fr); gap: 28px; align-items: start; padding: 8px 0 40px; border-top: 0; }
 .cfg-view { position: sticky; top: 16px; }
-#cfg-view { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 18px; border: 1px solid var(--line); background: #060810; touch-action: none; cursor: grab; }
-#cfg-view:active { cursor: grabbing; }
+.cfg-view canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 18px; border: 1px solid var(--line); background: #060810; touch-action: none; cursor: grab; }
+.cfg-view canvas:active { cursor: grabbing; }
 .cfg-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-top: 12px; }
 .cfg-size { font: 500 15px var(--num); color: var(--mist); font-variant-numeric: tabular-nums; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; padding: 3px; }
@@ -219,15 +219,15 @@ footer a:hover { color: var(--amber); }
 .seg span { display: block; padding: 5px 16px; border-radius: 99px; font-weight: 500; font-size: 16px; color: var(--mist); }
 .seg input:checked + span { background: var(--amber); color: #1b1206; }
 .seg input:focus-visible + span { outline: 2px solid var(--amber); outline-offset: 2px; }
-#cfg-form .grp { border: 1px solid var(--line); border-radius: 14px; padding: 6px 16px 10px; margin: 0 0 14px; min-width: 0; }
-#cfg-form legend, #cfg-form summary { font: 600 13px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); padding: 0 6px; }
-#cfg-form summary { cursor: pointer; padding: 8px 0 6px; }
-#cfg-form .row { display: grid; gap: 2px; padding: 7px 0; font-size: 16px; color: #ccd3de; }
-#cfg-form .ctl { display: grid; grid-template-columns: minmax(0, 1fr) 72px 26px; gap: 10px; align-items: center; }
-#cfg-form .ctl i { font: 400 14px var(--num); font-style: normal; color: var(--mist); }
-#cfg-form input[type=range] { width: 100%; accent-color: var(--amber); }
-#cfg-form input[type=number], #cfg-form select { font: 500 15px var(--num); color: var(--star); background: #0a0f1f; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; }
-#cfg-form select { font-family: var(--ui); font-size: 16px; }
+.cfg-form .grp { border: 1px solid var(--line); border-radius: 14px; padding: 6px 16px 10px; margin: 0 0 14px; min-width: 0; }
+.cfg-form legend, .cfg-form summary { font: 600 13px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); padding: 0 6px; }
+.cfg-form summary { cursor: pointer; padding: 8px 0 6px; }
+.cfg-form .row { display: grid; gap: 2px; padding: 7px 0; font-size: 16px; color: #ccd3de; }
+.cfg-form .ctl { display: grid; grid-template-columns: minmax(0, 1fr) 72px 26px; gap: 10px; align-items: center; }
+.cfg-form .ctl i { font: 400 14px var(--num); font-style: normal; color: var(--mist); }
+.cfg-form input[type=range] { width: 100%; accent-color: var(--amber); }
+.cfg-form input[type=number], .cfg-form select { font: 500 15px var(--num); color: var(--star); background: #0a0f1f; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; }
+.cfg-form select { font-family: var(--ui); font-size: 16px; }
 .cfg-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .cfg-actions button { border: 0; cursor: pointer; font-family: var(--ui); }
 .cfg-actions button.ghost { border: 1px solid var(--line); }
@@ -235,3 +235,12 @@ footer a:hover { color: var(--amber); }
   .cfg { grid-template-columns: 1fr; }
   .cfg-view { position: static; }
 }
+.guide > li h3 { margin: 0 0 8px; font-size: 24px; }
+.diagram { margin: 18px 0 22px; }
+.diagram svg { display: block; width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--line); background: radial-gradient(120% 90% at 55% 40%, #121a36 0, #070a14 75%); }
+.dg-l { fill: var(--star); font: 500 17px var(--ui); }
+.dg-s { fill: var(--mist); font: 400 14px var(--ui); }
+.dg-l.c-sky { fill: var(--sky); } .dg-l.c-amber { fill: var(--amber); }
+.parts dt { justify-content: flex-start; }
+.tag { font: 600 12px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--amber); border-radius: 99px; padding: 4px 8px; }
+.affil { font-size: 15px; }

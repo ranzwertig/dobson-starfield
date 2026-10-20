@@ -26,7 +26,7 @@
     { name: 'cornerR', type: 'float', caption: 'Corner radius', initial: 4, min: 0, max: 10, step: 0.5 },
     { name: 'edgeChamfer', type: 'float', caption: 'Edge chamfer', initial: 1, min: 0, max: 3, step: 0.25 },
 
-    { name: 'gSlot', type: 'group', caption: 'T-slot' },
+    { name: 'gSlot', type: 'group', caption: 'T-slot', advanced: true },
     { name: 'slotOpen', type: 'float', caption: 'Slot opening', initial: 6.4, min: 4, max: 10, step: 0.1 },
     { name: 'slotLip', type: 'float', caption: 'Lip thickness', initial: 2.5, min: 1.5, max: 5, step: 0.1 },
     { name: 'cavityW', type: 'float', caption: 'Cavity width', initial: 11.2, min: 7, max: 20, step: 0.1 },
@@ -37,10 +37,10 @@
     { name: 'leadIn', type: 'float', caption: 'Lead-in chamfer', initial: 0.6, min: 0, max: 1.5, step: 0.1 },
     { name: 'slotFloor', type: 'float', caption: 'Material above the cavity', initial: 2, min: 1.2, max: 6, step: 0.1 },
 
-    { name: 'gES', type: 'group', caption: 'Explore Scientific foot' },
+    { name: 'gES', type: 'group', caption: 'Explore Scientific foot', showIf: { mountType: 'es' } },
     { name: 'esNotch', type: 'choice', caption: 'Stop notch', values: ['back', 'front', 'none'], captions: ['Back end', 'Front end', 'None'], initial: 'back' },
 
-    { name: 'gVixen', type: 'group', caption: 'Vixen / Synta foot' },
+    { name: 'gVixen', type: 'group', caption: 'Vixen / Synta foot', showIf: { mountType: 'vixen' } },
     { name: 'vixenW', type: 'float', caption: 'Width at the bottom', initial: 31.5, min: 28, max: 36, step: 0.1 },
     { name: 'vixenH', type: 'float', caption: 'Dovetail height', initial: 8, min: 5, max: 12, step: 0.1 },
     { name: 'vixenAngle', type: 'float', caption: 'Flank angle', initial: 60, min: 45, max: 75, step: 1 }
@@ -132,7 +132,13 @@
 
   const defaults = () => Object.fromEntries(getParameterDefinitions().filter(d => d.type !== 'group').map(d => [d.name, d.initial]));
 
-  const api = { main, adapter, dims, defaults, getParameterDefinitions };
+  // for the configurator: size line and values shown in the text
+  const summary = p => { const d = dims(p); return `${d.length.toFixed(0)} × ${d.width.toFixed(1)} × ${d.height.toFixed(1)} mm`; };
+  const texts = p => ({ screw: (p.slotLip + 3).toFixed(1), vxTop: dims(p).vxTop.toFixed(1) });
+
+  const fileTag = p => `${p.mountType}-${Math.round(dims(p).length)}mm`;
+
+  const api = { main, inUse: adapter, adapter, dims, defaults, summary, texts, fileTag, getParameterDefinitions };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else globalThis.FinderAdapter = api;
 })();

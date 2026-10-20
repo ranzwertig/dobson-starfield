@@ -1,7 +1,7 @@
 // Builds the website into dist/:
 //   /            landing page (site/index.html) with a star chart drawn from the catalogue
 //   /privacy/    privacy policy, /imprint/ legal notice, /404.html
-//   /accessories/  configurator for the 3D-printable finder shoe adapter (JSCAD design src/finder-adapter.js)
+//   /accessories/  guide for a phone mount, with configurators for the printable parts (JSCAD designs src/finder-adapter.js, src/mirror-holder.js)
 //   /app/        the app: an HTML page with a start screen, and Astronomy Engine, satellite.js, catalogue + solver and the app
 //                code as separate content-named scripts (loaded with defer),
 //                plus service worker, manifest and icons
@@ -111,11 +111,13 @@ const jscadLib = `/*! JSCAD modeling ${jscadPkg.version} (c) JSCAD Organization,
   + readFileSync(path.join(jscadDir, 'dist', 'jscad-modeling.min.js'), 'utf8');
 const accFiles = {};
 const accFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; accFiles[f] = src; return f; };
-const accScripts = [accFile('jscad-modeling', jscadLib), accFile('finder-adapter', read('src/finder-adapter.js')), accFile('accessories', read('src/accessories.js'))]
+const accScripts = [accFile('jscad-modeling', jscadLib), accFile('finder-adapter', read('src/finder-adapter.js')),
+  accFile('mirror-holder', read('src/mirror-holder.js')), accFile('accessories', read('src/accessories.js'))]
   .map(f => `<script src="/accessories/${f}" defer></script>`).join('\n');
 for (const [f, src] of Object.entries(accFiles)) write('dist/accessories/' + f, src);
-// the design under a stable name, to open in the JSCAD web app
+// the designs under stable names, to open in the JSCAD web app
 write('dist/accessories/finder-adapter.jscad.js', read('src/finder-adapter.js'));
+write('dist/accessories/mirror-holder.jscad.js', read('src/mirror-holder.js'));
 
 const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
   'accessories.html': 'dist/accessories/index.html',
