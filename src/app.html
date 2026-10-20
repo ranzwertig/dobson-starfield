@@ -454,9 +454,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   }
   .sheet.open .inner { transform: translateX(0); }
   /* the menu opens on the left, where its button is */
-  body.menu-open { --pl: var(--panel-w); }
-  body.menu-open.panel-open { --panel-w: min(400px, 31vw); }   /* both open: a bit narrower, the map keeps room */
-  #menu.sheet { inset: 0 auto 0 0; }
+  /* the menu has its own, narrower width, so the panel on the right never changes size when it opens */
+  :root { --menu-w: min(360px, 30vw); }
+  body.menu-open { --pl: var(--menu-w); }
+  #menu.sheet { inset: 0 auto 0 0; width: var(--menu-w); }
   #menu .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
   #menu.open .inner { transform: translateX(0); }
   .grab { cursor: default; padding-top: 14px; margin-inline: -18px; padding-inline: 18px; }
