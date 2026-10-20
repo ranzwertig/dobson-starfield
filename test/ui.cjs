@@ -334,6 +334,37 @@ const TESTS = {
     await done(p);
   },
 
+  // Milky Way and satellites: extras, off by default, outside the presets
+  async milkyway() {
+    const p = await page({ w: 1000, h: 700, mobile: false });
+    ok(await ev(p, () => !cfg.show.mw && !cfg.show.sats), 'Milky Way and satellites are off by default');
+    const fill = () => ev(p, async () => { const t = skyNow().t, h = horiz(Solver.radec2v(308, 41), t); st.mapView = { az: h.az, alt: h.alt, fov: 60 }; cfg.show.stars = false; st.filterVer++; lastSig = [];
+      await new Promise(r => setTimeout(r, 500)); const v = $('view'), q = Solver.skyToPix(st.sol, Solver.radec2v(308, 41)), [x, y] = P(q.x, q.y); return v.getContext('2d').getImageData(x | 0, (y | 0) + 25, 1, 1).data[2]; });
+    const off = await fill();
+    await ev(p, () => { syncFilter(); openSheet('filterSheet'); }); await wait(p);
+    await p.click('[data-show=mw]'); await wait(p, 900);
+    const on = await fill();
+    ok(on > off + 5, 'switching it on fills the band in Cygnus', [off, on]);
+    ok(await ev(p, () => { cfg.show.stars = true; syncFilter(); return cfg.show.mw && $('filterChip').hidden && presetOf(cfg.show) === 'all'; }), 'the Milky Way is an extra: the filter still counts as Everything');
+    // random views: the galactic pole never filled, the band always (only the Milky Way drawn)
+    const bad = await ev(p, async () => {
+      cfg.show = { ...cfg.show, stars: false, solar: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false }; cfg.conLines = false; cfg.target = null; st.filterVer++;
+      const gp = Solver.radec2v(192.86, 27.13), pts = [[gp, false], [gp.map(x => -x), false], [Solver.radec2v(266.4, -28.9), true], [Solver.radec2v(10, 61), true]], out = [];
+      let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let k = 0; k < 120; k++) {
+        st.mapView = { az: rnd() * 360, alt: rnd() * 180 - 90, fov: 40 + rnd() * 100 }; lastSig = [];
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const v = $('view'), g = v.getContext('2d');
+        for (const [w, want] of pts) {
+          const q = Solver.skyToPix(st.sol, w); if (!q) continue; const [x, y] = P(q.x, q.y); if (x < 40 || y < 40 || x > v.width - 260 || y > v.height - 120) continue;
+          const b = g.getImageData(x | 0, y | 0, 1, 1).data[2]; if ((b > 4) !== want) out.push([k, want, b]);
+        }
+      }
+      return out; });
+    ok(bad.length === 0, 'in 120 random views the band is filled and the galactic poles are not', bad.slice(0, 5));
+    await done(p);
+  },
+
   // offline: the service worker keeps page and scripts
   async offline() {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));

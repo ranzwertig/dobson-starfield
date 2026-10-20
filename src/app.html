@@ -817,6 +817,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <fieldset>
       <legend>Stars</legend>
         <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4l1.6 5.2L19 10.8l-5.4 1.6L12 18l-1.6-5.6L5 10.8l5.4-1.6z"/></svg></span><span class="flab">Stars</span><input type="checkbox" data-show="stars"></label>
+        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 15c4-1 6-5 10-6s6-1 8-3" opacity=".5" stroke-width="5"/><path d="M3 15c4-1 6-5 10-6s6-1 8-3"/></svg></span><span class="flab">Milky Way<small>its outline in five brightness steps</small></span><input type="checkbox" data-show="mw"></label>
         <label class="fmag">Faintest stars: <b id="magV"></b><input type="range" id="showMag" min="2" max="9" step="0.5"></label>
     </fieldset>
     <fieldset>
@@ -1217,12 +1218,14 @@ cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {}
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
 // What the map shows (filter). Old separate switches are migrated once.
-const SHOW_DEF = { solar: true, stars: true, mag: 9, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true, sats: true };
+const SHOW_DEF = { solar: true, stars: true, mag: 9, gal: true, glob: true, open: true, neb: true, pn: true, ngc: true, sats: false, mw: false };
+// Satellites and the Milky Way are extras: off by default, switched on their own, not part of the presets
+const EXTRAS = ["sats", "mw"];
 const DSO_KEYS = ["gal", "glob", "open", "neb", "pn"];
 const PRESETS = {
   all: { label: "Everything", show: { ...SHOW_DEF } },
-  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false, sats: false } },
-  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5, sats: false } },
+  solar: { label: "Solar system", show: { ...SHOW_DEF, stars: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
+  deep: { label: "Deep sky", show: { ...SHOW_DEF, solar: false, mag: 5 } },
   eye: { label: "Naked eye", show: { ...SHOW_DEF, mag: 5, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false } },
 };
 if (!cfg.show) cfg.show = { ...SHOW_DEF, stars: cfg.map !== false, lines: cfg.lines !== false, names: cfg.names !== false };
@@ -1235,6 +1238,8 @@ if (cfg.starNames == null) cfg.starNames = cfg.show.names !== false;
 if (cfg.conLines == null) cfg.conLines = cfg.show.lines !== false;
 delete cfg.show.names; delete cfg.show.lines;
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
+// satellites are off by default now (switched on again in the filter when wanted)
+if (!cfg.extrasV) { cfg.show.sats = false; cfg.extrasV = 1; }
 // stacking got smarter (motion check, float average): the old default of 6 frames becomes 24
 if (!cfg.stackV) { if (+cfg.stack === 6) cfg.stack = 24; cfg.stackV = 2; }
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
@@ -2232,7 +2237,8 @@ const SAT = { list: [], at: 0, loading: false, ok: false, pos: [], posAt: 0, pos
 const satShort = n => /^ISS \(/.test(n) ? "ISS" : /^CSS \(/.test(n) ? "Tiangong" : n.replace(/\s+\(.*\)$/, "");
 const satsOn = () => !!(cfg.show.sats && SAT.ok && navigator.onLine);
 async function loadSats(force) {
-  if (!cfg.show.sats || !navigator.onLine || SAT.loading || typeof satellite === "undefined") { syncSatState(); return; }
+  // loaded also while hidden on the map: search, targets and details use them
+  if (!navigator.onLine || SAT.loading || typeof satellite === "undefined") { syncSatState(); return; }
   if (!force && SAT.ok && Date.now() - SAT.at < 6 * 3600e3) return;
   SAT.loading = true; syncSatState();
   try {
@@ -2312,6 +2318,120 @@ function satsNow() {
 addEventListener("online", () => loadSats(true));
 addEventListener("offline", () => { syncSatState(); st.filterVer++; lastSig = []; updateGuide(); });
 setInterval(() => loadSats(false), 30 * 60e3);
+// Milky Way outlines (Milky Way Outline Catalog, J. R. Vieira, via d3-celestial): five levels, rings of RA/Dec in 0.1°.
+// Loaded the first time it is switched on; each ring becomes unit vectors plus a bounding cone for quick culling.
+const MW = { rings: null, loading: false };
+async function loadMilkyWay() {
+  if (MW.rings || MW.loading) return; MW.loading = true;
+  try {
+    const d = await fetch("milkyway.json").then(r => r.ok ? r.json() : null); if (!d) throw 0;
+    MW.rings = d.levels.map(level => level.map(r => {
+      const v = []; for (let i = 0; i < r.length; i += 2) v.push(Solver.radec2v(r[i] / 10, r[i + 1] / 10));
+      const c = v.reduce((a, q) => [a[0] + q[0], a[1] + q[1], a[2] + q[2]], [0, 0, 0]), n = Math.hypot(...c) || 1, ctr = c.map(q => q / n);
+      const cosR = Math.min(...v.map(q => q[0] * ctr[0] + q[1] * ctr[1] + q[2] * ctr[2]));
+      return { v, ctr, rad: Math.acos(Math.max(-1, Math.min(1, cosR))) };
+    }));
+    st.filterVer++; lastSig = [];
+  } catch (e) {}
+  MW.loading = false;
+}
+// Each level is a soft, slightly bluish fill; the five levels add up towards the bright star clouds.
+// Rings can run all around the sky, so each is clipped against a circle in front of the view (zc: cos of its angle from
+// the axis) before projecting: the parts of the ring in front become chains, joined along that circle (far outside the
+// screen) to the next chain in one direction round it. Which side of a ring is its inside isn't taken from the winding:
+// small rings enclose their small side; the two edges of the band, which run around the whole sky, are taken as
+// enclosing the north galactic pole's side, so even-odd between them is the band. If the clipped outline has the axis
+// on the wrong side, the ring is joined the other way round.
+const NGP = Solver.radec2v(192.86, 27.13);
+const MWV = { cr: (u, w) => [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]], dot: (u, w) => u[0] * w[0] + u[1] * w[1] + u[2] * w[2] };
+function arcCrossings(V, P, Q) {   // how often the short arc P→Q crosses the ring
+  const nPQ = MWV.cr(P, Q), M = [P[0] + Q[0], P[1] + Q[1], P[2] + Q[2]]; let n = 0;
+  for (let i = 0; i < V.length; i++) {
+    const A = V[i], B = V[(i + 1) % V.length], nAB = MWV.cr(A, B);
+    if ((MWV.dot(P, nAB) > 0) !== (MWV.dot(Q, nAB) > 0) && (MWV.dot(A, nPQ) > 0) !== (MWV.dot(B, nPQ) > 0) && MWV.dot(A, M) > 0) n++;
+  }
+  return n;
+}
+function insideRing(r, p) {
+  if (r.rad > 1.2) {   // an edge of the band: the north galactic pole's side (from the nearer pole, so the arc is ≤ 90°)
+    const north = MWV.dot(p, NGP) >= 0, pole = north ? NGP : NGP.map(x => -x);
+    return (arcCrossings(r.v, pole, p) % 2 === 0) === north;
+  }
+  const c = r.ctr, cp = MWV.dot(c, p); if (Math.acos(Math.max(-1, Math.min(1, cp))) > r.rad) return false;
+  let u = [p[0] - c[0] * cp, p[1] - c[1] * cp, p[2] - c[2] * cp], n = Math.hypot(...u);
+  if (n < 1e-9) { u = Math.abs(c[2]) < 0.9 ? MWV.cr(c, [0, 0, 1]) : MWV.cr(c, [1, 0, 0]); n = Math.hypot(...u); }
+  const t = r.rad + 0.05, o = c.map((x, i) => x * Math.cos(t) + u[i] / n * Math.sin(t));   // just beyond the ring: outside
+  return arcCrossings(r.v, p, o) % 2 === 1;
+}
+function inPoly(polys, x, y) {   // even-odd test on screen over several outlines
+  let c = false;
+  for (const pts of polys) for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+function drawMilkyWay(c, sol, boresight, halfDiag) {
+  if (!MW.rings) { loadMilkyWay(); return; }
+  const R = sol.R, ax = [R[0][2], R[1][2], R[2][2]], dot = MWV.dot;
+  const zc = 0.08, proj = w => { const p = Solver.skyToPix(sol, w); return p ? P(p.x, p.y) : null; };
+  const [ox, oy] = P(sol.cx, sol.cy), rad = sol.f * fit.sc * Math.sqrt(1 - zc * zc) / zc, TAU = 2 * Math.PI;
+  const angOf = q => Math.atan2(q[1] - oy, q[0] - ox), circ = a => [ox + rad * Math.cos(a), oy + rad * Math.sin(a)];
+  const disc = () => { const o = []; for (let k = 0; k < 64; k++) o.push(circ(k / 64 * TAU)); return o; };
+  // the parts of a ring in front of the circle, each from where it comes in to where it leaves
+  const chainsOf = (v, z) => {
+    const n = v.length, cut = (i, j) => { const t = (zc - z[i]) / (z[j] - z[i]), A = v[i], B = v[j]; return proj([A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1]), A[2] + t * (B[2] - A[2])]); };
+    let s0 = -1; for (let i = 0; i < n; i++) if (z[i] < zc && z[(i + 1) % n] >= zc) { s0 = i; break; }
+    const out = []; let cur = null;
+    for (let s = 0; s < n; s++) {
+      const i = (s0 + s) % n, j = (i + 1) % n, ia = z[i] >= zc, ib = z[j] >= zc;
+      if (!ia && ib) { const q = cut(i, j); cur = q ? { pts: [q], a0: angOf(q) } : null; }
+      if (ib && cur) { const q = proj(v[j]); if (q) cur.pts.push(q); }
+      if (ia && !ib && cur) { const q = cut(i, j); if (q) { cur.pts.push(q); cur.a1 = angOf(q); out.push(cur); } cur = null; }
+    }
+    return out;
+  };
+  // join the chains: from where one leaves, round the circle (increasing angle) to the next one coming in
+  const join = chains => {
+    const polys = [], used = new Set();
+    for (let s = 0; s < chains.length; s++) {
+      if (used.has(s)) continue;
+      const pts = []; let k = s;
+      while (!used.has(k)) {
+        used.add(k); const ch = chains[k]; pts.push(...ch.pts);
+        let best = -1, bd = Infinity;
+        chains.forEach((o, m) => { let d = o.a0 - ch.a1; while (d < 0) d += TAU; while (d >= TAU) d -= TAU; if (d < bd && (!used.has(m) || m === s)) { bd = d; best = m; } });
+        if (best < 0) break;
+        const steps = Math.ceil(bd / 0.15); for (let q = 1; q < steps; q++) pts.push(circ(ch.a1 + bd * q / steps));
+        k = best;
+      }
+      if (pts.length >= 3) polys.push(pts);
+    }
+    return polys;
+  };
+  c.save(); c.fillStyle = "rgb(150,170,225)";
+  const a0 = showImgAlpha() < 1 ? 0.035 : 0.06;
+  MW.rings.forEach(level => {
+    const path = new Path2D(); let any = false;
+    for (const r of level) {
+      const big = r.rad > 1.2;
+      if (!big && Math.acos(Math.max(-1, Math.min(1, dot(r.ctr, boresight)))) * R2D > halfDiag + r.rad * R2D) continue;
+      const z = r.v.map(q => dot(q, ax)), front = z.filter(q => q >= zc).length, axIn = insideRing(r, ax);
+      let polys;
+      if (!front) { if (!axIn) continue; polys = [disc()]; }   // all behind: the whole view is inside or outside it
+      else if (front === z.length) {                          // all in front: the outline, or the view around it
+        const pts = r.v.map(proj).filter(Boolean); polys = [pts];
+        if (inPoly(polys, ox, oy) !== axIn) polys.push(disc());
+      } else {
+        polys = join(chainsOf(r.v, z));
+        if (inPoly(polys, ox, oy) !== axIn) { const rv = r.v.slice().reverse(), rz = z.slice().reverse(); polys = join(chainsOf(rv, rz)); }
+      }
+      for (const pts of polys) { path.moveTo(pts[0][0], pts[0][1]); for (let k = 1; k < pts.length; k++) path.lineTo(pts[k][0], pts[k][1]); path.closePath(); any = true; }
+    }
+    if (any) { c.globalAlpha = a0; c.fill(path, "evenodd"); }
+  });
+  c.restore();
+}
 async function loadDeep() {
   try {
     const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);
@@ -2863,6 +2983,7 @@ function drawOverlay(dpr) {
   // while a finger drags or pinches a wide view, only the brighter stars (smooth movement); all of them once it rests
   const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow)), gestFast() && fovNow > 60 ? 5.5 : 99), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
   st.drawnStarLim = show.stars ? starLim : 0;   // what can be tapped
+  if (show.mw) drawMilkyWay(c, sol, boresight, Math.min(89, halfDiag));
   if (show.stars) {
     // all dots in two paths (bright / faint) instead of one draw call per star
     c.fillStyle = "rgba(215,225,255,.85)";
@@ -5170,10 +5291,11 @@ async function setPointer(v) {
   lastSig = []; sensorUpdate(); updateGuide(); syncSettings();
 }
 /* ---------------- Filter ---------------- */
-const same = (a, b) => Object.keys(SHOW_DEF).every(k => a[k] === b[k]);
+const same = (a, b) => Object.keys(SHOW_DEF).every(k => EXTRAS.includes(k) || a[k] === b[k]);
+const withExtras = show => ({ ...show, ...Object.fromEntries(EXTRAS.map(k => [k, !!cfg.show[k]])) });   // presets keep the extras as they are
 function presetOf(show) { return Object.keys(PRESETS).find(k => same(show, PRESETS[k].show)) || null; }
 function filterName() { const k = presetOf(cfg.show); return k ? PRESETS[k].label : "Custom"; }
-function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); if (show.sats) loadSats(false); }
+function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); if (show.sats) loadSats(false); if (show.mw) loadMilkyWay(); }
 function syncFilter() {
   const sh = cfg.show, pk = presetOf(sh);
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);
@@ -5182,7 +5304,7 @@ function syncFilter() {
   const box = $("presets"); box.textContent = "";
   Object.entries(PRESETS).forEach(([k, p]) => {
     const b = document.createElement("button"); b.className = "chip" + (k === pk ? " sel" : ""); b.textContent = p.label;
-    b.onclick = () => setShow(p.show); box.append(b);
+    b.onclick = () => setShow(withExtras(p.show)); box.append(b);
   });
   // always visible while something is hidden
   const all = pk === "all";
@@ -5194,7 +5316,7 @@ document.querySelectorAll("[data-show]").forEach(el => el.onchange = () => setSh
 $("showMag").oninput = () => setShow({ ...cfg.show, mag: +$("showMag").value });
 $("fabFilter").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("filterChipTxt").onclick = () => { syncFilter(); openSheet("filterSheet"); };
-$("btnFilterOff").onclick = () => { setShow(PRESETS.all.show); hint("Filter off: the map shows everything again.", 2500); };
+$("btnFilterOff").onclick = () => { setShow(withExtras(PRESETS.all.show)); hint("Filter off: the map shows everything again.", 2500); };
 syncFilter();
 $("btnCalOff").onclick = () => { const alt = !!cfg.calTeleBak; clearCompassCal(); hint("Correction removed: the compass is used as it is" + (alt ? " and the eyepiece point is back as before." : "."), 3500); };
 $("btnCalApply").onclick = () => { setCompassCal(st.calSuggest); st.calDismissed = null; $("calBar").hidden = true; hint("Compass corrected by " + fmtSigned(st.calSuggest) + ".", 3000); };
