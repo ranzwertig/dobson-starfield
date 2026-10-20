@@ -229,9 +229,16 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .btn.danger svg { flex: none; }
 .actions .btn.wide { grid-column: 1 / -1; }
 /* details and target panel: the main buttons stay at the bottom while the content scrolls */
-#infoSheet .actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-#infoSheet .actions .btn { padding-inline: 6px; gap: 6px; }
-#infoSheet .actions #infoSync { grid-column: 1 / -1; }
+/* details: one row of icon buttons with a short label, always at the bottom of the panel (links above them) */
+#infoSheet .inner { display: flex; flex-direction: column; }
+#infoSheet .inner > * { flex: none; min-width: 0; }
+#infoSheet .inner > .actions { margin-top: auto; }
+#infoSheet .links { margin-top: 0; }
+.actions.iconbar { display: flex; gap: 6px; }
+.actions.iconbar .btn { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 3px; padding: 8px 2px 7px; font-size: 12px; line-height: 1.1; text-align: center; }
+.actions.iconbar .btn svg { width: 22px; height: 22px; flex: none; }
+.actions.iconbar .btn span { white-space: normal; overflow-wrap: anywhere; }
+.actions.iconbar .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 #infoSheet .actions, #tgtActs { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel);
   margin-inline: -16px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 16px -6px var(--panel); }
 .actions.three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: -6px; }
@@ -754,7 +761,6 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
     <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
-    <button class="showmap" id="infoShowMap" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>Show on map</button>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="mphase" id="infoMoon" hidden></div>
     <div class="pbox" id="infoPlanet" hidden></div>
@@ -762,13 +768,14 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="ttonight epbox" id="infoEp" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
-    <div class="actions">
-      <button class="btn primary" id="infoSeen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg> Seen</button>
-      <button class="btn" id="infoTarget">Set as target</button>
-      <button class="btn" id="infoPlan" aria-pressed="false"></button>
-      <button class="btn" id="infoSync" hidden>I’m pointing at it</button>
-    </div>
     <div class="links" id="infoLinks"></div>
+    <div class="actions iconbar">
+      <button class="btn primary" id="infoSeen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Seen</span></button>
+      <button class="btn" id="infoTarget" aria-pressed="false"></button>
+      <button class="btn" id="infoPlan" aria-pressed="false"></button>
+      <button class="btn" id="infoShowMap" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5l5-2 7 2.5 5-2v13l-5 2-7-2.5-5 2z"/><path d="M8.5 4.5v13M15.5 7v13"/></svg><span>Show on map</span></button>
+      <button class="btn" id="infoSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span>I’m pointing at it</span></button>
+    </div>
   </div>
 </div>
 
@@ -3088,6 +3095,7 @@ const ICON = {
   plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h5"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M19 15.5v5M16.5 18h5"/></svg>',
   planned: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h4"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M16 18l2 2 3.5-3.5"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg>',
 };
 function togglePlan(o) {
   const i = obs.list.findIndex(x => x.id === o.id);
@@ -3122,7 +3130,7 @@ function syncInfoObs(o) {
   $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(star));
   $("infoStar").setAttribute("aria-label", star ? "Unstar" : "Star: want to see it some day");
   $("infoPlan").hidden = !can; $("infoPlan").setAttribute("aria-pressed", String(plan));
-  $("infoPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + (plan ? " Planned" : " Plan");
+  $("infoPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + "<span>" + (plan ? "Planned" : "Plan") + "</span>";
   $("infoPlan").setAttribute("aria-label", plan ? "Planned for tonight: remove from the plan" : "Plan for tonight");
   const es = obs.log.filter(e => e.obj === o.id && e.result !== "miss").sort((a, b) => b.t.localeCompare(a.t)), h = $("infoHist");
   h.hidden = !es.length; h.textContent = "";
@@ -4664,7 +4672,8 @@ function showInfo(o, fromList) {
   lb.hidden = !lb.childElementCount;
   $("infoWarn").hidden = o.body !== "Sun";
   const isTarget = cfg.target === o.id;
-  $("infoTarget").textContent = isTarget ? "Remove as target" : "Set as target"; $("infoTarget").disabled = false;
+  $("infoTarget").innerHTML = ICON.target + "<span>" + (isTarget ? "Target ✓" : "Set as target") + "</span>"; $("infoTarget").disabled = false;
+  $("infoTarget").setAttribute("aria-pressed", String(isTarget)); $("infoTarget").setAttribute("aria-label", isTarget ? "Remove as target" : "Set as target");
   $("infoTarget").classList.remove("primary");
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
