@@ -2190,9 +2190,11 @@ function obsMark(c, id, x, y, r, dpr) {
   if (!plan && !star && !seen) return;
   const mx = x - r * 0.75 - 5 * dpr, my = y - r * 0.75 - 5 * dpr, k = 5 * dpr;
   c.save(); c.setLineDash([]);
-  if (plan) {   // planned for tonight: filled amber dot with a dark ring
-    c.fillStyle = "#f0a845"; c.beginPath(); c.arc(mx, my, k * 0.85, 0, 7); c.fill();
-    c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 1.2 * dpr; c.stroke();
+  if (plan) {   // planned for tonight: a small amber flag (a dot looked like a star or a moon, a box like a nebula)
+    const flag = () => { c.beginPath(); c.moveTo(mx - k * 0.45, my + k); c.lineTo(mx - k * 0.45, my - k); c.lineTo(mx + k * 0.95, my - k * 0.45); c.lineTo(mx - k * 0.45, my + k * 0.05); };
+    c.lineJoin = "round"; c.lineCap = "round";
+    flag(); c.strokeStyle = "rgba(0,0,0,.65)"; c.lineWidth = 3.4 * dpr; c.stroke();   // dark halo, readable on stars and lines
+    flag(); c.fillStyle = "#f0a845"; c.fill(); c.strokeStyle = "#f0a845"; c.lineWidth = 1.5 * dpr; c.stroke();
   } else if (star) {   // starred: outline star
     c.strokeStyle = "#f0a845"; c.lineWidth = 1.4 * dpr; c.lineJoin = "round"; c.beginPath();
     for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? k * 0.45 : k; c.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); }
