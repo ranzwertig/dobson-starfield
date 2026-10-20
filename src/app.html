@@ -96,15 +96,19 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.stale { opacity: .55; }
 .hud.idle .hcell { display: none; }
 
+/* Hints and notices sit right below the menu button, aligned with it, and keep clear of the button column on the
+   right (--fabs-x: its distance from the right edge; --fabs-w, its width, is measured) */
+:root { --fabs-x: calc(max(6px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px) + var(--fabs-w, 50px) + 10px); }
 .hint {
-  position: absolute; left: calc((100% - var(--pr, 0px) - var(--pl, 0px)) / 2 + var(--pl, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px - var(--pr, 0px) - var(--pl, 0px));
+  position: absolute; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); top: calc(max(8px, var(--safe-top)) + 62px); width: max-content;
+  max-width: min(440px, calc(100% - max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) - var(--pl, 0px) - var(--fabs-x, 74px)));
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
-  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
+  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: left; box-sizing: border-box;
 }
 
-.notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: calc(max(8px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: var(--fabs-x, 74px); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
-.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 134px); }
+.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 138px); }
 .update {
   display: flex; align-items: center; gap: 10px; box-sizing: border-box;
   background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
@@ -1196,9 +1200,11 @@ if (navigator.standalone === true) {
   const fillScreen = () => {
     const a = screen.width, b = screen.height, land = innerWidth > innerHeight;
     const sw = land ? Math.max(a, b) : Math.min(a, b), sh = land ? Math.min(a, b) : Math.max(a, b);
-    document.documentElement.style.setProperty("--app-h", Math.abs(innerWidth - sw) < 2 && sh > innerHeight ? sh + "px" : "100%");
+    document.documentElement.style.setProperty("--app-h", Math.abs(innerWidth - sw) < 2 ? Math.max(sh, innerHeight) + "px" : "100%");
   };
+  // also when coming back to the app: iOS can change the viewport then without a resize event
   fillScreen(); addEventListener("resize", fillScreen); addEventListener("orientationchange", () => setTimeout(fillScreen, 300));
+  addEventListener("pageshow", fillScreen); document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(fillScreen, 100); });
 }
 const A = Astronomy;
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
@@ -4061,6 +4067,9 @@ function layoutFabs() {
   const fits = () => { const r = f.getBoundingClientRect(); return obstacles.every(o => o.right < r.left - 4 || o.left > r.right + 4 || o.bottom + 8 <= r.top); };
   if (!fits()) { f.classList.add("compact"); if (!fits()) f.classList.add("two"); }
   if (f.className !== was) { insetCache = null; lastSig = []; }
+  // hints and notices keep clear of the column
+  const fw = f.offsetWidth + "px";
+  if (document.documentElement.style.getPropertyValue("--fabs-w") !== fw) document.documentElement.style.setProperty("--fabs-w", fw);
 }
 const relayout = () => { placeReadout(); layoutFabs(); };
 if (window.ResizeObserver) { const ro = new ResizeObserver(() => requestAnimationFrame(relayout)); ro.observe($("guide")); ro.observe($("readout")); }
