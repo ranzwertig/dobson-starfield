@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /app/
+Disallow: /diy-accessories/mirror-holder/
 
 Sitemap: https://zenigo.app/sitemap.xml

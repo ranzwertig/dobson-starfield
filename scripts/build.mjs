@@ -1,7 +1,8 @@
 // Builds the website into dist/:
 //   /            landing page (site/index.html) with a star chart drawn from the catalogue
 //   /privacy/    privacy policy, /imprint/ legal notice, /404.html
-//   /accessories/  guide for a phone mount, with configurators for the printable parts (JSCAD designs src/finder-adapter.js, src/mirror-holder.js)
+//   /diy-accessories/  DIY guide for a phone holder with the finder shoe adapter configurator (JSCAD design src/finder-adapter.js);
+//                      /diy-accessories/mirror-holder/ is unlisted (mirror holder configurator, src/mirror-holder.js)
 //   /app/        the app: an HTML page with a start screen, and Astronomy Engine, satellite.js, catalogue + solver and the app
 //                code as separate content-named scripts (loaded with defer),
 //                plus service worker, manifest and icons
@@ -104,23 +105,25 @@ write('dist/sw.js', read('src/sw-root.js'));
 const ctx = {}; vm.createContext(ctx); vm.runInContext(data.replace(/^const (\w+)=/gm, 'globalThis.$1='), ctx);
 const hero = heroSvg(ctx);
 const year = new Date().getFullYear();
-// accessories: JSCAD modelling library (MIT), the design and the page script, named by their content
+// DIY accessories: JSCAD modelling library (MIT), the designs and the configurator script, named by their content.
+// The phone holder guide is a normal page; the mirror holder page is reachable only by its address
+// (not linked, not in the sitemap, noindex, disallowed in robots.txt).
 const jscadDir = path.dirname(require.resolve('@jscad/modeling/package.json'));
 const jscadPkg = JSON.parse(readFileSync(path.join(jscadDir, 'package.json'), 'utf8'));
 const jscadLib = `/*! JSCAD modeling ${jscadPkg.version} (c) JSCAD Organization, MIT License, https://github.com/jscad/OpenJSCAD.org */\n`
   + readFileSync(path.join(jscadDir, 'dist', 'jscad-modeling.min.js'), 'utf8');
-const accFiles = {};
-const accFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; accFiles[f] = src; return f; };
-const accScripts = [accFile('jscad-modeling', jscadLib), accFile('finder-adapter', read('src/finder-adapter.js')),
-  accFile('mirror-holder', read('src/mirror-holder.js')), accFile('accessories', read('src/accessories.js'))]
-  .map(f => `<script src="/accessories/${f}" defer></script>`).join('\n');
-for (const [f, src] of Object.entries(accFiles)) write('dist/accessories/' + f, src);
+const diyFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; write('dist/diy-accessories/' + f, src); return f; };
+const fJscad = diyFile('jscad-modeling', jscadLib), fCfg = diyFile('configurator', read('src/accessories.js'));
+const fAdapter = diyFile('finder-adapter', read('src/finder-adapter.js')), fMirror = diyFile('mirror-holder', read('src/mirror-holder.js'));
+const tags = files => files.map(f => `<script src="/diy-accessories/${f}" defer></script>`).join('\n');
+const pageScripts = { 'diy-accessories.html': tags([fJscad, fAdapter, fCfg]), 'diy-mirror-holder.html': tags([fJscad, fMirror, fCfg]) };
 // the designs under stable names, to open in the JSCAD web app
-write('dist/accessories/finder-adapter.jscad.js', read('src/finder-adapter.js'));
-write('dist/accessories/mirror-holder.jscad.js', read('src/mirror-holder.js'));
+write('dist/diy-accessories/finder-adapter.jscad.js', read('src/finder-adapter.js'));
+write('dist/diy-accessories/mirror-holder/mirror-holder.jscad.js', read('src/mirror-holder.js'));
+const hidden = new Set(['diy-mirror-holder.html']);
 
 const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
-  'accessories.html': 'dist/accessories/index.html',
+  'diy-accessories.html': 'dist/diy-accessories/index.html', 'diy-mirror-holder.html': 'dist/diy-accessories/mirror-holder/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');
 // Search engines: canonical address per page and a sitemap (the app itself at /app/ is excluded in robots.txt)
@@ -128,15 +131,15 @@ const SITE = 'https://zenigo.app';
 const urlOf = dst => dst === 'dist/404.html' ? null : SITE + dst.replace(/^dist/, '').replace(/index\.html$/, '');
 const today = new Date().toISOString().slice(0, 10);
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-  + Object.values(pages).map(urlOf).filter(Boolean).map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n') + '\n</urlset>\n';
+  + Object.entries(pages).filter(([src]) => !hidden.has(src)).map(([, dst]) => urlOf(dst)).filter(Boolean).map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n') + '\n</urlset>\n';
 write('dist/sitemap.xml', sitemap);
 for (const [src, dst] of Object.entries(pages)) {
-  const url = urlOf(dst);
+  const url = hidden.has(src) ? null : urlOf(dst);
   const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
   const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replace(`<a href="${here}">`, `<a href="${here}" aria-current="page">`) : header;
-  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--ACCESSORIES_SCRIPTS-->', () => accScripts));
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || ''));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 
-console.log(`sitemap: ${Object.values(pages).map(urlOf).filter(Boolean).length} pages; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);
+console.log(`sitemap: ${Object.keys(pages).filter(p => !hidden.has(p) && p !== '404.html').length} pages; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);

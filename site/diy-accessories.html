@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DIY accessories: phone holder for the telescope – Zenigo</title>
+<meta name="description" content="Build your own phone holder for Zenigo: a 3D-printed finder shoe adapter with a Picatinny rail and a camera mount. Configure the adapter in the browser and download the STL.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="DIY accessories: phone holder for the telescope – Zenigo">
+<meta property="og:description" content="A do-it-yourself phone holder for Zenigo: a printed adapter for the finder shoe, a Picatinny rail and a camera mount.">
+<meta property="og:image" content="https://zenigo.app/app/icons/icon-512.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <div class="doc wide">
+    <p class="kicker">DIY accessories</p>
+    <h1>Phone holder for the telescope</h1>
+    <p class="intro">Zenigo finds where your telescope points by photographing the sky with the phone camera. That works best when the phone sits on the telescope firmly and always in the same place. Here is how to build such a holder yourself from a few standard parts and one 3D-printed adapter, which you can adjust to your telescope and download right here.</p>
+
+    <div class="diybox">
+      <p><b>A do-it-yourself project.</b> This is a building guide, not a product: Zenigo doesn’t sell these parts and gives no warranty. You print, build and use the holder at your own risk. Check that everything sits tight before you move the telescope, so the phone can’t fall.</p>
+    </div>
+
+    <h2 id="why">Why a rail in the finder shoe</h2>
+    <p>A phone strapped to the tube with a bike or tripod clamp works, but it shifts a little whenever you push the telescope, and after every setup it sits somewhere else. Each time, the <a href="/getting-started/#eyepiece">eyepiece point</a> no longer fits and has to be set again.</p>
+    <p>Almost every telescope already has a precise, sturdy mount for small accessories: the <b>finder shoe</b>. A printed adapter slides into it like a finder and carries a <b>Picatinny rail</b>, the rail system known from riflescopes and camera rigs. A <b>camera mount</b> clamps onto the rail, and the <b>phone holder</b> screws onto its 1/4" camera thread:</p>
+    <ul>
+      <li><b>Rigid:</b> the shoe and the rail clamp with screws, nothing wobbles when you move the telescope.</li>
+      <li><b>Repeatable:</b> the rail has a slot every 10 mm. The holder goes back into the same place, so the eyepiece point stays valid from night to night.</li>
+      <li><b>Quick:</b> the adapter slides out of the shoe with the phone holder still on it. Nothing to strap or tape to the tube.</li>
+      <li><b>Expandable:</b> the rail takes anything with a Picatinny clamp or a 1/4" camera thread, for example a red light, a dew heater controller, a second camera or a mirror.</li>
+    </ul>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 300" role="img" aria-labelledby="dg-t">
+        <title id="dg-t">Side view: the printed adapter sits in the finder shoe and carries a Picatinny rail; the phone stands in its holder on a camera mount, its back camera looking along the tube.</title>
+        <defs><marker id="dg-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#f0a845"/></marker></defs>
+        <rect x="20" y="206" width="680" height="76" rx="12" fill="#121a36" stroke="#232b45"/>
+        <text x="40" y="252" class="dg-l">Telescope tube</text>
+        <text x="690" y="252" class="dg-l" text-anchor="end">opening →</text>
+        <rect x="300" y="194" width="74" height="12" fill="#232b45"/>
+        <rect x="304" y="176" width="66" height="18" rx="2" fill="#7a5a2c"/>
+        <rect x="200" y="164" width="300" height="12" fill="#5a6378"/>
+        <g fill="#3a4256">
+          <rect x="212" y="164" width="5" height="4"/><rect x="232" y="164" width="5" height="4"/><rect x="252" y="164" width="5" height="4"/><rect x="272" y="164" width="5" height="4"/><rect x="292" y="164" width="5" height="4"/><rect x="312" y="164" width="5" height="4"/><rect x="332" y="164" width="5" height="4"/><rect x="352" y="164" width="5" height="4"/><rect x="372" y="164" width="5" height="4"/><rect x="392" y="164" width="5" height="4"/><rect x="412" y="164" width="5" height="4"/><rect x="432" y="164" width="5" height="4"/><rect x="452" y="164" width="5" height="4"/><rect x="472" y="164" width="5" height="4"/>
+        </g>
+        <rect x="392" y="150" width="34" height="14" rx="2" fill="#98a3b8"/>
+        <rect x="402" y="132" width="14" height="18" fill="#98a3b8"/>
+        <rect x="396" y="118" width="26" height="14" rx="3" fill="#98a3b8"/>
+        <rect x="402" y="16" width="14" height="106" rx="4" fill="#0c1124" stroke="#eef1f6" stroke-width="2"/>
+        <rect x="416" y="26" width="5" height="16" rx="1" fill="#eef1f6"/>
+        <path d="M424 34 H700" fill="none" stroke="#f0a845" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#dg-a)"/>
+        <text x="380" y="40" class="dg-l" text-anchor="end">Phone</text>
+        <text x="560" y="24" class="dg-l c-amber" text-anchor="middle">camera view</text>
+        <text x="436" y="128" class="dg-s">phone holder</text>
+        <text x="436" y="160" class="dg-s">camera mount</text>
+        <text x="510" y="174" class="dg-s">Picatinny rail</text>
+        <text x="290" y="190" class="dg-s" text-anchor="end">printed adapter in the finder shoe</text>
+      </svg>
+    </figure>
+
+    <h2 id="parts">What you need</h2>
+    <p class="muted affil">Links to Amazon are affiliate links: if you buy through them, Zenigo receives a small commission. The price stays the same for you.</p>
+    <dl class="ref parts">
+      <dt>Finder shoe adapter <span class="tag">3D print</span></dt>
+      <dd>Fits Explore Scientific and Vixen/Synta finder shoes. <a href="#adapter">Configure and download below.</a></dd>
+      <dt>Aluminium Picatinny rail with T-nuts, at least 13 slots</dt>
+      <dd>About 13 cm or longer, so there’s room for the holder and more. The T-nuts slide into the slot of the printed adapter; the hole spacing doesn’t matter. <a class="amz" href="https://link.amazon/B08IXon93" rel="sponsored nofollow noopener" target="_blank">Picatinny rail on Amazon</a></dd>
+      <dt>Picatinny camera mount</dt>
+      <dd>Clamps onto the rail and carries a 1/4" camera screw. <a class="amz" href="https://link.amazon/B06nJ4ykE" rel="sponsored nofollow noopener" target="_blank">Picatinny camera mount on Amazon</a></dd>
+      <dt>Phone holder with 1/4" thread</dt>
+      <dd>Holds the phone on the camera mount. <a class="amz" href="https://link.amazon/B0h2Fdaw0" rel="sponsored nofollow noopener" target="_blank">1/4" phone mount on Amazon</a></dd>
+    </dl>
+
+    <h2 id="build">Building it</h2>
+    <ol class="guide">
+      <li>
+        <h3>Print the adapter</h3>
+        <p>Choose your shoe type below, set how far the rail may reach forward and back, and download the STL. Print it as it comes, slot face on the bed: no supports needed. <b>PETG</b> or <b>ASA</b> hold up better than PLA in the cold and in a hot car; 4 walls and 20–30 % infill are plenty.</p>
+        <p data-show-if="FinderAdapter:mountType=vixen">Vixen/Synta shoes differ by a few tenths of a millimetre. Measure the slot of yours, adjust the dovetail and print a short test piece first (foot length 20 mm, no overhang).</p>
+      </li>
+      <li>
+        <h3>Screw the rail onto the adapter</h3>
+        <p>Slide the T-nuts of the rail into the open slot of the adapter, put the rail on top and screw it down. The hole spacing of the rail doesn’t matter, the nuts go wherever the holes are. Let the rail reach towards the opening of the tube.</p>
+      </li>
+      <li>
+        <h3>Mount the phone holder</h3>
+        <p>Clamp the camera mount onto the rail and screw the phone holder onto it. Lock it with the knurled ring so it can’t turn. The phone stands upright, its back camera looking towards the opening of the tube, roughly parallel to it. It doesn’t have to be exact.</p>
+      </li>
+      <li>
+        <h3>Set up Zenigo</h3>
+        <p>Keep <b>Settings → Telescope → Pointing</b> on <b>Camera</b>. Then <a href="/getting-started/#locate">locate</a> once and <a href="/getting-started/#eyepiece">set the eyepiece point</a> on a bright star. As long as nothing moves on the rail, it stays valid for the next nights too.</p>
+      </li>
+    </ol>
+    <p class="tip">A long rail is a lever on the small clamping screw of the shoe. If it wobbles, add a strap around the tube at the far end of the rail.</p>
+
+    <h2 id="adapter">Finder shoe adapter</h2>
+    <p>The foot for Explore Scientific copies the original ES adapter, including its stop notch. The base carries a slot for the T-nuts of the rail, sized for 20-series “slot 6” nuts; if yours differ, adjust it under <b>T-slot</b>. The cavity closes with two 45° slopes, so it prints without supports.</p>
+  </div>
+
+  <section class="cfg" data-design="FinderAdapter" data-file="zenigo-finder-adapter" data-title="Zenigo finder shoe adapter" aria-label="Configurator: finder shoe adapter">
+    <div class="cfg-view">
+      <canvas aria-label="3D preview of the adapter. Drag to turn it, pinch or scroll to zoom."></canvas>
+      <p class="cfg-noview muted" hidden>Your browser can’t show the 3D preview (WebGL is off). The download works anyway.</p>
+      <div class="cfg-bar">
+        <span class="seg" role="radiogroup" aria-label="Orientation">
+          <label><input type="radio" name="orient-adapter" value="use" checked><span>In use</span></label>
+          <label><input type="radio" name="orient-adapter" value="print"><span>Print</span></label>
+        </span>
+        <span class="cfg-size"></span>
+      </div>
+    </div>
+    <div class="cfg-side">
+      <form class="cfg-form" onsubmit="return false"></form>
+      <div class="cfg-actions">
+        <button type="button" class="open cfg-download">Download STL</button>
+        <button type="button" class="open ghost cfg-reset">Reset</button>
+      </div>
+      <p class="note-small">The STL is in print orientation. The address of this page keeps your settings, so you can bookmark or share it.</p>
+    </div>
+  </section>
+
+  <div class="doc wide">
+    <p class="muted">The adapter is a <a href="https://openjscad.xyz/">JSCAD</a> design. To change more than the sliders allow, open <a href="finder-adapter.jscad.js" download>finder-adapter.jscad.js</a> in the JSCAD web app.</p>
+  </div>
+</main>
+
+<!--FOOTER-->
+<!--SCRIPTS-->
+</body>
+</html>

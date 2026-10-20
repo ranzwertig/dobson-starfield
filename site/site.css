@@ -244,3 +244,6 @@ footer a:hover { color: var(--amber); }
 .parts dt { justify-content: flex-start; }
 .tag { font: 600 12px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--amber); border-radius: 99px; padding: 4px 8px; }
 .affil { font-size: 15px; }
+.kicker { margin: 0 0 8px; font: 600 14px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
+.diybox { border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 12px; padding: 14px 18px; margin: 0 0 8px; background: rgba(240, 168, 69, .05); }
+.diybox p { margin: 0; color: #ccd3de; }
