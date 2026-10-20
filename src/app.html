@@ -102,9 +102,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
-.notices { position: absolute; z-index: 5; left: calc(16px + var(--pl, 0px)); right: calc(16px + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: calc(max(8px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
-.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 168px); }
+.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 134px); }
 .update {
   display: flex; align-items: center; gap: 10px; box-sizing: border-box;
   background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
@@ -1432,8 +1432,16 @@ function stopCamera() {
   if (st.source === "video") showMap();
 }
 // Switch to the plain star map; take the view direction from the last solution
+// The free map takes over exactly what is on the screen now (direction of the screen centre, i.e. the telescope, and
+// the field across the shorter side), so switching Align off or leaving the camera doesn't make the view jump.
+function keepViewOnMap() {
+  const sol = st.sol, W = view.width, H = view.height; if (!sol || !(fit.sc > 0)) return;
+  const v = Solver.pixToSky(sol, (W / 2 - fit.ox) / fit.sc, (H / 2 - fit.oy) / fit.sc), h = horiz(v, skyNow().t);
+  const fov = 2 * Math.atan(Math.min(W, H) / 2 / (fit.sc * sol.f)) * R2D;
+  st.mapView = { az: h.az, alt: Math.max(-90, Math.min(90, h.alt)), fov: Math.max(MAP_FOV_MIN, Math.min(140, fov)) };
+}
 function showMap() {
-  if (st.sol && !st.sol.approx) { const h = horiz(Solver.mul(st.sol.R, [0, 0, 1]), skyNow().t); st.mapView.az = h.az; st.mapView.alt = Math.max(-10, h.alt); }
+  if (st.sol && !st.sol.approx) keepViewOnMap();
   st.source = "map"; st.frame = null; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
   if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; st.solMode = "map"; }
   updateGuide(); renderReadout();
@@ -2082,6 +2090,7 @@ function resumeSensors() {
   Object.assign(sens, { offBefore: sens.off || sens.offBefore, raw: null, rel: null, abs: null, pend: null, pendN: 0, relT: 0, speed: 0, off: null, offN: 0, offUsed: null, outSince: 0 });
 }
 async function setSensor(on) {
+  if (!on && st.sensor && st.source === "map" && st.sol) keepViewOnMap();   // the map stays where Align left it
   if (on) {
     try {
       if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {

@@ -330,7 +330,11 @@ const TESTS = {
       return [seen, want];
     });
     ok(halves[1] > 0 && halves[0] >= 0.8 * halves[1], 'with the view shifted, stars are drawn down to the bottom of the screen', halves);
-    await ev(p, () => { st.sensor = false; cfg.tele = { x: 0, y: 0 }; });
+    // switching Align off: the free map stays where it was (direction of the screen centre and the field)
+    const kept = await ev(p, async () => {
+      cfg.tele = { x: 0, y: 0 }; st.mapView = { az: 0, alt: 0, fov: 50 }; const v = $('view'); st.sol = mapSolCompute(skyNow().M, v.width, v.height, { az: 200, alt: 35, fov: 50 }); st.sensor = true; st.solMode = 'compass'; lastSig = [];
+      await new Promise(r => setTimeout(r, 300)); await setSensor(false); return st.mapView; });
+    ok(Math.abs(((kept.az - 200) + 540) % 360 - 180) < 0.5 && Math.abs(kept.alt - 35) < 0.5 && Math.abs(kept.fov - 50) < 0.5, 'switching Align off keeps the view on the map', kept);
     await done(p);
   },
 
