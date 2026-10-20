@@ -412,6 +412,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   .hcell .v { font-size: 18px; }
 }
 
+/* Not enough room below the directions at the top (measured, see layoutFabs): smaller buttons, then two columns */
+.fabs.compact { gap: 5px; } .fabs.compact .fab { width: 42px; height: 42px; } .fabs.compact .fab svg { width: 20px; height: 20px; } .fabs.compact .fab.shoot { width: 56px; height: 56px; }
+.fabs.two { gap: 6px; display: grid; grid-template-columns: repeat(2, auto); justify-items: center; align-items: center; }
+.fabs.two .fab.shoot { grid-column: 2; }
+.fabs.two.labels .fab small { opacity: 0; }
+
 /* Sheets: menu, target search, settings */
 .btn {
   border: 1px solid var(--line); background: var(--raise); border-radius: 9px; padding: 9px 13px;
@@ -3645,7 +3651,7 @@ function addTonightsBest() {
 document.querySelectorAll("[data-ltab]").forEach(b => b.onclick = () => { listTab.v = b.dataset.ltab; renderList(); });
 function syncTargetFab() {
   const f = $("fabTarget"); if (f) f.classList.toggle("tgt-on", !!cfg.target);
-  const sb = $("fabSound"); if (sb && sb.hidden === !!cfg.target) sb.hidden = !cfg.target;
+  const sb = $("fabSound"); if (sb && sb.hidden === !!cfg.target) { sb.hidden = !cfg.target; if (typeof layoutFabs === "function") requestAnimationFrame(layoutFabs); }
   if (!cfg.target && sound.on) setSound(false);
 }
 $("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("listSheet"); revealNew(); };
@@ -3854,7 +3860,20 @@ $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
 $("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
 // right below the target line, wherever it ends (its height changes with the directions shown)
 const placeReadout = () => { const g = $("guide").getBoundingClientRect(), app = $("guide").offsetParent; if (!app) return; document.documentElement.style.setProperty("--rd-top", Math.round(g.bottom - app.getBoundingClientRect().top + 6) + "px"); };
-if (window.ResizeObserver) new ResizeObserver(placeReadout).observe($("guide")); addEventListener("resize", placeReadout); placeReadout();
+// The button column on the right must stay below the directions and the position box at the top: when it would reach
+// into them (tall directions, many buttons, a short screen), the buttons get smaller, and if that's not enough two columns
+function layoutFabs() {
+  const f = $("fabs"); if (!f) return;
+  const obstacles = ["guide", "readout", "btnMenu"].filter(id => !$(id).hidden).map(id => $(id).getBoundingClientRect());
+  const was = f.className; f.classList.remove("compact", "two");
+  // fits when no element at the top reaches into the column's area (only those that overlap it sideways count)
+  const fits = () => { const r = f.getBoundingClientRect(); return obstacles.every(o => o.right < r.left - 4 || o.left > r.right + 4 || o.bottom + 8 <= r.top); };
+  if (!fits()) { f.classList.add("compact"); if (!fits()) f.classList.add("two"); }
+  if (f.className !== was) { insetCache = null; lastSig = []; }
+}
+const relayout = () => { placeReadout(); layoutFabs(); };
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => requestAnimationFrame(relayout)); ro.observe($("guide")); ro.observe($("readout")); }
+addEventListener("resize", relayout); relayout();
 $("rdHead").onclick = () => { cfg.readoutOpen = !cfg.readoutOpen; save(); syncSettings(); renderReadout(); insetCache = null; lastSig = []; };
 
 /* ---------------- Time: show the sky at another time ---------------- */
