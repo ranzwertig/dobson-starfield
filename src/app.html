@@ -29,7 +29,7 @@ button, input, select { font: inherit; color: inherit; }
 .app { height: var(--app-h, 100%); display: flex; flex-direction: column; }
 /* iPhone home-screen app: the viewport can be shorter than the screen (a strip stays empty at the bottom), so the
    script sets --app-h to the full screen height; the sheets follow it */
-html.ios-app .sheet { bottom: auto; height: var(--app-h, 100%); }
+html.ios-app .sheet { position: absolute; top: 0; bottom: auto; height: var(--app-h, 100%); }   /* fixed ones stopped at the short viewport */
 /* Top inset of the status bar. In the installed iPhone app iOS blurs a band below the status bar,
    so the top controls move below it (class set by script, the display-mode media query is unreliable there) */
 :root { --safe-top: env(safe-area-inset-top, 0px); }
@@ -230,16 +230,19 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .actions .btn.wide { grid-column: 1 / -1; }
 /* details and target panel: the main buttons stay at the bottom while the content scrolls */
 /* details: one row of icon buttons with a short label, always at the bottom of the panel (links above them) */
-#infoSheet .inner { display: flex; flex-direction: column; }
+/* only the body scrolls: title on top and the buttons at the bottom stay where they are */
+#infoSheet .inner { display: flex; flex-direction: column; gap: 0; overflow: hidden; padding-bottom: 0; }
 #infoSheet .inner > * { flex: none; min-width: 0; }
-#infoSheet .inner > .actions { margin-top: auto; }
+#infoSheet .sbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: minmax(0, 1fr);
+  gap: 14px; align-content: start; padding: 2px 0 14px; }
 #infoSheet .links { margin-top: 0; }
 .actions.iconbar { display: flex; gap: 6px; }
 .actions.iconbar .btn { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 3px; padding: 8px 2px 7px; font-size: 12px; line-height: 1.1; text-align: center; }
 .actions.iconbar .btn svg { width: 22px; height: 22px; flex: none; }
 .actions.iconbar .btn span { white-space: normal; overflow-wrap: anywhere; }
 .actions.iconbar .btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-#infoSheet .actions, #tgtActs { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel);
+#infoSheet .actions { position: relative; z-index: 3; background: var(--panel); margin-inline: -16px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 16px -6px var(--panel); }
+#tgtActs { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel);
   margin-inline: -16px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 16px -6px var(--panel); }
 .actions.three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: -6px; }
 .actions.three .btn { padding-inline: 6px; gap: 6px; }
@@ -760,6 +763,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <div class="sheet" id="infoSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
     <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="sbody">
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="mphase" id="infoMoon" hidden></div>
@@ -769,6 +773,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
     <div class="links" id="infoLinks"></div>
+    </div>
     <div class="actions iconbar">
       <button class="btn primary" id="infoSeen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Seen</span></button>
       <button class="btn" id="infoTarget" aria-pressed="false"></button>
@@ -4383,7 +4388,7 @@ function openSheet(id) {
   SHEETS.forEach(x => { if (x.id !== id && !x.hidden && !(bothPanels() && sheetSide(x.id) !== sheetSide(id))) closeSheet(x.id); });
   const sh = $(id); clearTimeout(sh._t);
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
-  sh.querySelector(".inner").scrollTop = 0;
+  sh.querySelector(".inner").scrollTop = 0; scroller(sh).scrollTop = 0;
   const tok = sh._tok = (sh._tok || 0) + 1;   // closed again before it slid in: stays closed
   requestAnimationFrame(() => requestAnimationFrame(() => { if (sh._tok === tok && !sh.hidden) sh.classList.add("open"); }));
   syncPanels(id);
@@ -4486,8 +4491,10 @@ function closeSheet(id) {
   if (reduceMotion()) { sh.hidden = true; return; }
   clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) sh.hidden = true; }, 360);
 }
+// the element that scrolls: a body of its own (details: title and buttons stay put) or the whole panel
+function scroller(sh) { return sh.querySelector(".sbody") || sh.querySelector(".inner"); }
 SHEETS.forEach(sh => {
-  const inner = sh.querySelector(".inner"), grab = sh.querySelector(".grab");
+  const inner = sh.querySelector(".inner"), grab = sh.querySelector(".grab"), body = scroller(sh);
   sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) closeSheet(sh.id); });
   let y0 = null, dy = 0, last = 0, lastT = 0, vel = 0, fromBody = false;
   const start = (y, body) => { if (sidePanels()) return; y0 = y; dy = 0; vel = 0; last = y; lastT = performance.now(); fromBody = body; };
@@ -4495,7 +4502,7 @@ SHEETS.forEach(sh => {
     if (y0 == null) return;
     const d = y - y0, dragging = sh.classList.contains("dragging");
     if (!dragging) {
-      if (fromBody && (inner.scrollTop > 0 || d < -2)) { y0 = null; return; }   // let it scroll normally
+      if (fromBody && (body.scrollTop > 0 || d < -2)) { y0 = null; return; }   // let it scroll normally
       if (Math.abs(d) < 6) return;
       sh.classList.add("dragging");
     }
@@ -4517,7 +4524,7 @@ SHEETS.forEach(sh => {
   grab.addEventListener("pointerup", end); grab.addEventListener("pointercancel", end);
   inner.addEventListener("touchstart", e => {
     if (e.target.closest(".grab, input, select, .row, .camctl")) return;
-    if (inner.scrollTop <= 0) start(e.touches[0].clientY, true);
+    if (body.scrollTop <= 0) start(e.touches[0].clientY, true);
   }, { passive: true });
   inner.addEventListener("touchmove", e => { if (!e.target.closest(".grab")) move(e.touches[0].clientY, e); }, { passive: false });
   inner.addEventListener("touchend", e => { if (!e.target.closest(".grab")) end(); });
@@ -4631,7 +4638,7 @@ function showOnMap(o) {
   hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
 }
 // the details again after a change in them (tablet, desktop), at the same scroll position
-function reshowInfo(o, fromList) { const inner = $("infoSheet").querySelector(".inner"), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
+function reshowInfo(o, fromList) { const inner = scroller($("infoSheet")), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
   st.infoFromList = fromList === "search" ? "search" : !!fromList; $("infoBack").hidden = !fromList;
   $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : "Back to the list");
