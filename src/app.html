@@ -38,7 +38,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 /* Status badge bottom left */
 .corner {
-  position: absolute; left: calc(max(10px, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
+  position: absolute; left: calc(max(10px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
   display: grid; gap: 4px; justify-items: start; max-width: calc(100% - 110px); pointer-events: none;
 }
 .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
@@ -81,8 +81,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Degree readouts at the top of the image */
 .hud {
-  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + var(--pill-w, 96px) + var(--pl, 0px));
-  right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px));
+  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pill-w, 96px) + var(--pl, 0px));
+  right: calc(max(8px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px));
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
 .hcell {
@@ -338,7 +338,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Round buttons bottom right */
 .fabs {
-  position: absolute; right: calc(max(6px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
+  position: absolute; right: calc(max(6px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
   display: flex; flex-direction: column; gap: 10px; align-items: flex-end;   /* flush with the right edge, the big Locate button too */
 }
 .fab {
@@ -364,7 +364,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Menu button top left, capture button as a large round button at the bottom of the stack */
 .menu-pill {
-  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); height: 46px; box-sizing: border-box;
+  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); height: 46px; box-sizing: border-box;
   display: flex; align-items: center; gap: 8px; padding: 0 12px 0 7px; border-radius: 99px; cursor: pointer;
   border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); color: var(--fg);
 }
@@ -548,7 +548,7 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .readout:empty::after { content: "No position determined yet."; color: var(--muted); }
 /* position numbers top right below the target line (switch: On the map › Position numbers): one short line, tap for all */
-.maprd { position: absolute; z-index: 4; right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); top: var(--rd-top, 60px); transition: right .34s cubic-bezier(.32, .72, 0, 1);
+.maprd { position: absolute; z-index: 4; right: calc(max(8px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); top: var(--rd-top, 60px); transition: right .34s cubic-bezier(.32, .72, 0, 1);
   max-width: min(260px, calc(100% - 16px)); box-sizing: border-box; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(4px); overflow: hidden; }
 .maprd .rdhead { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: 0; color: var(--fg); padding: 5px 8px 5px 10px; cursor: pointer; font: 12px var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .maprd .rdhead span { overflow: hidden; text-overflow: ellipsis; }
@@ -1165,6 +1165,17 @@ a.btn { text-decoration: none; color: var(--fg); }
 "use strict";
 const $ = id => document.getElementById(id);
 // Installed on the iPhone home screen: mark it, so the top controls keep clear of the blurred band below the status bar
+// iPhone in landscape: iOS reports the same side inset on both sides, but only the side with the camera cut-out needs
+// it. The buttons on the free side go close to the edge (window.orientation 90: turned anticlockwise, cut-out on the left).
+if (/iPhone|iPod/.test(navigator.userAgent)) {
+  const sides = () => {
+    const a = typeof window.orientation === "number" ? window.orientation : screen.orientation ? screen.orientation.angle : 0;
+    const ang = ((a % 360) + 360) % 360, st = document.documentElement.style;
+    if (ang === 90) st.setProperty("--safe-r", "0px"); else st.removeProperty("--safe-r");
+    if (ang === 270) st.setProperty("--safe-l", "0px"); else st.removeProperty("--safe-l");
+  };
+  sides(); addEventListener("orientationchange", () => setTimeout(sides, 100)); addEventListener("resize", sides);
+}
 if (navigator.standalone === true) {
   document.documentElement.classList.add("ios-app");
   // iOS reports a viewport shorter than the screen there (about the status bar's height), which left an empty strip
