@@ -223,7 +223,7 @@ footer a:hover { color: var(--amber); }
 .cfg-form legend, .cfg-form summary { font: 600 13px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); padding: 0 6px; }
 .cfg-form summary { cursor: pointer; padding: 8px 0 6px; }
 .cfg-form .row { display: grid; gap: 2px; padding: 7px 0; font-size: 16px; color: #ccd3de; }
-.cfg-form .ctl { display: grid; grid-template-columns: minmax(0, 1fr) 72px 26px; gap: 10px; align-items: center; }
+.cfg-form .ctl { display: grid; grid-template-columns: minmax(0, 1fr) 84px 26px; gap: 10px; align-items: center; }
 .cfg-form .ctl i { font: 400 14px var(--num); font-style: normal; color: var(--mist); }
 .cfg-form input[type=range] { width: 100%; accent-color: var(--amber); }
 .cfg-form input[type=number], .cfg-form select { font: 500 15px var(--num); color: var(--star); background: #0a0f1f; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; }

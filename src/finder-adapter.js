@@ -15,7 +15,7 @@
 
   const getParameterDefinitions = () => [
     { name: 'gMount', type: 'group', caption: 'Mount' },
-    { name: 'mountType', type: 'choice', caption: 'Mount type', values: ['es', 'vixen', 'vblock'], captions: ['Explore Scientific finder shoe', 'Vixen / Synta finder shoe', 'Universal V-block with straps'], initial: 'es' },
+    { name: 'mountType', type: 'choice', caption: 'Mount type', values: ['es', 'vixen', 'telrad', 'vblock'], captions: ['Explore Scientific finder shoe', 'Vixen / Synta finder shoe', 'Telrad base', 'Universal V-block with straps'], initial: 'es' },
     { name: 'mountLen', type: 'float', caption: 'Foot length', initial: 44, min: 20, max: 200, step: 1 },
 
     { name: 'gBase', type: 'group', caption: 'Base' },
@@ -45,6 +45,14 @@
     { name: 'vixenW', type: 'float', caption: 'Width at the bottom', initial: 31.5, min: 28, max: 36, step: 0.1 },
     { name: 'vixenH', type: 'float', caption: 'Dovetail height', initial: 8, min: 5, max: 12, step: 0.1 },
     { name: 'vixenAngle', type: 'float', caption: 'Flank angle', initial: 60, min: 45, max: 75, step: 1 },
+
+    // Telrad base: two cups with a thumbscrew each; the Telrad's feet drop in. Defaults measured from the cups of
+    // "Telrad Mount for Orion Dobsonian" by CHenryInSD (Thingiverse 3369512, CC BY): opening 41.2 x 13 mm, 152 mm apart.
+    { name: 'gTelrad', type: 'group', caption: 'Telrad base', showIf: { mountType: 'telrad' } },
+    { name: 'telradSpacing', type: 'float', caption: 'Distance between the cups (centre to centre)', initial: 152, min: 100, max: 200, step: 0.5 },
+    { name: 'telradFootL', type: 'float', caption: 'Foot length (across the base)', initial: 40.6, min: 30, max: 55, step: 0.1 },
+    { name: 'telradFootW', type: 'float', caption: 'Foot width (along the base)', initial: 12.4, min: 8, max: 20, step: 0.1 },
+    { name: 'telradFootH', type: 'float', caption: 'How deep the feet go into the cups', initial: 12, min: 4, max: 18, step: 0.5 },
 
     { name: 'gV', type: 'group', caption: 'V-block', showIf: { mountType: 'vblock' } },
     { name: 'tubeD', type: 'float', caption: 'Outer diameter of your tube', initial: 230, min: 40, max: 400, step: 1 },
@@ -76,7 +84,7 @@
   // key figures, also shown on the website
   const V_EDGE = 1.5;   // flat strip along the outer edges of the V-block, so they are not knife-sharp
   const dims = p => {
-    const isES = p.mountType === 'es', isV = p.mountType === 'vblock';
+    const isES = p.mountType === 'es', isV = p.mountType === 'vblock', isT = p.mountType === 'telrad';
     const vxTop = p.vixenW - 2 * p.vixenH / Math.tan(deg(p.vixenAngle));
     // V-block: phi = half the included angle, measured from the vertical; the V spans the width minus the edge strips
     const phi = deg(p.vAngle / 2), vHalf = p.vWidth / 2 - V_EDGE;
@@ -84,8 +92,10 @@
     const chRoof = p.strapW / 2;                                   // 45° roof over each channel (prints without bridge)
     const chZ0 = vDepth + p.strapFloor;                            // tip of the channel roof
     const vFootH = chZ0 + chRoof + p.strapH + 2;
-    const footH = isES ? 19.9 : isV ? vFootH : p.vixenH;
-    const footTW = isES ? 13 : isV ? p.vWidth : vxTop;
+    const footH = isES ? 19.9 : isV ? vFootH : isT ? p.telradFootH : p.vixenH;
+    const footTW = isES ? 13 : isV ? p.vWidth : isT ? p.telradFootL : vxTop;
+    // the Telrad feet need the whole distance between the cups
+    const footLen = isT ? Math.max(p.mountLen, p.telradSpacing + p.telradFootW + 6) : p.mountLen;
     const zTr0 = footH + (isV ? 0 : p.footClear);
     // never steeper than 45° when printed upside down (a wide V-block narrows towards the plate)
     const zPl0 = zTr0 + Math.max(p.transitionH, (footTW - p.plateW) / 2);
@@ -97,10 +107,10 @@
     const roofH = p.roof === 'peak' ? p.cavityW / 2 : p.roofChamfer;
     const plateT = p.slotFloor + roofH + p.cavityH + p.slotLip;
     return {
-      isES, isV, vxTop, footTW, zTr0, zPl0, roofH, plateT, vDepth, vHalf, chZ0, chRoof, maxTubeD, contactSpan, apexGap,
-      length: p.mountLen + p.overhangFront + p.overhangBack,
+      isES, isV, isT, footLen, vxTop, footTW, zTr0, zPl0, roofH, plateT, vDepth, vHalf, chZ0, chRoof, maxTubeD, contactSpan, apexGap,
+      length: footLen + p.overhangFront + p.overhangBack,
       height: zPl0 + plateT,
-      width: Math.max(p.plateW, isES ? 18.5 : isV ? p.vWidth : p.vixenW)
+      width: Math.max(p.plateW, isES ? 18.5 : isV ? p.vWidth : isT ? p.telradFootL : p.vixenW)
     };
   };
 
@@ -120,6 +130,12 @@
         const yn = p.esNotch === 'back' ? yM0 - EPS : yM0 + p.mountLen - 4.4, sz = [5, 4.4 + EPS, 6];
         foot = subtract(foot, cuboid({ size: sz, center: [0, yn + sz[1] / 2, -1 + sz[2] / 2] }));
       }
+    } else if (d.isT) {
+      // two feet that drop into the cups of a Telrad base, centred on the foot section
+      const yc = yM0 + d.footLen / 2, fw = p.telradFootW, fl = p.telradFootL, c = Math.min(1, fw / 4);
+      // feet with a small lead-in chamfer at the bottom, so they find their way into the cups
+      const footProf = poly([[-fl / 2 + c, 0], [fl / 2 - c, 0], [fl / 2, c], [fl / 2, zTr0 + EPS], [-fl / 2, zTr0 + EPS], [-fl / 2, c]]);
+      foot = union(...[-1, 1].map(s => along(yc + s * p.telradSpacing / 2 - fw / 2, fw, footProf)));
     } else if (d.isV) {
       // block with a V-notch underneath; channels run across it for cable ties or hose clamps
       const w2 = p.vWidth / 2;
