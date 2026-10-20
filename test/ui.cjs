@@ -72,12 +72,12 @@ const TESTS = {
     await ev(p, () => { obs.starred = ['M1', 'M2', 'M3', 'M5', 'M10', 'M11', 'M12', 'M13', 'M15', 'M27', 'M31', 'M33', 'M57', 'M92'].map(id => ({ id, name: id, added: 0 }));
       obs.log = [{ uid: 'a', obj: 'M45', name: 'M45', t: new Date().toISOString(), result: 'easy' }]; saveObs(); });
     await p.tap('#fabList'); await wait(p); await p.tap('[data-ltab="starred"]'); await wait(p, 300);
-    await ev(p, () => { $('listSheet').querySelector('.inner').scrollTop = 300; }); await wait(p, 100);
+    await ev(p, () => { scroller($('listSheet')).scrollTop = 300; }); await wait(p, 100);
     const id = await ev(p, () => [...document.querySelectorAll('#listBody .orow')][6].dataset.id);
     await p.tap(`#listBody .orow[data-id="${id}"] .omain`); await wait(p, 500);
     ok(await ev(p, () => !$('infoBack').hidden), 'details from the list have a back arrow');
     await p.tap('#infoBack'); await wait(p, 600);
-    const back = await ev(p, () => [!$('listSheet').hidden, listTab.v, $('listSheet').querySelector('.inner').scrollTop]);
+    const back = await ev(p, () => [!$('listSheet').hidden, listTab.v, scroller($('listSheet')).scrollTop]);
     ok(back[0] && back[1] === 'starred' && back[2] > 100, 'back returns to the same tab and scroll position', back);
     await p.tap('[data-ltab="seen"]'); await wait(p, 300); await p.tap('#listBody .orow .omain'); await wait(p, 500);
     await p.tap('#infoSheet [data-close]'); await wait(p, 600);
