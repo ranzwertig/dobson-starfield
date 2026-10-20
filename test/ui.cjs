@@ -304,6 +304,10 @@ const TESTS = {
     ok(await ev(p, () => !$('calChip').hidden && /Aligned on the map/.test($('calChipTxt').textContent)), 'the pill names the map alignment', await ev(p, () => $('calChipTxt').textContent));
     await p.tap('#btnCalOff'); await wait(p, 200);
     ok(await ev(p, () => !+cfg.compassCal && !cfg.calTeleBak && Math.abs(cfg.tele.y) < 1e-9 && $('calChip').hidden), 'removing it restores the compass and the eyepiece point', await ev(p, () => [cfg.compassCal, cfg.tele]));
+    // the map growing without a window resize (iPhone app filling the screen) resizes the canvas: circles stay round
+    const sz = await ev(p, async () => { document.documentElement.style.setProperty('--app-h', (innerHeight + 64) + 'px'); await new Promise(r => setTimeout(r, 300));
+      const v = $('view'), r = v.getBoundingClientRect(), k = v.height / r.height; document.documentElement.style.removeProperty('--app-h'); return [k, v.width / r.width]; });
+    ok(Math.abs(sz[0] - sz[1]) < 0.01, 'the map canvas follows a size change without a resize event', sz);
     // an eyepiece point far off the centre (set before the map alignment kept a backup) shows its own pill; ✕ resets it
     await ev(p, () => { cfg.tele = { x: 0, y: -0.8 }; save(); }); await wait(p, 400);
     ok(await ev(p, () => !$('teleChip').hidden && /39° off/.test($('teleChipTxt').textContent)), 'an eyepiece point far off the centre shows a pill', await ev(p, () => $('teleChipTxt').textContent));

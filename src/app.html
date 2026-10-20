@@ -5285,6 +5285,9 @@ $("q").addEventListener("input", showResults);
 $("q").addEventListener("keydown", e => { if (e.key === "Enter") { const b = $("results").querySelector("button"); b && b.click(); } });
 
 window.addEventListener("resize", resize);
+// The map's size can change without a window resize event (the iPhone app growing to the full screen height, panels):
+// without this the canvas kept its old pixel height, stretched to the new one, and every circle was an upright oval.
+if (window.ResizeObserver) new ResizeObserver(() => { resize(); insetCache = null; }).observe(view);
 resize(); syncSettings(); renderChips();
 // Start: free star map, looking toward the target (if above the horizon), otherwise south
 { const T = targetById(cfg.target), t = A.MakeTime(new Date());
