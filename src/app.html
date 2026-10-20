@@ -2172,7 +2172,8 @@ function mapSol() {
 function mapSolCompute(M, W, H, mv) {
   const z = hv(mv.az, mv.alt);
   let up = [0, 0, 1]; const k = z[2]; up = [up[0] - k * z[0], up[1] - k * z[1], up[2] - k * z[2]];
-  let n = Math.hypot(...up); if (n < 1e-6) { up = hv(mv.az + 180, 0); n = 1; }
+  // straight up or down "up" is undefined: keep the horizon you came from at the top (behind you at the zenith, ahead at the nadir)
+  let n = Math.hypot(...up); if (n < 1e-6) { up = hv(mv.az + (mv.alt > 0 ? 180 : 0), 0); n = 1; }
   const y = up.map(q => -q / n), x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
   const Rh = [[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]];
   const f = mapF(W, H);
@@ -2224,7 +2225,7 @@ function mapRotate(dx, dy) {   // finger drag: sky follows the finger
   if (st.sensor) return;
   const mv = st.mapView, k = mv.fov / view.width;
   mv.az = (mv.az - dx * k / Math.max(0.25, Math.cos(mv.alt * D2R)) + 360) % 360;
-  mv.alt = Math.max(-30, Math.min(90, mv.alt + dy * k));
+  mv.alt = Math.max(-90, Math.min(90, mv.alt + dy * k));   // all the way up and down, like with the sensors
 }
 // zoom range of the map: down to half a degree across, enough to see Jupiter's moons or the Moon at true size
 const MAP_FOV_MIN = 0.5;
