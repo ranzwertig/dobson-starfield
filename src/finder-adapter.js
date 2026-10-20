@@ -177,9 +177,12 @@
       [-so / 2, zPl0 + f + rh + ch - EPS], [so / 2, zPl0 + f + rh + ch - EPS],
       [so / 2, totalH - li], [so / 2 + li, totalH + EPS], [-so / 2 - li, totalH + EPS], [-so / 2, totalH - li]
     ]);
+    // round the corners in plan view; as wide as the widest part of the profile, so a foot wider than the plate
+    // (V-block, Telrad keys) keeps its chamfered transition instead of ending in a flat ledge
+    const pwMax = Math.max(pw, d.footTW);
     const plan = p.cornerR > 0
-      ? roundedRectangle({ size: [pw, L], roundRadius: Math.min(p.cornerR, pw / 2 - EPS, L / 2 - EPS), segments: SEG, center: [0, L / 2] })
-      : rectangle({ size: [pw, L], center: [0, L / 2] });
+      ? roundedRectangle({ size: [pwMax, L], roundRadius: Math.min(p.cornerR, pwMax / 2 - EPS, L / 2 - EPS), segments: SEG, center: [0, L / 2] })
+      : rectangle({ size: [pwMax, L], center: [0, L / 2] });
     const base = intersect(along(0, L, subtract(outer, cavity, opening)), translate([0, 0, -1], extrudeLinear({ height: totalH + 2 }, plan)));
     return union(foot, base);
   };
