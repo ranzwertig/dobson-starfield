@@ -541,10 +541,16 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .readout span:first-child { color: var(--muted); }
 .readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .readout:empty::after { content: "No position determined yet."; color: var(--muted); }
-/* position numbers on the map (switch: On the map › Position numbers) */
-.maprd { grid-template-columns: 1fr; width: 230px; max-width: 100%; box-sizing: border-box; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; gap: 4px; font-size: 12px; backdrop-filter: blur(4px); }
-.maprd div { border-bottom: 0; padding-bottom: 0; }
-.maprd span:last-child { font-size: 11.5px; }
+/* position numbers top right below the target line (switch: On the map › Position numbers): one short line, tap for all */
+.maprd { position: absolute; z-index: 4; right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); top: var(--rd-top, 60px); transition: right .34s cubic-bezier(.32, .72, 0, 1);
+  max-width: min(260px, calc(100% - 16px)); box-sizing: border-box; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: blur(4px); overflow: hidden; }
+.maprd .rdhead { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: 0; color: var(--fg); padding: 5px 8px 5px 10px; cursor: pointer; font: 12px var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.maprd .rdhead span { overflow: hidden; text-overflow: ellipsis; }
+.maprd .rdhead svg { width: 14px; height: 14px; flex: none; color: var(--muted); transition: transform .2s; }
+.maprd .rdhead[aria-expanded="true"] svg { transform: rotate(180deg); }
+.maprd .readout { grid-template-columns: 1fr; gap: 3px; padding: 0 10px 7px; font-size: 12px; min-width: 210px; }
+.maprd .readout div { border-bottom: 0; padding-bottom: 0; }
+.maprd .readout span:last-child { font-size: 11.5px; }
 .note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; margin: 0; }
 .note b { color: var(--fg); font-weight: 600; }
 
@@ -601,6 +607,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <button class="hclear" id="hudClear" aria-label="Clear target" title="Clear target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
       </div>
     </div>
+    <div class="maprd" id="readout" hidden>
+      <button class="rdhead" id="rdHead" aria-expanded="false"><span id="rdShort"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="readout" id="rdBody" hidden></div>
+    </div>
 
     <div class="notices">
     <div class="update" id="calBar" role="status" hidden>
@@ -618,7 +628,6 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="hint" id="hint" hidden></div>
     <div class="corner">
-      <div class="readout maprd" id="readout" hidden></div>
       <div class="epview" id="epView" hidden>
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
         <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -979,7 +988,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="switch"><input type="checkbox" id="qListMarks" aria-label="List marks"><i></i></label>
       </div>
       <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
-        <div class="qlabel">Position numbers <span class="qsub">RA/Dec, field of view, accuracy, bottom left</span></div>
+        <div class="qlabel">Position numbers <span class="qsub">top right, tap for RA/Dec and more</span></div>
         <label class="switch"><input type="checkbox" id="qReadout" aria-label="Position numbers"><i></i></label>
       </div>
     </div>
@@ -1025,7 +1034,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optStarNames"> Star names</label>
         <label class="check"><input type="checkbox" id="optObjLabels"> Names of other objects (Messier and NGC, planets, satellites)</label>
         <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
-        <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the bottom left (RA/Dec, field of view, accuracy)</label>
+        <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the top right (field of view and accuracy, tap for RA/Dec and more)</label>
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
       </div>
     </fieldset>
@@ -1697,7 +1706,9 @@ function updateGuide() {
 function compass(az) { return ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"][Math.round(az / 45) % 8]; }
 
 function renderReadout() {
-  const r = $("readout"); r.textContent = "";
+  const r = $("rdBody"); r.textContent = "";
+  const s0 = st.sol, short = s0 ? "FOV " + fmtDeg(longFromSol(s0)) + (s0.approx ? "" : " · ±" + (s0.rms * 60).toFixed(1) + "′ · " + s0.nMatch + " stars") : st.stars.length ? st.stars.length + " points of light" : "No position yet";
+  if ($("rdShort").textContent !== short) $("rdShort").textContent = short;
   const add = (k, v) => { const d = document.createElement("div"); const a = document.createElement("span"); a.textContent = k; const b = document.createElement("span"); b.textContent = v; d.append(a, b); r.append(d); };
   const t = A.MakeTime(new Date()), tv = teleVec();
   if (tv) {
@@ -3697,6 +3708,10 @@ $("bkFile").onchange = async () => {
 };
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
 $("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
+// right below the target line, wherever it ends (its height changes with the directions shown)
+const placeReadout = () => { const g = $("guide").getBoundingClientRect(), app = $("guide").offsetParent; if (!app) return; document.documentElement.style.setProperty("--rd-top", Math.round(g.bottom - app.getBoundingClientRect().top + 6) + "px"); };
+if (window.ResizeObserver) new ResizeObserver(placeReadout).observe($("guide")); addEventListener("resize", placeReadout); placeReadout();
+$("rdHead").onclick = () => { cfg.readoutOpen = !cfg.readoutOpen; save(); syncSettings(); renderReadout(); insetCache = null; lastSig = []; };
 
 /* ---------------- Time: show the sky at another time ---------------- */
 function skyDate() { return new Date(Date.now() + st.tOff); }
@@ -4071,7 +4086,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
-  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout;
+  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
