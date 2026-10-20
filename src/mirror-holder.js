@@ -8,8 +8,8 @@
   const jscad = typeof jscadModeling !== 'undefined' ? jscadModeling : require('@jscad/modeling');
   const { primitives, transforms, booleans, extrusions } = jscad;
   const { polygon, cuboid, cylinder } = primitives;
-  const { translate, rotateX, rotateY } = transforms;
-  const { union, subtract } = booleans;
+  const { translate, rotateX } = transforms;
+  const { subtract } = booleans;
   const { extrudeLinear } = extrusions;
 
   const getParameterDefinitions = () => [
@@ -18,7 +18,6 @@
     { name: 'mirrorL', type: 'float', caption: 'Mirror height (along the slope)', initial: 50, min: 25, max: 100, step: 1 },
     { name: 'mirrorT', type: 'float', caption: 'Mirror thickness', initial: 2, min: 1, max: 6, step: 0.1 },
     { name: 'margin', type: 'float', caption: 'Border around the mirror', initial: 2, min: 0, max: 8, step: 0.5 },
-    { name: 'lip', type: 'choice', caption: 'Ledge under the mirror', values: ['yes', 'no'], captions: ['Yes, the mirror rests on it', 'No'], initial: 'yes' },
 
     { name: 'gMount', type: 'group', caption: 'Mounting' },
     { name: 'mode', type: 'choice', caption: '1/4" connection', values: ['female', 'male'], captions: ['Nut: the adapter has a screw', 'Screw: the adapter has a thread'], initial: 'female' },
@@ -35,7 +34,6 @@
     { name: 'tol', type: 'float', caption: 'Clearance', initial: 0.3, min: 0, max: 0.8, step: 0.05 }
   ];
 
-  const EPS = 0.01;
   const S45 = Math.SQRT1_2;
 
   const dims = p => {
@@ -60,13 +58,7 @@
     const d = dims(p);
     // wedge: profile in the x/z plane, extruded across y = 0..W
     const prof = polygon({ points: [[0, 0], [d.Db, 0], [d.Db, d.zb], [d.D, d.zb], [d.D, d.zb + d.D], [0, d.zb]] });
-    let body = translate([0, d.W, 0], rotateX(Math.PI / 2, extrudeLinear({ height: d.W }, prof)));
-    if (p.lip === 'yes') {
-      // ledge along the lower edge of the 45° face: x along the slope, z out of the face
-      const h = p.mirrorT + 1;
-      const lip = cuboid({ size: [1.5, d.W, h], center: [p.margin - 0.75, d.W / 2, h / 2 - EPS] });
-      body = union(body, translate([0, 0, d.zb], rotateY(-Math.PI / 4, lip)));
-    }
+    const body = translate([0, d.W, 0], rotateX(Math.PI / 2, extrudeLinear({ height: d.W }, prof)));
     const hexH = d.hexT + p.tol;
     return subtract(body,
       cylinder({ radius: p.holeD / 2, height: p.floorT + hexH + 1, segments: 48, center: [d.xs, d.W / 2, -1 + (p.floorT + hexH + 1) / 2] }),
