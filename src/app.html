@@ -455,6 +455,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   .sheet.open .inner { transform: translateX(0); }
   /* the menu opens on the left, where its button is */
   body.menu-open { --pl: var(--panel-w); }
+  body.menu-open.panel-open { --panel-w: min(400px, 31vw); }   /* both open: a bit narrower, the map keeps room */
   #menu.sheet { inset: 0 auto 0 0; }
   #menu .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
   #menu.open .inner { transform: translateX(0); }
@@ -4070,12 +4071,14 @@ function syncSettings() {
 const SHEETS = [...document.querySelectorAll(".sheet")];
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function openSheet(id) {
-  SHEETS.forEach(x => { if (x.id !== id && !x.hidden) closeSheet(x.id); });
+  // with room for both (wide screens), the menu on the left and a panel on the right stay open side by side
+  const side = x => (x === "menu" ? "L" : "R");
+  SHEETS.forEach(x => { if (x.id !== id && !x.hidden && !(bothPanels() && side(x.id) !== side(id))) closeSheet(x.id); });
   const sh = $(id); clearTimeout(sh._t);
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   sh.querySelector(".inner").scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
-  setPanelOpen(true, id);
+  syncPanels(id);
 }
 // Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
 // avoid the buttons, so their position is re-read while they slide.
@@ -4085,11 +4088,13 @@ function afterPick(fromSheet, id) {
   if (id && cfg.target !== id) return;   // e.g. the Sun asks about the filter first
   if (sidePanels()) { if (cfg.target) openTargetPanel(false); } else closeSheet(fromSheet);
 }
-function setPanelOpen(on, id) {
-  // the menu is a panel on the left (tablet, desktop), everything else on the right
-  const left = on && id === "menu", bc = document.body.classList;
-  if (bc.contains("panel-open") === (on && !left) && bc.contains("menu-open") === left) return;
-  bc.toggle("panel-open", on && !left); bc.toggle("menu-open", left);
+const bothPanels = () => sidePanels() && innerWidth >= 1000;
+// which side has an open panel: the menu on the left (tablet, desktop), everything else on the right
+function syncPanels(opening, closing) {
+  const ids = SHEETS.filter(x => !x.hidden && x.id !== closing && (x.classList.contains("open") || x.id === opening)).map(x => x.id);
+  const left = sidePanels() && ids.includes("menu"), right = ids.some(i => i !== "menu" || !sidePanels()), bc = document.body.classList;
+  if (bc.contains("panel-open") === right && bc.contains("menu-open") === left) return;
+  bc.toggle("panel-open", right); bc.toggle("menu-open", left);
   if (!sidePanels()) return;
   const t0 = performance.now();
   const step = () => { insetCache = null; lastSig = []; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
@@ -4163,7 +4168,7 @@ function closeSheet(id) {
   if (sh._res) { const r = sh._res; sh._res = null; r(false); }
   sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   if (id === "infoSheet") st.picked = null;
-  if (!SHEETS.some(x => x.id !== id && !x.hidden && x.classList.contains("open"))) setPanelOpen(false);
+  syncPanels(null, id);
   if (reduceMotion()) { sh.hidden = true; return; }
   clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) sh.hidden = true; }, 360);
 }
