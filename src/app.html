@@ -560,6 +560,9 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 
 /* Object info */
 .info-sub { color: var(--muted); font-size: 14px; margin-top: -8px; }
+.showmap { justify-self: start; display: inline-flex; align-items: center; gap: 7px; margin-top: -4px; background: none; border: 1px solid var(--line); border-radius: 99px; padding: 6px 13px 6px 10px; color: var(--accent); font: 600 14px var(--font-ui); cursor: pointer; }
+.showmap svg { width: 17px; height: 17px; }
+.showmap:hover { border-color: var(--accent); }
 .warn { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--target); background: rgba(255,106,92,.12); color: var(--fg); font-size: 14px; line-height: 1.45; }
 .warn b { color: var(--target); }
 .checklist { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
@@ -741,6 +744,7 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
     <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="info-sub" id="infoSub"></div>
+    <button class="showmap" id="infoShowMap" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>Show on map</button>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
     <div class="mphase" id="infoMoon" hidden></div>
     <div class="pbox" id="infoPlanet" hidden></div>
@@ -2451,7 +2455,7 @@ function timeSig() {
 function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
-  return [W, H, zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
+  return [W, H, zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.focus, st.teleMode, st.solMode,
     st.filterVer, st.opticsVer, st.obsVer, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
@@ -2873,9 +2877,10 @@ function drawOverlay(dpr) {
       }
     }
   }
-  // highlight the tapped object
-  if (st.picked) {
-    const p = Solver.skyToPix(sol, st.picked.vec(t));
+  // highlight the tapped object, or the one shown with "Show on map" (until the next tap on the map)
+  const hl = st.picked || st.focus;
+  if (hl) {
+    const p = Solver.skyToPix(sol, hl.vec(t));
     if (p && p.z > 0.05) { const [x, y] = P(p.x, p.y); c.strokeStyle = "#ffffff"; c.lineWidth = 2 * dpr; c.setLineDash([]); c.beginPath(); c.arc(x, y, 15 * dpr, 0, 7); c.stroke(); }
   }
   c.globalAlpha = 1;
@@ -4105,7 +4110,7 @@ $("epSet").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); 
 // on the crosshair marks where the telescope (not the camera) points.
 function teleModeAllowed() { return st.sol && (st.solMode === "solve" || st.solMode === "track" || (st.solMode === "compass" && st.sensor)); }
 function handleTap(e) {
-  if (!st.teleMode) { const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
+  if (!st.teleMode) { st.focus = null; const o = pickAt(e.clientX, e.clientY); if (o) showInfo(o); return; }
   if (!teleModeAllowed()) { setTeleMode(false); return; }
   if (st.solMode === "compass") { alignOnMap(e); return; }
   const sol = st.sol, t = skyNow().t;
@@ -4420,6 +4425,18 @@ function pickAt(clientX, clientY, pointsOnly) {
   }
   return best ? best() : null;
 }
+// "Show on map": the free map (not while Align or the live camera follow the telescope) turns to the object and marks it.
+// The field becomes 20–40° wide: close enough to find it, wide enough to see the constellation around it.
+const canShowOnMap = () => !st.sensor && !st.stream;
+function showOnMap(o) {
+  if (!canShowOnMap()) return;
+  if (st.source !== "map") showMap();
+  const t = skyNow().t, h = horiz(o.vec(t), t), mv = st.mapView;
+  mv.az = h.az; mv.alt = Math.max(-90, Math.min(90, h.alt)); mv.fov = Math.max(20, Math.min(40, mv.fov || 40));
+  st.focus = o; st.sol = mapSol(); st.solMode = "map"; lastSig = []; updateGuide();
+  if (!sidePanels()) { st.infoFromList = false; closeSheet("infoSheet"); }
+  hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
+}
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = $("infoSheet").querySelector(".inner"), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
@@ -4427,8 +4444,9 @@ function showInfo(o, fromList) {
   $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : "Back to the list");
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
-  st.picked = o;
+  st.picked = o; st.focus = null;
   $("infoName").textContent = o.name;
+  $("infoShowMap").hidden = !canShowOnMap(); $("infoShowMap").onclick = () => showOnMap(o);
   $("infoSub").textContent = [o.kind === "star" ? "Star" : null, o.desig, "in " + con.name].filter(Boolean).join(" · ");
   const facts = [];
   let mag = o.mag;
