@@ -74,8 +74,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Degree readouts at the top of the image */
 .hud {
-  position: absolute; top: max(8px, var(--safe-top)); left: max(8px, env(safe-area-inset-left, 0px));
-  right: calc(max(8px, env(safe-area-inset-right, 0px)) + 96px + var(--pr, 0px));
+  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + 96px + var(--pl, 0px));
+  right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px));
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
 .hcell {
@@ -101,12 +101,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.idle .hcell { display: none; }
 
 .hint {
-  position: absolute; left: calc((100% - var(--pr, 0px)) / 2); top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px - var(--pr, 0px));
+  position: absolute; left: calc((100% - var(--pr, 0px) - var(--pl, 0px)) / 2 + var(--pl, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px - var(--pr, 0px) - var(--pl, 0px));
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
   padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: center; box-sizing: border-box;
 }
 
-.notices { position: absolute; z-index: 5; left: 16px; right: calc(16px + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
+.notices { position: absolute; z-index: 5; left: calc(16px + var(--pl, 0px)); right: calc(16px + var(--pr, 0px)); top: calc(max(8px, var(--safe-top)) + 96px); margin-inline: auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
 .notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 168px); }
 .update {
@@ -362,9 +362,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .cammenu b { display: block; font-weight: 600; font-size: 15px; } .cammenu small { display: block; color: var(--muted); font-size: 12.5px; }
 .fab.on { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px rgba(240,168,69,.25); }
 
-/* Menu button top right, capture button as a large round button at the bottom of the stack */
+/* Menu button top left, capture button as a large round button at the bottom of the stack */
 .menu-pill {
-  position: absolute; top: max(8px, var(--safe-top)); right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px)); height: 46px; box-sizing: border-box;
+  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); height: 46px; box-sizing: border-box;
   display: flex; align-items: center; gap: 8px; padding: 0 12px 0 7px; border-radius: 99px; cursor: pointer;
   border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); color: var(--fg);
 }
@@ -453,6 +453,11 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
     transform: translateX(105%); box-shadow: -12px 0 40px rgba(0,0,0,.35);
   }
   .sheet.open .inner { transform: translateX(0); }
+  /* the menu opens on the left, where its button is */
+  body.menu-open { --pl: var(--panel-w); }
+  #menu.sheet { inset: 0 auto 0 0; }
+  #menu .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
+  #menu.open .inner { transform: translateX(0); }
   .grab { cursor: default; padding-top: 14px; margin-inline: -18px; padding-inline: 18px; }
   .grab::before { display: none; }
   .sheet h2 { font-size: 21px; }
@@ -1541,7 +1546,7 @@ function renderChips() {
     const b = document.createElement("button"); b.className = "chip" + (cfg.target === id ? " sel" : "") + (alt < 0 ? " below" : "");
     b.textContent = T.name;
     b.title = alt < 0 ? "Below the horizon" : "Altitude " + alt.toFixed(0) + "°";
-    b.onclick = () => { selectTarget(id); closeSheet("searchSheet"); }; box.append(b);
+    b.onclick = () => { selectTarget(id); afterPick("searchSheet", id); }; box.append(b);
   });
 }
 function showResults() {
@@ -2587,8 +2592,8 @@ let insetCache = null;
 function overlayInsets(dpr) {   // layout reads are cached briefly: reading them every frame forces a layout
   const now = performance.now();
   if (insetCache && now - insetCache.at < 500 && insetCache.dpr === dpr && insetCache.w === view.width) return insetCache;
-  const sr = view.getBoundingClientRect(), hud = $("guide").getBoundingClientRect(), fb = $("fabs").getBoundingClientRect();
-  return insetCache = { top: Math.max(30 * dpr, (hud.bottom - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr), at: now, dpr, w: view.width };
+  const sr = view.getBoundingClientRect(), hud = $("guide").getBoundingClientRect(), fb = $("fabs").getBoundingClientRect(), mp = $("btnMenu").getBoundingClientRect();
+  return insetCache = { top: Math.max(30 * dpr, (Math.max(hud.bottom, mp.bottom) - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr), at: now, dpr, w: view.width };
 }
 let placed = [];
 // names of objects on the map: can be switched off (settings, quick settings); ring and target labels stay
@@ -3311,7 +3316,7 @@ function renderList() {
     main.append(b, sm);
     if (p && mode !== "seen") main.append(nightBar(p));
     // planned: tap = target (at the telescope); seen and starred: tap = details
-    main.onclick = mode === "todo" ? () => { selectTarget(id); closeSheet("listSheet"); } : () => { const o = objById(id); if (o) { listState.scroll = $("listSheet").querySelector(".inner").scrollTop; showInfo(o, true); } };
+    main.onclick = mode === "todo" ? () => { selectTarget(id); if (sidePanels()) renderList(); else closeSheet("listSheet"); } : () => { const o = objById(id); if (o) { listState.scroll = $("listSheet").querySelector(".inner").scrollTop; showInfo(o, true); } };
     const alt = document.createElement("span"); alt.className = "oalt";
     if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
@@ -3360,7 +3365,7 @@ function renderList() {
       .forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "starred")));
   }
   const nx = nextItem(); $("listNext").hidden = !nx;
-  if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); closeSheet("listSheet"); }; }
+  if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); if (sidePanels()) renderList(); else closeSheet("listSheet"); }; }
 }
 // Current target panel (Target button): where it is, how to get there, tonight's visibility, and what to do with it
 const tgtPanel = { at: 0 };
@@ -3421,7 +3426,7 @@ function syncTargetPanel(force) {
   $("tgtSeen").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSeen(o); };
   $("tgtNext").onclick = () => { if (nx) { goNext(nx); syncTargetPanel(true); } };
   $("tgtChange").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSearch(); };
-  $("tgtClear").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); clearTarget(); };
+  $("tgtClear").onclick = () => { st.tgtFromList = false; if (sidePanels()) { clearTarget(); openSearch(); } else { closeSheet("targetSheet"); clearTarget(); } };
 }
 function tgtDetails(o, T, v, t) {
   const facts = [], rd = Solver.v2radec(v);
@@ -3541,10 +3546,12 @@ function saveSeen(goOn) {
   if (!entry) obs.log.push(e);
   const wasStar = e.result !== "miss" && obs.starred.some(x => x.id === e.obj);
   if (wasStar) obs.starred = obs.starred.filter(x => x.id !== e.obj);
+  const fromLog = seenState.fromLog;
   saveObs(); closeSheet("seenSheet");
   if (!$("logSheet").hidden) renderLog();
+  if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
   hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (wasStar ? " Its star is removed: done." : ""), 3000);
-  if (goOn && seenState.next) goNext(seenState.next);
+  if (goOn && seenState.next) { goNext(seenState.next); if (sidePanels()) setTimeout(() => openTargetPanel(false), 80); }
 }
 $("seenSave").onclick = () => saveSeen(false);
 $("seenBack").onclick = () => closeSheet("seenSheet");
@@ -4068,14 +4075,21 @@ function openSheet(id) {
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   sh.querySelector(".inner").scrollTop = 0;
   requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add("open")));
-  setPanelOpen(true);
+  setPanelOpen(true, id);
 }
 // Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
 // avoid the buttons, so their position is re-read while they slide.
 const sidePanels = () => matchMedia("(min-width: 900px) and (min-height: 500px)").matches;
-function setPanelOpen(on) {
-  if (document.body.classList.contains("panel-open") === on) return;
-  document.body.classList.toggle("panel-open", on);
+// After choosing a target in a panel: on tablet and desktop the panel stays open and shows the target, on phones it closes
+function afterPick(fromSheet, id) {
+  if (id && cfg.target !== id) return;   // e.g. the Sun asks about the filter first
+  if (sidePanels()) { if (cfg.target) openTargetPanel(false); } else closeSheet(fromSheet);
+}
+function setPanelOpen(on, id) {
+  // the menu is a panel on the left (tablet, desktop), everything else on the right
+  const left = on && id === "menu", bc = document.body.classList;
+  if (bc.contains("panel-open") === (on && !left) && bc.contains("menu-open") === left) return;
+  bc.toggle("panel-open", on && !left); bc.toggle("menu-open", left);
   if (!sidePanels()) return;
   const t0 = performance.now();
   const step = () => { insetCache = null; lastSig = []; if (performance.now() - t0 < 420) requestAnimationFrame(step); };
@@ -4285,6 +4299,8 @@ function pickAt(clientX, clientY, pointsOnly) {
   }
   return best ? best() : null;
 }
+// the details again after a change in them (tablet, desktop), at the same scroll position
+function reshowInfo(o, fromList) { const inner = $("infoSheet").querySelector(".inner"), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
   st.infoFromList = fromList === "search" ? "search" : !!fromList; $("infoBack").hidden = !fromList;
   $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : "Back to the list");
@@ -4336,7 +4352,7 @@ function showInfo(o, fromList) {
     const d = ((want.az - have.az) + 540) % 360 - 180;
     // the compass correction rotates the view clockwise in azimuth for negative values (east of north is positive az)
     setCompassCal(+((((+cfg.compassCal || 0) - d) + 540) % 360 - 180).toFixed(1));
-    closeSheet("infoSheet");
+    if (!sidePanels()) closeSheet("infoSheet");
     hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
   };
   syncInfoObs(o);
@@ -4345,9 +4361,9 @@ function showInfo(o, fromList) {
   $("infoSeen").onclick = () => { st.infoFromList = false; closeSheet("infoSheet"); openSeen(o); };
   $("infoTarget").onclick = () => {
     st.infoFromList = false;
-    if (isTarget) { clearTarget(); closeSheet("infoSheet"); return; }
+    if (isTarget) { clearTarget(); if (sidePanels()) reshowInfo(o, fromList); else closeSheet("infoSheet"); return; }
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
-    selectTarget(o.id); closeSheet("infoSheet");
+    selectTarget(o.id); if (sidePanels()) { if (cfg.target === o.id) reshowInfo(o, fromList); } else closeSheet("infoSheet");
   };
   openSheet("infoSheet");
 }
@@ -4359,7 +4375,7 @@ const openSearch = () => { $("q").value = ""; renderChips(); showResults(); open
 $("fabSearch").onclick = openSearch;
 $("hudTarget").onclick = () => cfg.target ? openTargetPanel(false) : openSearch();
 $("hudClear").onclick = clearTarget;
-$("searchClear").onclick = () => { clearTarget(); closeSheet("searchSheet"); };
+$("searchClear").onclick = () => { clearTarget(); if (!sidePanels()) closeSheet("searchSheet"); };
 $("lat").onchange = () => { cfg.lat = +$("lat").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("lon").onchange = () => { cfg.lon = +$("lon").value; save(); updateGuide(); renderChips(); renderReadout(); };
 $("btnGps").onclick = () => {
@@ -4903,8 +4919,8 @@ document.querySelectorAll("#camMenu [data-cam]").forEach(b => b.onclick = () => 
   closeCamMenu(); const k = b.dataset.cam;
   if (k === "live") startCamera(); else if (k === "night") nightPhoto(); else galleryPhoto();
 });
-$("qNight").onclick = () => { closeSheet("quickSheet"); nightPhoto(); };
-$("qGallery").onclick = () => { closeSheet("quickSheet"); galleryPhoto(); };
+$("qNight").onclick = () => { if (!sidePanels()) closeSheet("quickSheet"); nightPhoto(); };
+$("qGallery").onclick = () => { if (!sidePanels()) closeSheet("quickSheet"); galleryPhoto(); };
 $("btnPhoto").onclick = () => { closeSheet("menu"); $("fileIn").click(); };
 // A solved night photo: like a live Locate. With Align on, the map follows the phone from here at once (the photo stays
 // pinned to its stars); otherwise turning Align on does it. The compass is compared with the solve as well.
