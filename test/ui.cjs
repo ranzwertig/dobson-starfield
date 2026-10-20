@@ -288,6 +288,42 @@ const TESTS = {
     await ev(p, () => stopCamera()); await done(p);
   },
 
+  // target pill, removing the compass correction, stars across the whole screen with the eyepiece point far off the axis
+  async compass() {
+    const p = await page();
+    await ev(p, () => { cfg.target = 'M45'; save(); updateGuide(); }); await wait(p, 200);
+    ok(await ev(p, () => !$('tgtChip').hidden && /M45|Pleiades/.test($('tgtChipTxt').textContent)), 'the target shows as a pill bottom left', await ev(p, () => $('tgtChipTxt').textContent));
+    await p.tap('#tgtChipTxt'); await wait(p);
+    ok((await openSheets(p)).includes('targetSheet'), 'tapping the pill opens the target panel', await openSheets(p));
+    await ev(p, () => SHEETS.forEach(x => !x.hidden && closeSheet(x.id))); await wait(p);
+    await p.tap('#btnTgtOff'); await wait(p, 200);
+    ok(await ev(p, () => !cfg.target && $('tgtChip').hidden), '✕ on the pill clears the target');
+    // aligned on the map in compass mode: compass correction plus a changed eyepiece point; ✕ undoes both
+    await ev(p, () => { cfg.calTeleBak = { tele: { x: 0, y: 0 }, teleTop: null }; cfg.tele = { x: 0, y: -0.4 }; save(); setCompassCal(6.5); });
+    ok(await ev(p, () => !$('calChip').hidden && /Aligned on the map/.test($('calChipTxt').textContent)), 'the pill names the map alignment', await ev(p, () => $('calChipTxt').textContent));
+    await p.tap('#btnCalOff'); await wait(p, 200);
+    ok(await ev(p, () => !+cfg.compassCal && !cfg.calTeleBak && Math.abs(cfg.tele.y) < 1e-9 && $('calChip').hidden), 'removing it restores the compass and the eyepiece point', await ev(p, () => [cfg.compassCal, cfg.tele]));
+    // compass mode with the eyepiece point 50° off the camera axis: the view is shifted, stars must still fill the screen
+    const halves = await ev(p, async () => {
+      const v = $('view'), sol = mapSolCompute(skyNow().M, v.width, v.height, { az: 200, alt: 35, fov: 60 });
+      st.sensor = true; st.solMode = 'compass'; st.sol = sol; cfg.tele = { x: 0, y: Math.tan(50 * D2R) }; lastSig = [];
+      await new Promise(r => setTimeout(r, 300));
+      // bright catalogue stars that land in the lower third: each must have its dot drawn
+      const g = v.getContext('2d'), W = v.width, H = v.height; let want = 0, seen = 0;
+      for (let k = 0; k < Solver.cat.n && STARS[3 * k + 2] < 4.5; k++) {
+        const q = Solver.skyToPix(sol, Solver.cat.v[k]); if (!q || q.z < 0.05) continue;
+        const [x, y] = P(q.x, q.y); if (x < 20 || x > W * 0.7 || y < H * 2 / 3 || y > H - 20) continue;
+        want++; const d = g.getImageData(Math.round(x) - 1, Math.round(y) - 1, 3, 3).data; let hit = false;
+        for (let i = 0; i < d.length; i += 4) if (d[i] > 120 && d[i + 2] > 150) hit = true;
+        if (hit) seen++;
+      }
+      return [seen, want];
+    });
+    ok(halves[1] > 0 && halves[0] >= 0.8 * halves[1], 'with the view shifted, stars are drawn down to the bottom of the screen', halves);
+    await ev(p, () => { st.sensor = false; cfg.tele = { x: 0, y: 0 }; });
+    await done(p);
+  },
+
   // offline: the service worker keeps page and scripts
   async offline() {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
