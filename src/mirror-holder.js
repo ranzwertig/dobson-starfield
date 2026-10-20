@@ -1,8 +1,11 @@
 // 45° mirror holder for a Picatinny rail (via a Picatinny to 1/4" camera adapter).
-// The phone lies flat on the rail, its camera looking down into the mirror; the mirror turns the view by 90° along
+// The phone lies flat on the rail, its camera looking down into the mirror; the mirror turns the view by about 90° along
 // the tube. JSCAD design: runs in the configurator on the website, in Node and at openjscad.xyz.
-// Light comes from the FRONT (-X), hits the mirror and goes straight up into the camera. The part prints as it stands:
-// base on the bed, the mirror face is the top surface, the nut slot is a short bridge. All dimensions in mm.
+// Light comes from the FRONT (-X), hits the mirror and goes up into the camera. With a tilt t the face is flatter than
+// 45° (45° − t/2), so the camera looks t degrees above the telescope's axis, away from the tube: low objects then
+// still have sky in the picture instead of trees. The eyepiece point in Zenigo takes care of the offset.
+// The part prints as it stands: base on the bed, the mirror face is the top surface, the nut slot is a short bridge.
+// All dimensions in mm.
 'use strict';
 (function () {
   const jscad = typeof jscadModeling !== 'undefined' ? jscadModeling : require('@jscad/modeling');
@@ -18,6 +21,7 @@
     { name: 'mirrorL', type: 'float', caption: 'Mirror height (along the slope)', initial: 50, min: 25, max: 100, step: 1 },
     { name: 'mirrorT', type: 'float', caption: 'Mirror thickness', initial: 2, min: 1, max: 6, step: 0.1 },
     { name: 'margin', type: 'float', caption: 'Border around the mirror', initial: 2, min: 0, max: 8, step: 0.5 },
+    { name: 'tiltAngle', type: 'float', caption: 'View tilted above the tube by', initial: 3, min: 0, max: 15, step: 0.5 },
 
     { name: 'gMount', type: 'group', caption: 'Mounting' },
     { name: 'mode', type: 'choice', caption: '1/4" connection', values: ['female', 'male'], captions: ['Nut: the adapter has a screw', 'Screw: the adapter has a thread'], initial: 'female' },
@@ -34,30 +38,30 @@
     { name: 'tol', type: 'float', caption: 'Clearance', initial: 0.3, min: 0, max: 0.8, step: 0.05 }
   ];
 
-  const S45 = Math.SQRT1_2;
-
   const dims = p => {
     const hexT = p.mode === 'female' ? p.hexTFemale : p.hexTMale;
     const af = p.hexAF + p.tol;
     const baseT = p.floorT + hexT + p.tol + p.nutCover;
     const zb = baseT + p.riserH;
     const faceL = p.mirrorL + 2 * p.margin;
-    const D = faceL * S45;
+    // a mirror turned by d turns the reflected view by 2d: a face at 45° − t/2 sends the view t above the axis
+    const a = (45 - p.tiltAngle / 2) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+    const D = faceL * ca, H = faceL * sa;
     const W = Math.max(p.mirrorW + 2 * p.margin, af + 8);
     const Db = Math.max(D, p.baseMinL);
     return {
-      hexT, af, zb, D, W, Db, xs: Db / 2,
-      length: Db, width: W, height: zb + D,
+      hexT, af, zb, D, H, W, Db, xs: Db / 2, faceAngle: 45 - p.tiltAngle / 2,
+      length: Db, width: W, height: zb + H,
       // centre of the mirror surface: distance behind the front edge and height above the base
-      mirrorX: (p.margin + p.mirrorL / 2) * S45 - p.mirrorT * S45,
-      mirrorZ: zb + (p.margin + p.mirrorL / 2) * S45 + p.mirrorT * S45
+      mirrorX: (p.margin + p.mirrorL / 2) * ca - p.mirrorT * sa,
+      mirrorZ: zb + (p.margin + p.mirrorL / 2) * sa + p.mirrorT * ca
     };
   };
 
   const main = p => {
     const d = dims(p);
     // wedge: profile in the x/z plane, extruded across y = 0..W
-    const prof = polygon({ points: [[0, 0], [d.Db, 0], [d.Db, d.zb], [d.D, d.zb], [d.D, d.zb + d.D], [0, d.zb]] });
+    const prof = polygon({ points: [[0, 0], [d.Db, 0], [d.Db, d.zb], [d.D, d.zb], [d.D, d.zb + d.H], [0, d.zb]] });
     const body = translate([0, d.W, 0], rotateX(Math.PI / 2, extrudeLinear({ height: d.W }, prof)));
     const hexH = d.hexT + p.tol;
     return subtract(body,
@@ -70,7 +74,7 @@
 
   // for the configurator: size line and values shown in the text
   const summary = p => { const d = dims(p); return `${d.length.toFixed(1)} × ${d.width.toFixed(0)} × ${d.height.toFixed(1)} mm`; };
-  const texts = p => { const d = dims(p); return { mirrorX: d.mirrorX.toFixed(0), mirrorZ: d.mirrorZ.toFixed(0) }; };
+  const texts = p => { const d = dims(p); return { mirrorX: d.mirrorX.toFixed(0), mirrorZ: d.mirrorZ.toFixed(0), faceAngle: (+d.faceAngle.toFixed(2)).toString(), tilt: String(p.tiltAngle) }; };
 
   const fileTag = p => `${p.mirrorW}x${p.mirrorL}mm-${p.mode === 'female' ? 'nut' : 'screw'}`;
 
