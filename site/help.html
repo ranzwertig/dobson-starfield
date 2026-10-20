@@ -70,7 +70,7 @@
       <dt>Map or image</dt>
       <dd>The camera image or the star map, with stars (fainter ones as you zoom in), constellation lines and names (both can be switched in <a href="#settings-display">Settings → General → Display</a>), Messier and other deep-sky objects, planets, <a href="#satellites">satellites</a> when online, and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image. Optional <a href="#optics">Telrad and eyepiece rings</a> sit around the crosshair, and small marks show objects you planned (amber dot), starred (star outline) or have seen (green tick).</dd>
       <dt>Menu (top left)</dt>
-      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, filter, <a href="#logbook">logbook</a>, <a href="#time">time</a>, settings, the current position, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers the menu opens on the left and every other panel on the right; they float over the map, which stays where it is, and the buttons move next to them. From 1000 pixels width the menu and a panel on the right can be open at the same time. A panel on the right stays open while you work in it: setting a target shows the target panel, Seen returns to the details or the target, and tapping the map shows the next object’s details. Close it with ✕ or the Esc key.</dd>
+      <dd>The button with the Z logo (top left) opens the menu: <a href="#logbook">logbook</a>, <a href="#time">time</a>, settings, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers the menu, the logbook (with its entries and “Seen”) and the settings open on the left, everything about the sky and objects (details, target, search, list, filter, quick settings) on the right; they float over the map, which stays where it is, and the buttons move next to them. From 1000 pixels width the menu and a panel on the right can be open at the same time. A panel on the right stays open while you work in it: setting a target shows the target panel, Seen returns to the details or the target, and tapping the map shows the next object’s details. Close it with ✕ or the Esc key.</dd>
       <dt>Status (bottom left)</dt>
       <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a>, a <a href="#filter">filter</a> or <a href="#time">another time</a>. Their ✕ switches them off. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
       <dt>Gestures</dt>
@@ -89,7 +89,7 @@
           <li><b>Solve a photo</b>: <a href="#night-photo"><b>Night photo</b></a> or <b>From gallery</b>.</li>
           <li><b>Camera</b>, with the <a href="#mirror"><b>Mirrored image</b></a> switch.</li>
           <li><b>Pointing</b>: <b>Camera</b> or <a href="#top-edge"><b>Top edge</b></a>.</li>
-          <li><b>On the map</b>: constellation lines, constellation names, star names, object names and list marks.</li>
+          <li><b>On the map</b>: constellation lines, constellation names, star names, object names, list marks and <b>Position numbers</b>: a small box at the bottom left with the target’s RA/Dec, the field of view, the accuracy of the last locate and how many stars matched (off by default).</li>
           <li><b>Button labels</b>.</li>
           <li><b>Location</b> in one line, with <b>GPS</b> and an <b>Edit</b> button that shows the latitude and longitude fields.</li>
         </ul>
@@ -135,7 +135,7 @@
       <li>It needs around ten stars in the image. Fields narrower than about 10° can’t be solved, so it does not work through the finder or the eyepiece.</li>
       <li>Trees, houses and clouds are ignored as far as possible, but the more open sky, the better.</li>
       <li id="night-photo"><b>Night photo:</b> a browser only gets a video stream from the camera, with at most about 1/30 second per frame. Your phone’s camera app can expose for several seconds in its night mode and sees far more stars. Camera button → <b>Night photo</b> (or Quick settings → Solve a photo → <b>Night photo</b>) opens the camera app: take the photo with the phone in its holder, without moving the telescope, and Zenigo solves it right away. If Align is on, the map then follows the telescope from that photo, as precisely as after a live Locate, and the photo stays pinned to its stars; otherwise turning Align on does that. Whether the camera app offers its night mode here depends on the phone; through a mirror the photo is flipped back like the live image.</li>
-      <li><b>Gallery photos</b> can be solved too: Menu → <b>Solve a photo from the gallery</b>, or Camera button → <b>Photo from the gallery</b>. Their field of view is searched every time.
+      <li><b>Gallery photos</b> can be solved too: Camera button → <b>Photo from the gallery</b>, or Quick settings → <b>From gallery</b>. Their field of view is searched every time.
         <ul>
           <li>Once a photo is solved (and Align is off), drag to look at the sky around it and pinch or scroll to zoom out. The photo stays in its place on the sky, bent to the curvature of the view, so its stars stay on the map stars up to its edges. The lens distortion measured by the solve is corrected too.</li>
           <li>As soon as you move, the view is levelled like the map: horizon horizontal, the photo turned to fit. Panning works like an alt-az mount, so it stays level. A double tap goes back to the photo.</li>
@@ -351,7 +351,7 @@
       <dd>How the image and the map look:
         <ul>
           <li>Fill the screen with the image (or show it whole), mark the detected points of light, <b>Red light</b>.</li>
-          <li>What the map labels: constellation lines, constellation names (the large constellations on the wide map, all of them when zoomed in; they give way to object names), star names, names of other objects (Messier and NGC, planets, satellites) and the marks for planned, starred and seen objects. The same switches are in Quick settings under <b>On the map</b>.</li>
+          <li>What the map labels: constellation lines, constellation names (the large constellations on the wide map, all of them when zoomed in; they give way to object names), star names, names of other objects (Messier and NGC, planets, satellites) and the marks for planned, starred and seen objects, and the position numbers at the bottom left. The same switches are in Quick settings under <b>On the map</b>.</li>
           <li><b>Labels next to the buttons</b>, which you can switch off once you know them.</li>
         </ul>
       </dd>
@@ -422,7 +422,7 @@
       <dt id="settings-compass">Compass</dt>
       <dd>Shows the <a href="#compass">compass correction</a>; <b>Reset compass correction</b> removes it.</dd>
     </dl>
-    <p>The settings you change most often are also in <a href="#buttons">Quick settings</a> (the button at the top of the button column). <b>Red light</b> tints the whole app red to keep your eyes dark-adapted. In the menu, <b>Show sky map</b> switches from camera or photo back to the map.</p>
+    <p>The settings you change most often are also in <a href="#buttons">Quick settings</a> (the button at the top of the button column). <b>Red light</b> tints the whole app red to keep your eyes dark-adapted. To go back to the map, tap the camera button while the live camera runs, or ✕ on the photo chip.</p>
 
     <h2 id="offline">Offline and updates</h2>
     <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>

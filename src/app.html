@@ -35,7 +35,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 /* Status badge bottom left */
 .corner {
-  position: absolute; left: max(10px, env(safe-area-inset-left, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
+  position: absolute; left: calc(max(10px, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
   display: grid; gap: 4px; justify-items: start; max-width: calc(100% - 110px); pointer-events: none;
 }
 .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
@@ -462,9 +462,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   /* the menu has its own, narrower width, so the panel on the right never changes size when it opens */
   :root { --menu-w: min(360px, 30vw); }
   body.menu-open { --pl: var(--menu-w); }
-  #menu.sheet { inset: 0 auto 0 0; width: var(--menu-w); }
-  #menu .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
-  #menu.open .inner { transform: translateX(0); }
+  #menu.sheet, #logSheet.sheet, #seenSheet.sheet, #sheet.sheet { inset: 0 auto 0 0; width: var(--menu-w); }
+  #menu .inner, #logSheet .inner, #seenSheet .inner, #sheet .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
+  #menu.open .inner, #logSheet.open .inner, #seenSheet.open .inner, #sheet.open .inner { transform: translateX(0); }
   .grab { cursor: default; padding-top: 14px; margin-inline: -18px; padding-inline: 18px; }
   .grab::before { display: none; }
   .sheet h2 { font-size: 21px; }
@@ -541,6 +541,10 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .readout span:first-child { color: var(--muted); }
 .readout span:last-child { font-family: var(--font-num); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .readout:empty::after { content: "No position determined yet."; color: var(--muted); }
+/* position numbers on the map (switch: On the map › Position numbers) */
+.maprd { grid-template-columns: 1fr; width: 230px; max-width: 100%; box-sizing: border-box; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; gap: 4px; font-size: 12px; backdrop-filter: blur(4px); }
+.maprd div { border-bottom: 0; padding-bottom: 0; }
+.maprd span:last-child { font-size: 11.5px; }
 .note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; margin: 0; }
 .note b { color: var(--fg); font-weight: 600; }
 
@@ -614,6 +618,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="hint" id="hint" hidden></div>
     <div class="corner">
+      <div class="readout maprd" id="readout" hidden></div>
       <div class="epview" id="epView" hidden>
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
         <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -689,15 +694,10 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
     <div class="grab"><h2 id="menuTitle"><span class="brand"><img src="logo.svg" alt="" width="30" height="30"><b>zeni<i>go</i></b></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
-      <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span>Solve a photo from the gallery</span></button>
-      <button class="menu-item" id="btnMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.8 4.6 4.9.3-3.8 3.1 1.2 4.8L12 13.2l-4.1 2.6 1.2-4.8-3.8-3.1 4.9-.3z"/></svg><span>Show sky map</span></button>
-      <button class="menu-item" id="btnFilter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg><span>Filter: what the map shows</span><em id="filterState">all</em></button>
       <button class="menu-item" id="btnLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span>Logbook</span><em id="logState"></em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
     </div>
-    <div class="label">Position</div>
-    <div class="readout" id="readout"></div>
     <div class="label">Tonight <span class="lbl-sub" id="wxLoc"></span></div>
     <div class="menu-list">
       <button class="menu-item" id="btnTonight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Darkness, Moon and what’s up</span><em>calculated here</em></button>
@@ -858,7 +858,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="seenSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="seenTitle">
-    <div class="grab"><h2 id="seenTitle"><button class="iconbtn" id="seenBack" hidden aria-label="Back to the logbook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="seenName" style="flex:1"></span> <span class="ihead"><button class="iconbtn" id="seenPrev" hidden aria-label="Newer entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button><button class="iconbtn" id="seenNextE" hidden aria-label="Older entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="seenTitle"><button class="iconbtn" id="seenBack" hidden aria-label="Back to the logbook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="seenName" style="flex:1"></span> <span class="ihead"><button class="iconbtn" id="seenInfo" aria-label="Details of this object"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".9" fill="currentColor"/></svg></button><button class="iconbtn" id="seenPrev" hidden aria-label="Newer entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button><button class="iconbtn" id="seenNextE" hidden aria-label="Older entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <p class="note" id="seenPos" hidden style="margin-top:-8px"></p>
     <div class="sfacts" id="seenFacts"></div>
     <div><div class="slabel" id="seenResL">How did it go?</div><div class="seg3" id="seenRes" role="group" aria-labelledby="seenResL"><button data-res="easy">Easy</button><button data-res="hard">Hard</button><button data-res="miss">Not found</button></div></div>
@@ -873,7 +873,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="logSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="logTitle">
-    <div class="grab"><h2 id="logTitle"><span>Logbook</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="logTitle"><button class="iconbtn" id="logMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Logbook</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="ltiles" id="logTiles"></div>
     <button class="lsuggest" id="logSuggest" hidden></button>
     <div class="chips" id="logFilter" hidden></div>
@@ -978,6 +978,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <div class="qlabel">List marks <span class="qsub">planned, starred, seen</span></div>
         <label class="switch"><input type="checkbox" id="qListMarks" aria-label="List marks"><i></i></label>
       </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Position numbers <span class="qsub">RA/Dec, field of view, accuracy, bottom left</span></div>
+        <label class="switch"><input type="checkbox" id="qReadout" aria-label="Position numbers"><i></i></label>
+      </div>
     </div>
     <div class="qrow qline">
       <div class="qlabel">Button labels</div>
@@ -1000,7 +1004,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><span>Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -1021,6 +1025,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optStarNames"> Star names</label>
         <label class="check"><input type="checkbox" id="optObjLabels"> Names of other objects (Messier and NGC, planets, satellites)</label>
         <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
+        <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the bottom left (RA/Dec, field of view, accuracy)</label>
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
       </div>
     </fieldset>
@@ -2927,7 +2932,7 @@ function syncInfoObs(o) {
   h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + "<b>Seen " + es.length + "×</b>";
   const sp = document.createElement("span"); sp.className = "note"; sp.textContent = "· last on " + d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h1.append(sp); h.append(h1);
   if (last.note || last.ep) { const p = document.createElement("p"); p.textContent = (last.note ? "“" + last.note + "” " : "") + [last.ep, last.seeing ? "seeing " + last.seeing + "/5" : ""].filter(Boolean).join(" · "); h.append(p); }
-  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { st.infoFromList = false; closeSheet("infoSheet"); openLog(o.id); }; h.append(b);
+  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { st.infoFromList = false; openLog(o.id); }; h.append(b);
 }
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
@@ -3431,7 +3436,7 @@ function syncTargetPanel(force) {
   if (nx) $("tgtNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →";
   $("tgtStar").onclick = () => { toggleStar(o); syncTargetPanel(true); };
   $("tgtPlan").onclick = () => { togglePlan(o); syncTargetPanel(true); };
-  $("tgtSeen").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSeen(o); };
+  $("tgtSeen").onclick = () => { st.tgtFromList = false; openSeen(o); };
   $("tgtNext").onclick = () => { if (nx) { goNext(nx); syncTargetPanel(true); } };
   $("tgtChange").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSearch(); };
   $("tgtClear").onclick = () => { st.tgtFromList = false; if (sidePanels()) { clearTarget(); openSearch(); } else { closeSheet("targetSheet"); clearTarget(); } };
@@ -3461,7 +3466,7 @@ function tgtDetails(o, T, v, t) {
     h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b></b><span class="note"></span>';
     h1.querySelector("b").textContent = "Seen " + es.length + "×"; h1.querySelector(".note").textContent = "· last on " + new Date(last.t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h.append(h1);
     if (last.note) { const p = document.createElement("p"); p.textContent = "“" + last.note + "”"; h.append(p); }
-    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openLog(T.id); }; h.append(b);
+    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => { st.tgtFromList = false; openLog(T.id); }; h.append(b);
   }
   const lb = $("tgtLinks"); lb.textContent = "";
   (o.links || []).forEach(([label, url]) => { const a = document.createElement("a"); a.className = "btn"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = label + " ↗"; lb.append(a); });
@@ -3557,11 +3562,12 @@ function saveSeen(goOn) {
   const fromLog = seenState.fromLog;
   saveObs(); closeSheet("seenSheet");
   if (!$("logSheet").hidden) renderLog();
-  if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
+  if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!sideBusy("infoSheet")) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
   hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (wasStar ? " Its star is removed: done." : ""), 3000);
   if (goOn && seenState.next) { goNext(seenState.next); if (sidePanels()) setTimeout(() => openTargetPanel(false), 80); }
 }
 $("seenSave").onclick = () => saveSeen(false);
+$("seenInfo").onclick = () => { const o = seenState.o && (objById(seenState.o.id) || seenState.o); if (o) showInfo(o); };
 $("seenBack").onclick = () => closeSheet("seenSheet");
 $("seenPrev").onclick = () => stepEntry(seenState.prevE);
 $("seenNextE").onclick = () => stepEntry(seenState.nextE);
@@ -3690,6 +3696,7 @@ $("bkFile").onchange = async () => {
   hint(lists, 4000);
 };
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
+$("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
 
 /* ---------------- Time: show the sky at another time ---------------- */
 function skyDate() { return new Date(Date.now() + st.tOff); }
@@ -4064,7 +4071,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
-  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false;
+  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout;
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
@@ -4079,8 +4086,7 @@ const SHEETS = [...document.querySelectorAll(".sheet")];
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function openSheet(id) {
   // with room for both (wide screens), the menu on the left and a panel on the right stay open side by side
-  const side = x => (x === "menu" ? "L" : "R");
-  SHEETS.forEach(x => { if (x.id !== id && !x.hidden && !(bothPanels() && side(x.id) !== side(id))) closeSheet(x.id); });
+  SHEETS.forEach(x => { if (x.id !== id && !x.hidden && !(bothPanels() && sheetSide(x.id) !== sheetSide(id))) closeSheet(x.id); });
   const sh = $(id); clearTimeout(sh._t);
   sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
   sh.querySelector(".inner").scrollTop = 0;
@@ -4096,10 +4102,15 @@ function afterPick(fromSheet, id) {
   if (sidePanels()) { if (cfg.target) openTargetPanel(false); } else closeSheet(fromSheet);
 }
 const bothPanels = () => sidePanels() && innerWidth >= 1000;
+// tablet and desktop: the menu and everything about the logbook and the settings open on the left, the rest on the right
+const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet"]);
+const sheetSide = id => (LEFT.has(id) ? "L" : "R");
+// is a panel open where this one would go back to? (on wide screens only the same side counts)
+const sideBusy = id => SHEETS.some(x => !x.hidden && x.classList.contains("open") && (!bothPanels() || sheetSide(x.id) === sheetSide(id)));
 // which side has an open panel: the menu on the left (tablet, desktop), everything else on the right
 function syncPanels(opening, closing) {
   const ids = SHEETS.filter(x => !x.hidden && x.id !== closing && (x.classList.contains("open") || x.id === opening)).map(x => x.id);
-  const left = sidePanels() && ids.includes("menu"), right = ids.some(i => i !== "menu" || !sidePanels()), bc = document.body.classList;
+  const left = sidePanels() && ids.some(i => LEFT.has(i)), right = ids.some(i => !LEFT.has(i) || !sidePanels()), bc = document.body.classList;
   if (bc.contains("panel-open") === right && bc.contains("menu-open") === left) return;
   bc.toggle("panel-open", right); bc.toggle("menu-open", left);
   if (!sidePanels()) return;
@@ -4162,15 +4173,15 @@ function closeSheet(id) {
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
     const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : backToList;
     st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
-    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) back(); }, 60);
+    setTimeout(() => { if (!sideBusy(id)) back(); }, 60);
   }
   if (id === "seenSheet" && seenState.fromLog) {   // an entry opened from the logbook: changes are kept, back to the logbook
     keepSeenEdits(); seenState.fromLog = false;
-    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) backToLog(); }, 60);
+    setTimeout(() => { if (!sideBusy(id)) backToLog(); }, 60);
   }
   if (id === "searchSheet" && st.fromList) {
     st.fromList = false;
-    setTimeout(() => { if (!SHEETS.some(x => !x.hidden && x.classList.contains("open"))) { renderList(); openSheet("listSheet"); revealNew(); } }, 60);
+    setTimeout(() => { if (!sideBusy(id)) { renderList(); openSheet("listSheet"); revealNew(); } }, 60);
   }
   if (sh._res) { const r = sh._res; sh._res = null; r(false); }
   sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
@@ -4370,7 +4381,7 @@ function showInfo(o, fromList) {
   syncInfoObs(o);
   $("infoStar").onclick = () => { toggleStar(o); syncInfoObs(o); };
   $("infoPlan").onclick = () => { togglePlan(o); syncInfoObs(o); };
-  $("infoSeen").onclick = () => { st.infoFromList = false; closeSheet("infoSheet"); openSeen(o); };
+  $("infoSeen").onclick = () => { st.infoFromList = false; openSeen(o); };
   $("infoTarget").onclick = () => {
     st.infoFromList = false;
     if (isTarget) { clearTarget(); if (sidePanels()) reshowInfo(o, fromList); else closeSheet("infoSheet"); return; }
@@ -4406,7 +4417,7 @@ function syncQuick() {
   if (document.activeElement !== $("qLon")) $("qLon").value = cfg.lon;
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
   $("qLocTxt").textContent = Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
-  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qMirror").checked = !!cfg.mirror;
+  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qReadout").checked = !!cfg.readout; $("qMirror").checked = !!cfg.mirror;
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
   $("qTeleReset").disabled = off < 0.01;
@@ -4822,8 +4833,9 @@ $("qRed").onchange = () => { cfg.red = $("qRed").checked; save(); syncSettings()
 $("qLabels").onchange = () => { cfg.fabLabels = $("qLabels").checked; save(); syncSettings(); };
 // what the map labels and marks: in the settings (Display) and the quick settings
 [["optObjLabels", "objLabels"], ["optConNames", "conNames"], ["optListMarks", "listMarks"], ["optConLines", "conLines"], ["optStarNames", "starNames"],
- ["qObjLabels", "objLabels"], ["qConNames", "conNames"], ["qListMarks", "listMarks"], ["qConLines", "conLines"], ["qStarNames", "starNames"]].forEach(([id, k]) =>
-  $(id).onchange = () => { cfg[k] = $(id).checked; save(); st.filterVer++; syncSettings(); syncQuick(); });
+ ["qObjLabels", "objLabels"], ["qConNames", "conNames"], ["qListMarks", "listMarks"], ["qConLines", "conLines"], ["qStarNames", "starNames"],
+ ["optReadout", "readout"], ["qReadout", "readout"]].forEach(([id, k]) =>
+  $(id).onchange = () => { cfg[k] = $(id).checked; save(); st.filterVer++; syncSettings(); syncQuick(); if (k === "readout") renderReadout(); });
 $("optMirror").onchange = () => setMirror($("optMirror").checked);
 $("qMirror").onchange = () => setMirror($("qMirror").checked);
 $("qCam").onchange = () => { $("camSel").value = $("qCam").value; $("camSel").onchange(); };
@@ -4860,12 +4872,11 @@ function syncFilter() {
   // always visible while something is hidden
   const all = pk === "all";
   $("filterChip").hidden = all; $("filterChipTxt").textContent = "Filter: " + filterName();
-  $("filterState").textContent = all ? "all" : filterName().toLowerCase();
+
   $("fabFilter").classList.toggle("on", !all); $("fabFilter").querySelector("small").textContent = all ? "Filter" : "Filter: " + filterName();
 }
 document.querySelectorAll("[data-show]").forEach(el => el.onchange = () => setShow({ ...cfg.show, [el.dataset.show]: el.checked }));
 $("showMag").oninput = () => setShow({ ...cfg.show, mag: +$("showMag").value });
-$("btnFilter").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("fabFilter").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("filterChipTxt").onclick = () => { syncFilter(); openSheet("filterSheet"); };
 $("btnFilterOff").onclick = () => { setShow(PRESETS.all.show); hint("Filter off: the map shows everything again.", 2500); };
@@ -4933,7 +4944,6 @@ document.querySelectorAll("#camMenu [data-cam]").forEach(b => b.onclick = () => 
 });
 $("qNight").onclick = () => { if (!sidePanels()) closeSheet("quickSheet"); nightPhoto(); };
 $("qGallery").onclick = () => { if (!sidePanels()) closeSheet("quickSheet"); galleryPhoto(); };
-$("btnPhoto").onclick = () => { closeSheet("menu"); $("fileIn").click(); };
 // A solved night photo: like a live Locate. With Align on, the map follows the phone from here at once (the photo stays
 // pinned to its stars); otherwise turning Align on does it. The compass is compared with the solve as well.
 function afterNightPhoto(sol) {
@@ -4969,7 +4979,6 @@ $("nightIn").onchange = () => loadPhotoFile($("nightIn"), true);
 $("btnSolve").onclick = () => st.busy ? abortSolve() : solveNow();
 $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarget("Sun", true); };
 $("btnSensor").onclick = () => setSensor(!st.sensor);
-$("btnMap").onclick = () => { closeSheet("menu"); if (st.stream) stopCamera(); else showMap(); };
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Continuous mode needs the live camera.", 3000); return; } setAuto(!st.auto); };
 $("btnTele").onclick = () => setTeleMode(!st.teleMode);
 $("q").addEventListener("input", showResults);
