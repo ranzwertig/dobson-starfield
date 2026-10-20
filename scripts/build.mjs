@@ -1,7 +1,8 @@
 // Builds the website into dist/:
 //   /            landing page (site/index.html) with a star chart drawn from the catalogue
 //   /privacy/    privacy policy, /imprint/ legal notice, /404.html
-//   /app/        the app: one self-contained HTML file with Astronomy Engine, catalogue and solver inlined,
+//   /app/        the app: an HTML page with a start screen, and Astronomy Engine, satellite.js, catalogue + solver and the app
+//                code as separate content-named scripts (loaded with defer),
 //                plus service worker, manifest and icons
 //   /fonts/      self-hosted fonts (no requests to third parties)
 //   npm run build
@@ -52,7 +53,32 @@ const core = ('/* Star catalogue: d3-celestial data (c) Olaf Frohn, BSD-3-Clause
   .replace("if (typeof module !== 'undefined') module.exports = Solver;", '');
 for (const chunk of [astronomy, core, satjs]) if (/<\/script/i.test(chunk)) throw new Error('Inline script contains </script');
 
-const page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss).replace('/*__ASTRONOMY__*/', () => astronomy).replace('/*__SATELLITE__*/', () => satjs).replace('/*__CORE__*/', () => core);
+// The scripts are served as separate files (named by their content), loaded with defer: the page with its start screen
+// paints at once, and the browser compiles the scripts in the background instead of blocking on one huge inline script.
+let page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss);
+const mainOpen = '<script id="main">', mi = page.indexOf(mainOpen), me = page.lastIndexOf('</script>');
+if (mi < 0 || me < mi) throw new Error('main script not found');
+const mainJs = page.slice(mi + mainOpen.length, me);
+const hashOf = s => createHash('sha256').update(s).digest('hex').slice(0, 10);
+const jsFiles = {};
+const jsFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; jsFiles[f] = src; return f; };
+const fAstro = jsFile('astronomy', astronomy), fSat = jsFile('satellite', satjs), fCore = jsFile('core', core), fMain = jsFile('app', mainJs);
+page = page.slice(0, mi) + `<script id="main" src="${fMain}" defer></script>` + page.slice(me + '</script>'.length);
+page = page.replace('<script>/*__ASTRONOMY__*/</script>', `<script src="${fAstro}" defer></script>`)
+  .replace('<script>/*__SATELLITE__*/</script>', `<script src="${fSat}" defer></script>`)
+  .replace('<script id="core">/*__CORE__*/</script>', `<script id="core" src="${fCore}" defer></script>`);
+if (/__ASTRONOMY__|__SATELLITE__|__CORE__/.test(page)) throw new Error('script marker left in the page');
+// start screen: drawn by the HTML alone, before any script runs; red light is applied right away
+const logoSvg = read('public/app/logo.svg').replace(/<\?xml[^>]*>/, '').trim();
+const splash = '<div id="splash" aria-hidden="true">' + logoSvg.replace('<svg', '<svg class="splogo"') + '<b>zeni<i>go</i></b><div class="sp"></div></div>'
+  + '<script>setTimeout(function(){var s=document.getElementById("splash");if(s)s.classList.add("gone")},10000)</script>';
+const splashCss = '#splash{position:fixed;inset:0;z-index:1000;display:grid;place-content:center;justify-items:center;gap:16px;background:#0a0c0f;color:#e8ecf2;'
+  + 'font:600 30px/1 "Saira Semi Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.3px;transition:opacity .4s}'
+  + '#splash.gone{opacity:0;pointer-events:none}#splash .splogo{width:88px;height:88px;border-radius:22px}#splash b i{font-style:normal;color:#f0a845}'
+  + '#splash .sp{margin-top:6px;width:24px;height:24px;border-radius:50%;border:2px solid #262d3a;border-top-color:#f0a845;animation:spl 1s linear infinite}'
+  + '@keyframes spl{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#splash .sp{animation:none}#splash{transition:none}}'
+  + 'html.red{filter:grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightness(.72)}';
+const redEarly = '<script>try{if((JSON.parse(localStorage.getItem("dobson-lotse")||"{}")||{}).red)document.documentElement.classList.add("red")}catch(e){}</script>';
 const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
   + '<meta name="robots" content="noindex">'
@@ -60,14 +86,16 @@ const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Zenigo">'
   + '<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="logo.svg" type="image/svg+xml"><link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">'
   + '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">'
-  + '<style>body{margin:0}</style></head><body>' + page + '</body></html>';
+  + '<style>body{margin:0;background:#0a0c0f}' + splashCss + '</style>' + redEarly + '</head><body>' + splash + page + '</body></html>';
 
 // static files (robots.txt, app manifest and icons)
 if (existsSync(new URL('public/', root))) cpSync(new URL('public/', root), new URL('dist/', root), { recursive: true });
 write('dist/app/index.html', html);
-// service worker for offline use; the version changes with the page so clients pick up new builds
+for (const [f, src] of Object.entries(jsFiles)) write('dist/app/' + f, src);
+// service worker for offline use; the version changes with the page (which names the scripts by their content)
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
-write('dist/app/sw.js', read('src/sw.js').replace('__VERSION__', version).replace('/*__FONTS__*/', fontFiles.map(f => `'${f}'`).join(', ')));
+write('dist/app/sw.js', read('src/sw.js').replace('__VERSION__', version).replace('/*__FONTS__*/', fontFiles.map(f => `'${f}'`).join(', '))
+  .replace('/*__JS__*/', Object.keys(jsFiles).map(f => `'${f}'`).join(', ')));
 // the old service worker at the root retires itself (see the file)
 write('dist/sw.js', read('src/sw-root.js'));
 

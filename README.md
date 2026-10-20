@@ -6,7 +6,7 @@ Push-to for your telescope.
 
 A web app that works out where a Dobsonian telescope is pointing using the phone camera, then guides you to the chosen object with azimuth and altitude arrows. The phone is mounted parallel to the tube. The app detects the stars in the camera image, matches them against a star catalogue (plate solving) and converts the direction into altitude/azimuth using time and location.
 
-Everything runs locally in the browser: no server, no sign-in. The website lives at `/` (landing page, `/getting-started/`, `/help/`, `/privacy/`, `/imprint/`), the app at `/app/` as a single HTML file of roughly 470 KB. Fonts are self-hosted, so no page contacts third parties. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
+Everything runs locally in the browser: no server, no sign-in. The website lives at `/` (landing page, `/getting-started/`, `/help/`, `/privacy/`, `/imprint/`), the app at `/app/`: a small HTML page (with a start screen that shows at once) and four scripts named by their content (Astronomy Engine, satellite.js, catalogue + solver, app; about 700 KB together), loaded with `defer` so the browser compiles them in the background. Fonts are self-hosted, so no page contacts third parties. It is an installable web app (PWA) and works offline once it has been opened: add it to the home screen before heading out to a dark site without signal. When a new version has been deployed, the app shows a notice with an **Update** button; it can be dismissed, and the old version keeps working until you update.
 
 ## Usage
 
@@ -88,7 +88,7 @@ The map redraws only when something changed: for the passing time only once the 
 | `scripts/build.mjs` (website part) | builds the pages from `site/`, adds a canonical link (https://zenigo.app/…) to each, and writes `dist/sitemap.xml`; `public/robots.txt` allows everything except `/app/` and points to the sitemap |
 | `worker/index.js` | Cloudflare Worker for `/api/tle` only (satellite orbital elements from CelesTrak, edge-cached, last good copy as fallback); everything else is served from `dist/` |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6 (also used by the solver), names, designations, Messier objects with sizes, constellation lines; plus `public/app/deep-stars.bin` (78,000 stars 6–9 mag, 7 bytes each) and `public/app/dso.json` (about 1,900 NGC/IC and other deep-sky objects), loaded after start and precached for offline use |
-| `scripts/build.mjs` | builds the website and `dist/app/index.html` with Astronomy Engine, catalogue and solver inlined, copies the fonts |
+| `scripts/build.mjs` | builds the website and the app: `dist/app/index.html` with the start screen, the scripts as content-hashed files (`astronomy.*.js`, `satellite.*.js`, `core.*.js`, `app.*.js`, all precached by the service worker; the solver worker fetches `core.*.js`), copies the fonts |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
 | `test/synthetic.cjs` | synthetic star fields with a known solution |
 | `test/photo.cjs` | solves a real photo |

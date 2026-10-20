@@ -1128,7 +1128,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <script>/*__ASTRONOMY__*/</script>
 <script>/*__SATELLITE__*/</script>
 <script id="core">/*__CORE__*/</script>
-<script>
+<script id="main">
 "use strict";
 const $ = id => document.getElementById(id);
 // Installed on the iPhone home screen: mark it, so the top controls keep clear of the blurred band below the status bar
@@ -1211,8 +1211,9 @@ function abortSolve(quiet) {
   if (worker) { worker.terminate(); makeWorker(); }
   Object.keys(jobs).forEach(id => { const j = jobs[id]; delete jobs[id]; j({ id: +id, type: "done", aborted: true, stars: [], sol: { ok: false, reason: "Stopped" } }); });
 }
-try {
-  const src = $("core").textContent + `
+// The worker runs the core (catalogue + solver) plus this message handler. The build serves the core as its own file,
+// so its source is fetched (from the offline cache); in an unbuilt page it is the inline script.
+const WORKER_TAIL = `
     Solver.setCatalog(STARS);
     self.onmessage = e => {
       const m = e.data;
@@ -1226,8 +1227,10 @@ try {
         self.postMessage({ id: m.id, type: "done", stars, sol });
       } catch (err) { self.postMessage({ id: m.id, type: "done", stars: [], sol: { ok: false, reason: String(err) } }); }
     };`;
-  workerSrc = src; makeWorker();
-} catch (e) { worker = null; }
+(async () => {
+  try { const c = $("core"), core = c.src ? await fetch(c.src).then(r => r.text()) : c.textContent; workerSrc = core + WORKER_TAIL; makeWorker(); }
+  catch (e) { worker = null; }
+})();
 
 function runSolve(gray, w, h, opts, onMsg) {
   return new Promise(resolve => {
@@ -5028,6 +5031,8 @@ resize(); syncSettings(); renderChips();
 st.solMode = "map";
 updateGuide(); renderReadout();
 requestAnimationFrame(draw);
+// the start screen goes once the first map frame is on screen
+requestAnimationFrame(() => requestAnimationFrame(() => { const sp = $("splash"); if (sp) { sp.classList.add("gone"); setTimeout(() => sp.remove(), 450); } }));
 loadDeep(); loadSats(true); syncListFab();
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
