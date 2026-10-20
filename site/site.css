@@ -98,6 +98,7 @@ footer a:hover { color: var(--amber); }
 .topnav { display: flex; align-items: center; gap: 22px; }
 .topnav > a:not(.open) { color: var(--star); text-decoration: none; font-weight: 500; }
 .topnav > a:not(.open):hover { color: var(--amber); }
+.topnav > a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--amber); text-decoration-thickness: 2px; text-underline-offset: 7px; }
 
 /* documentation pages: getting started, help */
 .doc { max-width: 720px; padding: 30px 0 80px; min-width: 0; }
@@ -108,6 +109,13 @@ footer a:hover { color: var(--amber); }
 .doc ul, .doc ol { padding-left: 22px; }
 .doc li { margin-bottom: 6px; }
 .doc b { color: var(--star); font-weight: 600; }
+/* anchor jumps land with some room above, like the h2 */
+.doc [id] { scroll-margin-top: 20px; }
+/* help: the three groups of sections */
+.doc .part { margin: 72px 0 0; padding-top: 18px; border-top: 1px solid var(--line); font: 600 14px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
+.doc .part + h2 { margin-top: 10px; }
+.doc h3 { margin-top: 30px; }
+.ref dd ul { margin: 6px 0 4px; }
 .c-amber { color: var(--amber); } .c-coral { color: var(--coral); }
 .tip { border-left: 3px solid var(--amber); padding: 4px 0 4px 16px; color: var(--mist) !important; }
 .warnbox { border: 1px solid rgba(255, 106, 92, .5); background: rgba(255, 106, 92, .07); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; }
@@ -122,6 +130,8 @@ footer a:hover { color: var(--amber); }
 .after h2 { margin-top: 40px; }
 .check { list-style: none; padding: 0 !important; }
 .check li { position: relative; padding-left: 30px; }
+.checklist { padding: 4px 0 28px; border-top: 0; }
+.checklist h2 { margin-top: 0; }
 .check li::before { content: ""; position: absolute; left: 2px; top: .35em; width: 14px; height: 14px; border: 2px solid var(--amber); border-radius: 4px; }
 
 /* reference lists in the help */
@@ -133,9 +143,12 @@ footer a:hover { color: var(--amber); }
 .trouble dt { color: var(--amber); }
 
 .docwrap { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; align-items: start; }
-.toc { position: sticky; top: 20px; display: grid; gap: 2px; padding: 34px 0; }
+.toc { position: sticky; top: 0; max-height: 100vh; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 2px; padding: 34px 0; }
 .toc a { color: var(--mist); text-decoration: none; padding: 5px 0 5px 12px; border-left: 2px solid var(--line); font-size: 16px; }
 .toc a:hover { color: var(--star); border-left-color: var(--amber); }
+.toc a.sub { padding-left: 26px; font-size: 15px; }
+.toc .grp { padding: 16px 0 4px; font: 600 13px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--star); }
+.toc .grp:first-child { padding-top: 0; }
 
 /* legal pages */
 .legal { max-width: 720px; padding: 30px 0 70px; }
@@ -149,7 +162,8 @@ footer a:hover { color: var(--amber); }
 
 @media (max-width: 860px) {
   .docwrap { grid-template-columns: 1fr; gap: 0; }
-  .toc { position: static; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 20px 0 0; }
+  .toc { position: static; max-height: none; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 20px 0 0; }
+  .toc .grp { grid-column: 1 / -1; }
   .topnav > a:not(.open) { display: none; }
   .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 16px; }
   .steps { grid-template-columns: 1fr; gap: 26px; }

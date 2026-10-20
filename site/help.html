@@ -7,6 +7,12 @@
 <meta name="description" content="Everything about Zenigo: the screen, every button, sky map and Align, plate solving, eyepiece point, compass correction, filter, settings, troubleshooting and FAQ.">
 <meta name="theme-color" content="#0c1124">
 <link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Help – Zenigo">
+<meta property="og:description" content="Every button, mode and setting of Zenigo explained, with troubleshooting and answers to common questions.">
+<meta property="og:image" content="https://zenigo.app/app/icons/icon-512.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
 <!--FONTS-->
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -15,25 +21,38 @@
 
 <main class="wrap docwrap">
   <nav class="toc" aria-label="Contents">
+    <span class="grp">Using the app</span>
     <a href="#screen">The screen</a>
     <a href="#buttons">Buttons</a>
     <a href="#modes">Sky map, camera and Align</a>
     <a href="#solving">How locating works</a>
     <a href="#eyepiece">Eyepiece point</a>
-    <a href="#targets">Targets and object details</a>
-    <a href="#optics">Telrad rings and eyepiece view</a>
-    <a href="#best-eyepiece">Best eyepiece</a>
-    <a href="#filter">Filter</a>
-    <a href="#list">Observing list and logbook</a>
-    <a href="#satellites">ISS and satellites</a>
-    <a href="#time">Time: the sky later</a>
     <a href="#compass">Compass correction</a>
     <a href="#top-edge">Without camera: top edge</a>
-    <a href="#settings">Settings</a>
-    <a href="#tonight">Tonight</a>
+    <a href="#optics">Telrad rings and eyepiece view</a>
+    <a class="sub" href="#best-eyepiece">Best eyepiece</a>
+    <span class="grp">Planning</span>
+    <a href="#targets">Targets and object details</a>
+    <a class="sub" href="#solar-system">Moon and planets in detail</a>
     <a href="#sun">Observing the Sun</a>
+    <a href="#filter">Filter</a>
+    <a href="#list">Observing list</a>
+    <a class="sub" href="#logbook">Logbook</a>
+    <a href="#tonight">Tonight</a>
+    <a class="sub" href="#coming-up">Coming up</a>
+    <a class="sub" href="#night-bar">Reading the night bar</a>
+    <a href="#time">Time: the sky later</a>
+    <a href="#satellites">ISS and satellites</a>
+    <span class="grp">Reference</span>
+    <a href="#settings">Settings</a>
+    <a class="sub" href="#settings-general">General</a>
+    <a class="sub" href="#settings-scope">Telescope</a>
+    <a class="sub" href="#settings-cam">Camera &amp; sensors</a>
     <a href="#offline">Offline and updates</a>
     <a href="#permissions">Camera and sensor access</a>
+    <a class="sub" href="#permissions-ios">iPhone and iPad</a>
+    <a class="sub" href="#permissions-android">Android</a>
+    <a class="sub" href="#permissions-desktop">Computer</a>
     <a href="#troubleshooting">Troubleshooting</a>
     <a href="#faq">Questions</a>
   </nav>
@@ -42,14 +61,16 @@
     <h1>Help</h1>
     <p class="intro">This page explains every part of Zenigo. New here? <a href="/getting-started/">Getting started</a> walks you through the first night step by step.</p>
 
+    <p class="part" id="using">Using the app</p>
+
     <h2 id="screen">The screen</h2>
     <dl class="ref">
       <dt>Directions at the top</dt>
       <dd>How many degrees to <b>turn</b> the telescope left or right (azimuth) and to <b>tilt</b> it up or down (altitude) to reach the target. The line below shows the distance to the target and where the position comes from. Tap that line to open the <a href="#targets">target panel</a> (or Find target when no target is set); a “Next” button beside it jumps to the next object on your <a href="#list">plan</a>; the small ✕ next to it clears the target, so the red ring, the arrow and the directions disappear. Before the first locate it shows how high the target stands and in which direction.</dd>
       <dt>Map or image</dt>
-      <dd>The camera image or the star map, with stars (fainter ones as you zoom in), constellation lines and names (both can be switched in the settings), Messier and other deep-sky objects, planets, <a href="#satellites">satellites</a> when online, and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image. Optional <a href="#optics">Telrad and eyepiece rings</a> sit around the crosshair, and small marks show objects you planned (amber dot), starred (star outline) or have seen (green tick).</dd>
+      <dd>The camera image or the star map, with stars (fainter ones as you zoom in), constellation lines and names (both can be switched in <a href="#settings-display">Settings → General → Display</a>), Messier and other deep-sky objects, planets, <a href="#satellites">satellites</a> when online, and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image. Optional <a href="#optics">Telrad and eyepiece rings</a> sit around the crosshair, and small marks show objects you planned (amber dot), starred (star outline) or have seen (green tick).</dd>
       <dt>Menu (top right)</dt>
-      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, filter, <a href="#list">logbook</a>, <a href="#time">time</a>, settings, the current position, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers they open at the right side and float over the map, which stays where it is; the buttons move next to the panel; close them with ✕ or the Esc key.</dd>
+      <dd>The pill with the Z logo opens the menu: solve a photo, sky map, filter, <a href="#logbook">logbook</a>, <a href="#time">time</a>, settings, the current position, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers they open at the right side and float over the map, which stays where it is; the buttons move next to the panel; close them with ✕ or the Esc key.</dd>
       <dt>Status (bottom left)</dt>
       <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a>, a <a href="#filter">filter</a> or <a href="#time">another time</a>. Their ✕ switches them off. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
       <dt>Gestures</dt>
@@ -60,7 +81,19 @@
     <p>The round buttons on the right. A dimmed button can’t be used right now; tap it to see why.</p>
     <dl class="ref icons">
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>Quick settings</dt>
-      <dd>The settings you change at the telescope: pointing (camera or <a href="#top-edge">top edge</a>), location with GPS, red light, which camera, the <a href="#optics">eyepiece in use and the eyepiece view</a>, eyepiece point and compass correction with one-tap reset, and button labels. <b>All settings</b> opens the full settings.</dd>
+      <dd>The settings you change at the telescope, from top to bottom:
+        <ul>
+          <li><b>Eyepiece</b>: the eyepiece or finder you are using, with the <a href="#optics"><b>Eyepiece view</b></a> switch below it.</li>
+          <li><b>Eyepiece point</b> with <b>Reset</b>, and <b>Compass correction</b> with <b>Remove</b>.</li>
+          <li><b>Red light</b>.</li>
+          <li><b>Solve a photo</b>: <a href="#night-photo"><b>Night photo</b></a> or <b>From gallery</b>.</li>
+          <li><b>Camera</b>, with the <a href="#mirror"><b>Mirrored image</b></a> switch.</li>
+          <li><b>Pointing</b>: <b>Camera</b> or <a href="#top-edge"><b>Top edge</b></a>.</li>
+          <li><b>On the map</b>: constellation lines, constellation names, star names, object names and list marks.</li>
+          <li><b>Button labels</b>.</li>
+          <li><b>Location</b> in one line, with <b>GPS</b> and an <b>Edit</b> button that shows the latitude and longitude fields.</li>
+        </ul>
+        <b>All settings</b> at the bottom opens the full <a href="#settings">settings</a>.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg>Target</dt>
       <dd>The <a href="#targets">current target</a> at a glance: how far to turn and tilt, how high it is now, when it is best placed tonight, whether it is planned, starred or seen, with its details (brightness, size or distance, coordinates, your history) and links, and buttons for Seen, Next, Plan, change and clear. Red while a target is set; without one it opens Find target. Tapping the target line at the top of the map opens it too.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg>List</dt>
@@ -101,8 +134,16 @@
       <li>The first locate also measures the camera’s field of view and saves it. It takes up to about ten seconds, later ones about a second.</li>
       <li>It needs around ten stars in the image. Fields narrower than about 10° can’t be solved, so it does not work through the finder or the eyepiece.</li>
       <li>Trees, houses and clouds are ignored as far as possible, but the more open sky, the better.</li>
-      <li id="night-photo"><b>Night photo:</b> a browser only gets a video stream from the camera, with at most about 1/30 second per frame. Your phone’s camera app can expose for several seconds in its night mode and sees far more stars. Camera button → <b>Night photo</b> (or Quick settings → Night photo) opens the camera app: take the photo with the phone in its holder, without moving the telescope, and Zenigo solves it right away. If Align is on, the map then follows the telescope from that photo, as precisely as after a live Locate, and the photo stays pinned to its stars; otherwise turning Align on does that. Whether the camera app offers its night mode here depends on the phone; through a mirror the photo is flipped back like the live image.</li>
-      <li>Gallery photos can be solved too (menu → Solve a photo from the gallery). Their field of view is searched every time. Once a photo is solved (and Align is off), drag to look at the sky around it and pinch or scroll to zoom out: the photo stays in its place on the sky, bent to the curvature of the view so its stars stay on the map stars up to its edges (the lens distortion measured by the solve is corrected too). As soon as you move, the view is levelled like the map (horizon horizontal, the photo turned to fit), and panning works like an alt-az mount, so it stays level. A double tap goes back to the photo. A photo does not follow the phone, so loading one turns Align off. Turning Align on again goes back to the sky map, which then follows the phone, and a solved photo stays pinned to its stars there: turn the phone towards it to see it. The “Photo” chip at the bottom left tells you where it is (or turns the map to it while Align is off); its × removes the photo from the sky. While a photo is on screen, being solved, solved or not solvable (“not solved”), the same chip is shown: its × closes the photo and goes back to the sky map, a tap on its name locates an unsolved photo again or returns to the whole solved photo.</li>
+      <li id="night-photo"><b>Night photo:</b> a browser only gets a video stream from the camera, with at most about 1/30 second per frame. Your phone’s camera app can expose for several seconds in its night mode and sees far more stars. Camera button → <b>Night photo</b> (or Quick settings → Solve a photo → <b>Night photo</b>) opens the camera app: take the photo with the phone in its holder, without moving the telescope, and Zenigo solves it right away. If Align is on, the map then follows the telescope from that photo, as precisely as after a live Locate, and the photo stays pinned to its stars; otherwise turning Align on does that. Whether the camera app offers its night mode here depends on the phone; through a mirror the photo is flipped back like the live image.</li>
+      <li><b>Gallery photos</b> can be solved too: Menu → <b>Solve a photo from the gallery</b>, or Camera button → <b>Photo from the gallery</b>. Their field of view is searched every time.
+        <ul>
+          <li>Once a photo is solved (and Align is off), drag to look at the sky around it and pinch or scroll to zoom out. The photo stays in its place on the sky, bent to the curvature of the view, so its stars stay on the map stars up to its edges. The lens distortion measured by the solve is corrected too.</li>
+          <li>As soon as you move, the view is levelled like the map: horizon horizontal, the photo turned to fit. Panning works like an alt-az mount, so it stays level. A double tap goes back to the photo.</li>
+          <li>A photo does not follow the phone, so loading one turns Align off. Turning Align on again goes back to the sky map, which then follows the phone. A solved photo stays pinned to its stars there: turn the phone towards it to see it.</li>
+          <li>On the map, the chip at the bottom left (“Photo on the sky”, or “Photo:” with the photo’s name) tells you where the photo is, or turns the map to it while Align is off. Its ✕ removes the photo from the sky.</li>
+          <li>While the photo itself is on screen (being solved, solved or “not solved”), the same chip is shown. A tap on it locates an unsolved photo again or returns to the whole solved photo; its ✕ closes the photo and goes back to the sky map.</li>
+        </ul>
+      </li>
     </ul>
 
     <h2 id="eyepiece">Eyepiece point</h2>
@@ -113,38 +154,45 @@
       <li>Tap <b>Eyepiece point</b>, then the same star on the screen. The tap snaps to the nearest star and confirms it by name.</li>
     </ol>
     <p><b>Without image detection</b> (camera off, or <a href="#top-edge">top edge</a> mode): turn on <b>Align</b>, centre a bright star in the eyepiece, tap <b>Eyepiece point</b> and then tap that star on the map. The app corrects the compass by the azimuth difference and stores the height difference between phone and telescope. The crosshair then marks where the telescope points, accurate to about a degree near that star; repeat it on another star when you move far across the sky.</p>
-    <p>Tap the button again to cancel. Camera and top edge mode each keep their own eyepiece point. Settings shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre. Set it again whenever the holder has moved.</p>
+    <p>Tap the button again to cancel. Camera and top edge mode each keep their own eyepiece point. <a href="#settings-eyepiece-point">Settings → Telescope → Eyepiece point</a> shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre; Quick settings has the same <b>Reset</b>. Set it again whenever the holder has moved.</p>
 
-    <h2 id="targets">Targets and object details</h2>
-    <p>Targets are the Sun, the Moon, the planets, all 110 Messier objects, about 1,900 further deep-sky objects (NGC, IC and other catalogues, for example “NGC 869” or “North America Nebula”) and the bright named stars. The <b>Target</b> button shows the current target in a panel: directions from the crosshair, its altitude and direction now, tonight’s visibility and what you can do with it. The Moon is drawn on the map in its current phase, at true size when zoomed in, with the lit side towards the Sun; planets get their true size too, and zoomed in on Jupiter you see its four big moons. </p>
-    <h3 id="solar-system">Moon and planets in detail</h3>
-    <p>The details of the Moon and the planets (and the target panel when one of them is your target) show more, calculated on the phone without internet:</p>
+    <h2 id="compass">Compass correction</h2>
+    <p>The phone’s compass is often several degrees off, especially near the metal of a telescope. After a locate with Align on, Zenigo compares the compass with the exact direction from the stars. If they differ by more than about 1.5°, it asks: “The compass is −12.3° off. Correct it?”</p>
     <ul>
-      <li><b>Moon:</b> the phase as a picture, how much is lit, its age, the next full and new Moon, the libration (which edge is tilted towards you, so you see a little further around it) and which well-known craters and mountains lie near the terminator right now, where shadows make them stand out.</li>
-      <li><b>All planets:</b> the size of the disc in arcseconds and how big it looks in your selected eyepiece compared with the full Moon to the naked eye, the distance from the Sun in the sky (morning or evening sky), how long its light takes to reach us, and the next opposition or, for Mercury and Venus, the next greatest elongation.</li>
-      <li><b>Mercury, Venus and Mars:</b> the phase as a picture, turned like in your eyepiece.</li>
-      <li><b>Saturn:</b> how far the rings are tilted towards us and which side we see.</li>
-      <li><b>Jupiter:</b> a picture of its four big moons Io, Europa, Ganymede and Callisto, turned like in your eyepiece (setting “Eyepiece view orientation”), and when a moon or its shadow crosses Jupiter in the next 24 hours, with a note if Jupiter isn’t up then.</li>
+      <li><b>Correct</b> saves the measured value and uses it in compass mode from now on.</li>
+      <li><b>✕</b> dismisses the question. It only comes back if the measured error changes by more than 3°.</li>
+      <li>While a correction is active, “Compass corrected −12.3°” is shown at the bottom left. Its ✕ removes the correction, and the compass is used as it is again. Quick settings → Compass correction → <b>Remove</b> and <a href="#settings-compass">Settings → Camera &amp; sensors → Compass</a> do the same.</li>
     </ul>
-    <p>Tap any object on the map for its details: brightness, distance (Moon and planets), altitude and azimuth right now, coordinates and the distance from the eyepiece. <b>Set as target</b> makes it your target; on the current target the button reads <b>Remove as target</b>. “Clear target” in Find target does the same.</p>
-    <p>The buttons at the bottom open good sources in a new tab:</p>
+    <p>The correction only matters before the first locate. After a locate the position comes from the stars.</p>
+    <p><b>Aligning on a star by hand:</b> in compass mode, aim the telescope (or the top of the phone) at a bright star or planet, tap it on the map and choose <b>I’m pointing at it</b>. The app sets the compass correction so that the direction matches. This works without camera and is the best way to make <a href="#top-edge">top edge mode</a> accurate. If the altitude differs a lot as well, the location is probably wrong.</p>
+
+    <h2 id="top-edge">Without camera: top edge</h2>
+    <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Telescope → Pointing → Top edge</b> (or Quick settings → Pointing → <b>Top edge</b>). The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction.</p>
+    <p>The map always stays upright, like in a planetarium program: up on the screen is towards the zenith, down towards the horizon, however you hold the phone, whether you point up or down, with the screen facing up or towards you, or with the phone strapped to the side of the tube. Moving the telescope right moves the sky to the left, as in the eyepiece of a finder. Pointing straight at the zenith, “up” is undefined; the map then keeps its last orientation.</p>
     <ul>
-      <li>Messier objects: <b>SEDS</b> Messier Database (data, photos, observing notes), <b>In-The-Sky</b> (visibility and finder charts), Wikipedia</li>
-      <li>Sun, Moon and planets: <b>NASA</b> Science, Wikipedia</li>
-      <li>Stars: Wikipedia and <b>SIMBAD</b> (the professional star database)</li>
+      <li>Align switches on automatically; the position comes from compass and motion sensor only.</li>
+      <li>The camera can be used in this mode too, if a periscope mirror or prism turns its view over the top of the phone.
+        <ul>
+          <li>When you start the camera, the app asks whether the image is mirrored. Choose <b>Mirrored image on</b> for a single mirror or a simple 90° prism, <b>Without mirroring</b> for optics that keep the image the right way round (two mirrors, a roof prism). The answer is remembered for the camera; change it any time with <a href="#mirror">Mirrored image</a> in Quick settings.</li>
+          <li>Locate, Continuous and the eyepiece point then work as usual. The first Locate with Align on teaches the app where the camera looks.</li>
+          <li>The image is flipped so that the screen side of the phone is up: with the phone on top of the tube, the sky is upright in the image as well. While the camera image is shown, the view turns with the phone (it has to match the image); without it, the map is upright again.</li>
+        </ul>
+      </li>
+      <li>The compass is often several degrees off, and the phone is rarely exactly parallel to the tube. Centre a bright star in the eyepiece and set the <a href="#eyepiece">eyepiece point</a> on it: that corrects both at once, and the crosshair then marks where the telescope points.</li>
+      <li>Expect an accuracy of one to a few degrees: enough with a finder or a low-power eyepiece, not for small objects at high magnification.</li>
     </ul>
 
     <h2 id="optics">Telrad rings and eyepiece view</h2>
-    <p>Enter your telescope and eyepieces once in <b>Settings → Telescope and eyepieces</b>: the focal length of the telescope, and for each eyepiece its focal length and apparent field (printed on it or in its specs, about 50° for a Plössl). The app works out the magnification and the true field, for example 25 mm in a 1200 mm telescope: 48× and 1.1°. Choose the eyepiece you are using in <b>Quick settings</b>.</p>
+    <p>Enter your telescope and eyepieces once in <a href="#settings-telescope">Settings → Telescope → Telescope and eyepieces</a>: the focal length of the telescope, and for each eyepiece its focal length and apparent field (printed on it or in its specs, about 50° for a Plössl). The app works out the magnification and the true field, for example 25 mm in a 1200 mm telescope: 48× and 1.1°. Choose the eyepiece you are using in <b>Quick settings</b>.</p>
     <dl class="ref">
       <dt>Rings on the map</dt>
       <dd>Around the crosshair the map can show the <b>Telrad rings</b> (red, 0.5°, 2° and 4°, as in many star charts), the <b>true field of the eyepiece</b> (white) and of the <b>finder</b> (dashed). So you see before looking whether the target will be in the field.</dd>
       <dt>Eyepiece view</dt>
-      <dd>A round view at the bottom left shows what you should see in the eyepiece: stars to magnitude 9, Messier and other deep-sky objects at their true size, the Moon and planets, and your target, or a red arrow at the edge pointing towards it. Tap it (or its label) to switch between eyepiece and finder; ✕ hides it. Switch it on in Quick settings or Settings.</dd>
+      <dd>A round view at the bottom left shows what you should see in the eyepiece: stars to magnitude 9, Messier and other deep-sky objects at their true size, the Moon and planets, and your target, or a red arrow at the edge pointing towards it. Tap it (or its label) to switch between eyepiece and finder; ✕ hides it. Switch it on in Quick settings or in Settings → Telescope.</dd>
       <dt>Orientation</dt>
-      <dd>A Newtonian such as a Dobson and a straight-through finder show the sky upside down, a star diagonal on a refractor shows it mirrored, a right-angle correct-image finder shows it upright. Choose this in Settings. How far a Newtonian turns the view also depends on where the focuser sits and how you look in: compare the view with the eyepiece once and turn it with <b>Turn the view by</b> until the star patterns match.</dd>
+      <dd>A Newtonian such as a Dobson and a straight-through finder show the sky upside down, a star diagonal on a refractor shows it mirrored, a right-angle correct-image finder shows it upright. Choose this in Settings → Telescope → <b>Eyepiece view orientation</b>. How far a Newtonian turns the view also depends on where the focuser sits and how you look in: compare the view with the eyepiece once and turn it with <b>Turn the view by</b> until the star patterns match.</dd>
     </dl>
-    <p>With the eyepiece entered, “should be in the eyepiece” at the top appears when the target is well inside its true field.</p>
+    <p>The top line says “… should be in the eyepiece” when the target is within 70 % of the radius of the selected eyepiece’s true field: for the 25 mm eyepiece above, within about 0.4°. With no eyepiece entered, it appears within 0.4°.</p>
     <h3 id="best-eyepiece">Best eyepiece</h3>
     <p>The details of a deep-sky object, the Moon or a planet, and the target panel, say which of your eyepieces suits it best and why, for example “10 mm · 120× · It fills about half the field; exit pupil 1.7 mm”. Below it all your eyepieces are listed with a short verdict such as “looks tiny”, “frames it well” or “larger than the field”. Tap one to see above what it does for this object; <b>Use it</b> then makes it the eyepiece in use, for the map rings and the eyepiece view.</p>
     <ul>
@@ -156,6 +204,33 @@
     </ul>
     <p>When your widest eyepiece is a different one, it says to find the object with that first and then switch. The <b>exit pupil</b> is eyepiece focal length ÷ focal ratio, so the app needs the <b>aperture</b> (mirror diameter, 200 mm for an 8-inch Dobson). Enter it in Settings → Telescope. Without the aperture or without eyepieces, the details show a note with a link to these settings instead. The settings then show the focal ratio, the highest useful magnification (about twice the aperture in mm) and each eyepiece’s exit pupil.</p>
 
+    <p class="part" id="planning">Planning</p>
+
+    <h2 id="targets">Targets and object details</h2>
+    <p>Targets are the Sun, the Moon, the planets, all 110 Messier objects, about 1,900 further deep-sky objects (NGC, IC and other catalogues, for example “NGC 869” or “North America Nebula”) and the bright named stars. The <b>Target</b> button shows the current target in a panel: directions from the crosshair, its altitude and direction now, tonight’s visibility and what you can do with it. The Moon is drawn on the map in its current phase, at true size when zoomed in, with the lit side towards the Sun; planets get their true size too, and zoomed in on Jupiter you see its four big moons.</p>
+    <p>Tap any object on the map for its details: brightness, distance (Moon and planets), altitude and azimuth right now, coordinates and the distance from the eyepiece. <b>Set as target</b> makes it your target; on the current target the button reads <b>Remove as target</b>. “Clear target” in Find target does the same.</p>
+    <p>The buttons at the bottom open good sources in a new tab:</p>
+    <ul>
+      <li>Messier objects: <b>SEDS</b> Messier Database (data, photos, observing notes), <b>In-The-Sky</b> (visibility and finder charts), Wikipedia</li>
+      <li>Sun, Moon and planets: <b>NASA</b> Science, Wikipedia</li>
+      <li>Stars: Wikipedia and <b>SIMBAD</b> (the professional star database)</li>
+    </ul>
+    <h3 id="solar-system">Moon and planets in detail</h3>
+    <p>The details of the Moon and the planets (and the target panel when one of them is your target) show more, calculated on the phone without internet:</p>
+    <ul>
+      <li><b>Moon:</b> the phase as a picture, how much is lit, its age, the next full and new Moon, the libration (which edge is tilted towards you, so you see a little further around it) and which well-known craters and mountains lie near the terminator right now, where shadows make them stand out.</li>
+      <li><b>All planets:</b> the size of the disc in arcseconds and how big it looks in your selected eyepiece compared with the full Moon to the naked eye, the distance from the Sun in the sky (morning or evening sky), how long its light takes to reach us, and the next opposition or, for Mercury and Venus, the next greatest elongation.</li>
+      <li><b>Mercury, Venus and Mars:</b> the phase as a picture, turned like in your eyepiece.</li>
+      <li><b>Saturn:</b> how far the rings are tilted towards us and which side we see.</li>
+      <li><b>Jupiter:</b> a picture of its four big moons Io, Europa, Ganymede and Callisto, turned like in your eyepiece (setting “Eyepiece view orientation”), and when a moon or its shadow crosses Jupiter in the next 24 hours, with a note if Jupiter isn’t up then.</li>
+    </ul>
+
+    <h2 id="sun">Observing the Sun</h2>
+    <div class="warnbox">
+      <p><b>Never look at the Sun through a telescope or finder without a certified solar filter covering the front of the telescope.</b> Focused sunlight blinds instantly and permanently, a single glance is enough.</p>
+    </div>
+    <p>Choosing the Sun as a target first asks you to confirm that a certified full-aperture filter (ISO 12312-2 or solar film) sits on the front of the telescope, that the finder is covered or removed and that children are supervised. Locate doesn’t work in daylight, so guidance to the Sun relies on compass and motion sensor. To aim without looking, turn the tube until its shadow is as small and round as possible.</p>
+
     <h2 id="filter">Filter</h2>
     <p>The Filter button chooses what the map shows. Presets:</p>
     <dl class="ref">
@@ -164,26 +239,81 @@
       <dt>Deep sky</dt><dd>All deep-sky objects, stars down to magnitude 5 for orientation, no planets.</dd>
       <dt>Naked eye</dt><dd>Stars down to magnitude 5 and planets.</dd>
     </dl>
-    <p>Below the presets you can switch individual classes: Sun/Moon/planets, stars with a slider for the faintest magnitude, the deep-sky classes galaxies, globular clusters, open clusters, nebulae and planetary nebulae, <b>Beyond Messier</b> for the NGC, IC and other objects, and <a href="#satellites">satellites</a> (only online). Constellation lines and all names are not part of the filter: they are switched in the settings (Display) and the quick settings (On the map). Each class has its usual chart symbol: ellipse for galaxies, circle with a cross for globular clusters, dashed circle for open clusters, square for nebulae, circle with a dot for planetary nebulae.</p>
+    <p>Below the presets you can switch individual classes: Sun/Moon/planets, stars with a slider for the faintest magnitude, the deep-sky classes galaxies, globular clusters, open clusters, nebulae and planetary nebulae, <b>Beyond Messier</b> for the NGC, IC and other objects, and <a href="#satellites">satellites</a> (only online). Constellation lines and all names are not part of the filter: they are switched in <a href="#settings-display">Settings → General → Display</a> and in Quick settings under <b>On the map</b>. Each class has its usual chart symbol: ellipse for galaxies, circle with a cross for globular clusters, dashed circle for open clusters, square for nebulae, circle with a dot for planetary nebulae.</p>
     <p><b>The further you zoom in, the more you see:</b> the wide map shows stars to magnitude 6.5; zoomed in, fainter stars down to magnitude 9 appear, and more of the fainter NGC and IC objects. Messier objects are always shown. Large objects such as the Andromeda Galaxy are drawn at their true size once that is bigger than the symbol.</p>
     <p>Your target is always shown, and Find target always searches everything. While a filter is active it is shown at the bottom left; ✕ shows everything again.</p>
 
-    <h2 id="list">Observing list and logbook</h2>
+    <h2 id="list">Observing list</h2>
     <p>Objects can be <b>starred</b>, <b>planned</b> and <b>seen</b>:</p>
     <dl class="ref">
       <dt>Starred</dt><dd>You want to see it some day: a wish list. The star in an object’s details or in Find target. When you log an object as seen, its star is removed.</dd>
-      <dt>Planned</dt><dd>You want to see it tonight. <b>Plan for tonight</b> in the details, or the list icon in Find target and in the Starred tab.</dd>
-      <dt>Seen</dt><dd>In your logbook, logged with <b>Seen</b> in the details.</dd>
+      <dt>Planned</dt><dd>You want to see it tonight. <b>Plan</b> in the details, or the list icon in Find target and in the Starred tab.</dd>
+      <dt>Seen</dt><dd>In your <a href="#logbook">logbook</a>, logged with <b>Seen</b> in the details.</dd>
     </dl>
     <p>The <b>List</b> button opens the observing list with three tabs (it opens on the tab you used last); its number shows how many planned objects are still to do.</p>
+    <dl class="ref">
+      <dt>Planned</dt>
+      <dd>Sorted by when objects get low, so the ones that set first come first. Objects that are low or below the horizon now are dimmed at the end, with the time from when they are well placed.
+        <ul>
+          <li>Each row shows the type, brightness and when it is best placed, the altitude now, and a <a href="#night-bar">night bar</a>.</li>
+          <li>Tap a row to make it your target; ✕ takes it off the plan.</li>
+          <li><b>Next</b> (at the bottom and next to the target at the top of the map) jumps to the next object that is well placed, in the chosen order.</li>
+          <li>With nothing planned, <b>Plan tonight’s best objects</b> or <b>Plan from starred</b> gets you started.</li>
+        </ul>
+      </dd>
+      <dt id="short-route">Short route</dt>
+      <dd>With three or more planned objects you can switch the order to <b>Short route</b>: the shortest way for the telescope, starting where it points now.
+        <ul>
+          <li>Objects that get low within the hour stay first; objects that only come up later stay at the end.</li>
+          <li>The way is measured along the axes of your mount (Settings → Telescope → <b>Mount</b>). Alt-azimuth, like a Dobson, turns in azimuth and altitude, so near the zenith a short step on the sky can be a big turn. Equatorial turns in right ascension and declination.</li>
+          <li>The note shows how far the telescope moves in total.</li>
+        </ul>
+      </dd>
+      <dt>Seen tonight</dt>
+      <dd>What you logged tonight. Marked one by mistake? Its ✕ removes it: tonight’s logbook entry for it is deleted, and it goes back to Planned.</dd>
+      <dt>Starred</dt>
+      <dd>Your wish list, the objects that are well placed tonight first. The list icon plans one for tonight.</dd>
+    </dl>
     <ul>
-      <li><b>Planned</b> is sorted by when objects get low, so the ones that set first come first. With three or more objects you can switch the order to <b>Short route</b>: objects that get low within the hour stay first, the rest follows the shortest way for the telescope, starting where it points now and measured along the axes of your mount (Settings → Telescope → Mount: alt-azimuth like a Dobson turns in azimuth and altitude, so near the zenith a short step on the sky can be a big turn; equatorial turns in right ascension and declination); objects that only come up later stay at the end. The note shows how far the telescope moves in total. <b>Next</b> follows the chosen order. Each row shows the type, brightness and when it is best placed, the altitude now, and a <a href="#night-bar">bar for the night</a> from sunset (left, with its time) to sunrise (right): amber while it is above the horizon, green while it is well placed (above 20° in a dark enough sky: Sun 12° below the horizon, for planets 6°), grey while it is below the horizon; the red mark is now. The search results in Find target, the details of every object (tap it on the map or in a list) and the current target panel show the same bar in a <b>Tonight</b> box, with when it is well placed and when it rises, culminates and sets during the night. Objects that are low or below the horizon now are dimmed at the end, with the time from when they are well placed. Tap a row to make it your target, ✕ takes it off the plan. <b>Next</b> (at the bottom and next to the target at the top of the map) jumps to the next object that is well placed. With nothing planned, <b>Plan tonight’s best objects</b> or <b>Plan from starred</b> gets you started.</li>
-      <li><b>Seen tonight</b> lists what you logged tonight. Marked one by mistake? Its ✕ removes it: tonight’s logbook entry for it is deleted, and it goes back to Planned.</li>
-      <li><b>Starred</b> shows your wish list, the objects that are well placed tonight first. The list icon plans one for tonight.</li>
       <li>Only in Planned does a tap on a row make the object your target. In Seen tonight and Starred it opens the object’s details, and ← (or ✕) brings you back to the list where you were; the same for the current target at the top of the list.</li>
       <li>While a target is set, it is shown at the top of the list; tap it to open its panel.</li>
       <li>Newly added objects are marked “New”, and the list scrolls to the newest one. With <b>Add</b>, Find target opens; tap the list icon or the star next to objects, close it, and you are back in the list.</li>
       <li>On the map, planned objects have a small amber dot, starred ones an amber star outline and seen ones a green tick.</li>
+    </ul>
+
+    <h3 id="logbook">Logbook</h3>
+    <p><b>Seen</b> in an object’s details logs it: date and time, eyepiece and magnification, altitude, Moon and site are filled in. Choose easy, hard or not found, optionally seeing and transparency (1–5, kept for the rest of the night) and a note, then <b>Save</b> or <b>Save, next</b> to go straight to the next planned object.</p>
+    <p>The logbook (Menu → <b>Logbook</b>) shows your progress (Messier objects, planets, nights) and lists the entries by night, newest first.</p>
+    <ul>
+      <li><b>Suggestions:</b> when Messier objects you haven’t seen are well placed tonight, a line says how many. Its <b>Plan</b> button adds up to 12 of them to tonight’s plan, the brightest first.</li>
+      <li><b>Open an entry:</b> tap it to see or change it. The arrows step to the newer and older entries, ← (or ✕) goes back to the logbook where you were; changes are kept.</li>
+      <li><b>Delete an entry:</b> open it and tap <b>Delete</b>. The app asks first; a deleted entry can’t be restored.</li>
+      <li><b>One object only:</b> <b>All entries</b> in the target panel, or <b>All entries for …</b> in an object’s details, opens the logbook with just that object. The chip “… only ✕” at the top shows all entries again.</li>
+    </ul>
+    <p>Object details show how often and when you last saw an object.</p>
+    <p>List and logbook are stored only on your device. Clearing the website data in the browser deletes them, so export a backup now and then: Menu → Settings → General → <a href="#backup">Backup and restore</a>.</p>
+
+    <h2 id="tonight">Tonight</h2>
+    <p>The <b>Tonight</b> section of the menu starts with <b>Darkness, Moon and what’s up</b>, calculated on the phone for your location, also offline:</p>
+    <ul>
+      <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
+      <li><b>Moon:</b> phase, how much is lit, rise and set.</li>
+      <li><b>Planets</b> that are well placed tonight, with their highest point after dusk.</li>
+      <li><b>Best deep-sky objects:</b> the brightest Messier objects that climb above 30° in darkness, with the best time. Tap any of them for details or to make it your target.</li>
+    </ul>
+    <p>For what the app can’t calculate, one good website per topic, opened for your location:</p>
+    <dl class="ref">
+      <dt>Seeing and clouds: meteoblue</dt><dd>Forecast of cloud layers, seeing (how steady the air is) and transparency for the next days.</dd>
+      <dt>Light pollution: lightpollutionmap.info</dt><dd>How dark the sky is at your site and where darker places are nearby.</dd>
+      <dt>ISS and satellites: Heavens-Above</dt><dd>When the ISS passes over, how bright and in which direction. Bright satellites can be confused with stars in the camera image.</dd>
+    </dl>
+    <h3 id="coming-up">Coming up</h3>
+    <p>What is special in the next weeks, all calculated on the phone:</p>
+    <ul>
+      <li>lunar and solar eclipses visible from your site</li>
+      <li>the Moon passing close to a planet (or covering it), and two planets close together</li>
+      <li>oppositions of the outer planets and the greatest elongations of Mercury and Venus</li>
+      <li>the big meteor showers, with how much the Moon will disturb them</li>
     </ul>
     <h3 id="night-bar">Reading the night bar</h3>
     <p>The bar under each object in the list, in Find target, in its details and in the target panel is tonight from sunset (left, with its time) to sunrise (right):</p>
@@ -198,88 +328,101 @@
       <li><i class="down"></i><span><b>Grey:</b> below the horizon.</span></li>
       <li><i class="now"></i><span><b>Red mark:</b> now.</span></li>
     </ul>
-    <p>In the example the object is well placed from evening until about midnight, then sinks low and sets in the early morning. The text above the bar says the same in words, for example “best 21:40, south · low after 00:30”.</p>
-    <p><b>Seen</b> in an object’s details logs it: date and time, eyepiece and magnification, altitude, Moon and site are filled in. Choose easy, hard or not found, optionally seeing and transparency (1–5, kept for the rest of the night) and a note, then <b>Save</b> or <b>Save, next</b> to go straight to the next planned object.</p>
-    <p>The <b>logbook</b> (Menu → Logbook) shows your progress (Messier objects, planets, nights), suggests Messier objects you haven’t seen that are well placed tonight, and lists the entries by night. Tap an entry to see or change it: the arrows step to the newer and older entries, ← (or ✕) goes back to the logbook where you were; changes are kept. Object details show how often and when you last saw an object.</p>
-    <p>List and logbook are stored only on your device. Clearing the website data in the browser deletes them, so export a backup now and then: Menu → Settings → General → <a href="#backup">Backup and restore</a>.</p>
-
-    <h2 id="satellites">ISS and satellites</h2>
-    <p>With an internet connection the map shows the ISS, the Chinese space station Tiangong and about 150 other bright satellites. Bright cyan dots are lit by the Sun and can be seen, with a short tail showing where they came from; grey rings are in Earth’s shadow and invisible. The ISS is always labelled, other satellites when you zoom in. Tap one for its height, distance and a link to Heavens-Above, or make it your target: the directions at the top then follow it.</p>
-    <p>Orbits change quickly, so the app loads them fresh from the internet (from CelesTrak, through our server) and doesn’t keep them: offline, satellites are not shown. Switch them off in the <a href="#filter">Filter</a>. With the <a href="#time">time</a> set to later, the map shows where they will be, for example to catch the next ISS pass. Satellites move up to about a degree per second, too fast to follow by pushing a Dobson; it is easier to wait at a point of their path.</p>
+    <p>In the example the object is well placed from evening until about midnight, then sinks low and sets in the early morning. The text above the bar says the same in words, for example “best 21:40, south · low after 00:30”. In the details and the target panel the bar sits in a <b>Tonight</b> box, with when the object is well placed and when it rises, culminates and sets during the night.</p>
 
     <h2 id="time">Time: the sky later</h2>
     <p>To plan, look at the sky at another time: <b>Menu → Time</b>. Drag the slider (12 hours back to 24 hours ahead), use the buttons <b>Now</b>, <b>±1 h</b>, <b>Dark tonight</b>, <b>Midnight</b> and <b>End of darkness</b>, or pick any date and time. The map, the directions at the top, the target search (“well placed”) and the object details then show the sky at that time, and the time keeps running from there.</p>
     <p>While another time is shown, it appears at the bottom left; tap it to change it, ✕ returns to now. With Align on, the map shows what will be in the direction of the phone at that time. <b>Locate</b>, the <b>eyepiece point</b> and aligning on a star need the sky as it is now, so they switch back to the current time.</p>
 
-    <h2 id="compass">Compass correction</h2>
-    <p>The phone’s compass is often several degrees off, especially near the metal of a telescope. After a locate with Align on, Zenigo compares the compass with the exact direction from the stars. If they differ by more than about 1.5°, it asks: “The compass is −12.3° off. Correct it?”</p>
-    <ul>
-      <li><b>Correct</b> saves the measured value and uses it in compass mode from now on.</li>
-      <li><b>✕</b> dismisses the question. It only comes back if the measured error changes by more than 3°.</li>
-      <li>While a correction is active, “Compass corrected −12.3°” is shown at the bottom left. Its ✕ removes the correction, and the compass is used as it is again. Settings → Compass offers the same.</li>
-    </ul>
-    <p>The correction only matters before the first locate. After a locate the position comes from the stars.</p>
-    <p><b>Aligning on a star by hand:</b> in compass mode, aim the telescope (or the top of the phone) at a bright star or planet, tap it on the map and choose <b>I’m pointing at it</b>. The app sets the compass correction so that the direction matches. This works without camera and is the best way to make <a href="#top-edge">top edge mode</a> accurate. If the altitude differs a lot as well, the location is probably wrong.</p>
+    <h2 id="satellites">ISS and satellites</h2>
+    <p>With an internet connection the map shows the ISS, the Chinese space station Tiangong and about 150 other bright satellites. Bright cyan dots are lit by the Sun and can be seen, with a short tail showing where they came from; grey rings are in Earth’s shadow and invisible. The ISS is always labelled, other satellites when you zoom in. Tap one for its height, distance and a link to Heavens-Above, or make it your target: the directions at the top then follow it.</p>
+    <p>Orbits change quickly, so the app loads them fresh from the internet (from CelesTrak, through our server) and doesn’t keep them: offline, satellites are not shown. Switch them off in the <a href="#filter">Filter</a>. With the <a href="#time">time</a> set to later, the map shows where they will be, for example to catch the next ISS pass. Satellites move up to about a degree per second, too fast to follow by pushing a Dobson; it is easier to wait at a point of their path.</p>
 
-    <h2 id="top-edge">Without camera: top edge</h2>
-    <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Pointing → Top edge</b>. The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction.</p>
-    <p>The map always stays upright, like in a planetarium program: up on the screen is towards the zenith, down towards the horizon, however you hold the phone, whether you point up or down, with the screen facing up or towards you, or with the phone strapped to the side of the tube. Moving the telescope right moves the sky to the left, as in the eyepiece of a finder. Pointing straight at the zenith, “up” is undefined; the map then keeps its last orientation.</p>
-    <ul>
-      <li>Align switches on automatically; the position comes from compass and motion sensor only.</li>
-      <li>The camera can be used in this mode too, if a periscope mirror or prism turns its view over the top of the phone. When you start the camera, the app asks whether the image is mirrored: choose <b>Mirrored image on</b> for a single mirror or a simple 90° prism, <b>Without mirroring</b> for optics that keep the image the right way round (two mirrors, a roof prism). The answer is remembered for the camera and can be changed any time with <a href="#mirror">Mirrored image</a> in Quick settings. Locate, Continuous and the eyepiece point then work as usual; the first Locate with Align on teaches the app where the camera looks. The image is flipped so that the screen side of the phone is up: with the phone on top of the tube, the sky is upright in the image as well. While the camera image is shown, the view turns with the phone (it has to match the image); without it, the map is upright again.</li>
-      <li>The compass is often several degrees off, and the phone is rarely exactly parallel to the tube. Centre a bright star in the eyepiece and set the <a href="#eyepiece">eyepiece point</a> on it: that corrects both at once, and the crosshair then marks where the telescope points.</li>
-      <li>Expect an accuracy of one to a few degrees: enough with a finder or a low-power eyepiece, not for small objects at high magnification.</li>
-    </ul>
+    <p class="part" id="reference">Reference</p>
 
     <h2 id="settings">Settings</h2>
-    <p>The settings are grouped in three tabs: <b>General</b> (location, display, backup and restore), <b>Telescope</b> (telescope and eyepieces, pointing, eyepiece point) and <b>Camera &amp; sensors</b> (camera, field of view, capture, compass). The app opens the tab you used last.</p>
+    <p>Open them with Menu → <b>Settings</b> or Quick settings → <b>All settings</b>. They are grouped in three tabs; the app opens the tab you used last.</p>
+
+    <h3 id="settings-general">General</h3>
     <dl class="ref">
-      <dt>Pointing</dt>
+      <dt id="settings-location">Location</dt>
+      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows. Quick settings shows the location in one line, with <b>GPS</b> and <b>Edit</b>.</dd>
+      <dt id="settings-display">Display</dt>
+      <dd>How the image and the map look:
+        <ul>
+          <li>Fill the screen with the image (or show it whole), mark the detected points of light, <b>Red light</b>.</li>
+          <li>What the map labels: constellation lines, constellation names (the large constellations on the wide map, all of them when zoomed in; they give way to object names), star names, names of other objects (Messier and NGC, planets, satellites) and the marks for planned, starred and seen objects. The same switches are in Quick settings under <b>On the map</b>.</li>
+          <li><b>Labels next to the buttons</b>, which you can switch off once you know them.</li>
+        </ul>
+      </dd>
+      <dt id="backup">Backup and restore</dt>
+      <dd>Everything is stored only on your device, and clearing the browser’s website data deletes it. Back up now and then, and use a backup to move to a new phone.
+        <ul>
+          <li><b>Back up lists</b> saves the observing list, starred objects and logbook as a file.</li>
+          <li><b>Back up lists and settings</b> adds all settings (telescope and eyepieces, location, pointing, camera, display).</li>
+          <li><b>Restore from a backup</b> adds the list entries missing here and never deletes any. If the file holds settings, the app asks before replacing yours.</li>
+          <li><b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar.</li>
+        </ul>
+      </dd>
+    </dl>
+
+    <h3 id="settings-scope">Telescope</h3>
+    <dl class="ref">
+      <dt id="settings-telescope">Telescope and eyepieces</dt>
+      <dd>Your optics, used for the map rings, the eyepiece view and the <a href="#best-eyepiece">best eyepiece</a>. See <a href="#optics">Telrad rings and eyepiece view</a>.
+        <ul>
+          <li><b>Mount</b>: alt-azimuth like a Dobson, or equatorial; used for the <a href="#short-route">short route</a> in the planned list.</li>
+          <li><b>Focal length</b> and <b>Aperture</b> of the telescope, and the finder’s field of view.</li>
+          <li>Your eyepieces, each with focal length and apparent field; <b>Add eyepiece</b> adds one.</li>
+          <li>The rings on the map and the eyepiece view, with its orientation and <b>Turn the view by</b>.</li>
+        </ul>
+      </dd>
+      <dt id="settings-pointing">Pointing</dt>
       <dd>Whether the back camera looks along the telescope (default, needed for Locate) or the <a href="#top-edge">top edge of the phone</a> points along it.</dd>
-      <dt>Location</dt>
-      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows.</dd>
+      <dt id="settings-eyepiece-point">Eyepiece point</dt>
+      <dd>Shows the stored <a href="#eyepiece">eyepiece point</a>; <b>Reset to image centre</b> clears it.</dd>
+    </dl>
+
+    <h3 id="settings-cam">Camera &amp; sensors</h3>
+    <dl class="ref">
       <dt id="camera">Camera</dt>
       <dd>Which camera Locate uses. “Back camera (automatic)” is the phone’s main camera. The list also shows other cameras of the phone and any connected USB webcam or HDMI capture device; the names appear after the camera has been started once. Field of view and eyepiece point are remembered separately for each camera. With an external camera, Align is off, because the phone’s motion sensors don’t know how that camera moves; use Locate or Continuous instead.</dd>
       <dt id="mirror">Mirrored image</dt>
-      <dd>Switch this on when the camera looks through a mirror or prism, for example a 90° mirror so the phone can lie flat on the tube. A mirror turns the image into its mirror image, and a mirrored star pattern can’t be matched with the catalogue. With the option on, the app flips the image back before locating and showing it (left to right in camera mode, top to bottom in top edge mode). It works with both pointing modes: in camera mode for a mirror that sends the view anywhere, in <a href="#top-edge">top edge</a> mode for a periscope over the top of the phone, where the app asks about it when you first start the camera. It is remembered per camera. Align keeps working: with Align on, the first Locate also teaches the app in which direction the mirror sends the view (it recognises any 90° arrangement, e.g. a periscope mirror looking out over the top of the phone). From then on the map follows the phone as usual.</dd>
+      <dd>Switch this on when the camera looks through a mirror or prism, for example a 90° mirror so the phone can lie flat on the tube. A mirror turns the image into its mirror image, and a mirrored star pattern can’t be matched with the catalogue.
+        <ul>
+          <li>With the option on, the app flips the image back before locating and showing it: left to right in camera mode, top to bottom in top edge mode.</li>
+          <li>It works with both pointing modes: in camera mode for a mirror that sends the view anywhere, in <a href="#top-edge">top edge</a> mode for a periscope over the top of the phone, where the app asks about it when you first start the camera.</li>
+          <li>It is remembered per camera, and is also in Quick settings.</li>
+          <li>Align keeps working. With Align on, the first Locate also teaches the app in which direction the mirror sends the view (it recognises any 90° arrangement). From then on the map follows the phone as usual.</li>
+        </ul>
+      </dd>
       <dt id="field-of-view">Camera field of view</dt>
       <dd>The angle the camera covers along the long side of the image, measured on the first successful locate (typically 60–75° for main cameras). <b>Measure again</b> if you switch camera or zoom. The search range limits where the measurement looks.</dd>
-      <dt>Compass</dt>
-      <dd>Shows and removes the <a href="#compass">compass correction</a>.</dd>
-      <dt>Capture</dt>
-      <dd><b>Frames to stack</b> (1–90, 24 by default): how many video frames are averaged per locate. Every four times as many frames halve the noise, so fainter stars appear: 24 frames take about a second, 60 frames two to four seconds. While stacking, the motion sensor watches the telescope with a tolerance of about two pixels: frames taken while it moves (a bump, a gust of wind) are skipped and stacking goes on once it is still (“Hold the telescope still”); if it then points somewhere else, stacking starts again, or, when most frames are already in, the frames so far are used. Continuous locating uses a third of the frames. <b>Sensitivity</b>: how faint a point of light may be to count as a star; higher finds more stars but also more noise. If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well. <b id="diagnostics">Diagnostics</b>: when switched on, a tap on the status at the bottom left shows the image the last Locate worked with: the stack, the raw average, the image with the sky removed, which pixels were above the threshold, and, for the live camera, the first frame alone for comparison (a photo is a single image, so it has no “One frame”), with the points of light numbered by brightness and the matched catalogue stars in green (tap the image to zoom in). Below: a histogram with sky level and threshold, the numbers (frames, camera settings, sky brightness and noise, threshold, points found, star size for checking the focus, result or reason it failed), the last ten attempts, and <b>Save image and report</b> to keep or send the layer you are looking at, with the marks if they are on (PNG; the stack without marks can be solved again from the gallery), and the numbers (JSON). While the live camera runs, a small line shows a quick count of points of light, sky level and star size every 1.5 seconds, handy for focusing.</dd>
-      <dt>Display</dt>
-      <dd>Fill the screen with the image (or show it whole), mark the detected points of light, red light. What the map labels: constellation lines, constellation names (the large constellations on the wide map, all of them when zoomed in; they give way to object names), star names, names of other objects (Messier and NGC, planets, satellites) and the marks for planned, starred and seen objects. The same switches are in the quick settings under <b>On the map</b>.</dd>
-      <dt>Telescope and eyepieces</dt>
-      <dd>The mount type (alt-azimuth like a Dobson, or equatorial; used for the short route in the planned list), telescope focal length, your eyepieces (focal length and apparent field), the finder’s field of view, the rings on the map and the eyepiece view with its orientation. See <a href="#optics">Telrad rings and eyepiece view</a>.</dd>
-      <dt>Eyepiece point</dt>
-      <dd>Shows the stored offset and resets it to the image centre.</dd>
-      <dt id="backup">Backup and restore</dt>
-      <dd><b>Back up lists</b> saves the observing list, starred objects and logbook as a file; <b>Back up lists and settings</b> adds all settings (telescope and eyepieces, location, pointing, camera, display). <b>Restore from a backup</b> adds the list entries missing here and never deletes any; if the file holds settings, the app asks before replacing yours. <b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar. Everything is stored only on your device, and clearing the browser’s website data deletes it, so back up now and then, and use a backup to move to a new phone.</dd>
+      <dt id="settings-capture">Capture</dt>
+      <dd>How Locate takes its image:
+        <ul>
+          <li><b>Frames to stack</b> (1–90, 24 by default): how many video frames are averaged per locate. Every four times as many frames halve the noise, so fainter stars appear: 24 frames take about a second, 60 frames two to four seconds. Continuous locating uses a third of the frames.</li>
+          <li>While stacking, the motion sensor watches the telescope with a tolerance of about two pixels. Frames taken while it moves (a bump, a gust of wind) are skipped, and stacking goes on once it is still (“Hold the telescope still”). If it then points somewhere else, stacking starts again, or, when most frames are already in, the frames so far are used.</li>
+          <li><b>Sensitivity</b>: how faint a point of light may be to count as a star. Higher finds more stars but also more noise.</li>
+          <li>If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well.</li>
+        </ul>
+      </dd>
+      <dt id="diagnostics">Diagnostics</dt>
+      <dd>A switch under Capture. When it is on, a tap on the status at the bottom left shows the image the last Locate worked with. Tap the image to zoom in.
+        <ul>
+          <li><b>Stack</b> (for a photo: <b>Image</b>): the image Locate used. The local sky background is subtracted before it is stretched, so a brightness gradient from light pollution or the lens no longer shows as a bright disc.</li>
+          <li><b>Raw</b>: the averaged frames as they came. <b>Sky removed</b>: what is brighter than the sky light, what is darker blue. <b>Detection</b>: the pixels above the threshold.</li>
+          <li><b>One frame</b>: the first frame alone, to compare with the stack. It exists only for the live camera; a photo is a single image.</li>
+          <li><b>Marks</b>: the points of light in amber, numbered by brightness, and the matched catalogue stars in green.</li>
+          <li>Below: a histogram with sky level and threshold, and the numbers: frames, camera settings, sky brightness and noise, how much brighter the sky is in the centre than at the edges, threshold, points found, star size for checking the focus, and the result or the reason it failed. Then the last ten attempts.</li>
+          <li><b>Save image and report</b> saves the layer you are looking at, with the marks if they are on, as PNG, and the numbers as JSON. The Stack without marks can be solved again from the gallery. <b>Copy report</b> puts the numbers on the clipboard, for example to paste into an email.</li>
+          <li>While the live camera runs, a small line shows a quick count of points of light, sky level and star size every 1.5 seconds, handy for focusing.</li>
+        </ul>
+      </dd>
+      <dt id="settings-compass">Compass</dt>
+      <dd>Shows the <a href="#compass">compass correction</a>; <b>Reset compass correction</b> removes it.</dd>
     </dl>
-    <p>The most important of these are also in <b>Quick settings</b> (the button at the top of the button column). <b>Red light</b> tints the whole app red to keep your eyes dark-adapted; <b>labels next to the buttons</b> can be switched off once you know them. In the menu, <b>Show sky map</b> switches from camera or photo back to the map.</p>
-
-    <h2 id="tonight">Tonight</h2>
-    <p>The <b>Tonight</b> section of the menu starts with <b>Darkness, Moon and what’s up</b>, calculated on the phone for your location, also offline:</p>
-    <ul>
-      <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
-      <li><b>Moon:</b> phase, how much is lit, rise and set.</li>
-      <li><b>Planets</b> that are well placed tonight, with their highest point after dusk.</li>
-      <li><b>Best deep-sky objects:</b> the brightest Messier objects that climb above 30° in darkness, with the best time. Tap any of them for details or to make it your target.</li>
-      <li><b>Coming up:</b> what is special in the next weeks, all calculated on the phone: lunar and solar eclipses visible from your site, the Moon passing close to a planet (or covering it), two planets close together, oppositions of the outer planets, the greatest elongations of Mercury and Venus, and the big meteor showers with how much the Moon will disturb them.</li>
-    </ul>
-    <p>For what the app can’t calculate, one good website per topic, opened for your location:</p>
-    <dl class="ref">
-      <dt>Seeing and clouds: meteoblue</dt><dd>Forecast of cloud layers, seeing (how steady the air is) and transparency for the next days.</dd>
-      <dt>Light pollution: lightpollutionmap.info</dt><dd>How dark the sky is at your site and where darker places are nearby.</dd>
-      <dt>ISS and satellites: Heavens-Above</dt><dd>When the ISS passes over, how bright and in which direction. Bright satellites can be confused with stars in the camera image.</dd>
-    </dl>
-
-    <h2 id="sun">Observing the Sun</h2>
-    <div class="warnbox">
-      <p><b>Never look at the Sun through a telescope or finder without a certified solar filter covering the front of the telescope.</b> Focused sunlight blinds instantly and permanently, a single glance is enough.</p>
-    </div>
-    <p>Choosing the Sun as a target first asks you to confirm that a certified full-aperture filter (ISO 12312-2 or solar film) sits on the front of the telescope, that the finder is covered or removed and that children are supervised. Locate doesn’t work in daylight, so guidance to the Sun relies on compass and motion sensor. To aim without looking, turn the tube until its shadow is as small and round as possible.</p>
+    <p>The settings you change most often are also in <a href="#buttons">Quick settings</a> (the button at the top of the button column). <b>Red light</b> tints the whole app red to keep your eyes dark-adapted. In the menu, <b>Show sky map</b> switches from camera or photo back to the map.</p>
 
     <h2 id="offline">Offline and updates</h2>
     <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
@@ -306,11 +449,11 @@
     <h2 id="troubleshooting">Troubleshooting</h2>
     <dl class="ref trouble">
       <dt>“Only a few stars detected”</dt>
-      <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in Settings → Capture. Still too dark? Take a <a href="#night-photo">night photo</a> instead: the camera app exposes for seconds. To see why, switch on <a href="#diagnostics">Diagnostics</a> (Settings → Camera &amp; sensors) and tap the status after a Locate. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
+      <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in <a href="#settings-capture">Settings → Camera &amp; sensors → Capture</a>. Still too dark? Take a <a href="#night-photo">night photo</a> instead: the camera app exposes for seconds. To see why, switch on <a href="#diagnostics">Diagnostics</a> (Settings → Camera &amp; sensors → Capture) and tap the status after a Locate. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
       <dt>“Field of view not found” or “No match”</dt>
-      <dd>If the camera looks through a mirror or prism, switch on <a href="#mirror">Mirrored image</a>. Otherwise get more open sky into the image. If you changed camera or zoom, tap Measure again in Settings. A wrong search range can also prevent the first measurement.</dd>
+      <dd>If the camera looks through a mirror or prism, switch on <a href="#mirror">Mirrored image</a>. Otherwise get more open sky into the image. If you changed camera or zoom, tap <b>Measure again</b> in <a href="#field-of-view">Settings → Camera &amp; sensors → Camera field of view</a>. A wrong search range there can also prevent the first measurement.</dd>
       <dt>The directions are off although the map looks right</dt>
-      <dd>Check the location in Settings, and set the <a href="#eyepiece">eyepiece point</a> again. It is wrong as soon as the holder has moved.</dd>
+      <dd>Check the location in <a href="#settings-location">Settings → General → Location</a>, and set the <a href="#eyepiece">eyepiece point</a> again. It is wrong as soon as the holder has moved.</dd>
       <dt>Compass mode is far off</dt>
       <dd>Normal near a metal tube. Accept the <a href="#compass">compass correction</a> after a locate, or move the phone away from metal. Locating makes it exact anyway.</dd>
       <dt>The view flips or rotates when pointing high</dt>
@@ -322,7 +465,7 @@
       <dt>“This device provides no orientation data”</dt>
       <dd>The motion sensors are blocked or missing. See <a href="#permissions">Camera and sensor access</a>.</dd>
       <dt>Locating takes very long</dt>
-      <dd>The first locate with a new camera or a gallery photo searches the field of view, which can take a while. The Locate button turns into <b>Stop</b>: tap it to cancel, then try with more sky in the image or a narrower search range in Settings.</dd>
+      <dd>The first locate with a new camera or a gallery photo searches the field of view, which can take a while. The Locate button turns into <b>Stop</b>: tap it to cancel, then try with more sky in the image or a narrower search range in <a href="#field-of-view">Settings → Camera &amp; sensors → Camera field of view</a>.</dd>
       <dt>No satellites on the map</dt>
       <dd>They need an internet connection and are hidden offline. Check that “ISS and bright satellites” is on in the <a href="#filter">Filter</a>; the Solar system and Deep sky presets switch them off.</dd>
       <dt>The eyepiece view shows hardly any stars</dt>
@@ -336,7 +479,7 @@
       <dt>Does it cost anything?</dt><dd>No. Zenigo is free, without account and without ads.</dd>
       <dt>Which devices work?</dt><dd>Current iPhones and Android phones with Safari or Chrome, and tablets and computers with Chrome, Edge or Safari. For Locate, the camera has to show a few stars in a short exposure, which most phones from the last few years manage. Without a usable camera, the <a href="#top-edge">top edge</a> mode and the sky map still work; on a computer you can use a <a href="#camera">USB webcam</a>.</dd>
       <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
-      <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
+      <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera &amp; sensors → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
       <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
       <dt>What happens to my data?</dt><dd>Camera images, location, sensor data, your observing list and logbook stay on your phone and are never uploaded. Export a backup now and then (Settings → General → Backup and restore). Details in the <a href="/privacy/">privacy policy</a>.</dd>
       <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>

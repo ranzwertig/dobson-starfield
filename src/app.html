@@ -128,7 +128,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .qrow.qline { grid-template-columns: 1fr auto; align-items: center; }
 .qlabel { font-size: 15px; display: grid; gap: 2px; }
 .qlabel .qval, .qsub { color: var(--muted); font-size: 13px; }
-.qloc { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+.qloc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qrow .qline .btn { padding: 7px 14px; min-height: 0; }
 .qloc input, .qrow select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; min-width: 0; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; }
 .seg button { border: 0; background: none; color: var(--fg); padding: 9px 8px; border-radius: 8px; font-size: 15px; cursor: pointer; }
@@ -227,6 +228,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .btn.danger:hover { background: rgba(255,106,92,.12); }
 .btn.danger svg { flex: none; }
 .actions .btn.wide { grid-column: 1 / -1; }
+/* details and target panel: the main buttons stay at the bottom while the content scrolls */
+#infoSheet .actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#infoSheet .actions .btn { padding-inline: 6px; gap: 6px; }
+#infoSheet .actions #infoSync { grid-column: 1 / -1; }
+#infoSheet .actions, #tgtActs { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; background: var(--panel);
+  margin-inline: -16px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 16px -6px var(--panel); }
 .actions.three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: -6px; }
 .actions.three .btn { padding-inline: 6px; gap: 6px; }
 .facts .fact:last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -898,19 +905,20 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
     <div class="grab"><h2 id="quickTitle"><span>Quick settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="qrow">
-      <div class="qlabel">Pointing</div>
-      <div class="seg" role="radiogroup" aria-label="Pointing">
-        <button role="radio" data-pointer="camera">Camera</button>
-        <button role="radio" data-pointer="top">Top edge</button>
+      <div class="qlabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
+      <select id="qEp" aria-label="Eyepiece in use"></select>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Eyepiece view <span class="qsub">what you should see, bottom left</span></div>
+        <label class="switch"><input type="checkbox" id="qView" aria-label="Eyepiece view"><i></i></label>
       </div>
     </div>
-    <div class="qrow">
-      <div class="qlabel">Location <span class="qval" id="qLocTxt"></span></div>
-      <div class="qloc">
-        <input type="number" id="qLat" step="0.01" aria-label="Latitude (°N)" placeholder="Latitude">
-        <input type="number" id="qLon" step="0.01" aria-label="Longitude (°E)" placeholder="Longitude">
-        <button class="btn" id="qGps">GPS</button>
-      </div>
+    <div class="qrow qline" id="qTeleRow">
+      <div class="qlabel">Eyepiece point <span class="qsub" id="qTeleTxt"></span></div>
+      <button class="btn" id="qTeleReset">Reset</button>
+    </div>
+    <div class="qrow qline">
+      <div class="qlabel">Compass correction <span class="qsub" id="qCalTxt"></span></div>
+      <button class="btn" id="qCalOff">Remove</button>
     </div>
     <div class="qrow qline">
       <div class="qlabel">Red light <span class="qsub">keeps your eyes dark-adapted</span></div>
@@ -929,20 +937,11 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
     </div>
     <div class="qrow">
-      <div class="qlabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
-      <select id="qEp" aria-label="Eyepiece in use"></select>
-      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
-        <div class="qlabel">Eyepiece view <span class="qsub">what you should see, bottom left</span></div>
-        <label class="switch"><input type="checkbox" id="qView" aria-label="Eyepiece view"><i></i></label>
+      <div class="qlabel">Pointing</div>
+      <div class="seg" role="radiogroup" aria-label="Pointing">
+        <button role="radio" data-pointer="camera">Camera</button>
+        <button role="radio" data-pointer="top">Top edge</button>
       </div>
-    </div>
-    <div class="qrow qline" id="qTeleRow">
-      <div class="qlabel">Eyepiece point <span class="qsub" id="qTeleTxt"></span></div>
-      <button class="btn" id="qTeleReset">Reset</button>
-    </div>
-    <div class="qrow qline">
-      <div class="qlabel">Compass correction <span class="qsub" id="qCalTxt"></span></div>
-      <button class="btn" id="qCalOff">Remove</button>
     </div>
     <div class="qrow">
       <div class="qlabel">On the map</div>
@@ -970,6 +969,17 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="qrow qline">
       <div class="qlabel">Button labels</div>
       <label class="switch"><input type="checkbox" id="qLabels" aria-label="Button labels"><i></i></label>
+    </div>
+    <div class="qrow" id="qLocRow">
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
+        <div class="qlabel">Location <span class="qsub" id="qLocTxt"></span></div>
+        <button class="btn" id="qGps">GPS</button>
+        <button class="btn" id="qLocEdit" aria-expanded="false">Edit</button>
+      </div>
+      <div class="qloc" id="qLocFields" hidden>
+        <input type="number" id="qLat" step="0.01" aria-label="Latitude (°N)" placeholder="Latitude">
+        <input type="number" id="qLon" step="0.01" aria-label="Longitude (°E)" placeholder="Longitude">
+      </div>
     </div>
     <button class="btn" id="qAll">All settings</button>
   </div>
@@ -1543,11 +1553,15 @@ function showResults() {
     const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (above 15°)"; box.append(g);
   } else {
     // exact names first, then names starting with the query, then matches anywhere (also in the description)
-    const rank = T => { const n = norm(T.name); return n === q || norm(T.id) === q ? 0 : n.startsWith(q) ? 1 : n.includes(q) ? 2 : 3; };
-    list = TARGETS.filter(T => norm(T.name + T.sub).includes(q) || norm(T.id) === q).map(T => ({ T, r: rank(T) })).sort((a, b) => a.r - b.r).slice(0, 30)
+    // normalised names are kept on the target: normalising some 2000 names on every key press is what made typing slow
+    const nm = T => T._nn ?? (T._nn = norm(T.name)), nid = T => T._ni ?? (T._ni = norm(T.id)), nall = T => T._na ?? (T._na = norm(T.name + T.sub));
+    const rank = T => { const n = nm(T); return n === q || nid(T) === q ? 0 : n.startsWith(q) ? 1 : n.includes(q) ? 2 : 3; };
+    list = TARGETS.filter(T => nall(T).includes(q) || nid(T) === q).map(T => ({ T, r: rank(T) })).sort((a, b) => a.r - b.r).slice(0, 30)
       .map(({ T }) => ({ T, alt: horiz(T.vec(t), t).alt }));
     if (!list.length) { const g = document.createElement("div"); g.className = "grp"; g.textContent = "Nothing found"; box.append(g); }
   }
+  // the rows come first; their night bars are worked out afterwards in small batches, so typing stays quick
+  const gen = ++searchBars.gen, pending = [], memoOk = !!planCache.t && Date.now() - planCache.at <= 10 * 60e3 && planMemo.tn === planCache.t;
   list.forEach(({ T, alt }) => {
     const b = document.createElement("button");
     const n = document.createElement("b"); n.textContent = T.name;
@@ -1555,12 +1569,27 @@ function showResults() {
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
     b.append(n, s, a); b.onclick = () => openFromSearch(T);
     if (T.kind === "sat") { box.append(b); return; }
-    const pl = T.kind === "sun" ? null : memoPlan(T); if (pl) { b.classList.add("wbar"); b.append(nightBar(pl)); }
+    if (T.kind !== "sun") {
+      b.classList.add("wbar");
+      if (memoOk && planMemo.m.has(T.id)) { const pl = planMemo.m.get(T.id); if (pl) b.append(nightBar(pl)); else b.classList.remove("wbar"); }
+      else { const ph = document.createElement("div"); ph.className = "obarw pending"; ph.innerHTML = '<span class="oend">&nbsp;</span><div class="obar"></div><span class="oend">&nbsp;</span>'; b.append(ph); pending.push([T, b, ph]); }
+    }
     const row = document.createElement("div"); row.className = "rrow";
     const make = () => ({ id: T.id, name: T.name });
     row.append(b, toggleButton("plan", T.id, make), toggleButton("star", T.id, make)); box.append(row);
   });
+  const step = () => {
+    if (gen !== searchBars.gen || $("searchSheet").hidden) return;   // a newer query or the sheet closed
+    const t0 = performance.now();
+    while (pending.length && performance.now() - t0 < 8) {
+      const [T, b, ph] = pending.shift(), pl = memoPlan(T);
+      if (pl) ph.replaceWith(nightBar(pl)); else { ph.remove(); b.classList.remove("wbar"); }
+    }
+    if (pending.length) requestAnimationFrame(step);
+  };
+  if (pending.length) requestAnimationFrame(step);
 }
+const searchBars = { gen: 0 };
 // A search result opens its details; ← (or closing them) goes back to the search, same query and place.
 // "Set as target" in the details sets it and closes both.
 const searchState = { scroll: 0, fromList: false };
@@ -1982,17 +2011,22 @@ let NGC = [];
 // Sky cells of about 4° × 4° (declination bands, split in right ascension), each holding its stars brightest first,
 // so drawing a small part of the sky only looks at the stars near it
 const DCELL = 4;
-function buildDeepIndex() {
-  const nb = 180 / DCELL, bands = [];
+// Long loops at start are cut into pieces of about 10 ms, so the map can be drawn and tapped in between
+const pause = () => new Promise(r => setTimeout(r, 0));
+function slicer(ms = 10) { let t = performance.now(); return async () => { if (performance.now() - t > ms) { await pause(); t = performance.now(); } }; }
+async function buildDeepIndex(N, v) {
+  const nb = 180 / DCELL, bands = [], tick = slicer();
   for (let b = 0; b < nb; b++) { const dc = Math.cos(((b + 0.5) * DCELL - 90) * D2R); bands.push({ n: Math.max(1, Math.floor(360 / DCELL * dc)), cells: null }); }
   bands.forEach(B => B.cells = Array.from({ length: B.n }, () => []));
-  const v = DEEP.v;
-  for (let i = 0; i < DEEP.n; i++) {
+  for (let i = 0; i < N; i++) {
     const x = v[3 * i], y = v[3 * i + 1], z = v[3 * i + 2];
     const dec = Math.asin(Math.max(-1, Math.min(1, z))) * R2D, ra = (Math.atan2(y, x) * R2D + 360) % 360;
     const B = bands[Math.min(nb - 1, Math.floor((dec + 90) / DCELL))]; B.cells[Math.min(B.n - 1, Math.floor(ra / 360 * B.n))].push(i);
+    if ((i & 2047) === 0) await tick();
   }
-  DEEP.bands = bands.map(B => ({ n: B.n, cells: B.cells.map(c => Int32Array.from(c)) }));
+  const out = [];
+  for (const B of bands) { out.push({ n: B.n, cells: B.cells.map(c => Int32Array.from(c)) }); await tick(); }
+  return out;
 }
 // Calls fn(i) for every deep star within about radDeg of the unit vector c that is not fainter than maxMag
 function deepNear(c, radDeg, maxMag, fn) {
@@ -2073,12 +2107,15 @@ async function loadDeep() {
   try {
     const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);
     if (b) {
-      const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215;
+      // decoded and indexed in pieces; DEEP is only filled in at the end, the map draws without it until then
+      const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215, tick = slicer();
       for (let i = 0; i < n; i++) {
         const o = i * 7, w = Solver.radec2v((u[o] | u[o + 1] << 8 | u[o + 2] << 16) / U * 360, (u[o + 3] | u[o + 4] << 8 | u[o + 5] << 16) / U * 180 - 90);
         v[3 * i] = w[0]; v[3 * i + 1] = w[1]; v[3 * i + 2] = w[2]; m[i] = u[o + 6] / 20 - 2;
+        if ((i & 2047) === 0) await tick();
       }
-      Object.assign(DEEP, { n, v, m }); buildDeepIndex();
+      const bands = await buildDeepIndex(n, v);
+      Object.assign(DEEP, { n, v, m, bands });
     }
     if (d) {
       NGC = d.map(([id, ra, dec, mag, cls, size, name, type]) => ({ id, ra, dec, mag, cls, size, name, type, v: Solver.radec2v(ra, dec) }));
@@ -2123,8 +2160,15 @@ function hv(az, alt) { const a = az * D2R, h = alt * D2R; return [Math.cos(h) * 
 // The map's field of view spans the shorter screen side: turning the phone to landscape must not change the scale
 // (rings, eyepiece and finder circles keep their size relative to the stars and to the screen)
 function mapF(W, H) { return (Math.min(W, H) / 2) / Math.tan(st.mapView.fov / 2 * D2R); }
+// the same view gives the same projection: reused until direction, field, screen size or sky time change
+const mapSolCache = { key: "", sol: null };
 function mapSol() {
   const M = skyNow().M, W = view.width, H = view.height, mv = st.mapView;
+  const key = mv.az + "|" + mv.alt + "|" + mv.fov + "|" + W + "|" + H + "|" + sky.at;
+  if (mapSolCache.key === key && mapSolCache.sol) return mapSolCache.sol;
+  mapSolCache.key = key; return mapSolCache.sol = mapSolCompute(M, W, H, mv);
+}
+function mapSolCompute(M, W, H, mv) {
   const z = hv(mv.az, mv.alt);
   let up = [0, 0, 1]; const k = z[2]; up = [up[0] - k * z[0], up[1] - k * z[1], up[2] - k * z[2]];
   let n = Math.hypot(...up); if (n < 1e-6) { up = hv(mv.az + 180, 0); n = 1; }
@@ -2291,11 +2335,12 @@ view.addEventListener("pointermove", e => {
   if (gest.kind === "pan" && ptrs.size === 1) {
     const [x, y] = ptrs.get(e.pointerId), dpr = view.width / view.clientWidth;
     if (!gest.moved && Math.hypot(x - gest.x0, y - gest.y0) < 8 * dpr) return;
-    gest.moved = true;
+    gest.moved = true; st.gestAt = performance.now();
     if (mapGestures()) { mapRotate(x - (gest.lx ?? gest.x0), y - (gest.ly ?? gest.y0)); gest.lx = x; gest.ly = y; }
     else if (zoom.z > 1) { zoom.x = gest.px + x - gest.x0; zoom.y = gest.py + y - gest.y0; clampPan(); }
   } else if (gest.kind === "pinch" && ptrs.size >= 2) {
     const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    st.gestAt = performance.now();
     if (mapGestures()) {
       if (photoSky()) { if (gest.f0 == null) gest.f0 = st.sol.f; photoZoom(gest.f0 * d / gest.d0 / st.sol.f); return; }
       if (gest.f0 == null) gest.f0 = st.mapView.fov; st.mapView.fov = Math.max(MAP_FOV_MIN, Math.min(140, gest.f0 * gest.d0 / d)); return;
@@ -2331,10 +2376,22 @@ function resize() {
 }
 // Only redraw when something visible changed (live video always): saves battery and keeps frames free for sensor updates
 let lastSig = [];
+// The sky turns 0.0042° per second. Redraw for the passing time only once that moves things by about a third of a
+// device pixel at the current scale (zoomed in: about every second, the whole sky: every few seconds), at least every 30 s.
+// Changes of time offset or location (sky.key) redraw at once; everything else (sensors, video, zoom) has its own key.
+const redrawT = { at: 0, key: "" };
+// a finger is moving the view right now (or did so in the last 200 ms)
+const gestFast = () => performance.now() - (st.gestAt || 0) < 200;
+function timeSig() {
+  const s = st.sol, degPx = s && s.f > 0 ? R2D / (s.f * (fit.sc || 1)) : 0.1;
+  const due = Math.min(30000, Math.max(1000, 0.3 * degPx / 0.0042 * 1000));
+  if (sky.key !== redrawT.key || sky.at < redrawT.at || sky.at - redrawT.at >= due) { redrawT.at = sky.at; redrawT.key = sky.key; }
+  return redrawT.at;
+}
 function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
-  return [W, H, zoom.z, zoom.x, zoom.y, sky.at, st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
+  return [W, H, zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.teleMode, st.solMode,
     st.filterVer, st.opticsVer, st.obsVer, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
@@ -2366,13 +2423,15 @@ function updateAvailability() {
   setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
 }
 document.addEventListener("click", e => {
+  updateAvailability();   // the frame loop refreshes it only every 150 ms
   const b = e.target.closest && e.target.closest('[aria-disabled="true"]'); if (!b) return;
   e.preventDefault(); e.stopImmediatePropagation();
   if (b.dataset.why) hint(b.dataset.why, 4000);
 }, true);
 function draw() {
   requestAnimationFrame(draw);
-  updateAvailability();
+  // button states and the source tag change rarely: checked every 150 ms, not 60 times a second
+  const tUi = performance.now(); if (tUi - (draw.ui || 0) > 150) { draw.ui = tUi; updateAvailability(); draw.tag = true; }
   const W = view.width, H = view.height, dpr = W / Math.max(1, view.clientWidth);
   let src = null, sw = 0, sh = 0;
   const liveVideo = st.source === "video" && st.stream && video.videoWidth;
@@ -2382,7 +2441,7 @@ function draw() {
   const showImg = src && (liveVideo || !st.moved);
   skyNow();
   if (st.source === "map" && (!st.sensor || !st.sol)) { st.sol = mapSol(); st.solMode = "map"; st.moved = true; }
-  updateTag();
+  if (draw.tag) { draw.tag = false; updateTag(); }
   const sig = frameSig(W, H);
   if (!liveVideo && sig.length === lastSig.length && sig.every((v, i) => v === lastSig[i])) return;
   lastSig = sig;
@@ -2577,17 +2636,18 @@ function drawOverlay(dpr) {
   const halfDiag = Math.atan(Math.hypot(W, H) / 2 / (fit.sc * sol.f)) * R2D + 2, cosLim = Math.cos(Math.min(89, halfDiag) * D2R);
   const show = cfg.show, fovNow = 2 * Math.atan(W / 2 / (fit.sc * sol.f)) * R2D;
   // fainter stars and more deep-sky objects the further you zoom in
-  const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow))), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
+  // while a finger drags or pinches a wide view, only the brighter stars (smooth movement); all of them once it rests
+  const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow)), gestFast() && fovNow > 60 ? 5.5 : 99), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
   if (show.stars) {
     // all dots in two paths (bright / faint) instead of one draw call per star
     c.fillStyle = "rgba(215,225,255,.85)";
     const bright = new Path2D(), faint = new Path2D(), cv = Solver.cat.v, n = Solver.cat.n;
     const b0 = boresight[0], b1 = boresight[1], b2 = boresight[2];
     for (let k = 0; k < n; k++) {
+      const m = STARS[3 * k + 2]; if (m > starLim) break;   // the catalogue is sorted by brightness
       const v = cv[k]; if (v[0] * b0 + v[1] * b1 + v[2] * b2 < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.2) continue;
       const x = fit.ox + p.x * fit.sc, y = fit.oy + p.y * fit.sc; if (x < -5 || y < -5 || x > W + 5 || y > H + 5) continue;
-      const m = STARS[3 * k + 2]; if (m > starLim) continue;
       const r = Math.max(0.5, (6.4 - m) * 0.55) * dpr * zf;
       if (r < 1.6) faint.rect(x - r, y - r, 2 * r, 2 * r);   // tiny dots: squares are much cheaper to rasterize and look the same
       else { const path = m > 5 ? faint : bright; path.moveTo(x + r, y); path.arc(x, y, r, 0, 6.2832); }
@@ -2840,7 +2900,8 @@ function syncInfoObs(o) {
   $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(star));
   $("infoStar").setAttribute("aria-label", star ? "Unstar" : "Star: want to see it some day");
   $("infoPlan").hidden = !can; $("infoPlan").setAttribute("aria-pressed", String(plan));
-  $("infoPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + (plan ? " Planned for tonight" : " Plan for tonight");
+  $("infoPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + (plan ? " Planned" : " Plan");
+  $("infoPlan").setAttribute("aria-label", plan ? "Planned for tonight: remove from the plan" : "Plan for tonight");
   const es = obs.log.filter(e => e.obj === o.id && e.result !== "miss").sort((a, b) => b.t.localeCompare(a.t)), h = $("infoHist");
   h.hidden = !es.length; h.textContent = "";
   if (!es.length) return;
@@ -2921,17 +2982,25 @@ function jupiterView(t) {
 }
 // Moon transits and shadow transits in the next 24 hours (2-minute steps), cached for 10 minutes
 const jupEvCache = { at: 0, v: null };
+const jupEvReady = () => !!jupEvCache.v && Math.abs(skyDate() - jupEvCache.at) < 10 * 60e3;
 function jupiterEvents() {
   const now = skyDate();
   if (jupEvCache.v && Math.abs(now - jupEvCache.at) < 10 * 60e3) return jupEvCache.v;
-  const step = 2 * 60e3, n = 24 * 30, ev = [];
+  // 15-minute steps over 24 h, then each start and end narrowed down to a minute by halving the interval
+  // (transits and shadow transits last one to several hours, so none slips between two steps)
+  const step = 15 * 60e3, n = 24 * 4, ev = [], t0 = now.getTime();
+  const state = ms => { const m = new Map(); jupiterView(A.MakeTime(new Date(ms))).moons.forEach(mo => m.set(mo.k, mo)); return m; };
+  const edge = (lo, hi, k, kind, want) => {   // first time in (lo, hi] where the event is `want` (on / off)
+    while (hi - lo > 60e3) { const mid = Math.round((lo + hi) / 2); if (!!state(mid).get(k)[kind] === want) hi = mid; else lo = mid; }
+    return new Date(hi);
+  };
   const open = {};
   for (let i = 0; i <= n; i++) {
-    const d = new Date(now.getTime() + i * step), v = jupiterView(A.MakeTime(d));
-    v.moons.forEach(mo => ["transit", "shadow"].forEach(kind => {
-      const key = mo.k + kind, on = mo[kind];
-      if (on && !open[key]) open[key] = { name: mo.name, kind, start: d, startsBefore: i === 0 };
-      if ((!on || i === n) && open[key]) { ev.push(Object.assign(open[key], { end: d, endsAfter: on })); delete open[key]; }
+    const ms = t0 + i * step, v = state(ms);
+    v.forEach(mo => ["transit", "shadow"].forEach(kind => {
+      const key = mo.k + kind, on = !!mo[kind];
+      if (on && !open[key]) open[key] = { name: mo.name, kind, start: i === 0 ? new Date(ms) : edge(ms - step, ms, mo.k, kind, true), startsBefore: i === 0 };
+      if ((!on || i === n) && open[key]) { ev.push(Object.assign(open[key], { end: on ? new Date(ms) : edge(ms - step, ms, mo.k, kind, false), endsAfter: on })); delete open[key]; }
     }));
   }
   ev.sort((a, b) => a.start - b.start);
@@ -3007,7 +3076,10 @@ function fillPlanetBox(box, body) {
     // with the day when it isn't today, and whether Jupiter is up then
     const today = d.toDateString(), when = x => (x.toDateString() === today ? "" : x.toLocaleDateString([], { weekday: "short" }) + " ") + fmtHM(x);
     const up = x => { const tt = A.MakeTime(x); return horiz(targetById("Jupiter").vec(tt), tt).alt; };
-    const evs = jupiterEvents().map(e => {
+    // the 24-hour scan takes a moment: the details open first, the list follows right after
+    const ready = jupEvReady();
+    if (!ready) setTimeout(() => { jupiterEvents(); if (!box.hidden && box._key === key) { box._key = null; fillPlanetBox(box, body); } }, 30);
+    const evs = !ready ? null : jupiterEvents().map(e => {
       // seen from here: Jupiter above 5° in a dark sky at the start, middle or end
       const ts = [e.start, new Date((e.start.getTime() + e.end.getTime()) / 2), e.end];
       const ok = ts.map(x => up(x) > 5 && horiz(targetById("Sun").vec(A.MakeTime(x)), A.MakeTime(x)).alt < -6), n = ok.filter(Boolean).length;
@@ -3016,7 +3088,7 @@ function fillPlanetBox(box, body) {
     });
     extra = '<div class="jup">' + jupiterSvg(v) + '<small>The four big moons with Jupiter’s equator level, ' + f.note + ' (eyepiece view setting). Dashed: hidden behind Jupiter or in its shadow.</small>'
       + (now.length ? "<p>" + now.join(". ") + ".</p>" : "")
-      + "<p><b>Next 24 hours</b><br>" + (evs.length ? evs.join("<br>") : "No moon or shadow crosses Jupiter.") + "</p></div>";
+      + "<p><b>Next 24 hours</b><br>" + (!evs ? "Working it out …" : evs.length ? evs.join("<br>") : "No moon or shadow crosses Jupiter.") + "</p></div>";
   }
   box.innerHTML = (pic ? '<div class="pp">' + pic + "</div>" : "") + '<div class="pl"></div>' + extra;
   box.classList.toggle("nopic", !pic);
@@ -3253,7 +3325,7 @@ function renderList() {
   if (listTab.v === "todo") {
     if (!obs.list.length) {
       const e = document.createElement("div"); e.className = "oempty";
-      e.innerHTML = '<p class="note">Nothing planned for tonight. Plan objects with <b>Plan for tonight</b> in their details or the list icon in Find target, plan from your starred objects, or start with the best objects for tonight.</p>';
+      e.innerHTML = '<p class="note">Nothing planned for tonight. Plan objects with <b>Plan</b> in their details or the list icon in Find target, plan from your starred objects, or start with the best objects for tonight.</p>';
       const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Plan tonight’s best objects";
       b.onclick = () => { const n = addTonightsBest(); hint(n ? n + " objects planned." : "Nothing new to plan tonight.", 3000); renderList(); }; e.append(b);
       if (obs.starred.length) { const s2 = document.createElement("button"); s2.className = "btn"; s2.textContent = "Plan from starred (" + obs.starred.length + ")"; s2.onclick = () => { listTab.v = "starred"; renderList(); }; e.append(s2); }
@@ -4526,7 +4598,10 @@ function diagAnalyze(fr) {
     bg[by * bw + bx] = med; sd[by * bw + bx] = Math.max(floor, 1.4826 * tmp[tmp.length >> 1]);
   }
   const med = a => Array.from(a).sort((x, y) => x - y)[a.length >> 1];
-  return { B, bw, bh, bg, sd, sky: med(bg), noise: med(sd), floor };
+  // gradient: sky in the middle of the image against the four corners (vignetting, light pollution, stray light)
+  const cell = (fx, fy) => bg[Math.min(bh - 1, Math.floor(fy * bh)) * bw + Math.min(bw - 1, Math.floor(fx * bw))];
+  const centre = (cell(0.45, 0.45) + cell(0.55, 0.45) + cell(0.45, 0.55) + cell(0.55, 0.55)) / 4, corners = (cell(0.02, 0.02) + cell(0.98, 0.02) + cell(0.02, 0.98) + cell(0.98, 0.98)) / 4;
+  return { B, bw, bh, bg, sd, sky: med(bg), noise: med(sd), floor, grad: centre - corners };
 }
 const bgAt = (A, x, y, arr) => {
   const fx = Math.max(0, Math.min(A.bw - 1.001, x / A.B - 0.5)), fy = Math.max(0, Math.min(A.bh - 1.001, y / A.B - 0.5));
@@ -4564,14 +4639,16 @@ function diagImage(d, layer) {
   const fr = layer === "single" && d.fr.single ? { ...d.fr, gray: d.fr.single } : d.fr, { gray, w, h } = fr, A = d.A;
   const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"), img = g.createImageData(w, h), px = img.data;
   const thr = d.sigma;
-  // stretch from the stack, so single frame and stack are shown alike and can be compared
-  const lo = A.sky, hi = Math.max(lo + 8, (() => { const sm = []; for (let i = 0; i < d.fr.gray.length; i += 13) sm.push(d.fr.gray[i]); sm.sort((a, b) => a - b); return sm[Math.floor(sm.length * 0.997)]; })());
+  // stretch from the stack, so single frame and stack are shown alike and can be compared. Stack/image and one frame
+  // show the brightness above the local sky: a gradient (vignetting, light pollution) would otherwise fill the stretch.
+  const flat = layer === "stretch" || layer === "single";
+  const lo = flat ? 0 : A.sky, hi = Math.max(lo + 8, (() => { const sm = []; for (let i = 0; i < d.fr.gray.length; i += 13) { const x = i % w, y = (i / w) | 0; sm.push(d.fr.gray[i] - (flat ? bgAt(A, x, y, A.bg) : 0)); } sm.sort((a, b) => a - b); return sm[Math.floor(sm.length * 0.997)]; })());
   for (let y = 0, j = 0; y < h; y++) for (let x = 0; x < w; x++, j++) {
     const v = gray[j]; let r, gg, b;
     if (layer === "raw") r = gg = b = Math.min(255, v);
     else if (layer === "bg") { const res = v - bgAt(A, x, y, A.bg), s = bgAt(A, x, y, A.sd), t = Math.max(-1, Math.min(1, res / (4 * thr * s))); r = t > 0 ? 40 + 215 * t : 40; gg = t > 0 ? 40 + 215 * t : 40 + 40 * -t; b = t > 0 ? 40 + 215 * t : 40 + 160 * -t; }
     else if (layer === "mask") { const res = v - bgAt(A, x, y, A.bg), s = bgAt(A, x, y, A.sd); const on = res > thr * s; r = on ? 255 : 14; gg = on ? 210 : 16; b = on ? 120 : 22; }
-    else { const t = Math.max(0, (v - lo) / (hi - lo)); r = gg = b = Math.min(255, 22 + 233 * Math.sqrt(t)); }
+    else { const t = Math.max(0, (v - (flat ? bgAt(A, x, y, A.bg) : 0) - lo) / (hi - lo)); r = gg = b = Math.min(255, 22 + 233 * Math.sqrt(t)); }
     px[4 * j] = r; px[4 * j + 1] = gg; px[4 * j + 2] = b; px[4 * j + 3] = 255;
   }
   g.putImageData(img, 0, 0);
@@ -4623,6 +4700,7 @@ function diagRest(d) {
     ["Image", d.fr.w + " × " + d.fr.h + " px (worked on)"],
     ["Camera", d.cam ? [cam.width && cam.width + "×" + cam.height, cam.frameRate && f1(cam.frameRate) + " fps", cam.exposureMode, cam.exposureTime && "exposure " + (cam.exposureTime / 10).toFixed(1) + " ms", cam.iso && "ISO " + cam.iso].filter(Boolean).join(" · ") || "no details from the browser" : "–"],
     ["Sky", "background " + f1(d.A.sky) + " of 255 · noise " + d.A.noise.toFixed(2) + " (floor " + d.A.floor.toFixed(2) + ")"],
+    ["Gradient", Math.abs(d.A.grad) < 0.5 ? "even: centre and corners alike" : "centre " + Math.abs(d.A.grad).toFixed(1) + " levels " + (d.A.grad > 0 ? "brighter" : "darker") + " than the corners (removed in the image" + (d.A.grad > 0.25 * d.A.sky && d.A.grad > 3 * d.A.noise ? "; strong: lens vignetting or stray light, a dew shield helps against stray light" : "") + ")"],
     ["Detection", "sensitivity " + d.sigma + " → threshold " + f1(d.sigma * d.A.noise) + " above the sky"],
     ["Points of light", d.stars.length + (d.stars.length >= 80 ? " (only the 80 brightest are used)" : "") + (d.sat ? " · " + d.sat + " saturated" : "")],
     ["Star size", d.fwhm ? f1(d.fwhm) + " px (FWHM)" + (d.fwhm > 5 ? " – large: check the focus" : "") : "–"],
@@ -4636,7 +4714,7 @@ function diagRest(d) {
 function diagReport() {
   const d = diag.last; if (!d) return null;
   return { app: "Zenigo", at: d.at.toISOString(), source: d.src, frames: d.frames, want: d.want, skipped: d.skipped, restarts: d.restarts, captureMs: d.captureMs && Math.round(d.captureMs),
-    image: { w: d.fr.w, h: d.fr.h }, camera: d.cam, sky: +d.A.sky.toFixed(2), noise: +d.A.noise.toFixed(3), noiseFloor: +d.A.floor.toFixed(3), sigma: d.sigma,
+    image: { w: d.fr.w, h: d.fr.h }, camera: d.cam, sky: +d.A.sky.toFixed(2), gradient: +d.A.grad.toFixed(2), noise: +d.A.noise.toFixed(3), noiseFloor: +d.A.floor.toFixed(3), sigma: d.sigma,
     points: d.stars.length, saturated: d.sat, fwhm: d.fwhm && +d.fwhm.toFixed(2), knownFov: d.known, fovSetting: cfg.fov.video, fovRange: cfg.fovRange, pointer: cfg.pointer, mirror: !!cfg.mirror,
     result: d.sol.ok ? { matched: d.sol.nMatch, fov: d.sol.fov && +d.sol.fov.toFixed(2), rms: d.sol.rms, ms: Math.round(d.sol.ms) } : { reason: d.sol.reason || "not solved" },
     stars: d.stars.slice(0, 40).map(s => [+s.x.toFixed(1), +s.y.toFixed(1), +s.flux.toFixed(0)]), device: navigator.userAgent };
@@ -4687,6 +4765,7 @@ document.querySelectorAll("[data-pointer]").forEach(b => b.onclick = () => { set
 $("qLat").onchange = () => { $("lat").value = $("qLat").value; $("lat").onchange(); syncQuick(); };
 $("qLon").onchange = () => { $("lon").value = $("qLon").value; $("lon").onchange(); syncQuick(); };
 $("qGps").onclick = () => $("btnGps").onclick();
+$("qLocEdit").onclick = () => { const f = $("qLocFields"), open = f.hidden; f.hidden = !open; $("qLocEdit").setAttribute("aria-expanded", String(open)); $("qLocEdit").textContent = open ? "Done" : "Edit"; if (open) $("qLat").focus(); };
 $("qRed").onchange = () => { cfg.red = $("qRed").checked; save(); syncSettings(); };
 $("qLabels").onchange = () => { cfg.fabLabels = $("qLabels").checked; save(); syncSettings(); };
 // what the map labels and marks: in the settings (Display) and the quick settings
@@ -4760,7 +4839,12 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
       const nw = r.installing; if (!nw) return;
       nw.addEventListener("statechange", () => {
         if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdate(nw);
-        if (nw.state === "activated" && !st.hadController) { st.hadController = true; hint("Ready for offline use. Add Zenigo to your home screen to start it without signal.", 6000); }
+        if (nw.state === "activated" && !st.hadController) {
+          st.hadController = true;
+          let seen = false; try { seen = !!localStorage.getItem("zenigo-offline-note"); localStorage.setItem("zenigo-offline-note", "1"); } catch (e) {}
+          const installed = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+          if (!seen) hint(installed ? "Works offline now." : "Works offline now. Tip: add it to your home screen.", 3500);
+        }
       });
     });
     // look for new versions when the app comes back to the foreground, and hourly
