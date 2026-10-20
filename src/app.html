@@ -74,7 +74,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 /* Degree readouts at the top of the image */
 .hud {
-  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + 96px + var(--pl, 0px));
+  position: absolute; top: max(8px, var(--safe-top)); left: calc(max(8px, env(safe-area-inset-left, 0px)) + var(--pill-w, 96px) + var(--pl, 0px));
   right: calc(max(8px, env(safe-area-inset-right, 0px)) + var(--pr, 0px));
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px; pointer-events: none;
 }
@@ -369,7 +369,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); color: var(--fg);
 }
 .menu-pill img { width: 30px; height: 30px; border-radius: 9px; display: block; }
-.menu-pill i { width: 1px; height: 22px; background: var(--line); }
+.menu-pill > i { width: 1px; height: 22px; background: var(--line); }
+/* the word "zenigo" next to the mark: only on tablet and desktop, where there is room */
+.menu-pill .wordmark { display: none; font-weight: 600; font-size: 19px; letter-spacing: .3px; margin-left: -2px; }
+.menu-pill .wordmark i { font-style: normal; color: var(--accent); }
 .menu-pill svg { width: 21px; height: 21px; }
 .menu-pill:active { background: var(--raise); }
 .fab.shoot { width: 64px; height: 64px; background: var(--accent); border-color: var(--accent); color: #17110a; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
@@ -454,6 +457,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   }
   .sheet.open .inner { transform: translateX(0); }
   /* the menu opens on the left, where its button is */
+  :root { --pill-w: 158px; }
+  .menu-pill .wordmark { display: block; }
   /* the menu has its own, narrower width, so the panel on the right never changes size when it opens */
   :root { --menu-w: min(360px, 30vw); }
   body.menu-open { --pl: var(--menu-w); }
@@ -639,6 +644,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <button class="menu-pill" id="btnMenu" aria-label="Zenigo menu">
       <img src="logo.svg" alt="" width="30" height="30">
+      <b class="wordmark" aria-hidden="true">zeni<i>go</i></b>
       <i aria-hidden="true"></i>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
