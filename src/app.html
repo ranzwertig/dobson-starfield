@@ -4616,7 +4616,7 @@ function closeSheet(id) {
   sh._tok = (sh._tok || 0) + 1;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
-    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : backToList;
+    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : id === "infoSheet" && st.infoFromList === "tonight" ? backToTonight : backToList;
     st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
     setTimeout(() => { if (!sideBusy(id)) back(); }, 60);
   }
@@ -4794,8 +4794,8 @@ function showOnMap(o) {
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = scroller($("infoSheet")), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
-  st.infoFromList = fromList === "search" ? "search" : !!fromList; $("infoBack").hidden = !fromList;
-  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : "Back to the list");
+  st.infoFromList = fromList === "search" || fromList === "tonight" ? fromList : !!fromList; $("infoBack").hidden = !fromList;
+  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : fromList === "tonight" ? "Back to Tonight" : "Back to the list");
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o; st.focus = null;
@@ -5048,10 +5048,14 @@ function fillComingUp(sec, el, esc) {
   if (!list.length) { sec.append(el("p", "tn-note", "Nothing special in the coming weeks.")); return; }
   list.slice(0, 10).forEach(x => {
     const b = el(x.body ? "button" : "div", "tn-row", "<b>" + esc(x.txt) + "</b><small>" + esc(x.sub) + "</small>");
-    if (x.body) b.onclick = () => showInfo(planetObj(x.body, x.body));
+    if (x.body) b.onclick = () => infoFromTonight(planetObj(x.body, x.body));
     sec.append(b);
   });
 }
+// Details opened from Tonight: ← (or closing them) goes back to Tonight, at the same place
+const tonightState = { scroll: 0 };
+function infoFromTonight(o) { tonightState.scroll = scroller($("tonightSheet")).scrollTop; showInfo(o, "tonight"); }
+function backToTonight() { showTonight(); openSheet("tonightSheet"); const b = scroller($("tonightSheet")); requestAnimationFrame(() => { b.scrollTop = tonightState.scroll; }); }
 function showTonight() {
   const t = tonightData(), box = $("tonightBody"); box.textContent = "";
   const fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
@@ -5088,7 +5092,7 @@ function showTonight() {
   if (!t.planets.length) s3.append(el("p", "tn-note", "No planet gets higher than 8° tonight."));
   t.planets.forEach(p => {
     const b = el("button", "tn-row", "<b>" + esc(p.de) + "</b><span class=\"tn-alt\">" + Math.round(p.b.alt) + "°</span><small>highest at " + fmt(p.b.d) + " in the " + dir(p.b.az) + " · " + p.mag.toFixed(1) + " mag</small>");
-    b.onclick = () => showInfo(planetObj(p.de, p.en)); s3.append(b);
+    b.onclick = () => infoFromTonight(planetObj(p.de, p.en)); s3.append(b);
   });
   box.append(s3);
   // deep sky
@@ -5096,7 +5100,7 @@ function showTonight() {
   if (!t.dso.length) s4.append(el("p", "tn-note", t.dawn ? "No bright Messier object climbs above 30° in darkness tonight." : "Not dark enough tonight for deep-sky objects."));
   t.dso.forEach(({ row, b: bb }) => {
     const b = el("button", "tn-row", "<b>" + esc(row[0] + (row[4] ? " · " + row[4] : "")) + "</b><span class=\"tn-alt\">" + Math.round(bb.alt) + "°</span><small>" + esc(row[5] || "") + " · " + row[3] + " mag · highest at " + fmt(bb.d) + " in the " + dir(bb.az) + "</small>");
-    b.onclick = () => showInfo(messierObj(row)); s4.append(b);
+    b.onclick = () => infoFromTonight(messierObj(row)); s4.append(b);
   });
   box.append(s4);
   // coming up: computed after the sheet is shown (takes a moment once a day)

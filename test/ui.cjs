@@ -369,6 +369,19 @@ const TESTS = {
     await done(p);
   },
 
+  // details opened from Tonight go back to Tonight
+  async tonightBack() {
+    const p = await page();
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 900);
+    const rows = await ev(p, () => document.querySelectorAll('#tonightSheet .tn-row').length);
+    ok(rows > 0, 'Tonight lists objects', rows);
+    await ev(p, () => { const r = [...document.querySelectorAll('#tonightSheet .tn-row')].find(b => b.onclick); r.scrollIntoView(); r.click(); }); await wait(p, 700);
+    ok(await ev(p, () => !$('infoSheet').hidden && !$('infoBack').hidden && /Tonight/.test($('infoBack').getAttribute('aria-label'))), 'the details show a back button to Tonight');
+    await p.tap('#infoBack'); await wait(p, 700);
+    ok(await ev(p, () => !$('tonightSheet').hidden && $('tonightSheet').classList.contains('open') && $('infoSheet').hidden), 'back returns to Tonight', await openSheets(p));
+    await done(p);
+  },
+
   // names on the map can be tapped: they open the object they belong to
   async labels() {
     const p = await page({ w: 1000, h: 700, mobile: false });
