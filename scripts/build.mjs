@@ -1,6 +1,7 @@
 // Builds the website into dist/:
 //   /            landing page (site/index.html) with a star chart drawn from the catalogue
 //   /privacy/    privacy policy, /imprint/ legal notice, /404.html
+//   /accessories/  configurator for the 3D-printable finder shoe adapter (JSCAD design src/finder-adapter.js)
 //   /app/        the app: an HTML page with a start screen, and Astronomy Engine, satellite.js, catalogue + solver and the app
 //                code as separate content-named scripts (loaded with defer),
 //                plus service worker, manifest and icons
@@ -103,7 +104,21 @@ write('dist/sw.js', read('src/sw-root.js'));
 const ctx = {}; vm.createContext(ctx); vm.runInContext(data.replace(/^const (\w+)=/gm, 'globalThis.$1='), ctx);
 const hero = heroSvg(ctx);
 const year = new Date().getFullYear();
+// accessories: JSCAD modelling library (MIT), the design and the page script, named by their content
+const jscadDir = path.dirname(require.resolve('@jscad/modeling/package.json'));
+const jscadPkg = JSON.parse(readFileSync(path.join(jscadDir, 'package.json'), 'utf8'));
+const jscadLib = `/*! JSCAD modeling ${jscadPkg.version} (c) JSCAD Organization, MIT License, https://github.com/jscad/OpenJSCAD.org */\n`
+  + readFileSync(path.join(jscadDir, 'dist', 'jscad-modeling.min.js'), 'utf8');
+const accFiles = {};
+const accFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; accFiles[f] = src; return f; };
+const accScripts = [accFile('jscad-modeling', jscadLib), accFile('finder-adapter', read('src/finder-adapter.js')), accFile('accessories', read('src/accessories.js'))]
+  .map(f => `<script src="/accessories/${f}" defer></script>`).join('\n');
+for (const [f, src] of Object.entries(accFiles)) write('dist/accessories/' + f, src);
+// the design under a stable name, to open in the JSCAD web app
+write('dist/accessories/finder-adapter.jscad.js', read('src/finder-adapter.js'));
+
 const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
+  'accessories.html': 'dist/accessories/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');
 // Search engines: canonical address per page and a sitemap (the app itself at /app/ is excluded in robots.txt)
@@ -118,7 +133,7 @@ for (const [src, dst] of Object.entries(pages)) {
   const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
   const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replace(`<a href="${here}">`, `<a href="${here}" aria-current="page">`) : header;
-  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)));
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--ACCESSORIES_SCRIPTS-->', () => accScripts));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 

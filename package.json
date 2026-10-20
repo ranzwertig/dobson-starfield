@@ -14,6 +14,7 @@
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "^5.1.0",
     "@fontsource/saira-semi-condensed": "^5.1.0",
+    "@jscad/modeling": "2.13.0",
     "astronomy-engine": "2.1.19",
     "d3-celestial": "0.7.35",
     "satellite.js": "^6.0.2",

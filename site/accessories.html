@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Accessories – Zenigo</title>
+<meta name="description" content="3D-printable finder shoe adapter for Explore Scientific and Vixen/Synta shoes with a T-slot base for a Picatinny rail. Configure it in the browser and download the STL.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Accessories – Zenigo">
+<meta property="og:description" content="Configure a 3D-printable finder shoe adapter for your telescope and download the STL.">
+<meta property="og:image" content="https://zenigo.app/app/icons/icon-512.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <div class="doc wide">
+    <h1>Finder shoe adapter</h1>
+    <p class="intro">A 3D-printable adapter that slides into the finder shoe of your telescope and carries an aluminium Picatinny rail. On the rail you mount the phone holder for Zenigo, and anything else you like. Set it up for your shoe, look at it from all sides and download the STL.</p>
+  </div>
+
+  <section class="cfg" aria-label="Configurator">
+    <div class="cfg-view">
+      <canvas id="cfg-view" aria-label="3D preview of the adapter. Drag to turn it, pinch or scroll to zoom."></canvas>
+      <p id="cfg-noview" class="muted" hidden>Your browser can’t show the 3D preview (WebGL is off). The download works anyway.</p>
+      <div class="cfg-bar">
+        <span class="seg" role="radiogroup" aria-label="Orientation">
+          <label><input type="radio" name="cfg-orient" value="use" checked><span>In use</span></label>
+          <label><input type="radio" name="cfg-orient" value="print"><span>Print</span></label>
+        </span>
+        <span class="cfg-size" id="cfg-size"></span>
+      </div>
+    </div>
+    <div class="cfg-side">
+      <form id="cfg-form" onsubmit="return false"></form>
+      <div class="cfg-actions">
+        <button type="button" class="open" id="cfg-download">Download STL</button>
+        <button type="button" class="open ghost" id="cfg-reset">Reset</button>
+      </div>
+      <p class="note-small">The STL is already in print orientation. The address of this page keeps your settings, so you can bookmark or share it.</p>
+    </div>
+  </section>
+
+  <div class="doc wide">
+    <h2>Printing</h2>
+    <ul>
+      <li>Print it as it comes: slot face on the bed, foot pointing up. It needs <b>no supports</b>. The cavity of the T-slot closes with two 45° slopes, the transition to the foot is chamfered.</li>
+      <li><b>PETG</b> or <b>ASA</b> are better than PLA: they stay put in the cold of the night and in a hot car.</li>
+      <li>4 walls and 20–30 % infill are plenty.</li>
+    </ul>
+
+    <h2>Hardware</h2>
+    <ul>
+      <li>An aluminium <b>Picatinny rail</b> of any length. The hole spacing doesn’t matter: the nuts slide anywhere in the slot.</li>
+      <li><b>T-slot nuts for 20-series profile, slot 6</b> (“Nutenstein Nut 6”), M4 or M5 to match the holes of your rail. Slide them in from the open ends.</li>
+      <li>Screws: thickness of the rail foot plus about <span id="cfg-screw">5.5 mm</span>.</li>
+      <li>For <b>slot 5</b> nuts set the slot opening to about 5.4 mm and the cavity to your nuts plus 0.3–0.5 mm. M5 screws barely fit a slot-5 opening, use M4.</li>
+    </ul>
+
+    <h2>Fitting your shoe</h2>
+    <p><b>Explore Scientific:</b> the foot copies the original ES adapter, including its stop notch.</p>
+    <p id="cfg-vixen"><b>Vixen / Synta:</b> these shoes are not standardised and differ by a few tenths of a millimetre. Measure the slot of your shoe and adjust the width and height of the dovetail; the top of the dovetail is then <span id="cfg-vxtop">22.3</span> mm wide. Print a short test piece (foot length 20 mm, no overhang) before the long one.</p>
+    <p class="tip">A long rail is a lever on the small clamping screw of the shoe. If it wobbles, add a strap around the tube at the far end of the rail.</p>
+    <p class="muted">The model is a <a href="https://openjscad.xyz/">JSCAD</a> design. To change more than the sliders allow, open <a href="finder-adapter.jscad.js" download>finder-adapter.jscad.js</a> in the JSCAD web app.</p>
+  </div>
+</main>
+
+<!--FOOTER-->
+<!--ACCESSORIES_SCRIPTS-->
+</body>
+</html>
