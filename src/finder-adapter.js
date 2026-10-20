@@ -46,13 +46,15 @@
     { name: 'vixenH', type: 'float', caption: 'Dovetail height', initial: 8, min: 5, max: 12, step: 0.1 },
     { name: 'vixenAngle', type: 'float', caption: 'Flank angle', initial: 60, min: 45, max: 75, step: 1 },
 
-    // Telrad base: two cups with a thumbscrew each; the Telrad's feet drop in. Defaults measured from the cups of
-    // "Telrad Mount for Orion Dobsonian" by CHenryInSD (Thingiverse 3369512, CC BY): opening 41.2 x 13 mm, 152 mm apart.
+    // Telrad base: a block at each end with a dovetail slot along the tube; the Telrad's two dovetail keys slide in and a
+    // thumbscrew locks them. Key profile from "Telrad Mount for Green LED" by jeffrey892 (Thingiverse 4576071, CC BY),
+    // distance between the blocks from "Telrad Mount for Orion Dobsonian" by CHenryInSD (Thingiverse 3369512, CC BY).
     { name: 'gTelrad', type: 'group', caption: 'Telrad base', showIf: { mountType: 'telrad' } },
-    { name: 'telradSpacing', type: 'float', caption: 'Distance between the cups (centre to centre)', initial: 152, min: 100, max: 200, step: 0.5 },
-    { name: 'telradFootL', type: 'float', caption: 'Foot length (across the base)', initial: 40.6, min: 30, max: 55, step: 0.1 },
-    { name: 'telradFootW', type: 'float', caption: 'Foot width (along the base)', initial: 12.4, min: 8, max: 20, step: 0.1 },
-    { name: 'telradFootH', type: 'float', caption: 'How deep the feet go into the cups', initial: 12, min: 4, max: 18, step: 0.5 },
+    { name: 'telradSpacing', type: 'float', caption: 'Distance between the two slots (centre to centre)', initial: 152, min: 100, max: 200, step: 0.5 },
+    { name: 'telradKeyW', type: 'float', caption: 'Dovetail width at the bottom', initial: 41.9, min: 30, max: 50, step: 0.1 },
+    { name: 'telradKeyTopW', type: 'float', caption: 'Dovetail width at the top', initial: 34.9, min: 25, max: 50, step: 0.1 },
+    { name: 'telradKeyH', type: 'float', caption: 'Dovetail height', initial: 7, min: 3, max: 12, step: 0.1 },
+    { name: 'telradKeyL', type: 'float', caption: 'Dovetail length (along the tube)', initial: 12, min: 6, max: 30, step: 0.5 },
 
     { name: 'gV', type: 'group', caption: 'V-block', showIf: { mountType: 'vblock' } },
     { name: 'tubeD', type: 'float', caption: 'Outer diameter of your tube', initial: 230, min: 40, max: 400, step: 1 },
@@ -92,10 +94,10 @@
     const chRoof = p.strapW / 2;                                   // 45° roof over each channel (prints without bridge)
     const chZ0 = vDepth + p.strapFloor;                            // tip of the channel roof
     const vFootH = chZ0 + chRoof + p.strapH + 2;
-    const footH = isES ? 19.9 : isV ? vFootH : isT ? p.telradFootH : p.vixenH;
-    const footTW = isES ? 13 : isV ? p.vWidth : isT ? p.telradFootL : vxTop;
+    const footH = isES ? 19.9 : isV ? vFootH : isT ? p.telradKeyH : p.vixenH;
+    const footTW = isES ? 13 : isV ? p.vWidth : isT ? p.telradKeyTopW : vxTop;
     // the Telrad feet need the whole distance between the cups
-    const footLen = isT ? Math.max(p.mountLen, p.telradSpacing + p.telradFootW + 6) : p.mountLen;
+    const footLen = isT ? Math.max(p.mountLen, p.telradSpacing + p.telradKeyL + 6) : p.mountLen;
     const zTr0 = footH + (isV ? 0 : p.footClear);
     // never steeper than 45° when printed upside down (a wide V-block narrows towards the plate)
     const zPl0 = zTr0 + Math.max(p.transitionH, (footTW - p.plateW) / 2);
@@ -110,7 +112,7 @@
       isES, isV, isT, footLen, vxTop, footTW, zTr0, zPl0, roofH, plateT, vDepth, vHalf, chZ0, chRoof, maxTubeD, contactSpan, apexGap,
       length: footLen + p.overhangFront + p.overhangBack,
       height: zPl0 + plateT,
-      width: Math.max(p.plateW, isES ? 18.5 : isV ? p.vWidth : isT ? p.telradFootL : p.vixenW)
+      width: Math.max(p.plateW, isES ? 18.5 : isV ? p.vWidth : isT ? p.telradKeyW : p.vixenW)
     };
   };
 
@@ -131,11 +133,10 @@
         foot = subtract(foot, cuboid({ size: sz, center: [0, yn + sz[1] / 2, -1 + sz[2] / 2] }));
       }
     } else if (d.isT) {
-      // two feet that drop into the cups of a Telrad base, centred on the foot section
-      const yc = yM0 + d.footLen / 2, fw = p.telradFootW, fl = p.telradFootL, c = Math.min(1, fw / 4);
-      // feet with a small lead-in chamfer at the bottom, so they find their way into the cups
-      const footProf = poly([[-fl / 2 + c, 0], [fl / 2 - c, 0], [fl / 2, c], [fl / 2, zTr0 + EPS], [-fl / 2, zTr0 + EPS], [-fl / 2, c]]);
-      foot = union(...[-1, 1].map(s => along(yc + s * p.telradSpacing / 2 - fw / 2, fw, footProf)));
+      // two dovetail keys that slide into the slots of a Telrad base, centred on the foot section
+      const yc = yM0 + d.footLen / 2, kl = p.telradKeyL, wb = p.telradKeyW / 2, wt = p.telradKeyTopW / 2;
+      const keyProf = poly([[-wb, 0], [wb, 0], [wt, p.telradKeyH], [wt, zTr0 + EPS], [-wt, zTr0 + EPS], [-wt, p.telradKeyH]]);
+      foot = union(...[-1, 1].map(s => along(yc + s * p.telradSpacing / 2 - kl / 2, kl, keyProf)));
     } else if (d.isV) {
       // block with a V-notch underneath; channels run across it for cable ties or hose clamps
       const w2 = p.vWidth / 2;
