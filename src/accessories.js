@@ -112,8 +112,8 @@
         const num = document.createElement('input');
         Object.assign(num, { type: 'number', min: d.min, max: d.max, step: d.step, value: fmt(d, params[d.name]), inputMode: 'decimal' });
         const unit = document.createElement('i');
-        unit.textContent = /angle/i.test(d.name) ? '°' : 'mm';
-        num.setAttribute('aria-label', `${d.caption} in ${unit.textContent === '°' ? 'degrees' : 'mm'}`);
+        unit.textContent = d.unit !== undefined ? d.unit : /angle/i.test(d.name) ? '°' : 'mm';
+        num.setAttribute('aria-label', unit.textContent ? `${d.caption} in ${unit.textContent === '°' ? 'degrees' : unit.textContent}` : d.caption);
         range.addEventListener('input', () => { params[d.name] = +range.value; num.value = fmt(d, range.value); changed(); });
         num.addEventListener('change', () => {
           const v = Math.min(d.max, Math.max(d.min, +num.value || d.min));

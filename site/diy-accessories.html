@@ -38,6 +38,7 @@
       <li><b>Quick:</b> the adapter slides out of the shoe with the phone holder still on it. Nothing to strap or tape to the tube.</li>
       <li><b>Expandable:</b> the rail takes anything with a Picatinny clamp or a 1/4" camera thread, for example a red light, a dew heater controller, a second camera or a mirror.</li>
     </ul>
+    <p>No suitable finder shoe, or it’s taken? The adapter also comes as a <b>universal V-block</b>: it sits on any tube and is held with two cable ties or hose clamps.</p>
 
     <figure class="diagram">
       <svg viewBox="0 0 720 330" role="img" aria-labelledby="dg-t">
@@ -108,7 +109,9 @@
     <p class="muted affil">Links to Amazon are affiliate links: if you buy through them, Zenigo receives a small commission. The price stays the same for you.</p>
     <dl class="ref parts">
       <dt>Finder shoe adapter <span class="tag">3D print</span></dt>
-      <dd>Fits Explore Scientific and Vixen/Synta finder shoes. <a href="#adapter">Configure and download below.</a></dd>
+      <dd>For Explore Scientific or Vixen/Synta finder shoes, or as a V-block for any tube. <a href="#adapter">Configure and download below.</a></dd>
+      <dt>Only for the V-block: 2 cable ties or hose clamps</dt>
+      <dd>Long enough to go around the tube, up to 9 mm wide by default (the channels are adjustable, also for wider straps). A strip of rubber or foam under the V protects the tube’s paint.</dd>
       <dt>Aluminium Picatinny rail with T-nuts, at least 13 slots</dt>
       <dd>About 13 cm or longer, so there’s room for the holder and more. The T-nuts slide into the slot of the printed adapter; the hole spacing doesn’t matter. <a class="amz" href="https://link.amazon/B08IXon93" rel="sponsored nofollow noopener" target="_blank">Picatinny rail on Amazon</a></dd>
       <dt>Picatinny camera mount</dt>
@@ -121,7 +124,8 @@
     <ol class="guide">
       <li>
         <h3>Print the adapter</h3>
-        <p>Choose your shoe type below, set how far the rail may reach forward and back, and download the STL. Print it as it comes, slot face on the bed: no supports needed. <b>PETG</b> or <b>ASA</b> hold up better than PLA in the cold and in a hot car; 4 walls and 20–30 % infill are plenty.</p>
+        <p>Choose your mount type below, set how far the rail may reach forward and back, and download the STL. Print it as it comes, slot face on the bed: no supports needed. <b>PETG</b> or <b>ASA</b> hold up better than PLA in the cold and in a hot car; 4 walls and 20–30 % infill are plenty.</p>
+        <p data-show-if="FinderAdapter:mountType=vblock">Enter the outer diameter of your tube. With these settings the V-block takes tubes up to <span data-text="FinderAdapter:maxTubeD">283</span> mm. <span data-text="FinderAdapter:vFit">A 230 mm tube rests on both flanks, with its two contact lines 30 mm apart.</span> A flatter V (larger angle) suits thick tubes, a sharper one thin tubes. Pull the straps through the channels and around the tube, tight but without crushing anything.</p>
         <p data-show-if="FinderAdapter:mountType=vixen">Vixen/Synta shoes differ by a few tenths of a millimetre. Measure the slot of yours, adjust the dovetail and print a short test piece first (foot length 20 mm, no overhang).</p>
       </li>
       <li>
@@ -137,10 +141,10 @@
         <p>Keep <b>Settings → Telescope → Pointing</b> on <b>Camera</b>. Then <a href="/getting-started/#locate">locate</a> once and <a href="/getting-started/#eyepiece">set the eyepiece point</a> on a bright star. As long as nothing moves on the rail, it stays valid for the next nights too.</p>
       </li>
     </ol>
-    <p class="tip">A long rail is a lever on the small clamping screw of the shoe. If it wobbles, add a strap around the tube at the far end of the rail.</p>
+    <p class="tip">A long rail is a lever on the small clamping screw of the shoe. If it wobbles, add a strap around the tube at the far end of the rail. With the V-block, keep the rail’s overhang short or make the block longer.</p>
 
     <h2 id="adapter">Finder shoe adapter</h2>
-    <p>The foot for Explore Scientific copies the original ES adapter, including its stop notch. The base carries a slot for the T-nuts of the rail, sized for 20-series “slot 6” nuts; if yours differ, adjust it under <b>T-slot</b>. The cavity closes with two 45° slopes, so it prints without supports.</p>
+    <p>The foot for Explore Scientific copies the original ES adapter, including its stop notch. The V-block has channels across it for cable ties or hose clamps; they close towards the V with 45° slopes, so they print without supports too. The base carries a slot for the T-nuts of the rail, sized for 20-series “slot 6” nuts; if yours differ, adjust it under <b>T-slot</b>. The cavity closes with two 45° slopes, so it prints without supports.</p>
   </div>
 
   <section class="cfg" data-design="FinderAdapter" data-file="zenigo-finder-adapter" data-title="Zenigo finder shoe adapter" aria-label="Configurator: finder shoe adapter">
