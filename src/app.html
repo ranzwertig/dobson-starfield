@@ -1527,6 +1527,7 @@ const QUICK = ["Sun", "Moon", "Jupiter", "Saturn", "M31", "M45", "M42", "M13", "
 function targetById(id) {
   let T = TARGETS.find(t => t.id === id);
   if (!T && /^S\d+$/.test(id) && typeof starObj === "function") { const o = starObj(+id.slice(1)); T = { id, name: o.name, sub: o.desig, kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); }
+  if (!T && /^D\d/.test(id) && typeof deepStarById === "function") { const o = deepStarById(id); if (o) { T = { id, name: o.name, sub: "Star · " + o.mag.toFixed(1) + " mag", kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); } }
   return T;
 }
 const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "");
@@ -2638,6 +2639,7 @@ function drawOverlay(dpr) {
   // fainter stars and more deep-sky objects the further you zoom in
   // while a finger drags or pinches a wide view, only the brighter stars (smooth movement); all of them once it rests
   const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow)), gestFast() && fovNow > 60 ? 5.5 : 99), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
+  st.drawnStarLim = show.stars ? starLim : 0;   // what can be tapped
   if (show.stars) {
     // all dots in two paths (bright / faint) instead of one draw call per star
     c.fillStyle = "rgba(215,225,255,.85)";
@@ -2856,6 +2858,7 @@ function objById(id) {
   const n = NGC.find(o => o.id === id); if (n) return ngcObj(n);
   const p = PLANETS.find(([, en]) => en === id); if (p) return planetObj(p[0], p[1]);
   if (/^S\d+$/.test(id)) return starObj(+id.slice(1));
+  const ds = deepStarById(id); if (ds) return ds;
   const sx = SAT.list.find(x => "SAT" + x.norad === id); if (sx) return satObj(sx);
   return null;
 }
@@ -4212,10 +4215,19 @@ function starObj(k) {
   const inf = STARINFO[k] || ["", "", "", "", 0], [nm, bay, fl, c, hip] = inf, mag = STARS[3 * k + 2];
   const desig = bay ? bay + " " + c : fl ? fl + " " + c : "";
   const query = bay && GEN[c] ? greekLatin(bay) + " " + GEN[c] : fl && GEN[c] ? fl + " " + GEN[c] : nm;
-  return { id: "S" + k, kind: "star", name: nm || desig || "Star", desig: nm ? desig : "", mag,
+  return { id: "S" + k, kind: "star", name: nm || desig || "Star · " + mag.toFixed(1) + " mag", desig: nm ? desig : "", mag,
     vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]),
     links: [query && ["Wikipedia", wikiSearch(query)], hip && ["SIMBAD", "https://simbad.cds.unistra.fr/simbad/sim-id?Ident=" + encodeURIComponent("HIP " + hip)]].filter(Boolean) };
 }
+// Faint stars of the deep catalogue (6–9 mag) have no names or numbers: the id carries position and magnitude,
+// so they can still be a target or be logged
+function deepStarObj(ra, dec, mag) {
+  ra = (ra + 360) % 360;
+  const id = "D" + ra.toFixed(4) + (dec >= 0 ? "+" : "") + dec.toFixed(4) + "m" + (+mag).toFixed(1);
+  return { id, kind: "star", name: "Star · " + (+mag).toFixed(1) + " mag", desig: "", mag: +(+mag).toFixed(1), vec: () => Solver.radec2v(ra, dec),
+    links: [["SIMBAD", "https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=" + encodeURIComponent(ra.toFixed(5) + " " + (dec >= 0 ? "+" : "") + dec.toFixed(5)) + "&Radius=0.5&Radius.unit=arcmin"]] };
+}
+function deepStarById(id) { const m = /^D(\d+\.\d+)([+-]\d+\.\d+)m(-?\d+\.\d)$/.exec(id || ""); return m ? deepStarObj(+m[1], +m[2], +m[3]) : null; }
 function messierObj(row) {
   const [id, ra, dec, mag, nm, typ, desig] = row;
   return { id, kind: "dso", name: nm ? id + " · " + nm : id, desig: [typ, desig].filter(Boolean).join(" · "), mag,
@@ -4256,9 +4268,19 @@ function pickAt(clientX, clientY, pointsOnly) {
   if (!pointsOnly) MESSIER.forEach((row, i) => { if (show[MSV[i].cls]) consider(MSV[i].v, 8, () => messierObj(row)); });
   if (!pointsOnly) (st.drawnNgc || []).forEach(o => consider(o.v, 4, () => ngcObj(o)));
   if (!pointsOnly) (st.drawnSats || []).forEach(s => consider(s.v, 10, () => satObj(s.x)));
+  // every star that is drawn can be tapped: catalogue stars, and when zoomed in the faint ones of the deep catalogue
+  const sLim = Math.min(show.mag, st.drawnStarLim || 5.5);
   for (let k = 0; show.stars && k < Solver.cat.n; k++) {
-    const m = STARS[3 * k + 2]; if (m > Math.min(5.5, show.mag)) break;          // catalog is sorted by brightness
+    const m = STARS[3 * k + 2]; if (m > sLim) break;          // catalog is sorted by brightness
     consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
+  }
+  if (show.stars && sLim > 6 && DEEP.n) {
+    const tap = Solver.pixToSky(sol, (px - fit.ox) / fit.sc, (py - fit.oy) / fit.sc), rad = Math.atan(lim / fit.sc / sol.f) * R2D * 1.3;
+    const dv = DEEP.v, dm = DEEP.m;
+    if (tap) deepNear(tap, Math.max(0.01, rad), sLim, k => {
+      const v = [dv[3 * k], dv[3 * k + 1], dv[3 * k + 2]];
+      consider(v, -1 - (dm[k] - 6) * 0.5, () => { const rd = Solver.v2radec(v); return deepStarObj(rd.ra, rd.dec, dm[k]); });
+    });
   }
   return best ? best() : null;
 }
