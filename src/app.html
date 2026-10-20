@@ -1711,7 +1711,7 @@ function updateGuide() {
   if (!tv) {
     $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimuth"; $("altW").textContent = "Altitude";
     $("totalTxt").textContent = T.name + (th.alt < 0 ? " is below the horizon" : " is " + fmtDeg(th.alt, 0) + " high, towards " + compass(th.az));
-    $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + "Tap Locate and the arrows will show the way.";
+    $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + (T.kind === "sat" && th.alt < 0 ? passText(T) : "Tap Locate and the arrows will show the way.");
     lastGuide = null; return;
   }
   const ph = horiz(tv, t);
@@ -1728,6 +1728,7 @@ function updateGuide() {
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
   $("totalTxt").textContent = th.alt < 0 ? T.name + " is below the horizon " + (st.tOff ? "at " + fmtClock(skyDate()) : "right now") : hit ? T.name + " should be in the eyepiece" : fmtDeg(sep) + " to " + T.name;
   const age = Math.round((Date.now() - st.solAt) / 1000);
+  if (T.kind === "sat" && th.alt < 0) { $("totalSub").textContent = passText(T); lastGuide = { ph, th, sep }; return; }
   $("totalSub").textContent = (T.id === "Sun" ? "⚠ Solar filter on the front, finder covered! " : "") + (ph.alt > 80 ? "Near the zenith: small nudges change the azimuth a lot. " : "")
     + (st.solMode === "compass" ? "by compass, approximate" : st.solMode === "track" ? "via motion sensor" : st.source === "video" ? age + " s ago" : "");
   lastGuide = { ph, th, sep };
@@ -2222,6 +2223,34 @@ function satState(x, date) {
 }
 function satVec(x, date) { const s = satState(x, date); return s ? s.v : [0, 0, -1]; }
 // All satellites above the horizon, recomputed at most 4 times a second (they move up to about 1° per second)
+// The next time a satellite comes above the horizon (within 24 hours; the ISS's passes come in groups that can be
+// more than 12 hours apart): when, from where, how high, and whether it can be
+// seen (lit by the Sun while the sky is dark). Cached for a minute.
+const passCache = {};
+function nextPass(x) {
+  const now = skyDate(), key = cfg.lat + "|" + cfg.lon, c = passCache[x.norad];
+  if (c && Math.abs(now - c.at) < 60000 && c.key === key) return c.pass;
+  const sunAlt = d => { const t = A.MakeTime(d); return horiz(targetById("Sun").vec(t), t).alt; };
+  let pass = null;
+  for (let ms = 30000; ms <= 24 * 3600e3 && !pass; ms += 30000) {
+    const d = new Date(now.getTime() + ms), q = satState(x, d); if (!q || q.alt <= 0) continue;
+    let top = q, visible = false;
+    for (let m = 0; m <= 25 * 60e3; m += 20000) {
+      const d2 = new Date(d.getTime() + m), q2 = satState(x, d2); if (!q2 || q2.alt <= 0) break;
+      if (q2.alt > top.alt) top = q2;
+      if (!visible && q2.lit && q2.alt > 10 && sunAlt(d2) < -6) visible = true;
+    }
+    pass = { at: d, az: q.az, top: top.alt, visible };
+  }
+  passCache[x.norad] = { at: now.getTime(), key, pass };
+  return pass;
+}
+function passText(T) {
+  const x = T && T.kind === "sat" && SAT.list.find(q => "SAT" + q.norad === T.id); if (!x) return "";
+  const pp = nextPass(x); if (!pp) return "Not above the horizon in the next 24 hours.";
+  const today = skyDate().toDateString() === pp.at.toDateString();
+  return "Next above the horizon " + (today ? "at " : "tomorrow at ") + fmtClock(pp.at) + ", rising in the " + compass(pp.az) + ", up to " + Math.round(pp.top) + "° high" + (pp.visible ? ", visible." : ", but not visible (daylight or in Earth’s shadow).");
+}
 function satsNow() {
   if (!satsOn()) return [];
   const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + st.tOff;
@@ -2877,20 +2906,25 @@ function drawOverlay(dpr) {
   }
   // Satellites: lit ones bright with a short tail showing where they move, those in Earth's shadow dim
   st.drawnSats = [];
-  if (show.sats && satsOn()) {
-    const sats = satsNow(), d0 = skyDate();
+  const tSat = /^SAT\d+$/.test(cfg.target || "") && SAT.list.find(x => "SAT" + x.norad === cfg.target);
+  if ((show.sats && satsOn()) || tSat) {
+    const d0 = skyDate(), sats = show.sats && satsOn() ? satsNow().slice() : [];
+    // the target is always drawn: also below the horizon (dimmed) and with satellites switched off in the filter
+    if (tSat && !sats.some(q => q.x === tSat)) { const q = satState(tSat, d0); if (q) sats.push(Object.assign(q, { x: tSat })); }
     c.font = `${11.5 * dpr}px ${col("--font-ui")}`;
     for (const s of sats) {
-      if (s.alt < 0) continue;
+      const tgt = "SAT" + s.x.norad === cfg.target;
+      if (s.alt < 0 && !tgt) continue;
       const p = Solver.skyToPix(sol, s.v); if (!p || p.z < 0.2 || !inView(p)) continue;
-      const [x, y] = P(p.x, p.y), iss = s.x.name === "ISS", tgt = "SAT" + s.x.norad === cfg.target;
+      const [x, y] = P(p.x, p.y), iss = s.x.name === "ISS";
+      c.globalAlpha = s.alt < 0 ? 0.55 : 1;
       if (s.lit) {
         const back = satState(s.x, new Date(d0.getTime() - 20000)), q = back && Solver.skyToPix(sol, back.v);
         if (q && q.z > 0.2) { const [bx, by] = P(q.x, q.y); c.strokeStyle = "rgba(140,220,255,.55)"; c.lineWidth = 2 * dpr; c.beginPath(); c.moveTo(bx, by); c.lineTo(x, y); c.stroke(); }
         c.fillStyle = "#9be3ff"; c.beginPath(); c.arc(x, y, (iss ? 4 : 2.6) * dpr, 0, 7); c.fill();
       } else { c.strokeStyle = "rgba(150,170,190,.6)"; c.lineWidth = 1.2 * dpr; c.beginPath(); c.arc(x, y, 2.4 * dpr, 0, 7); c.stroke(); }
-      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name, x + 8 * dpr, y - 8 * dpr); }
-      st.drawnSats.push(s);
+      if (iss || tgt || (s.lit && zoom.z >= 1.5)) { c.fillStyle = s.lit ? "#9be3ff" : "rgba(150,170,190,.8)"; objLabel(c, s.x.name + (s.alt < 0 ? " (below the horizon)" : ""), x + 8 * dpr, y - 8 * dpr); }
+      c.globalAlpha = 1; st.drawnSats.push(s);
     }
     c.fillStyle = col("--fg");
   }
@@ -3532,7 +3566,7 @@ function syncTargetPanel(force) {
   fillPlanetBox($("tgtPlanet"), T.id);
   const tn = nightPlan(), p = T.kind === "sat" ? null : rowPlan(T.id, tn), box = $("tgtTonight"); box.textContent = "";
   if (p) fillTonight(box, p);
-  else { const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; const d = document.createElement("div"); d.textContent = T.kind === "sat" ? "A satellite: it crosses the sky in a few minutes." : "–"; box.append(k, d); }
+  else { const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; const d = document.createElement("div"); d.textContent = T.kind === "sat" ? (vecNow(T) && horiz(vecNow(T), skyNow().t).alt > 0 ? "Above the horizon now: it crosses the sky in a few minutes." : passText(T)) : "–"; box.append(k, d); }
   const S = sets(), stt = document.createElement("div"); stt.className = "st";
   const seenN = obs.log.filter(e => e.obj === T.id && e.result !== "miss").length;
   [[S.list.has(T.id), "Planned", "on"], [S.starred.has(T.id), "Starred", "on"], [S.tonight.has(T.id), "Seen tonight", "ok"], [!S.tonight.has(T.id) && seenN > 0, "Seen " + seenN + "×", "ok"]]

@@ -239,6 +239,21 @@ const TESTS = {
     await done(p);
   },
 
+  // a satellite as target: drawn also below the horizon, next pass (an ISS-like orbit with epoch on the test night)
+  async satellite() {
+    const cks = l => { let s = 0; for (const ch of l.slice(0, 68)) s += ch === '-' ? 1 : /\d/.test(ch) ? +ch : 0; return l.slice(0, 68) + (s % 10); };
+    const l1 = cks('1 25544U 98067A   26293.50000000  .00016717  00000-0  10270-3 0  9990'), l2 = cks('2 25544  51.6400 100.0000 0005000  90.0000 270.0000 15.50000000400000');
+    const p = await page({ time: new Date('2026-10-20T17:16:00+02:00'), init: `window.__tle = ${JSON.stringify({ sats: [{ name: 'ISS (ZARYA)', l1, l2 }] })};
+      const f0 = window.fetch; window.fetch = (u, o) => String(u).includes('/api/tle') ? Promise.resolve(new Response(JSON.stringify(window.__tle), { headers: { 'content-type': 'application/json' } })) : f0(u, o);` });
+    await p.waitForFunction(() => SAT.ok, null, { timeout: 10000 });
+    await ev(p, () => { selectTarget('SAT25544'); cfg.show.sats = false; st.filterVer++; const t = skyNow().t, h = horiz(vecNow(targetById('SAT25544')), t); st.mapView = { az: h.az, alt: h.alt, fov: 60 }; lastSig = []; updateGuide(); });
+    await wait(p, 600);
+    ok(await ev(p, () => st.drawnSats.length) === 1, 'the target satellite is drawn below the horizon, with satellites filtered out');
+    const sub = await ev(p, () => $('totalSub').textContent);
+    ok(/^Next above the horizon (at|tomorrow at) .+, rising in the .+, up to \d+° high/.test(sub), 'the line at the top gives the next pass', sub);
+    await done(p);
+  },
+
   // locate with a fake camera of a star field, diagnostics
   async diagnostics() {
     const p = await page({ perms: ['camera'], init: () => {
