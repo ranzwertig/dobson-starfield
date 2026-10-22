@@ -443,6 +443,11 @@ const TESTS = {
     await ev(p, () => hint('Test message', 20000)); await wait(p, 200);
     await p.tap('#hint .hx'); await wait(p, 200);
     ok(await ev(p, () => $('hint').hidden), 'a message closes with its ✕');
+    await ev(p, () => { cfg.infoHints = false; hint('Filter off: the map shows everything again.', 5000); }); await wait(p, 100);
+    ok(await ev(p, () => $('hint').hidden), 'with info messages off, a confirmation isn’t shown');
+    await ev(p, () => hint('No camera found. Check that a camera is connected.', 5000)); await wait(p, 100);
+    ok(await ev(p, () => !$('hint').hidden), '… but a warning still is');
+    await ev(p, () => { hint(null); cfg.infoHints = true; });
     await ev(p, () => { cfg.target = 'M45'; updateGuide(); }); await p.tap('#cornerHide'); await wait(p, 400);
     ok(await ev(p, () => $('corner').classList.contains('away') && !$('cornerTab').hidden && $('cornerTab').classList.contains('tgt')), 'the pills hide, a tab with a target dot stays at the edge');
     ok(await ev(p, () => cfg.cornerAway === true), 'hidden pills are remembered');

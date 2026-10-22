@@ -1136,6 +1136,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
         <label class="check"><input type="checkbox" id="optReadout"> Position numbers at the top right (field of view, accuracy, telescope position, location)</label>
         <label class="check"><input type="checkbox" id="optLabels"> Labels next to the buttons</label>
+        <label class="check"><input type="checkbox" id="optInfoHints"> Info messages (modes switched, confirmations). Warnings and what you have to do are always shown.</label>
       </div>
     </fieldset>
     <fieldset data-stab="general" id="backup">
@@ -1336,9 +1337,14 @@ const st = {
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
 
 function setStatus(text, kind) { $("statusText").textContent = text; $("dot").className = "dot" + (kind ? " " + kind : ""); }
-// A short message below the menu button; it goes by itself after ms, or with its ✕
+// A short message below the menu button; it goes by itself after ms, or with its ✕.
+// Info messages (a mode switched, a confirmation) can be turned off in the settings; what needs attention can't:
+// warnings, errors and steps to do (they start with Tap / Centre / Point / Turn on, or say what is missing or wrong).
+const hintNeedsYou = t => /^(tap|centre|point the|turn on|turn the phone)\b/i.test(t) || t.includes("⚠")
+  || /\b(no|not|could not|couldn’t|can’t|cannot|isn’t|doesn’t|too few|blocked|failed|outside|rejected|in use|needs?|never|restarted|rotated|full|too much|differs)\b/i.test(t);
 function hint(text, ms) {
   const h = $("hint"); if (!text) { h.hidden = true; return; }
+  if (cfg.infoHints === false && !hintNeedsYou(text)) return;
   if (!h.firstChild || !h.querySelector(".ht")) {
     h.innerHTML = '<span class="ht"></span><button class="iconbtn hx" aria-label="Close the message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
     h.querySelector(".hx").onclick = () => { clearTimeout(hint.t); h.hidden = true; };
@@ -4918,7 +4924,7 @@ function syncSettings() {
   $("optFill").checked = cfg.fill; 
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
-  document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels;
+  document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels; $("optInfoHints").checked = cfg.infoHints !== false;
   $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
@@ -5799,6 +5805,7 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
 $("optDiag").onchange = () => { cfg.diag = $("optDiag").checked; save(); syncSettings(); if (cfg.diag) hint("Diagnostics on: after a Locate, tap the status at the bottom left.", 4000); };
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
+$("optInfoHints").onchange = () => { cfg.infoHints = $("optInfoHints").checked; save(); if (!cfg.infoHints) hint(null); };
 [["optFill", "fill"], ["optDet", "det"], ["optRed", "red"], ["optLabels", "fabLabels"]].forEach(([id, k]) => $(id).onchange = () => { cfg[k] = $(id).checked; save(); syncSettings(); });
 $("btnTeleReset").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); };
 $("btnTeleOff").onclick = () => { setTele({ x: 0, y: 0 }); syncSettings(); updateGuide(); lastSig = []; hint("Eyepiece point reset to the image centre. Set it again with Eyepiece point on a star in the eyepiece.", 4000); };
