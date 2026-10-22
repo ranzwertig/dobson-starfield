@@ -108,7 +108,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 .notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: var(--fabs-x, 74px); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
-.wiz { background: rgba(17,21,26,.96); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px 12px; display: grid; gap: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+/* The assistant sits at the bottom left, in front of the pills, so the middle of the screen (the crosshair) and the
+   top stay free; it keeps clear of the button column on the right */
+.wiz { position: absolute; z-index: 6; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: var(--fabs-x, 74px);
+  bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px)); max-width: 440px; max-height: 46%; overflow-y: auto; box-sizing: border-box;
+  background: rgba(17,21,26,.96); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px 12px; display: grid; gap: 8px; box-shadow: 0 -4px 24px rgba(0,0,0,.45); }
+.wiz .wizc { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -2px; padding: 0 2px; } .wiz .wizc .chip { flex: none; }
 .wiz .wizhead { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: -4px -8px -4px 0; }
 .wiz .wizhead .iconbtn { width: 30px; height: 30px; } .wiz .wizhead svg { width: 16px; height: 16px; }
 .wiz h3 { margin: 0; font-size: 17px; font-weight: 600; }
@@ -653,12 +658,6 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
 
     <div class="notices" id="notices">
-    <section class="wiz" id="wiz" hidden aria-live="polite" aria-label="Setup assistant">
-      <div class="wizhead"><span id="wizStep"></span><button class="iconbtn" id="wizClose" aria-label="Close the assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <h3 id="wizTitle"></h3>
-      <div id="wizBody"></div>
-      <div class="wizbtns" id="wizBtns"></div>
-    </section>
     <div class="update" id="calBar" role="status" hidden>
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
       <span id="calBarTxt"></span>
@@ -713,6 +712,12 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="tag diaglive" id="diagLive" hidden></div>
       <div class="tag" id="srcTag">Sky map</div>
     </div>
+    <section class="wiz" id="wiz" hidden aria-live="polite" aria-label="Setup assistant">
+      <div class="wizhead"><span id="wizStep"></span><button class="iconbtn" id="wizClose" aria-label="Close the assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <h3 id="wizTitle"></h3>
+      <div id="wizBody"></div>
+      <div class="wizbtns" id="wizBtns"></div>
+    </section>
     <button class="menu-pill" id="btnMenu" aria-label="Zenigo menu">
       <img src="logo.svg" alt="" width="30" height="30">
       <b class="wordmark" aria-hidden="true">zeni<i>go</i></b>
