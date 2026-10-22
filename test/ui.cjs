@@ -369,6 +369,20 @@ const TESTS = {
     await done(p);
   },
 
+  // many search results: the panel scrolls with a finger (the list used to be cut off at the bottom)
+  async searchScroll() {
+    const p = await page();
+    await ev(p, () => openSearch()); await wait(p, 500); await p.fill('#q', 'm'); await wait(p, 400);
+    const sz = await ev(p, () => { const i = $('searchSheet').querySelector('.inner'); return [i.scrollHeight, i.clientHeight, $('results').children.length]; });
+    ok(sz[0] > sz[1] + 200, 'all results are there to scroll to', sz);
+    const cdp = await p.context().newCDPSession(p);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 200, y: 700 }] });
+    for (let k = 1; k <= 12; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 200, y: 700 - 400 * k / 12 }] }); await wait(p, 16); }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await wait(p, 500);
+    ok(await ev(p, () => $('searchSheet').querySelector('.inner').scrollTop) > 200, 'a swipe up scrolls the results');
+    await done(p);
+  },
+
   // details opened from Tonight go back to Tonight
   async tonightBack() {
     const p = await page();

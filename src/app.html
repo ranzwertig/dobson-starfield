@@ -600,7 +600,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 .chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
 .chip.sel { border-color: var(--target); color: var(--target); }
 .chip.below { opacity: .45; }
-.results { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.results { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; overflow: clip; min-height: max-content; }   /* not a scroll container: hidden would let the grid squeeze it to the panel and cut off the results instead of scrolling the panel */
 .results button { display: flex; width: 100%; gap: 10px; align-items: baseline; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 11px 12px; cursor: pointer; }
 .results button:last-child { border-bottom: 0; }
 .results button:hover, .results button:focus-visible { background: var(--raise); outline: none; }
