@@ -375,6 +375,10 @@ const TESTS = {
     await ev(p, () => openSearch()); await wait(p, 500); await p.fill('#q', 'm'); await wait(p, 400);
     const sz = await ev(p, () => { const i = scroller($('searchSheet')); return [i.scrollHeight, i.clientHeight, $('results').children.length]; });
     ok(sz[0] > sz[1] + 200, 'all results are there to scroll to', sz);
+    // the way Safari treated the box (squeezed to the panel): the rows must still keep their full height
+    const saf = await ev(p, async () => { const r = $('results'), b = scroller($('searchSheet')); r.style.overflow = 'hidden'; r.style.minHeight = 'auto';
+      await new Promise(x => setTimeout(x, 50)); const v = [b.scrollHeight, b.clientHeight]; r.style.overflow = r.style.minHeight = ''; return v; });
+    ok(saf[0] > saf[1] + 200, 'the results keep their height even where the box could be squeezed', saf);
     const cdp = await p.context().newCDPSession(p);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 200, y: 700 }] });
     for (let k = 1; k <= 12; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 200, y: 700 - 400 * k / 12 }] }); await wait(p, 16); }

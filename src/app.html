@@ -454,6 +454,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet.open .inner { transform: translateY(0); }
 /* never wider than the panel: a grid column sized to its content (long select options, number inputs) would scroll sideways */
 .sheet .inner { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
+/* rows as tall as their content: a panel scrolls instead of squeezing a box (Safari did that with the results list) */
+.sheet .inner, .split > .sbody { grid-auto-rows: max-content; }
 .sheet fieldset, .sheet label { min-width: 0; }
 .sheet input, .sheet select, .sheet textarea { min-width: 0; max-width: 100%; }
 .sheet select { text-overflow: ellipsis; }
