@@ -387,6 +387,29 @@ const TESTS = {
     await done(p);
   },
 
+  // categories under the search field: conditions together, lists and kinds either way; "Suits you?" in the details
+  async categories() {
+    const p = await page();
+    await ev(p, () => { setOptics({ scope: 1200, ap: 203 }); cfg.searchCats = []; }); await p.waitForFunction(() => LISTS.ok && NGC.length > 1000, null, { timeout: 10000 });
+    await ev(p, () => openSearch()); await wait(p, 400);
+    const chips = await ev(p, () => [...document.querySelectorAll('#chips .chip')].map(b => b.textContent));
+    ok(chips.includes('My telescope') && chips.includes('Good now') && chips.includes('Popular') && chips.includes('Herschel 400'), 'the chips are categories now', chips);
+    const tap = async label => { await p.locator('#chips .chip', { hasText: label }).first().tap(); await wait(p, 300); };
+    await tap('Popular'); const nPop = await ev(p, () => $('results').querySelectorAll('.rrow').length);
+    ok(nPop > 40 && nPop <= 62, 'Popular lists the curated showpieces', nPop);
+    await tap('My telescope'); await tap('Good now');
+    const r = await ev(p, () => { const ids = [...$('results').querySelectorAll('.rrow b')].map(b => b.textContent);
+      return { n: ids.length, bad: ids.filter(id => { const T = targetById(id); return !(LISTS.pop.has(T.id) && scopeFit(T).ok && nowFit(T).ok); }) }; });
+    ok(r.n > 5 && r.bad.length === 0, 'Popular + My telescope + Good now: only objects that meet all three', r);
+    await tap('Popular'); await tap('Galaxies');
+    const g = await ev(p, () => [...$('results').querySelectorAll('.rrow b')].map(b => targetById(b.textContent)).every(T => catKind(T) === 'gal'));
+    ok(g, 'a kind narrows them down to galaxies');
+    ok(await ev(p, () => cfg.searchCats.join()) === 'scope,now,gal', 'the categories are remembered');
+    await ev(p, () => { closeSheet('searchSheet'); showInfo(messierObj(MESSIER.find(r => r[0] === 'M27'))); }); await wait(p, 500);
+    ok(await ev(p, () => !$('infoFit').hidden && /Popular · Messier/.test($('infoFit').textContent) && /Telescope/.test($('infoFit').textContent)), 'the details say why it suits you', await ev(p, () => $('infoFit').textContent));
+    await done(p);
+  },
+
   // details opened from Tonight go back to Tonight
   async tonightBack() {
     const p = await page();

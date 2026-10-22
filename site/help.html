@@ -33,6 +33,7 @@
     <a class="sub" href="#barlow">Barlow lens</a>
     <a class="sub" href="#best-eyepiece">Best eyepiece</a>
     <span class="grp">Planning</span>
+    <a href="#categories">Categories in Find target</a>
     <a href="#targets">Targets and object details</a>
     <a class="sub" href="#solar-system">Moon and planets in detail</a>
     <a href="#sun">Observing the Sun</a>
@@ -110,7 +111,7 @@
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg>List</dt>
       <dd>Your <a href="#list">observing list</a>: planned for tonight, seen tonight and starred; the number shows how many planned objects are still to do.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>Find target</dt>
-      <dd>Choose what you want to look at: quick picks, a list of what is well placed now (higher than 15°), or search by name, Messier number or star name; the search field is ready to type as soon as it opens. A quick pick becomes the target right away; a result in the list opens its details (with tonight’s bar), where <b>Set as target</b> makes it the target and ← goes back to the search. The current target is also shown as a pill at the bottom left: tap it for the target panel, ✕ clears the target.</dd>
+      <dd>Choose what you want to look at: a list of what is well placed now (higher than 15°), categories, or search by name, Messier number or star name; the search field is ready to type as soon as it opens. See <a href="#categories">Categories</a>. A result in the list opens its details (with tonight’s bar), where <b>Set as target</b> makes it the target and ← goes back to the search. The current target is also shown as a pill at the bottom left: tap it for the target panel, ✕ clears the target.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Filter</dt>
       <dd>Choose what the map shows. Lights up while a filter is active. See <a href="#filter">Filter</a>.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>Eyepiece point</dt>
@@ -218,6 +219,18 @@
     <p>When your widest eyepiece is a different one, it says to find the object with that first and then switch. The <b>exit pupil</b> is eyepiece focal length ÷ focal ratio, so the app needs the <b>aperture</b> (mirror diameter, 200 mm for an 8-inch Dobson). Enter it in Settings → Telescope. Without the aperture or without eyepieces, the details show a note with a link to these settings instead. The settings then show the focal ratio, the highest useful magnification (about twice the aperture in mm) and each eyepiece’s exit pupil.</p>
 
     <p class="part" id="planning">Planning</p>
+
+    <h2 id="categories">Categories in Find target</h2>
+    <p>The chips under the search field are categories. Tap one or more; they stay selected for next time, and typing narrows the list down further.</p>
+    <dl class="ref">
+      <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and framed well by one of your eyepieces. Objects far larger than your widest field are left out, they are better in binoculars. Needs the aperture in <a href="#settings-telescope">Settings → Telescope</a>; the sky is assumed to be dark.</dd>
+      <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°) and still high in an hour, the sky dark enough, and galaxies and nebulae not next to a bright Moon. With another <a href="#time">time</a> set, it reads “Good at …”.</dd>
+      <dt>Popular</dt><dd>A curated list of about 60 showpieces for small and medium telescopes from mid-northern latitudes: the Moon and bright planets, the Pleiades, the Double Cluster, M13, the Ring, Dumbbell and Orion Nebulae, the Andromeda, Whirlpool and Sombrero Galaxies, the Needle Galaxy and more.</dd>
+      <dt>Messier, Caldwell, Herschel 400</dt><dd>The classic observing lists: Messier’s 110 objects; Patrick Moore’s Caldwell list of 109 more for amateur telescopes; and the Herschel 400, 400 of William Herschel’s objects chosen for telescopes from about 15 cm.</dd>
+      <dt>Solar system, Galaxies, Clusters, Nebulae</dt><dd>The kind of object.</dd>
+    </dl>
+    <p><b>Combining:</b> My telescope, Good now and Popular all have to apply, so together they show the popular objects that suit your telescope and are well placed now. Among the lists and among the kinds one is enough: Messier and Caldwell show both lists; add Galaxies to see only their galaxies. The best matches come first.</p>
+    <p>Why an object suits you or not is in its details, under <b>Suits you?</b>: the lists it is on, how bright it is for your telescope and which eyepiece frames it, and where it stands at the shown time.</p>
 
     <h2 id="targets">Targets and object details</h2>
     <p>Targets are the Sun, the Moon, the planets, all 110 Messier objects, about 1,900 further deep-sky objects (NGC, IC and other catalogues, for example “NGC 869” or “North America Nebula”) and the bright named stars. The <b>Target</b> button shows the current target in a panel: directions from the crosshair, its altitude and direction now, tonight’s visibility and what you can do with it. The Moon is drawn on the map in its current phase, at true size when zoomed in, with the lit side towards the Sun; planets get their true size too, and zoomed in on Jupiter you see its four big moons.</p>

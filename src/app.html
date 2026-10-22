@@ -604,6 +604,11 @@ a.btn { text-decoration: none; color: var(--fg); }
 .chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
 .chip.sel { border-color: var(--target); color: var(--target); }
 .chip.below { opacity: .45; }
+.chip.cat.sel { border-color: var(--accent); color: var(--accent); background: rgba(240,168,69,.1); }
+.chips .cdiv { width: 1px; align-self: stretch; background: var(--line); margin: 2px 2px; }
+.fitbox .fitl { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+.fitbox .fitl b { color: var(--fg); font-weight: 600; }
+.fitbox .fitl.good b { color: var(--ok); } .fitbox .fitl.bad b { color: #ff9a8f; }
 .results { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; overflow: clip; min-height: max-content; }   /* not a scroll container: hidden would let the grid squeeze it to the panel and cut off the results instead of scrolling the panel */
 .results button { display: flex; width: 100%; gap: 10px; align-items: baseline; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 11px 12px; cursor: pointer; }
 .results button:last-child { border-bottom: 0; }
@@ -779,6 +784,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="mphase" id="infoMoon" hidden></div>
     <div class="pbox" id="infoPlanet" hidden></div>
     <div class="ttonight" id="infoTonight" hidden></div>
+    <div class="ttonight fitbox" id="infoFit" hidden></div>
     <div class="ttonight epbox" id="infoEp" hidden></div>
     <div class="facts" id="infoFacts"></div>
     <div class="ohist" id="infoHist" hidden></div>
@@ -881,6 +887,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="mphase" id="tgtMoon" hidden></div>
     <div class="pbox" id="tgtPlanet" hidden></div>
     <div class="ttonight" id="tgtTonight"></div>
+    <div class="ttonight fitbox" id="tgtFit" hidden></div>
     <div class="ttonight epbox" id="tgtEp" hidden></div>
     <div class="facts" id="tgtFacts"></div>
     <div class="ohist" id="tgtHist" hidden></div>
@@ -1649,7 +1656,12 @@ PLANETS.forEach(([de, en]) => TARGETS.push({ id: en, name: de, sub: en === "Moon
 MESSIER.forEach(([id, ra, dec, mag, nm, typ, desig]) => TARGETS.push({ id, name: id, sub: [nm, typ, desig, mag != null ? mag + " mag" : ""].filter(Boolean).join(" · "), kind: "dso", mag, ra, dec, vec: () => Solver.radec2v(ra, dec) }));
 Object.entries(STARLABELS).forEach(([i, nm]) => { const k = +i; if (STARS[3 * k + 2] > 3.2) return;
   TARGETS.push({ id: "S" + k, name: nm, sub: "Star · " + STARS[3 * k + 2].toFixed(1) + " mag", kind: "star", mag: STARS[3 * k + 2], vec: () => Solver.radec2v(STARS[3 * k], STARS[3 * k + 1]) }); });
-const QUICK = ["Sun", "Moon", "Jupiter", "Saturn", "M31", "M45", "M42", "M13", "M57", "M44", "M27"];
+// Categories under the search field. Conditions (telescope, now, popular) all have to hold; within the lists and within
+// the kinds one is enough (Messier or Caldwell; galaxies or clusters).
+const CATS = [
+  { id: "scope", g: "cond", label: "My telescope" }, { id: "now", g: "cond", label: "Good now" }, { id: "pop", g: "cond", label: "Popular" },
+  { id: "messier", g: "list", label: "Messier" }, { id: "caldwell", g: "list", label: "Caldwell" }, { id: "h400", g: "list", label: "Herschel 400" },
+  { id: "solar", g: "kind", label: "Solar system" }, { id: "gal", g: "kind", label: "Galaxies" }, { id: "clusters", g: "kind", label: "Clusters" }, { id: "neb", g: "kind", label: "Nebulae" }];
 function targetById(id) {
   let T = TARGETS.find(t => t.id === id);
   if (!T && /^S\d+$/.test(id) && typeof starObj === "function") { const o = starObj(+id.slice(1)); T = { id, name: o.name, sub: o.desig, kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); }
@@ -1660,21 +1672,58 @@ const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").repla
 
 function renderChips() {
   $("searchClear").hidden = !cfg.target;
-  const t = skyNow().t, box = $("chips"); box.textContent = "";
-  QUICK.forEach(id => {
-    const T = targetById(id); if (!T) return;
-    const alt = horiz(T.vec(t), t).alt;
-    const b = document.createElement("button"); b.className = "chip" + (cfg.target === id ? " sel" : "") + (alt < 0 ? " below" : "");
-    b.textContent = T.name;
-    b.title = alt < 0 ? "Below the horizon" : "Altitude " + alt.toFixed(0) + "°";
-    b.onclick = () => { selectTarget(id); afterPick("searchSheet", id); }; box.append(b);
+  const box = $("chips"); box.textContent = ""; const on = new Set(cfg.searchCats || []);
+  let g0 = null;
+  CATS.forEach(c => {
+    if (g0 && c.g !== g0) { const d = document.createElement("span"); d.className = "cdiv"; box.append(d); }
+    g0 = c.g;
+    const b = document.createElement("button"); b.className = "chip cat" + (on.has(c.id) ? " sel" : ""); b.setAttribute("aria-pressed", String(on.has(c.id)));
+    b.textContent = c.id === "now" && st.tOff ? "Good at " + fmtClock(skyDate()) : c.label;
+    b.onclick = () => { on.has(c.id) ? on.delete(c.id) : on.add(c.id); cfg.searchCats = CATS.map(x => x.id).filter(x => on.has(x)); save(); renderChips(); showResults(); scroller($("searchSheet")).scrollTop = 0; };
+    box.append(b);
   });
 }
+// The kind of a search entry for the categories
+function catKind(T) {
+  if (T.kind === "planet") return "solar";
+  if (T.kind !== "dso") return null;
+  const c = dsoCls(T.id); return c === "gal" ? "gal" : c === "glob" || c === "open" ? "clusters" : "neb";
+}
+function dsoCls(id) { const m = MSV.find(x => x.id === id); if (m) return m.cls; const n = NGC.find(x => x.id === id); return n ? n.cls : "neb"; }
+function inCat(T, c) {
+  switch (c) {
+    case "pop": return LISTS.pop.has(T.id);
+    case "messier": return /^M\d+$/.test(T.id);
+    case "caldwell": return LISTS.caldwell.has(T.id);
+    case "h400": return LISTS.h400.has(T.id);
+    case "scope": { const f = scopeFit(T); return !!f && f.ok; }
+    case "now": return nowFit(T).ok;
+    default: return catKind(T) === c;
+  }
+}
+// Entries for the active categories, best first
+function catList(cats, pool) {
+  const has = g => cats.filter(c => CATS.find(x => x.id === c).g === g);
+  const cond = has("cond"), lists = has("list"), kinds = has("kind");
+  const listed = T => /^M\d+$/.test(T.id) || LISTS.pop.has(T.id) || LISTS.caldwell.has(T.id) || LISTS.h400.has(T.id);
+  const out = pool.filter(T => (T.kind === "planet" || T.kind === "dso") && T.id !== "Sun" && (listed(T) || !/^(PGC|LDN|B|Ced) /.test(T.id))
+    && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
+  const score = T => (cats.includes("scope") ? (scopeFit(T)?.score || 0) : 0) + (cats.includes("now") ? nowFit(T).score : 0) + (LISTS.pop.has(T.id) ? 0.3 : 0) + (listed(T) ? 0.3 : 0) - (T.mag ?? 10) / 50;
+  return out.map(T => [T, score(T)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+}
 function showResults() {
-  const q = norm($("q").value), box = $("results"), t = skyNow().t;
+  const q = norm($("q").value), box = $("results"), t = skyNow().t, cats = cfg.searchCats || [];
   box.textContent = "";
   let list;
-  if (!q) {
+  const note = txt => { const g = document.createElement("div"); g.className = "grp"; g.textContent = txt; box.append(g); };
+  if (cats.length) {
+    // categories: the text narrows them down further
+    const nall = T => T._na ?? (T._na = norm(T.name + T.sub)), nid = T => T._ni ?? (T._ni = norm(T.id));
+    if (cats.includes("scope") && !aperture()) { note("Enter your telescope’s aperture in the settings for “My telescope”"); return; }
+    const all = catList(cats, q ? TARGETS.filter(T => nall(T).includes(q) || nid(T) === q) : TARGETS);
+    list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
+    note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
+  } else if (!q) {
     list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => x.alt > 15)
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
     const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (above 15°)"; box.append(g);
@@ -1717,6 +1766,90 @@ function showResults() {
   if (pending.length) requestAnimationFrame(step);
 }
 const searchBars = { gen: 0 };
+// How well an object suits this telescope: bright enough for its aperture (for galaxies and nebulae the brightness
+// spread over their area counts) and framed well by one of the eyepieces. Planets and the Moon always suit.
+// null without an aperture. Kept until the optics change.
+const fitCache = { scope: new Map(), sv: -1, now: new Map(), nk: "" };
+function scopeFit(T) {
+  const D = aperture(); if (!D) return null;
+  if (fitCache.sv !== (st.opticsVer || 0)) { fitCache.scope.clear(); fitCache.sv = st.opticsVer || 0; }
+  if (fitCache.scope.has(T.id)) return fitCache.scope.get(T.id);
+  const f = scopeFitCalc(T, D); fitCache.scope.set(T.id, f); return f;
+}
+function scopeFitCalc(T, D) {
+  const why = [], lim = 6.5 + 5 * Math.log10(D / 7);   // faintest star, in a dark sky
+  if (T.kind === "planet") {
+    const small = T.id === "Uranus" || T.id === "Neptune" || T.id === "Mercury";
+    return { ok: !small || D >= 100, score: small ? 0.35 : 0.9, why: [small ? "A small disc: shows as a tiny coloured dot." : "Shows detail in any telescope."] };
+  }
+  if (T.kind !== "dso") return { ok: false, score: 0, why: [] };
+  const m = MESSIER.find(r => r[0] === T.id), n = !m && NGC.find(x => x.id === T.id);
+  const cls = m ? dsoClass(m[5]) : n ? n.cls : "neb", mag = m ? m[3] : n ? n.mag : null, size = m ? m[7] : n ? n.size : null;
+  let score = 0.6, ok = true;
+  if (mag == null) { ok = false; score = 0.25; why.push("No reliable brightness: a faint, spread-out nebula that usually needs a dark sky and a nebula filter."); }
+  else if (cls === "gal" || cls === "neb") {
+    // surface brightness in mag per square arcminute. Galaxies count as twice as long as wide, and what the eye picks up
+    // first is the brighter inner part of a galaxy or nebula: about half the listed size, a quarter of the area.
+    const a = size || 1, area = Math.PI / 4 * a * (cls === "gal" ? a / 2 : a) / 4, sb = mag + 2.5 * Math.log10(Math.max(0.05, area));
+    const sbLim = 14.0 + 1.5 * Math.log10(D / 200) + (cls === "neb" ? 0.3 : 0), mg = sbLim - sb;
+    ok = mg >= 0 && mag <= lim - 2.5; score = Math.max(0, Math.min(1, 0.55 + mg * 0.3));
+    why.push((mg >= 1 ? "Bright enough for your " : mg >= 0 ? "Visible in your " : "Probably too faint for your ") + D + " mm: " + mag.toFixed(1) + " mag spread over " + (a >= 60 ? (a / 60).toFixed(1) + "°" : Math.round(a) + "′")
+      + " (" + sb.toFixed(1) + " mag per square arcminute; it shows down to about " + sbLim.toFixed(1) + ")." + (mg < 1 && mg >= 0 ? " Needs a dark sky." : ""));
+  } else {
+    const need = cls === "pn" ? lim - 2.5 : lim - 4, mg = need - mag;
+    ok = mg >= 0; score = Math.max(0, Math.min(1, 0.55 + mg * 0.12)) + (cls === "glob" && D >= 150 ? 0.1 : 0);
+    why.push((ok ? "Bright enough for your " + D + " mm (" + mag.toFixed(1) + " mag)." : "Too faint for your " + D + " mm (" + mag.toFixed(1) + " mag).")
+      + (cls === "glob" ? (D >= 150 ? " The aperture resolves it into stars." : " With more aperture it would break up into stars.") : ""));
+  }
+  // framing: the best eyepiece for it, and whether it fits the widest field at all
+  let a = null; try { a = epAdvice({ id: T.id, kind: "dso", name: T.name }, skyNow().t); } catch (e) {}
+  if (a && size) {
+    const wf = a.widest.fov * 60 * (cls === "gal" || cls === "neb" ? 2 : 1);   // their visible part: about half the listed size
+    if (size > wf * 1.5) { ok = false; score *= 0.4; why.push("Much larger than your widest field (" + fmtField(a.widest.fov) + "): better in binoculars or the finder."); }
+    else if (size > wf * 1.05) { score *= 0.75; why.push("A little larger than your widest field (" + fmtField(a.widest.fov) + "): you see it in parts."); }
+    else if (a.best) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×): " + a.best.note + ".");
+  } else if (a && a.best) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×).");
+  return { ok, score: Math.min(1, score), why };
+}
+// How well placed it is at the shown time: high enough now and in an hour, dark enough, and for faint deep-sky objects
+// not next to a bright Moon. Kept for a minute (and per shown time).
+function nowFit(T) {
+  const sk = skyNow(), key = sk.key + "|" + Math.floor(skyDate().getTime() / 60e3);
+  if (fitCache.nk !== key) { fitCache.now.clear(); fitCache.nk = key; fitCache.env = null; }
+  if (fitCache.now.has(T.id)) return fitCache.now.get(T.id);
+  const t = sk.t, t1 = A.MakeTime(new Date(skyDate().getTime() + 3600e3));
+  if (!fitCache.env) {
+    const sun = horiz(targetById("Sun").vec(t), t).alt, mv = targetById("Moon").vec(t), moonAlt = horiz(mv, t).alt;
+    let ill = 0; try { ill = A.Illumination(A.Body.Moon, t).phase_fraction; } catch (e) {}
+    fitCache.env = { sun, mv, moonAlt, ill };
+  }
+  const E = fitCache.env, v = T.vec(t), h = horiz(v, t), h1 = horiz(T.vec(t1), t1), why = [];
+  const deep = T.kind === "dso", minAlt = deep ? 25 : 15;
+  let ok = h.alt >= minAlt && h1.alt >= minAlt - 5, score = Math.max(0, Math.min(1, (h.alt - 10) / 50));
+  why.push(h.alt < 0 ? "Below the horizon " + (st.tOff ? "then" : "now") + "." : Math.round(h.alt) + "° high in the " + compass(h.az) + (h1.alt < h.alt - 2 ? ", " + Math.max(0, Math.round(h1.alt)) + "° in an hour" : ", still rising") + ".");
+  if (deep && E.sun > -12) { ok = false; why.push("Not dark enough (Sun " + Math.round(E.sun) + "°)."); }
+  else if (!deep && T.id !== "Moon" && E.sun > -4) { ok = false; why.push("The sky is still too bright."); }
+  if (deep && E.moonAlt > 0 && E.ill > 0.4) {
+    const cls = dsoCls(T.id), sep = Math.acos(Math.max(-1, Math.min(1, v[0] * E.mv[0] + v[1] * E.mv[1] + v[2] * E.mv[2]))) * R2D;
+    if ((cls === "gal" || cls === "neb") && sep < 70) { ok = false; score *= 0.5; why.push("The Moon (" + Math.round(E.ill * 100) + " %) is " + Math.round(sep) + "° away and washes it out."); }
+    else if (cls === "gal" || cls === "neb") why.push("The Moon is up (" + Math.round(E.ill * 100) + " %), but far enough away.");
+  }
+  const f = { ok, score, why }; fitCache.now.set(T.id, f); return f;
+}
+// "Suits you" in the details and the target panel: lists, telescope, the shown time
+function fillFitBox(box, o) {
+  box.textContent = "";
+  const T = targetById(o.id); if (!T || (T.kind !== "dso" && T.kind !== "planet") || T.id === "Sun") { box.hidden = true; return; }
+  const k = document.createElement("div"); k.className = "k"; k.textContent = "Suits you?"; box.append(k);
+  const line = (head, txt, good) => { const d = document.createElement("div"); d.className = "fitl"; d.innerHTML = "<b></b> <span></span>"; d.querySelector("b").textContent = head;
+    d.querySelector("span").textContent = txt; if (good != null) d.classList.add(good ? "good" : "bad"); box.append(d); };
+  const lists = [LISTS.pop.has(T.id) && "Popular", /^M\d+$/.test(T.id) && "Messier", LISTS.caldwell.has(T.id) && "Caldwell " + LISTS.caldwell.get(T.id), LISTS.h400.has(T.id) && "Herschel 400"].filter(Boolean);
+  if (lists.length) line("Lists", lists.join(" · "));
+  const sf = scopeFit(T);
+  if (sf) line((sf.ok ? "✓ " : "✗ ") + "Telescope", sf.why.join(" "), sf.ok); else line("Telescope", "Enter your telescope’s aperture in the settings to see how well it suits it.");
+  const nf = nowFit(T); line((nf.ok ? "✓ " : "✗ ") + (st.tOff ? "At " + fmtClock(skyDate()) : "Now"), nf.why.join(" "), nf.ok);
+  box.hidden = false;
+}
 // A search result opens its details; ← (or closing them) goes back to the search, same query and place.
 // "Set as target" in the details sets it and closes both.
 const searchState = { scroll: 0, fromList: false };
@@ -2219,6 +2352,8 @@ const MSV = MESSIER.map(([id, ra, dec, mag, , type, , size]) => ({ id, mag, cls:
 // Deep catalogue, loaded after start (see loadDeep): stars 6–9 mag and about 1900 deep-sky objects beyond Messier
 const DEEP = { n: 0, v: null, m: null };
 let NGC = [];
+// Observing lists (lists.json): Caldwell number by id, Herschel 400 and a curated list of popular showpieces
+const LISTS = { ok: false, caldwell: new Map(), h400: new Set(), pop: new Set() };
 // Sky cells of about 4° × 4° (declination bands, split in right ascension), each holding its stars brightest first,
 // so drawing a small part of the sky only looks at the stars near it
 const DCELL = 4;
@@ -2459,7 +2594,9 @@ function drawMilkyWay(c, sol, boresight, halfDiag) {
 }
 async function loadDeep() {
   try {
-    const [b, d] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null)]);
+    const [b, d, li] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null),
+      fetch("lists.json").then(r => r.ok ? r.json() : null).catch(() => null)]);
+    if (li) { LISTS.caldwell = new Map(li.caldwell.map(([n, id]) => [id, n])); LISTS.h400 = new Set(li.herschel); LISTS.pop = new Set(li.popular); LISTS.ok = true; }
     if (b) {
       // decoded and indexed in pieces; DEEP is only filled in at the end, the map draws without it until then
       const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215, tick = slicer();
@@ -2472,8 +2609,10 @@ async function loadDeep() {
       Object.assign(DEEP, { n, v, m, bands });
     }
     if (d) {
-      NGC = d.map(([id, ra, dec, mag, cls, size, name, type]) => ({ id, ra, dec, mag, cls, size, name, type, v: Solver.radec2v(ra, dec) }));
-      NGC.forEach(o => TARGETS.push({ id: o.id, name: o.id, sub: [o.name, o.type, o.mag + " mag"].filter(Boolean).join(" · "), kind: "dso", ngc: true, mag: o.mag, vec: () => o.v }));
+      // objects of the observing lists the catalogue lacks come with the lists (some nebulae without a magnitude)
+      const rows = li && li.extra ? d.concat(li.extra) : d;
+      NGC = rows.map(([id, ra, dec, mag, cls, size, name, type]) => ({ id, ra, dec, mag, dm: mag ?? 9.5, cls, size, name, type, v: Solver.radec2v(ra, dec) })).sort((a, b) => a.dm - b.dm);
+      NGC.forEach(o => TARGETS.push({ id: o.id, name: o.id, sub: [o.name, o.type, o.mag != null && o.mag + " mag"].filter(Boolean).join(" · "), kind: "dso", ngc: true, mag: o.mag, vec: () => o.v }));
     }
     st.filterVer++; lastSig = []; updateGuide();
   } catch (e) {}
@@ -3073,7 +3212,7 @@ function drawOverlay(dpr) {
     });
     st.drawnNgc = [];
     if (show.ngc) for (const o of NGC) {
-      if (o.mag > dsoLim) break;
+      if (o.dm > dsoLim) break;
       if (!show[o.cls] || o.id === cfg.target) continue;
       const v = o.v; if (v[0] * boresight[0] + v[1] * boresight[1] + v[2] * boresight[2] < cosLim) continue;
       const p = Solver.skyToPix(sol, v); if (!p || p.z < zs(0.3) || !inView(p)) continue;
@@ -3814,6 +3953,7 @@ function tgtDetails(o, T, v, t) {
   const ms = MSV.find(m => m.id === T.id), ng = !ms && NGC.find(n => n.id === T.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
   if (T.kind === "sat") { const sx = SAT.list.find(x => "SAT" + x.norad === T.id), ss = sx && satState(sx, skyDate()); if (ss) facts.push(["Height", Math.round(ss.height) + " km"], ["Distance", Math.round(ss.range) + " km"]); }
+  fillFitBox($("tgtFit"), o);
   const e = curEp(); if (!fillEpBox($("tgtEp"), o.kind ? o : { ...o, kind: T.kind }) && e && T.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(e).mag) + "× · " + fmtField(epData(e).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const box = $("tgtFacts"); box.textContent = "";
@@ -4820,6 +4960,7 @@ function showInfo(o, fromList) {
   facts.push(["Altitude", h.alt < 0 ? "below horizon" : fmtDeg(h.alt)], ["Azimuth", fmtDeg(h.az) + " " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]]);
   const ms = MSV.find(m => m.id === o.id), ng = !ms && NGC.find(n => n.id === o.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
+  fillFitBox($("infoFit"), o);
   const ep = curEp(); if (!fillEpBox($("infoEp"), o) && ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
   const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
