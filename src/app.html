@@ -108,7 +108,19 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 
 .notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: var(--fabs-x, 74px); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
-.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 138px); }
+.wiz { background: rgba(17,21,26,.96); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px 12px; display: grid; gap: 8px; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+.wiz .wizhead { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: -4px -8px -4px 0; }
+.wiz .wizhead .iconbtn { width: 30px; height: 30px; } .wiz .wizhead svg { width: 16px; height: 16px; }
+.wiz h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.wiz p { margin: 0; font-size: 14px; color: #cfd6e0; line-height: 1.4; }
+.wiz .wchk { display: grid; gap: 4px; font-size: 14px; }
+.wiz .wchk div { display: flex; align-items: center; gap: 8px; }
+.wiz .wchk i { font-style: normal; width: 18px; text-align: center; color: var(--muted); } .wiz .wchk .ok i { color: var(--ok); }
+.wiz .wizbtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.wiz .wizbtns .btn { padding: 8px 14px; }
+.wiz .wizbtns .lnk { margin-right: auto; background: none; border: 0; color: var(--muted); font: 600 14px var(--font-ui); cursor: pointer; padding: 8px 0; }
+.wiz.mini { padding: 8px 12px; gap: 4px; } .wiz.mini h3 { font-size: 15px; } .wiz.mini .wizhead { display: none; }
+.notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 70px + var(--nh, 68px)); }   /* below the notices, however tall (measured) */
 .update {
   display: flex; align-items: center; gap: 10px; box-sizing: border-box;
   background: rgba(17,21,26,.96); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 10px;
@@ -639,7 +651,13 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="readout" id="rdBody" hidden></div>
     </div>
 
-    <div class="notices">
+    <div class="notices" id="notices">
+    <section class="wiz" id="wiz" hidden aria-live="polite" aria-label="Setup assistant">
+      <div class="wizhead"><span id="wizStep"></span><button class="iconbtn" id="wizClose" aria-label="Close the assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <h3 id="wizTitle"></h3>
+      <div id="wizBody"></div>
+      <div class="wizbtns" id="wizBtns"></div>
+    </section>
     <div class="update" id="calBar" role="status" hidden>
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
       <span id="calBarTxt"></span>
@@ -756,6 +774,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="label">Help</div>
     <div class="menu-list">
+      <button class="menu-item" id="btnWiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Setup assistant</span><em>camera, Align, eyepiece point</em></button>
       <a class="menu-item" href="/getting-started/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4"/></svg><span>Getting started</span><em>first night, step by step</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
       <a class="menu-item" href="/help/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>Help</span><em>every button and setting</em><svg class="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="opens an external website"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a>
     </div>
@@ -1261,6 +1280,8 @@ if (cfg.starNames == null) cfg.starNames = cfg.show.names !== false;
 if (cfg.conLines == null) cfg.conLines = cfg.show.lines !== false;
 delete cfg.show.names; delete cfg.show.lines;
 cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
+// an eyepiece point set before the assistant existed counts as set
+if (cfg.teleSetAt == null && [cfg.tele, cfg.teleTop].some(t => t && Math.hypot(+t.x || 0, +t.y || 0) > 1e-5)) cfg.teleSetAt = 1;
 // satellites are off by default now (switched on again in the filter when wanted)
 if (!cfg.extrasV) { cfg.show.sats = false; cfg.extrasV = 1; }
 // stacking got smarter (motion check, float average): the old default of 6 frames becomes 24
@@ -4223,7 +4244,8 @@ function layoutFabs() {
   if (document.documentElement.style.getPropertyValue("--fabs-w") !== fw) document.documentElement.style.setProperty("--fabs-w", fw);
 }
 const relayout = () => { placeReadout(); layoutFabs(); };
-if (window.ResizeObserver) { const ro = new ResizeObserver(() => requestAnimationFrame(relayout)); ro.observe($("guide")); ro.observe($("readout")); }
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => requestAnimationFrame(relayout)); ro.observe($("guide")); ro.observe($("readout"));
+  new ResizeObserver(() => document.documentElement.style.setProperty("--nh", Math.round($("notices").offsetHeight) + "px")).observe($("notices")); }
 addEventListener("resize", relayout); relayout();
 $("rdHead").onclick = () => { cfg.readoutOpen = !cfg.readoutOpen; save(); syncSettings(); renderReadout(); insetCache = null; lastSig = []; };
 
@@ -4606,8 +4628,9 @@ function handleTap(e) {
   }
   const c = Solver.mulT(sol.R, v);
   if (!(c[2] > 0.2)) { hint("That point is outside the camera’s view.", 3000); return; }
-  setTele({ x: c[0] / c[2], y: c[1] / c[2] });
+  setTele({ x: c[0] / c[2], y: c[1] / c[2] }); cfg.teleSetAt = Date.now(); save();
   setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
+  if (wiz.on) { wizTele(name); return; }
   const off = Math.atan(Math.hypot(curTele().x, curTele().y)) * R2D;
   hint("Eyepiece point set" + (name ? " on " + name : "") + " · " + fmtDeg(off) + " from the image centre.", 4000);
 }
@@ -4632,11 +4655,170 @@ function alignOnMap(e) {
     setCompassCal(+((((+cfg.compassCal || 0) - dAz) + 540) % 360 - 180).toFixed(2));
     if (dAlt) { tele.y = Math.tan(Math.atan(+tele.y || 0) - dAlt * D2R); setTele({ ...tele }); }
   }
-  if (!altBig) cfg.calTeleBak = bak; save(); syncCompassCal();
+  if (!altBig) { cfg.calTeleBak = bak; cfg.teleSetAt = Date.now(); } save(); syncCompassCal();
+  if (wiz.on) { sensorUpdate(); setTeleMode(false); syncSettings(); updateGuide(); renderReadout(); wizTele(o.name, altBig); return; }
   sensorUpdate(); setTeleMode(false); syncSettings(); updateGuide(); renderReadout();
   if (altBig) { hint("Compass aligned on " + o.name + ". Its altitude differs by " + fmtDeg(Math.abs(altDiff), 0) + ": too much for a phone on the tube, so the eyepiece point was left as it was. Is it the star in the eyepiece?", 7000); return; }
   hint("Aligned on " + o.name + ". The crosshair now marks where the telescope points. Tap the button again whenever you want to repeat it.", 5000);
 }
+/* ---------------- Setup assistant ---------------- */
+// A small card below the menu button that walks through the setup and switches things on by itself: phone on the
+// tube, Align and camera, a bright star centred, Locate, the eyepiece point on that star, a check on a second star.
+// It opens when Locate is tapped before Align is on or an eyepiece point was ever set, or from the menu. On later
+// nights (eyepiece point set) it is short: sensors, Locate on a star, does the crosshair sit on it?
+const wiz = { on: false, step: "", star: null, star2: null, quick: false, map: false, note: "", busy: false };
+const wizNeeded = () => st.source !== "photo" && !st.wizSkip && (!st.sensor || !cfg.teleSetAt);
+function wizStart(quick) {
+  wiz.on = true; wiz.quick = quick ?? !!cfg.teleSetAt; wiz.map = false; wiz.note = ""; wiz.star = wiz.star2 = null;
+  if (st.tOff) setTimeOffset(0, null);
+  wizGo(wiz.quick ? "sensors" : "mount");
+}
+function wizClose() { wiz.on = false; wiz.busy = false; if (st.teleMode) setTeleMode(false); st.focus = null; lastSig = []; $("wiz").hidden = true; }
+const WIZ_FULL = ["mount", "sensors", "star", "tap", "check", "done"], WIZ_QUICK = ["sensors", "star", "verify", "done"];
+function wizGo(step) { wiz.step = step; wiz.note = wiz.note || ""; wizRender(); }
+// A bright named star, well placed for a Dobson (not too low, not near the zenith), away from another one if given
+function wizPickStar(away) {
+  const t = skyNow().t; let best = null, bs = -Infinity;
+  for (const S of NAMED) {
+    if (S.mag > 2.3) break; if (!S.lab) continue;
+    const v = Solver.cat.v[S.k], h = horiz(v, t); if (h.alt < 25 || h.alt > 72) continue;
+    if (away) { const d = Math.acos(Math.max(-1, Math.min(1, v[0] * away[0] + v[1] * away[1] + v[2] * away[2]))) * R2D; if (d < 30) continue; }
+    const sc = -S.mag * 2 - Math.abs(h.alt - 50) / 15; if (sc > bs) { bs = sc; best = { k: S.k, name: S.lab, v, alt: h.alt, az: h.az }; }
+  }
+  return best;
+}
+function lowestEp() { const e = opt().eps.slice().sort((a, b) => (+b.f || 0) - (+a.f || 0))[0]; return e ? Math.round(+e.f) + " mm" : null; }
+function wizRender() {
+  const box = $("wiz"), steps = wiz.quick ? WIZ_QUICK : WIZ_FULL, i = steps.indexOf(wiz.step);
+  $("wizStep").textContent = "Setup · " + (Math.min(i, steps.length - 2) + 1) + " of " + (steps.length - 1);
+  const body = $("wizBody"), btns = $("wizBtns"); body.textContent = ""; btns.textContent = "";
+  box.classList.toggle("mini", wiz.step === "tap"); box.hidden = false;
+  const p = html => { const e = document.createElement("p"); e.innerHTML = html; body.append(e); return e; };
+  const btn = (txt, fn, primary) => { const b = document.createElement("button"); b.className = "btn" + (primary ? " primary" : ""); b.textContent = txt; b.onclick = fn; btns.append(b); return b; };
+  const lnk = (txt, fn) => { const b = document.createElement("button"); b.className = "lnk"; b.textContent = txt; b.onclick = fn; btns.append(b); };
+  const title = t => { $("wizTitle").textContent = t; };
+  const esc2 = x => String(x).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  if (wiz.note) { const n = p(esc2(wiz.note)); n.style.color = "var(--accent)"; wiz.note = ""; }
+  switch (wiz.step) {
+    case "mount":
+      title("Phone on the telescope");
+      p("Clamp the phone so its back camera looks along the tube, towards the opening. Turn on your phone’s <b>rotation lock</b>.");
+      lnk("Skip, just locate", () => { st.wizSkip = true; wizClose(); solveNow(); });
+      btn("Ready", () => { if (topMode()) setPointer("camera"); wizGo("sensors"); }, true);
+      break;
+    case "sensors": {
+      title("Sensors and camera");
+      p("Align lets the map follow the telescope; the camera finds the stars.");
+      const chk = document.createElement("div"); chk.className = "wchk"; body.append(chk);
+      const row = (ok, txt) => { const d = document.createElement("div"); d.className = ok ? "ok" : ""; d.innerHTML = "<i>" + (ok ? "✓" : "○") + "</i><span></span>"; d.querySelector("span").textContent = txt; chk.append(d); };
+      const okS = st.sensor, okC = !!st.stream, okL = !!cfg.loc;
+      row(okS, "Align (motion sensors)"); row(okC, "Camera"); row(okL, okL ? "Location set" : "Location not set yet");
+      if (!okL) { const b = document.createElement("button"); b.className = "btn"; b.textContent = "Use my location"; b.style.justifySelf = "start"; b.onclick = () => { $("btnGps").click(); setTimeout(() => wiz.on && wizRender(), 2500); }; body.append(b); }
+      lnk("Just locate", () => { st.wizSkip = true; wizClose(); solveNow(); });
+      if (okS && okC) btn("Next", () => wizGo("star"), true);
+      else btn(wiz.busy ? "Starting …" : "Turn on", async () => {
+        wiz.busy = true; wizRender();
+        if (!st.sensor) await setSensor(true);
+        if (!st.stream) await startCamera();
+        wiz.busy = false; if (!wiz.on) return;
+        hint(null);   // the assistant says what to do
+        if (!st.stream) { wiz.map = true; wiz.note = "No camera: the eyepiece point is set on the map instead (rougher, about a degree)."; }
+        if (st.sensor && (st.stream || wiz.map)) wizGo("star"); else wizRender();
+      }, true).disabled = wiz.busy;
+      break;
+    }
+    case "star": {
+      const s = wiz.star || (wiz.star = wizPickStar());
+      title("Centre a bright star");
+      if (!s) { p("No bright star is well placed right now. Centre any bright star in the eyepiece."); }
+      else {
+        st.focus = { id: "S" + s.k, name: s.name, kind: "star", vec: () => s.v }; lastSig = [];
+        p("Put in your lowest-power eyepiece" + (lowestEp() ? " (<b>" + lowestEp() + "</b>)" : "") + " and centre <b>" + esc2(s.name) + "</b> in it by hand. It is " + Math.round(s.alt) + "° high in the " + compass(s.az) + ".");
+      }
+      if (!wiz.map) p("Then don’t touch the telescope: Zenigo locates it with the camera.");
+      lnk("Close", wizClose);
+      btn(wiz.busy ? "Locating …" : "It’s centred", async () => {
+        if (wiz.map) { wizGo("tap"); return; }
+        wiz.busy = true; wizRender();
+        const before = st.solAt || 0; await solveNow(); wiz.busy = false; if (!wiz.on) return;
+        const ok = st.sol && st.solAt > before && (st.solMode === "solve" || st.sol.near);
+        if (!ok) { wiz.step = "fail"; wizRender(); return; }
+        wizCompass();
+        wizGo(wiz.quick ? "verify" : "tap");
+      }, true).disabled = wiz.busy;
+      break;
+    }
+    case "fail":
+      title("Not located");
+      p("The camera didn’t find enough stars. Wait until it is properly dark, aim away from the Moon and lights, or let a night photo with your camera app’s long exposure do it.");
+      lnk("Close", wizClose);
+      btn("Night photo", () => { wizClose(); nightPhoto(); });
+      btn("Try again", () => wizGo("star"), true);
+      break;
+    case "tap": {
+      const s = wiz.star;
+      title(wiz.map ? "Tap " + (s ? s.name : "the star") + " on the map" : "Tap " + (s ? s.name : "the star") + " on the screen");
+      p(wiz.map ? "The star centred in the eyepiece." : "The star you centred in the eyepiece.");
+      if (!st.teleMode) { setTeleMode(true); hint(null); }
+      lnk("Back", () => { setTeleMode(false); wizGo("star"); });
+      break;
+    }
+    case "check": {
+      const s2 = wiz.star2 || (wiz.star2 = wizPickStar(wiz.star && wiz.star.v));
+      title("Check it (optional)");
+      if (s2) { st.focus = { id: "S" + s2.k, name: s2.name, kind: "star", vec: () => s2.v }; lastSig = []; }
+      p(s2 ? "Push the telescope to <b>" + esc2(s2.name) + "</b> (" + Math.round(s2.alt) + "° high in the " + compass(s2.az) + ") and centre it in the eyepiece." : "Push the telescope to another bright star and centre it in the eyepiece.");
+      lnk("Skip", () => wizGo("done"));
+      btn(wiz.busy ? "Checking …" : wiz.map ? "It’s centred" : "Check", async () => {
+        if (!wiz.map) { wiz.busy = true; wizRender(); const before = st.solAt || 0; await solveNow(); wiz.busy = false; if (!wiz.on) return;
+          if (!(st.sol && st.solAt > before)) { wiz.note = "Not located: try again, or skip the check."; wizRender(); return; } }
+        const tv = teleVec(), v = s2 ? s2.v : null;
+        if (!tv || !v) { wizGo("done"); return; }
+        const d = Math.acos(Math.max(-1, Math.min(1, tv[0] * v[0] + tv[1] * v[1] + tv[2] * v[2]))) * R2D, lim = wiz.map ? 2 : 0.6;
+        wiz.checkOff = d; wiz.step = d <= lim ? "done" : "recheck"; wizRender();
+      }, true).disabled = wiz.busy;
+      break;
+    }
+    case "recheck":
+      title("The crosshair is " + fmtDeg(wiz.checkOff) + " off");
+      p("The holder may have moved, or the first star wasn’t quite centred. Set the eyepiece point again on this star.");
+      lnk("Keep it", () => wizGo("done"));
+      btn("Set again", () => { wiz.star = wiz.star2; wiz.star2 = null; wizGo(wiz.map ? "tap" : "tap"); }, true);
+      break;
+    case "verify": {
+      const s = wiz.star;
+      title("Does the crosshair sit on " + (s ? s.name : "the star") + "?");
+      p("The orange crosshair marks where the telescope points. If it sits on the star centred in the eyepiece, you’re ready.");
+      btn("No, set again", () => { wiz.quick = false; wizGo("tap"); });
+      btn("Yes", () => wizGo("done"), true);
+      break;
+    }
+    case "done":
+      st.focus = null; lastSig = [];
+      title("Ready");
+      if (wiz.checkOff != null && wiz.checkOff <= (wiz.map ? 2 : 0.6)) p("Checked: " + fmtDeg(wiz.checkOff) + " off. ");
+      p("The crosshair shows where the telescope points. Near a target, tap <b>Locate</b> again for an exact position.");
+      lnk("Close", wizClose);
+      btn("Choose a target", () => { wizClose(); openSearch(); }, true);
+      wiz.checkOff = null;
+      break;
+  }
+  requestAnimationFrame(layoutFabs);
+}
+// After a solve in the assistant: take the compass correction without asking
+function wizCompass() {
+  if ($("calBar").hidden || st.calSuggest == null) return;
+  const d = st.calSuggest; setCompassCal(d); st.calDismissed = null; $("calBar").hidden = true;
+  wiz.note = "Compass was " + fmtSigned(d) + " off: corrected.";
+}
+// The eyepiece point was set by a tap during the assistant
+function wizTele(name, rough) {
+  const s = wiz.star;
+  wiz.note = rough ? "That star is far from where the phone points: only the compass was corrected. Is it the star in the eyepiece?"
+    : s && name && !name.includes(s.name) ? "Set on " + name + ", not " + s.name + ": fine if that is the star in the eyepiece." : "Eyepiece point set" + (name ? " on " + name : "") + ".";
+  wizGo(wiz.quick ? "done" : "check");
+}
+$("wizClose").onclick = wizClose;
 function setTeleMode(on) {
   if (on && st.tOff) setTimeOffset(0, null);
   if (on && !teleModeAllowed()) {
@@ -5598,7 +5780,8 @@ async function loadPhotoFile(input, night) {
 }
 $("fileIn").onchange = () => loadPhotoFile($("fileIn"), false);
 $("nightIn").onchange = () => loadPhotoFile($("nightIn"), true);
-$("btnSolve").onclick = () => st.busy ? abortSolve() : solveNow();
+$("btnSolve").onclick = () => st.busy ? abortSolve() : wiz.on ? null : wizNeeded() ? wizStart() : solveNow();
+$("btnWiz").onclick = () => { closeSheet("menu"); wizStart(); };
 $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarget("Sun", true); };
 $("btnSensor").onclick = () => setSensor(!st.sensor);
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Continuous mode needs the live camera.", 3000); return; } setAuto(!st.auto); };

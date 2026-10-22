@@ -410,6 +410,33 @@ const TESTS = {
     await done(p);
   },
 
+  // setup assistant: opens on Locate before the setup is done, switches things on, walks to the eyepiece point
+  async assistant() {
+    const p = await page({ perms: ['camera'] });
+    await ev(p, () => { cfg.fov.video = 66; delete cfg.teleSetAt; cfg.tele = { x: 0, y: 0 }; save(); });
+    await p.tap('#btnSolve'); await wait(p, 300);
+    ok(await ev(p, () => !$('wiz').hidden && /Phone on the telescope/.test($('wizTitle').textContent)), 'Locate before the setup opens the assistant');
+    ok(await ev(p, () => !st.busy), 'it doesn’t start locating by itself');
+    await p.locator('#wizBtns .btn.primary').tap(); await wait(p, 300);
+    ok(await ev(p, () => /Sensors and camera/.test($('wizTitle').textContent)), 'next: sensors and camera');
+    await p.locator('#wizBtns .btn.primary').tap(); await wait(p, 2500);
+    ok(await ev(p, () => st.sensor && !!st.stream && /Centre a bright star/.test($('wizTitle').textContent)), 'it turns on Align and the camera, then asks for a bright star', await ev(p, () => [st.sensor, !!st.stream, $('wizTitle').textContent]));
+    ok(await ev(p, () => !!wiz.star && $('wizBody').textContent.includes(wiz.star.name)), 'it suggests a bright star by name', await ev(p, () => $('wizBody').textContent));
+    await ev(p, () => closeSheet('permSheet')); await wait(p, 400);   // headless Chromium has no motion sensors
+    // the fake camera shows no stars: not located, with a way on
+    await p.locator('#wizBtns .btn.primary').tap(); await p.waitForFunction(() => wiz.step === 'fail' || wiz.step === 'tap', null, { timeout: 30000 }).catch(() => {});
+    ok(await ev(p, () => wiz.step === 'fail' && /Not located/.test($('wizTitle').textContent)), 'without stars it says so and offers a night photo', await ev(p, () => wiz.step));
+    // as if the star was tapped: on to the check, then done, then the search
+    await ev(p, () => { wiz.step = 'tap'; cfg.teleSetAt = Date.now(); wizTele(wiz.star.name); }); await wait(p, 200);
+    ok(await ev(p, () => wiz.step === 'check' && /Check it/.test($('wizTitle').textContent) && wiz.star2 && wiz.star2.name !== wiz.star.name), 'after the eyepiece point: a check on a second star');
+    await p.locator('#wizBtns .lnk').tap(); await wait(p, 200);
+    ok(await ev(p, () => wiz.step === 'done'), 'the check can be skipped');
+    await p.locator('#wizBtns .btn.primary').tap(); await wait(p, 500);
+    ok(await ev(p, () => $('wiz').hidden && !$('searchSheet').hidden), '“Choose a target” closes it and opens the search');
+    ok(await ev(p, () => !wizNeeded()), 'set up: Locate locates directly again');
+    await ev(p, () => stopCamera()); await done(p);
+  },
+
   // details opened from Tonight go back to Tonight
   async tonightBack() {
     const p = await page();
