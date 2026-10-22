@@ -241,6 +241,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   gap: 14px; align-content: start; padding: 2px 0 14px; }
 .split > .bar { position: relative; bottom: auto; z-index: 3; background: var(--panel); margin: 0 -16px; padding: 8px 16px; box-shadow: 0 -10px 16px -6px var(--panel); }
 .split .links { margin-top: 0; }
+.split > .sbody:last-child { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }   /* no bar below: keep clear of the home indicator */
+#searchSheet .search { padding: 4px 0 12px; }
 .split > .sbody > :first-child { margin-top: 0 !important; }   /* a note pulled up under the title would be cut off at the top of the body */
 /* one row of icon buttons with a short label */
 .actions.iconbar { display: flex; gap: 6px; }
@@ -755,12 +757,14 @@ a.btn { text-decoration: none; color: var(--fg); }
 </div>
 
 <div class="sheet tall" id="searchSheet" hidden>
-  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+  <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
     <div class="grab"><h2 id="searchTitle"><span>Choose target</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="search"><input id="q" type="text" placeholder="Search: Jupiter, M31, Andromeda, Vega …" autocomplete="off" aria-label="Find target"></div>
+    <div class="sbody">
     <div class="chips" id="chips"></div>
     <button class="btn" id="searchClear">Clear target</button>
     <div class="results" id="results"></div>
+    </div>
   </div>
 </div>
 
@@ -1716,12 +1720,12 @@ const searchBars = { gen: 0 };
 const searchState = { scroll: 0, fromList: false };
 function openFromSearch(T) {
   const o = objById(T.id) || { id: T.id, name: T.name, kind: T.kind, desig: T.sub, mag: T.mag, vec: T.vec };
-  searchState.scroll = $("searchSheet").querySelector(".inner").scrollTop; searchState.fromList = st.fromList;
+  searchState.scroll = scroller($("searchSheet")).scrollTop; searchState.fromList = st.fromList;
   st.fromList = false; closeSheet("searchSheet"); showInfo(o, "search");
 }
 function backToSearch() {
   st.fromList = searchState.fromList; showResults(); openSheet("searchSheet");
-  const inner = $("searchSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = searchState.scroll; });
+  const inner = scroller($("searchSheet")); requestAnimationFrame(() => { inner.scrollTop = searchState.scroll; });
 }
 // No target: the red ring, the arrow and the directions disappear
 function clearTarget() {
