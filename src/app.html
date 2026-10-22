@@ -107,6 +107,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.hit .hcell { border-color: var(--ok); }
 .hud.stale { opacity: .55; }
 .hud.idle .hcell { display: none; }
+.hud.tog .hcell { pointer-events: auto; cursor: pointer; }
+.hud.abs .hcell svg { display: none; }
+.hud.abs .hcell .v { color: var(--sky, #9fb6ff); }
 
 /* Hints and notices sit right below the menu button, aligned with it, and keep clear of the button column on the
    right (--fabs-x: its distance from the right edge; --fabs-w, its width, is measured) */
@@ -1966,8 +1969,14 @@ function tgtPill(txt, cls) {
 function updateGuide() {
   syncHudNext(); syncTargetPanel(false); syncTargetFab();
   const T = targetById(cfg.target), tv = teleVec(), t = skyNow().t;
-  const g = $("guide"); g.classList.remove("hit", "stale"); g.classList.toggle("idle", !teleVec());
-  if (!T) { g.classList.add("idle"); lastGuide = null; tgtPill(""); return; }
+  const g = $("guide"); g.classList.remove("hit", "stale", "abs", "tog"); g.classList.toggle("idle", !teleVec());
+  // where the telescope points: azimuth and altitude (without a target always, with one after a tap on the boxes)
+  const showAbs = ph => {
+    g.classList.add("abs"); g.classList.toggle("tog", !!T);
+    $("azV").textContent = fmtDeg(ph.az); $("azW").textContent = "azimuth · " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(ph.az / 45) % 8];
+    $("altV").textContent = fmtDeg(ph.alt); $("altW").textContent = T ? "altitude · tap: to target" : "altitude";
+  };
+  if (!T) { lastGuide = null; tgtPill(""); if (tv) showAbs(horiz(tv, t)); else g.classList.add("idle"); return; }
   const tgt = vecNow(T), th = horiz(tgt, t);
   if (!tv) {
     $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimuth"; $("altW").textContent = "Altitude";
@@ -1988,7 +1997,14 @@ function updateGuide() {
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
   tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : hit ? "in the eyepiece" : fmtDeg(sep) + " away", T.id === "Sun" ? "warn" : hit ? "hit" : "");
   lastGuide = { ph, th, sep };
+  if (cfg.hudAbs) showAbs(ph); else g.classList.add("tog");
 }
+// With a target: a tap on the boxes switches between the way to it and where the telescope points
+document.querySelectorAll("#guide .hcell").forEach(c => c.onclick = () => {
+  if (!targetById(cfg.target) || !teleVec()) return;
+  cfg.hudAbs = !cfg.hudAbs; save(); updateGuide();
+  hint(cfg.hudAbs ? "Showing where the telescope points (azimuth, altitude). Tap again for the way to the target." : "Showing the way to the target. Tap again for where the telescope points.", 3000);
+});
 /* ---------------- Sound guidance: one axis after the other ---------------- */
 // For pushing without looking at the screen. First the azimuth: clicks, a high "tick" = turn right, a low "tock" =
 // turn left. Once that is within about a degree: the altitude, a rising chirp = tilt up, a falling one = tilt down.

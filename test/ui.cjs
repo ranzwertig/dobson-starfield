@@ -451,6 +451,22 @@ const TESTS = {
     await done(p);
   },
 
+  // where the telescope points: shown without a target, and with one after a tap on the boxes
+  async pointing() {
+    const p = await page();
+    const set = () => ev(p, () => { const v = $('view'); st.mapView = { az: 0, alt: 0, fov: 50 }; st.sol = mapSolCompute(skyNow().M, v.width, v.height, { az: 135, alt: 30, fov: 50 }); st.sensor = true; st.solMode = 'compass'; cfg.tele = { x: 0, y: 0 }; });
+    await ev(p, () => { cfg.target = null; cfg.hudAbs = false; }); await set(); await ev(p, () => updateGuide()); await wait(p, 200);
+    const a = await ev(p, () => [!$('guide').classList.contains('idle'), $('azV').textContent, $('azW').textContent, $('altV').textContent]);
+    ok(a[0] && /^135\.0°$/.test(a[1]) && /SE/.test(a[2]) && /^30\.0°$/.test(a[3]), 'without a target the boxes show where the telescope points', a);
+    await ev(p, () => { cfg.target = 'M31'; }); await set(); await ev(p, () => updateGuide()); await wait(p, 200);
+    ok(await ev(p, () => /turn|azimuth on/.test($('azW').textContent)), 'with a target: the way to it');
+    await p.tap('#guide .hcell'); await set(); await ev(p, () => updateGuide()); await wait(p, 200);
+    ok(await ev(p, () => cfg.hudAbs && /^135\.0°$/.test($('azV').textContent) && $('guide').classList.contains('abs')), 'a tap switches to where the telescope points', await ev(p, () => $('azV').textContent));
+    await p.tap('#guide .hcell'); await set(); await ev(p, () => updateGuide()); await wait(p, 200);
+    ok(await ev(p, () => !cfg.hudAbs && /turn|on target/.test($('azW').textContent)), 'another tap switches back');
+    await ev(p, () => { st.sensor = false; }); await done(p);
+  },
+
   // details opened from Tonight go back to Tonight
   async tonightBack() {
     const p = await page();
