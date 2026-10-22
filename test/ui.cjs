@@ -437,6 +437,20 @@ const TESTS = {
     await ev(p, () => stopCamera()); await done(p);
   },
 
+  // a fuller screen: messages close with ✕, the pills bottom left hide behind a tab at the edge
+  async declutter() {
+    const p = await page();
+    await ev(p, () => hint('Test message', 20000)); await wait(p, 200);
+    await p.tap('#hint .hx'); await wait(p, 200);
+    ok(await ev(p, () => $('hint').hidden), 'a message closes with its ✕');
+    await ev(p, () => { cfg.target = 'M45'; updateGuide(); }); await p.tap('#cornerHide'); await wait(p, 400);
+    ok(await ev(p, () => $('corner').classList.contains('away') && !$('cornerTab').hidden && $('cornerTab').classList.contains('tgt')), 'the pills hide, a tab with a target dot stays at the edge');
+    ok(await ev(p, () => cfg.cornerAway === true), 'hidden pills are remembered');
+    await p.tap('#cornerTab'); await wait(p, 400);
+    ok(await ev(p, () => !$('corner').classList.contains('away') && $('cornerTab').hidden), 'the tab brings them back');
+    await done(p);
+  },
+
   // details opened from Tonight go back to Tonight
   async tonightBack() {
     const p = await page();

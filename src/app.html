@@ -41,6 +41,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   position: absolute; left: calc(max(10px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
   display: grid; gap: 4px; justify-items: start; max-width: calc(100% - 110px); pointer-events: none;
 }
+/* the pills bottom left can be pushed out to the left; a small tab at the edge brings them back */
+.corner { transition: transform .25s ease, opacity .25s ease; }
+.corner.away { transform: translateX(calc(-100% - 24px)); opacity: 0; pointer-events: none !important; }
+.corner.away * { pointer-events: none !important; }
+.cornerhide { pointer-events: auto; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--muted); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.cornerhide svg { width: 14px; height: 14px; }
+.cornertab { position: absolute; z-index: 4; left: calc(var(--safe-l, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 4px));
+  width: 24px; height: 52px; border-radius: 0 12px 12px 0; border: 1px solid var(--line); border-left: 0; background: var(--glass); color: var(--fg); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.cornertab[hidden] { display: none; }
+.cornertab svg { width: 16px; height: 16px; }
+.cornertab i { position: absolute; top: 6px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--target); display: none; }
+.cornertab.tgt i { display: block; }
 .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
 .status.tappable { pointer-events: auto; cursor: pointer; border: 1px solid var(--line); }
 #diagLayers .chip.sel { border-color: var(--accent); color: var(--accent); }
@@ -103,8 +115,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   position: absolute; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); top: calc(max(8px, var(--safe-top)) + 62px); width: max-content;
   max-width: min(440px, calc(100% - max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) - var(--pl, 0px) - var(--fabs-x, 74px)));
   background: rgba(17,21,26,.94); border: 1px solid var(--accent); color: var(--fg);
-  padding: 8px 12px; border-radius: 8px; font-size: 14px; text-align: left; box-sizing: border-box;
+  padding: 6px 4px 6px 12px; border-radius: 8px; font-size: 14px; text-align: left; box-sizing: border-box;
+  display: flex; align-items: flex-start; gap: 4px; z-index: 5;
 }
+.hint[hidden] { display: none; }
+.hint .ht { padding-top: 2px; }
+.hint .hx { flex: none; width: 26px; height: 26px; margin: -2px 0 -2px 2px; } .hint .hx svg { width: 14px; height: 14px; }
 
 .notices { position: absolute; z-index: 5; left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: var(--fabs-x, 74px); top: calc(max(8px, var(--safe-top)) + 62px); margin-inline: 0 auto; max-width: 440px; display: grid; gap: 8px; pointer-events: none; }
 .notices > * { pointer-events: auto; }
@@ -672,7 +688,9 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     </div>
     <div class="hint" id="hint" hidden></div>
-    <div class="corner">
+    <button class="cornertab" id="cornerTab" hidden aria-label="Show the info at the bottom left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><i></i></button>
+    <div class="corner" id="corner">
+      <button class="cornerhide" id="cornerHide" aria-label="Hide the info at the bottom left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
       <div class="epview" id="epView" hidden>
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
         <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epSet" aria-label="Telescope, eyepiece and finder settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -1313,7 +1331,15 @@ const st = {
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
 
 function setStatus(text, kind) { $("statusText").textContent = text; $("dot").className = "dot" + (kind ? " " + kind : ""); }
-function hint(text, ms) { const h = $("hint"); if (!text) { h.hidden = true; return; } h.textContent = text; h.hidden = false; clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.hidden = true, ms); }
+// A short message below the menu button; it goes by itself after ms, or with its ✕
+function hint(text, ms) {
+  const h = $("hint"); if (!text) { h.hidden = true; return; }
+  if (!h.firstChild || !h.querySelector(".ht")) {
+    h.innerHTML = '<span class="ht"></span><button class="iconbtn hx" aria-label="Close the message"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    h.querySelector(".hx").onclick = () => { clearTimeout(hint.t); h.hidden = true; };
+  }
+  h.querySelector(".ht").textContent = text; h.hidden = false; clearTimeout(hint.t); if (ms) hint.t = setTimeout(() => h.hidden = true, ms);
+}
 
 /* ---------------- Compute core in the worker ---------------- */
 let worker = null, jobId = 0; const jobs = {};
@@ -4023,6 +4049,7 @@ function addTonightsBest() {
 document.querySelectorAll("[data-ltab]").forEach(b => b.onclick = () => { listTab.v = b.dataset.ltab; renderList(); });
 function syncTargetFab() {
   const f = $("fabTarget"); if (f) f.classList.toggle("tgt-on", !!cfg.target);
+  const ct = $("cornerTab"); if (ct) ct.classList.toggle("tgt", !!cfg.target);
   // the current target as a pill bottom left: tap for the target panel, ✕ clears it
   const T = cfg.target ? targetById(cfg.target) : null, nm = T ? T.name : "";
   if (syncTargetFab.nm !== nm) { syncTargetFab.nm = nm; $("tgtChip").hidden = !T; $("tgtChipName").textContent = nm; $("tgtChipTxt").setAttribute("aria-label", "Target " + nm + ": details"); }
@@ -4842,6 +4869,15 @@ function wizTele(name, rough) {
   wizGo(wiz.quick ? "done" : "check");
 }
 $("wizClose").onclick = wizClose;
+// Pills bottom left: hidden and shown again, remembered
+function setCornerAway(away) {
+  cfg.cornerAway = !!away; save();
+  $("corner").classList.toggle("away", !!away); $("cornerTab").hidden = !away;
+  $("cornerTab").classList.toggle("tgt", !!cfg.target);
+}
+$("cornerHide").onclick = () => setCornerAway(true);
+$("cornerTab").onclick = () => setCornerAway(false);
+setCornerAway(!!cfg.cornerAway);
 function setTeleMode(on) {
   if (on && st.tOff) setTimeOffset(0, null);
   if (on && !teleModeAllowed()) {
