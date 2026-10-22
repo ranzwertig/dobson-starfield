@@ -119,6 +119,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .wiz .wizbtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .wiz .wizbtns .btn { padding: 8px 14px; }
 .wiz .wizbtns .lnk { margin-right: auto; background: none; border: 0; color: var(--muted); font: 600 14px var(--font-ui); cursor: pointer; padding: 8px 0; }
+.wiz .wizc { gap: 5px; } .wiz .wizc .chip { font-size: 13px; padding: 4px 10px; } .wiz .wizc .chip.sel { border-color: var(--accent); color: var(--accent); }
 .wiz.mini { padding: 8px 12px; gap: 4px; } .wiz.mini h3 { font-size: 15px; } .wiz.mini .wizhead { display: none; }
 .notices:has(> :not([hidden])) + .hint { top: calc(max(8px, var(--safe-top)) + 70px + var(--nh, 68px)); }   /* below the notices, however tall (measured) */
 .update {
@@ -4669,24 +4670,37 @@ function alignOnMap(e) {
 const wiz = { on: false, step: "", star: null, star2: null, quick: false, map: false, note: "", busy: false };
 const wizNeeded = () => st.source !== "photo" && !st.wizSkip && (!st.sensor || !cfg.teleSetAt);
 function wizStart(quick) {
-  wiz.on = true; wiz.quick = quick ?? !!cfg.teleSetAt; wiz.map = false; wiz.note = ""; wiz.star = wiz.star2 = null;
+  wiz.on = true; wiz.quick = quick ?? !!cfg.teleSetAt; wiz.map = false; wiz.note = ""; wiz.star = wiz.star2 = wiz.cands1 = wiz.cands2 = null;
   if (st.tOff) setTimeOffset(0, null);
   wizGo(wiz.quick ? "sensors" : "mount");
 }
 function wizClose() { wiz.on = false; wiz.busy = false; if (st.teleMode) setTeleMode(false); st.focus = null; lastSig = []; $("wiz").hidden = true; }
 const WIZ_FULL = ["mount", "sensors", "star", "tap", "check", "done"], WIZ_QUICK = ["sensors", "star", "verify", "done"];
 function wizGo(step) { wiz.step = step; wiz.note = wiz.note || ""; wizRender(); }
-// A bright named star, well placed for a Dobson (not too low, not near the zenith), away from another one if given
-function wizPickStar(away) {
-  const t = skyNow().t; let best = null, bs = -Infinity;
-  for (const S of NAMED) {
-    if (S.mag > 2.3) break; if (!S.lab) continue;
-    const v = Solver.cat.v[S.k], h = horiz(v, t); if (h.alt < 25 || h.alt > 72) continue;
-    if (away) { const d = Math.acos(Math.max(-1, Math.min(1, v[0] * away[0] + v[1] * away[1] + v[2] * away[2]))) * R2D; if (d < 30) continue; }
-    const sc = -S.mag * 2 - Math.abs(h.alt - 50) / 15; if (sc > bs) { bs = sc; best = { k: S.k, name: S.lab, v, alt: h.alt, az: h.az }; }
-  }
-  return best;
+// Bright stars and planets that are easy to reach with a Dobson: 15–60° high, best around 35° (high up a Dobson is
+// awkward to push). Up to four, in different directions, so one can be picked that isn't behind a tree or the house.
+// The Moon is left out: its glare blinds the camera, and it is too large to centre precisely.
+function wizCandidates(away) {
+  const t = skyNow().t, out = [], sep = (a, b) => Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]))) * R2D;
+  const add = (name, v, mag, k) => { const h = horiz(v, t); if (h.alt < 15 || h.alt > 60) return; if (away && sep(v, away) < 30) return;
+    out.push({ k, name, v, mag, alt: h.alt, az: h.az, score: -mag * 1.5 - Math.abs(h.alt - 35) / 10 }); };
+  for (const S of NAMED) { if (S.mag > 2.3) break; if (S.lab) add(S.lab, Solver.cat.v[S.k], S.mag); }
+  for (const en of ["Venus", "Jupiter", "Mars", "Saturn"]) { try { const m = A.Illumination(A.Body[en], t).mag; if (m < 1.5) add(en, targetById(en).vec(t), m, null); } catch (e) {} }
+  out.sort((a, b) => b.score - a.score);
+  const pick = [];
+  for (const c of out) { if (pick.length >= 4) break; if (pick.every(p => Math.abs(((c.az - p.az) + 540) % 360 - 180) >= 35)) pick.push(c); }
+  return pick;
 }
+function wizPickStar(away) { const c = wizCandidates(away); wiz.cands1 = c; return c[0] || null; }
+// the suggestions as chips: tap one to use it instead
+function wizChoices(body, key) {
+  const c = (key === "star" ? wiz.cands1 : wiz.cands2) || []; if (c.length < 2) return;
+  const box = document.createElement("div"); box.className = "chips wizc";
+  c.forEach(x => { const b = document.createElement("button"); b.className = "chip" + (wiz[key] === x ? " sel" : ""); b.textContent = x.name + " · " + Math.round(x.alt) + "° " + compassShort(x.az);
+    b.onclick = () => { wiz[key] = x; wizRender(); }; box.append(b); });
+  body.append(box);
+}
+const compassShort = az => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(az / 45) % 8];
 function lowestEp() { const e = opt().eps.slice().sort((a, b) => (+b.f || 0) - (+a.f || 0))[0]; return e ? Math.round(+e.f) + " mm" : null; }
 function wizRender() {
   const box = $("wiz"), steps = wiz.quick ? WIZ_QUICK : WIZ_FULL, i = steps.indexOf(wiz.step);
@@ -4730,10 +4744,12 @@ function wizRender() {
     case "star": {
       const s = wiz.star || (wiz.star = wizPickStar());
       title("Centre a bright star");
-      if (!s) { p("No bright star is well placed right now. Centre any bright star in the eyepiece."); }
+      if (!s) { p("Centre any bright star or planet you can reach in your lowest-power eyepiece" + (lowestEp() ? " (<b>" + lowestEp() + "</b>)" : "") + "."); }
       else {
-        st.focus = { id: "S" + s.k, name: s.name, kind: "star", vec: () => s.v }; lastSig = [];
+        st.focus = { id: s.k != null ? "S" + s.k : s.name, name: s.name, kind: "star", vec: () => s.v }; lastSig = [];
         p("Put in your lowest-power eyepiece" + (lowestEp() ? " (<b>" + lowestEp() + "</b>)" : "") + " and centre <b>" + esc2(s.name) + "</b> in it by hand. It is " + Math.round(s.alt) + "° high in the " + compass(s.az) + ".");
+        p("Any bright star or planet you can reach works. Others:");
+        wizChoices(body, "star");
       }
       if (!wiz.map) p("Then don’t touch the telescope: Zenigo locates it with the camera.");
       lnk("Close", wizClose);
@@ -4764,10 +4780,12 @@ function wizRender() {
       break;
     }
     case "check": {
-      const s2 = wiz.star2 || (wiz.star2 = wizPickStar(wiz.star && wiz.star.v));
+      if (!wiz.star2) { const c = wizCandidates(wiz.star && wiz.star.v); wiz.cands2 = c; wiz.star2 = c[0] || null; }
+      const s2 = wiz.star2;
       title("Check it (optional)");
-      if (s2) { st.focus = { id: "S" + s2.k, name: s2.name, kind: "star", vec: () => s2.v }; lastSig = []; }
+      if (s2) { st.focus = { id: s2.k != null ? "S" + s2.k : s2.name, name: s2.name, kind: "star", vec: () => s2.v }; lastSig = []; }
       p(s2 ? "Push the telescope to <b>" + esc2(s2.name) + "</b> (" + Math.round(s2.alt) + "° high in the " + compass(s2.az) + ") and centre it in the eyepiece." : "Push the telescope to another bright star and centre it in the eyepiece.");
+      if (s2) wizChoices(body, "star2");
       lnk("Skip", () => wizGo("done"));
       btn(wiz.busy ? "Checking …" : wiz.map ? "It’s centred" : "Check", async () => {
         if (!wiz.map) { wiz.busy = true; wizRender(); const before = st.solAt || 0; await solveNow(); wiz.busy = false; if (!wiz.on) return;
