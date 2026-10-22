@@ -45,13 +45,15 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .corner { transition: transform .25s ease, opacity .25s ease; }
 .corner.away { transform: translateX(calc(-100% - 24px)); opacity: 0; pointer-events: none !important; }
 .corner.away * { pointer-events: none !important; }
-.cornerhide { pointer-events: auto; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--muted); display: grid; place-items: center; padding: 0; cursor: pointer; }
-.cornerhide svg { width: 14px; height: 14px; }
-.cornertab { position: absolute; z-index: 4; left: calc(var(--safe-l, env(safe-area-inset-left, 0px)) + var(--pl, 0px)); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 4px));
-  width: 24px; height: 52px; border-radius: 0 12px 12px 0; border: 1px solid var(--line); border-left: 0; background: var(--glass); color: var(--fg); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.cornerhide { pointer-events: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--fg); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.cornerhide svg { width: 18px; height: 18px; }
+/* the tab sits on the very edge of the screen; on the side of the camera cut-out it reaches in past it */
+.cornertab { position: absolute; z-index: 4; left: var(--pl, 0px); bottom: max(14px, calc(env(safe-area-inset-bottom, 0px) - 4px));
+  width: calc(40px + var(--safe-l, env(safe-area-inset-left, 0px))); height: 72px; padding: 0 0 0 var(--safe-l, env(safe-area-inset-left, 0px)); box-sizing: border-box;
+  border-radius: 0 16px 16px 0; border: 1px solid var(--line); border-left: 0; background: var(--glass); color: var(--fg); display: grid; place-items: center; cursor: pointer; }
 .cornertab[hidden] { display: none; }
-.cornertab svg { width: 16px; height: 16px; }
-.cornertab i { position: absolute; top: 6px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--target); display: none; }
+.cornertab svg { width: 22px; height: 22px; }
+.cornertab i { position: absolute; top: 8px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--target); display: none; }
 .cornertab.tgt i { display: block; }
 .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg); background: var(--glass); padding: 4px 9px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
 .status.tappable { pointer-events: auto; cursor: pointer; border: 1px solid var(--line); }
