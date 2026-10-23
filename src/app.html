@@ -680,6 +680,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 .results b { font-weight: 600; }
 .results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.results button.away b, .results button.away .sub { opacity: .55; }   /* can't be reached now: below the horizon or out of the telescope's reach */
 .results .grp { padding: 7px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
 </style>
 
@@ -1841,12 +1842,19 @@ function inCat(T, c) {
   }
 }
 // Entries for the active categories, best first
+// Does the object ever come into the telescope's reach from here? Its highest point is 90° − |latitude − declination|,
+// its lowest |latitude + declination| − 90°. (Planets move, but their declination changes slowly.)
+function everInReach(T) {
+  const R = reach(); if (!R.limited) return true;
+  const v = T.vec(skyNow().t), dec = Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D, lat = +cfg.lat;
+  return 90 - Math.abs(lat - dec) >= R.lo && Math.abs(lat + dec) - 90 <= R.hi;
+}
 function catList(cats, pool) {
   const has = g => cats.filter(c => CATS.find(x => x.id === c).g === g);
   const cond = has("cond"), lists = has("list"), kinds = has("kind");
   const listed = T => /^M\d+$/.test(T.id) || LISTS.pop.has(T.id) || LISTS.caldwell.has(T.id) || LISTS.h400.has(T.id);
   const out = pool.filter(T => (T.kind === "planet" || T.kind === "dso") && T.id !== "Sun" && (listed(T) || !/^(PGC|LDN|B|Ced) /.test(T.id))
-    && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
+    && everInReach(T) && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
   const score = T => (cats.includes("scope") ? (scopeFit(T)?.score || 0) : 0) + (cats.includes("now") ? nowFit(T).score : 0) + (LISTS.pop.has(T.id) ? 0.3 : 0) + (listed(T) ? 0.3 : 0) - (T.mag ?? 10) / 50;
   return out.map(T => [T, score(T)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
 }
@@ -1860,7 +1868,9 @@ function showResults() {
     const nall = T => T._na ?? (T._na = norm(T.name + T.sub)), nid = T => T._ni ?? (T._ni = norm(T.id));
     if (cats.includes("scope") && !aperture()) { note("Enter your telescope’s aperture in the settings for “My telescope”"); return; }
     const all = catList(cats, q ? TARGETS.filter(T => nall(T).includes(q) || nid(T) === q) : TARGETS);
-    list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
+    // what can't be reached now (below the horizon, too low or too high) goes after the rest, in the same order
+    const rows = all.map(T => ({ T, alt: horiz(T.vec(t), t).alt })), now = rows.filter(x => inReach(x.alt));
+    list = now.concat(rows.filter(x => !inReach(x.alt))).slice(0, 150);
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
   } else if (!q) {
     list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => inReach(x.alt, 15))
@@ -1881,7 +1891,8 @@ function showResults() {
     const b = document.createElement("button");
     const n = document.createElement("b"); n.textContent = T.name;
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
-    const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : alt.toFixed(0) + "°";
+    const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : inReach(alt) ? alt.toFixed(0) + "°" : alt.toFixed(0) + "° " + (alt > reach().hi ? "too high" : "too low");
+    if (T.kind !== "sat" && !inReach(alt)) b.classList.add("away");
     b.append(n, s, a); b.onclick = () => openFromSearch(T);
     if (T.kind === "sat") { box.append(b); return; }
     if (T.kind !== "sun") {
