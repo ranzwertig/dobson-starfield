@@ -1598,7 +1598,7 @@ function stopCamera() {
 // the field across the shorter side), so switching Align off or leaving the camera doesn't make the view jump.
 function keepViewOnMap() {
   const sol = st.sol, W = view.width, H = view.height; if (!sol || !(fit.sc > 0)) return;
-  const v = Solver.pixToSky(sol, (W / 2 - fit.ox) / fit.sc, (H / 2 - fit.oy) / fit.sc), h = horiz(v, skyNow().t);
+  const v = Solver.pixToSky(sol, (viewCx() - fit.ox) / fit.sc, (H / 2 - fit.oy) / fit.sc), h = horiz(v, skyNow().t);
   const fov = 2 * Math.atan(Math.min(W, H) / 2 / (fit.sc * sol.f)) * R2D;
   st.mapView = { az: h.az, alt: Math.max(-90, Math.min(90, h.alt)), fov: Math.max(MAP_FOV_MIN, Math.min(140, fov)) };
 }
@@ -2995,8 +2995,8 @@ function clampPan() {
 }
 function zoomAbout(px, py, nz) {
   const W = view.width, H = view.height; nz = Math.max(1, Math.min(20, nz));
-  const wx = W / 2 + (px - W / 2 - zoom.x) / zoom.z, wy = H / 2 + (py - H / 2 - zoom.y) / zoom.z;
-  zoom.z = nz; zoom.x = px - W / 2 - (wx - W / 2) * nz; zoom.y = py - H / 2 - (wy - H / 2) * nz;
+  const C = viewCx(), wx = C + (px - C - zoom.x) / zoom.z, wy = H / 2 + (py - H / 2 - zoom.y) / zoom.z;
+  zoom.z = nz; zoom.x = px - C - (wx - C) * nz; zoom.y = py - H / 2 - (wy - H / 2) * nz;
   if (nz === 1) { zoom.x = 0; zoom.y = 0; }
   clampPan();
 }
@@ -3071,7 +3071,7 @@ function timeSig() {
 function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
-  return [W, H, zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.focus, st.teleMode, st.solMode,
+  return [W, H, viewCx(), zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.focus, st.teleMode, st.solMode,
     st.filterVer, st.opticsVer, st.obsVer, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
@@ -3136,7 +3136,8 @@ function draw() {
     const bw = src ? sw : ref.w, bh = src ? sh : ref.h;
     const sc0 = (cfg.fill ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;
     const dw = bw * sc, dh = bh * sc, fsc = dw / ref.w;
-    let ox = W / 2 - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
+    const cX = overlayInsets(dpr).cx;   // the middle of the free map: the crosshair and the map's centre go there
+    let ox = cX - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
     // Keep the telescope in the middle: shift map and image so the crosshair (eyepiece point) sits at the centre
     if (st.sol && st.solMode !== "map" && st.sol === ref) {
       const tp = telePix(st.sol);
@@ -3267,11 +3268,21 @@ function drawPhotoInView(src, sw, sh, ps = st.photoSol) {
   if ((coarse && ms > 14) || (!coarse && ms > 30)) mesh.slow = Math.min(2, mesh.slow + 1);
 }
 let insetCache = null;
+// the horizontal middle of the free map in canvas pixels (W/2 on phones, beside the panels on tablet and desktop)
+function viewCx() { return overlayInsets(view.width / Math.max(1, view.clientWidth)).cx; }
 function overlayInsets(dpr) {   // layout reads are cached briefly: reading them every frame forces a layout
   const now = performance.now();
   if (insetCache && now - insetCache.at < 500 && insetCache.dpr === dpr && insetCache.w === view.width) return insetCache;
   const sr = view.getBoundingClientRect(), hud = $("guide").getBoundingClientRect(), fb = $("fabs").getBoundingClientRect(), mp = $("btnMenu").getBoundingClientRect();
-  return insetCache = { top: Math.max(30 * dpr, (Math.max(hud.bottom, mp.bottom) - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr), at: now, dpr, w: view.width };
+  // the free part of the map between the side panels (tablet, desktop): its middle is where the crosshair and the middle
+  // of the map go. Read from the panels as they are on screen, so the view glides along while a panel slides in or out.
+  let L = 0, Rt = sr.width;
+  if (sidePanels()) SHEETS.forEach(x => {
+    if (x.hidden) return; const r = x.querySelector(".inner").getBoundingClientRect(); if (r.width < 10) return;
+    if (sheetSide(x.id) === "L") { if (r.right > sr.left) L = Math.max(L, r.right - sr.left); } else if (r.left < sr.right) Rt = Math.min(Rt, r.left - sr.left);
+  });
+  const cx = Rt - L > 200 ? Math.round((L + Rt) / 2 * dpr) : view.width / 2;
+  return insetCache = { top: Math.max(30 * dpr, (Math.max(hud.bottom, mp.bottom) - sr.top + 10) * dpr), right: Math.max(30 * dpr, (sr.right - fb.left + 10) * dpr), cx, at: now, dpr, w: view.width };
 }
 let placed = [];
 // names of objects on the map: can be switched off (settings, quick settings); ring and target labels stay
@@ -3467,7 +3478,7 @@ function drawOverlay(dpr) {
   drawHorizon(c, sol, dpr, t, col);
   const freeMap = st.solMode === "map";
   let tx, ty;
-  if (freeMap) { tx = W / 2; ty = H / 2; }
+  if (freeMap) { tx = viewCx(); ty = H / 2; }
   else {
     const tp = telePix(sol); [tx, ty] = P(tp.x, tp.y);
     c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr; c.globalAlpha = sol.approx ? 0.6 : 1;

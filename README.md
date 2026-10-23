@@ -142,7 +142,7 @@ npm run test:sync    # sync core: merge, deletions, settings, compatibility betw
 # SYNC_URL=http://localhost:8787 node test/sync-api.cjs   # the sync API of a running Worker (wrangler dev with a D1 binding)
 npm run test:ui      # the built app in Chromium: navigation, logbook and backup, camera choice, eyepieces and
                      # Barlow, finders, side panels, sound, locate and diagnostics, sync between two devices
-                     # against a stand-in API, telescope reach, offline start (179 checks);
+                     # against a stand-in API, telescope reach, centring beside panels, offline start (186 checks);
                      # needs Playwright: npm i --no-save playwright && npx playwright install chromium
 npm run dev          # local server via wrangler dev
 npm run deploy       # manual deploy (otherwise on push to main)

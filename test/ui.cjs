@@ -237,8 +237,8 @@ const TESTS = {
     await p.click('#infoTarget'); await wait(p, 500);
     ok(await ev(p, () => cfg.target === 'M13' && $('infoSheet').classList.contains('open')), 'Set as target keeps the details open');
     await p.click('#infoShowMap'); await wait(p, 500);
-    const c = await ev(p, () => { const q = Solver.skyToPix(st.sol, objById('M13').vec(skyNow().t)), [x, y] = P(q.x, q.y); return [Math.abs(x - view.width / 2), Math.abs(y - view.height / 2), st.mapView.fov]; });
-    ok(c[0] < 5 && c[1] < 5 && c[2] >= 20 && c[2] <= 40, 'Show on map centres the object at 20–40°', c);
+    const c = await ev(p, () => { const q = Solver.skyToPix(st.sol, objById('M13').vec(skyNow().t)), [x, y] = P(q.x, q.y); return [Math.abs(x - viewCx()), Math.abs(y - view.height / 2), st.mapView.fov]; });
+    ok(c[0] < 5 && c[1] < 5 && c[2] >= 20 && c[2] <= 40, 'Show on map centres the object (in the free part of the map) at 20–40°', c);
     await done(p);
   },
 
@@ -377,8 +377,10 @@ const TESTS = {
     ok(on > off + 5, 'switching it on fills the band in Cygnus', [off, on]);
     ok(await ev(p, () => { cfg.show.stars = true; syncFilter(); return cfg.show.mw && $('filterChip').hidden && presetOf(cfg.show) === 'all'; }), 'the Milky Way is an extra: the filter still counts as Everything');
     // random views: the galactic pole never filled, the band always (only the Milky Way drawn)
+    await ev(p, () => closeSheet('filterSheet')); await wait(p, 500);   // the same full-width view as before the map moved beside panels
     const bad = await ev(p, async () => {
       cfg.show = { ...cfg.show, stars: false, solar: false, gal: false, glob: false, open: false, neb: false, pn: false, ngc: false }; cfg.conLines = false; cfg.target = null; st.filterVer++;
+      cfg.optics.ring = false; cfg.optics.telrad = false; st.opticsVer = (st.opticsVer || 0) + 1;   // only the Milky Way: no rings around the middle
       const gp = Solver.radec2v(192.86, 27.13), pts = [[gp, false], [gp.map(x => -x), false], [Solver.radec2v(266.4, -28.9), true], [Solver.radec2v(10, 61), true]], out = [];
       let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
       for (let k = 0; k < 120; k++) {
@@ -455,6 +457,31 @@ const TESTS = {
     ok(c.south === 0 && c.southAll > 0, 'In reach leaves out objects that never climb above the lowest altitude; My telescope alone keeps them', [c.south, c.southAll]);
     await wait(p, 300);
     await done(p);
+  },
+
+  // the middle of the map: Show on map and the crosshair sit in the middle of the part not covered by panels
+  async centre() {
+    for (const [w, h, mob] of [[390, 844, true], [1440, 900, false]]) {
+      const p = await page({ w, h, mobile: mob });
+      const r = await ev(p, async () => {
+        const wait = ms => new Promise(r => setTimeout(r, ms)), at = o => { const q = Solver.skyToPix(st.sol, o.vec(skyNow().t)), [x, y] = P(q.x, q.y); return [x, y]; };
+        const free = () => { const sr = view.getBoundingClientRect(); let L = 0, R = sr.width; if (sidePanels()) SHEETS.forEach(x => { if (x.hidden) return; const b = x.querySelector('.inner').getBoundingClientRect(); if (sheetSide(x.id) === 'L') L = Math.max(L, b.right - sr.left); else R = Math.min(R, b.left - sr.left); }); return (L + R) / 2 * view.width / sr.width; };
+        const o = objById('M57'); showInfo(o); await wait(600); showOnMap(o); await wait(900);
+        const a = at(o), fa = free();
+        let b = null, fb = null;
+        if (sidePanels()) { $('btnMenu').click(); await wait(900); b = at(o); fb = free(); }
+        // tracking (as with Align): the crosshair, where the telescope points, is in the middle too
+        st.sol = Object.assign({}, mapSol(), { approx: false }); st.solMode = 'track'; st.source = 'map'; st.sensor = true; lastSig = []; await wait(300);
+        const tp = telePix(st.sol), [tx] = P(tp.x, tp.y), ft = free();
+        st.sensor = false; st.solMode = 'map';
+        return { W: view.width, H: view.height, a, fa, b, fb, tx, ft };
+      });
+      const near = (x, y) => Math.abs(x - y) < 3;
+      ok(near(r.a[0], r.fa) && near(r.a[1], r.H / 2), (mob ? 'phone' : 'desktop') + ': Show on map puts the object in the middle of the free map', r);
+      if (r.b) ok(near(r.b[0], r.fb) && r.fb > r.fa, 'desktop: with the menu open too, it moves to the middle between the panels', [r.b, r.fb]);
+      ok(near(r.tx, r.ft), (mob ? 'phone' : 'desktop') + ': the crosshair sits in the middle of the free map', [r.tx, r.ft]);
+      await done(p);
+    }
   },
 
   async categories() {
