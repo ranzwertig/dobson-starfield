@@ -654,6 +654,14 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 #liveSheet .qrbox canvas { width: min(300px, 74vw); }
 #liveSheet .scanbox { max-height: 30vh; justify-self: center; width: min(320px, 100%); }
 #liveStatus.on { color: var(--ok); } #liveStatus.err { color: var(--target); }
+/* the live connection, bottom right next to Locate: who follows whom, ✕ ends it */
+/* phones: right, just above the column of buttons (the bottom is full); wider screens: bottom right, beside Locate and its label */
+.livechip { position: absolute; z-index: 4; right: calc(max(6px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px));
+  bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px)) + var(--fabs-h, 400px) + 12px); max-width: 70vw; transition: right .34s cubic-bezier(.32, .72, 0, 1); }
+@media (min-width: 700px) { .livechip { right: calc(var(--fabs-x, 74px) + var(--solve-lbl, 0px)); bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px)) + 14px); max-width: 40vw; } }
+.livechip svg { width: 18px; height: 18px; flex: none; }
+.livechip .chiplabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto !important; min-width: 0; }
+.liverole { display: grid; gap: 6px; }
 .qrbox { justify-self: center; background: #fff; padding: 14px; border-radius: 14px; line-height: 0; }
 .qrbox canvas { width: min(240px, 62vw); height: auto; image-rendering: pixelated; }
 .scanbox { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; max-height: 46vh; }
@@ -791,6 +799,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
 
+    <div class="calchip livechip" id="liveChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="fabs" id="fabs">
       <button class="fab" id="fabQuick" aria-label="Quick settings"><small>Quick settings</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>
@@ -837,6 +846,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
       <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices</span><em id="syncState"></em></button>
+      <button class="menu-item" id="btnLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><span>Live connection</span><em id="liveState"></em></button>
     </div>
     <div class="label">Tonight <span class="lbl-sub" id="wxLoc"></span></div>
     <div class="menu-list">
@@ -1238,7 +1248,10 @@ a.btn { text-decoration: none; color: var(--fg); }
       <p class="note" id="liveStatus"></p>
       <div class="row" id="liveIdle"><button class="btn primary" id="liveStart">Show a code</button><button class="btn" id="liveJoin">Scan a code</button></div>
       <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button></div>
-      <label class="check"><input type="checkbox" id="liveFollow"> Follow the other device’s telescope (map, crosshair and directions)</label>
+      <div class="liverole" role="radiogroup" aria-label="Role of this device">
+        <label class="check"><input type="radio" name="liveRole" value="scope"> <span><b>On the telescope</b>: shares where it points</span></label>
+        <label class="check"><input type="radio" name="liveRole" value="follow"> <span><b>Follows</b> the other device’s telescope: map, crosshair and directions</span></label>
+      </div>
       <p class="note">How to connect: on one device tap <b>Show a code</b>, on the other <b>Scan a code</b> and scan it; then hold the code the second device shows in front of the first device’s camera. Do it before the phone goes into its holder. <a href="/help/#live" target="_blank" rel="noopener">Help</a></p>
     </fieldset>
     <fieldset data-stab="general" id="backup">
@@ -4884,16 +4897,22 @@ if (/[#&]join=/.test(location.hash)) {
 /* ---------------- Live connection: two devices directly (WebRTC), paired by QR codes ---------------- */
 // No server: the two devices exchange their connection details (offer and answer) as QR codes and then talk directly
 // over the local network (same Wi-Fi or hotspot). Only small messages, about 10 a second at most, never video:
-//   hello  {t, proto, name}             once, after connecting
+//   hello  {t, proto, name, role}       after connecting and when the role changes ("scope" or "follow")
 //   pose   {t, v: [x,y,z] | null}      where this device's telescope points (sky direction), while it knows it
 //   target {t, id | null}              a target was chosen or cleared
 // Unknown messages are ignored (newer versions can add some). Everything else in the app stays as it is: the
 // receiving side only uses the pointing in pointVec() (directions, readout, sound) and turns its free map to it.
 const LIVE_PROTO = 1, LIVE_PREFIX = "zenigo-live:1:";
-var live = { pc: null, dc: null, state: "off", role: null, peer: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
+var live = { pc: null, dc: null, state: "off", role: null, peer: null, peerRole: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
+// Roles: one device is on the telescope and shares where it points, the other follows it. Set per device; a guess
+// at first: phones go on the telescope, tablets and computers follow.
+function liveRole() {
+  if (cfg.liveRole === "scope" || cfg.liveRole === "follow") return cfg.liveRole;
+  return /iPhone|Android phone/.test(deviceName()) ? "scope" : "follow";
+}
 // the other device's telescope, while we follow it (and this device doesn't point by itself)
 function liveVec() {
-  if (!live || live.state !== "connected" || !live.remote || cfg.liveFollow === false) return null;
+  if (!live || live.state !== "connected" || !live.remote || liveRole() !== "follow") return null;
   if (Date.now() - live.remoteAt > 6000) return null;   // nothing heard for a while: not current any more
   if (st.sol && st.solMode !== "map") return null;      // this device has its own pointing
   return live.remote;
@@ -4934,7 +4953,7 @@ function liveChannel(dc) {
   live.dc = dc;
   dc.onopen = () => {
     live.state = "connected"; clearTimeout(live.waitT); liveScanStop();
-    liveSendRaw({ t: "hello", proto: LIVE_PROTO, name: myDevice().name });
+    liveHello();
     if (cfg.target) liveSendRaw({ t: "target", id: cfg.target });
     live.sent = null; clearInterval(live.timer); live.timer = setInterval(livePoseTick, 100);
     closeSheet("liveSheet"); renderLive(); hint("Live connection ready.", 3000);
@@ -4942,17 +4961,18 @@ function liveChannel(dc) {
   dc.onclose = () => { if (live.dc === dc && live.state === "connected") liveLost(); };
   dc.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } liveReceive(m); };
 }
+function liveHello() { liveSendRaw({ t: "hello", proto: LIVE_PROTO, name: myDevice().name, role: liveRole() }); }
 function liveSendRaw(m) { try { if (live.dc && live.dc.readyState === "open") live.dc.send(JSON.stringify(m)); } catch (e) {} }
 // this device's pointing, ten times a second at most, and only when it moved (or every 2 s, so the other side knows it is current)
 function livePoseTick() {
-  const v = teleVec(), now = Date.now();
+  const v = liveRole() === "scope" ? teleVec() : null, now = Date.now();
   if (!v) { if (live.sent) { live.sent = null; liveSendRaw({ t: "pose", v: null }); } return; }
   const moved = !live.sent || v[0] * live.sent[0] + v[1] * live.sent[1] + v[2] * live.sent[2] < Math.cos(0.01 * D2R);
   if (!moved && now - live.sentAt < 2000) return;
   live.sent = v; live.sentAt = now; liveSendRaw({ t: "pose", v: v.map(x => +x.toFixed(6)) });
 }
 function liveReceive(m) {
-  if (m.t === "hello") { live.peer = String(m.name || "other device").slice(0, 40); renderLive(); return; }
+  if (m.t === "hello") { live.peer = String(m.name || "other device").slice(0, 40); live.peerRole = m.role === "scope" || m.role === "follow" ? m.role : null; renderLive(); return; }
   if (m.t === "bye") { liveStop(true); hint((live.peer || "The other device") + " ended the live connection.", 4000); return; }
   if (m.t === "pose") {
     const had = !!liveVec();
@@ -4985,19 +5005,28 @@ function liveStop(quiet) {
   try { if (live.dc) live.dc.close(); } catch (e) {}
   try { if (live.pc) live.pc.close(); } catch (e) {}
   const was = !!liveVec();
-  Object.assign(live, { pc: null, dc: null, state: "off", role: null, remote: null, sent: null });
+  Object.assign(live, { pc: null, dc: null, state: "off", role: null, remote: null, sent: null, peerRole: null });
   if (was) { lastSig = []; updateGuide(); }
   renderLive();
 }
 function renderLive() {
-  const s = $("liveStatus"), on = live.state === "connected";
-  s.className = "note" + (on ? " on" : live.state === "lost" || live.state === "fail" ? " err" : "");
-  s.textContent = on ? "Connected to " + (live.peer || "the other device") + (liveVec() ? ". Following its telescope." : live.remote ? "." : ". Its telescope doesn’t point anywhere yet (camera or Align off).")
+  const s = $("liveStatus"), on = live.state === "connected", role = liveRole(), peer = live.peer || "the other device";
+  const clash = on && live.peerRole && live.peerRole === role;
+  s.className = "note" + (on && !clash ? " on" : clash || live.state === "lost" || live.state === "fail" ? " err" : "");
+  s.textContent = clash ? (role === "scope" ? "Both devices are set to “On the telescope”. Switch one of them to “Follows”." : "Both devices are set to “Follows”. Switch the one on the telescope to “On the telescope”.")
+    : on && role === "scope" ? "This device is the telescope. " + peer + " follows it" + (teleVec() ? "." : ": it doesn’t point anywhere yet (start the camera or Align).")
+    : on ? "Following " + peer + "’s telescope" + (liveVec() ? "." : live.remote ? ", but this device points by itself now (camera or Align)." : ": it doesn’t point anywhere yet.")
     : live.state === "offer" ? "Waiting for the other device…" : live.state === "answer" ? "Show this device’s code to the other device…"
     : live.state === "lost" ? "The connection was lost. Connect again with the codes."
     : live.state === "fail" ? "No connection. Are both devices in the same Wi-Fi, or one in the other’s hotspot?" : "Not connected.";
   $("liveIdle").hidden = on; $("liveOn").hidden = !on;
-  $("liveFollow").checked = cfg.liveFollow !== false;
+  document.querySelectorAll('input[name="liveRole"]').forEach(r => { r.checked = r.value === role; });
+  // the pill bottom right and the menu entry
+  const chip = $("liveChip"); chip.hidden = !on;
+  const txt = role === "scope" ? "Telescope · " + (live.peer || "other device") + " follows" : "Following " + (live.peer || "other device");
+  if (on && $("liveChipTxt").textContent !== txt) $("liveChipTxt").textContent = txt;
+  chip.classList.toggle("warn", !!clash);
+  $("liveState").textContent = on ? (role === "scope" ? "telescope for " : "following ") + (live.peer || "other device") : "";
   updateTag();
 }
 function liveShowQr(text) {
@@ -5090,7 +5119,15 @@ $("liveStart").onclick = () => liveStart();
 $("liveJoin").onclick = () => liveJoin();
 $("liveEnd").onclick = () => { liveStop(); hint("Live connection ended.", 2500); };
 $("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings(); };
-$("liveFollow").onchange = () => { cfg.liveFollow = $("liveFollow").checked; save(); lastSig = []; updateGuide(); renderLive(); };
+document.querySelectorAll('input[name="liveRole"]').forEach(r => r.onchange = () => {
+  cfg.liveRole = r.value; save(); live.sent = null; liveHello(); lastSig = []; updateGuide(); renderLive();
+});
+$("btnLive").onclick = () => { closeSheet("menu"); liveSettings(); };
+$("liveChipTxt").onclick = () => liveSettings();
+$("liveChipOff").onclick = async () => {
+  if ((await askConfirm("End the live connection?", "Both devices stop sharing. Connect again with the codes in Settings › Live.", "End it")) !== true) return;
+  liveStop(); hint("Live connection ended.", 2500);
+};
 addEventListener("pagehide", () => { if (live.state === "connected") liveSendRaw({ t: "bye" }); });
 renderLive();
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
@@ -5108,8 +5145,12 @@ function layoutFabs() {
   if (!fits()) { f.classList.add("compact"); if (!fits()) f.classList.add("two"); }
   if (f.className !== was) { insetCache = null; lastSig = []; }
   // hints and notices keep clear of the column
-  const fw = f.offsetWidth + "px";
-  if (document.documentElement.style.getPropertyValue("--fabs-w") !== fw) document.documentElement.style.setProperty("--fabs-w", fw);
+  const fw = f.offsetWidth + "px", ds = document.documentElement.style;
+  if (ds.getPropertyValue("--fabs-w") !== fw) ds.setProperty("--fabs-w", fw);
+  // for the live pill: the height of the column, and the width of the Locate label beside the big button
+  const fh = f.offsetHeight + "px", lw = (f.classList.contains("labels") && !f.classList.contains("two") ? $("solveLbl").offsetWidth + 8 : 0) + "px";
+  if (ds.getPropertyValue("--fabs-h") !== fh) ds.setProperty("--fabs-h", fh);
+  if (ds.getPropertyValue("--solve-lbl") !== lw) ds.setProperty("--solve-lbl", lw);
 }
 const relayout = () => { placeReadout(); layoutFabs(); };
 if (window.ResizeObserver) { const ro = new ResizeObserver(() => requestAnimationFrame(relayout)); ro.observe($("guide")); ro.observe($("readout"));
@@ -5852,8 +5893,15 @@ function askConfirm(title, text, okLabel, altLabel) {
     openSheet("confirmSheet");
   });
 }
-function closeSheet(id) {
+// final: closed with ✕ (or a tap beside it): the panel closes, nothing opens again. Back buttons (and swiping it
+// down on a phone) go back to where it was opened from.
+function closeSheet(id, final) {
   const sh = $(id); if (sh.hidden) return;
+  if (final) {
+    if (id === "infoSheet" || id === "targetSheet") { st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true; }
+    if (id === "seenSheet" && seenState.fromLog) { keepSeenEdits(); seenState.fromLog = false; }
+    if (id === "searchSheet") st.fromList = false;
+  }
   if (id === "syncSheet") stopScan();
   if (id === "liveSheet") { liveScanStop(); if (live.state === "offer" || live.state === "answer") { liveStop(true); } }
   sh._tok = (sh._tok || 0) + 1;
@@ -5882,7 +5930,7 @@ function closeSheet(id) {
 function scroller(sh) { return sh.querySelector(".sbody") || sh.querySelector(".inner"); }
 SHEETS.forEach(sh => {
   const inner = sh.querySelector(".inner"), grab = sh.querySelector(".grab"), body = scroller(sh);
-  sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) closeSheet(sh.id); });
+  sh.addEventListener("click", e => { if (e.target === sh || e.target.closest("[data-close]")) closeSheet(sh.id, true); });
   let y0 = null, dy = 0, last = 0, lastT = 0, vel = 0, fromBody = false;
   const start = (y, body) => { if (sidePanels()) return; y0 = y; dy = 0; vel = 0; last = y; lastT = performance.now(); fromBody = body; };
   const move = (y, e) => {

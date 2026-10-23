@@ -107,7 +107,8 @@ const TESTS = {
     ok(back[0] && back[1] === 'starred' && back[2] > 100, 'back returns to the same tab and scroll position', back);
     await p.tap('[data-ltab="seen"]'); await wait(p, 300); await p.tap('#listBody .orow .omain'); await wait(p, 500);
     await p.tap('#infoSheet [data-close]'); await wait(p, 600);
-    ok(await ev(p, () => !$('listSheet').hidden && listTab.v === 'seen'), '✕ on details opened from the list returns to the list');
+    ok(await ev(p, () => $('listSheet').hidden && $('infoSheet').hidden), '✕ on details opened from the list closes them (back is the arrow)');
+    await p.tap('#fabList'); await wait(p, 500);
     await p.tap('[data-ltab="starred"]'); await wait(p, 300); await p.tap('#listBody .orow .omain'); await wait(p, 500);
     const tid = await ev(p, () => st.picked.id); await p.tap('#infoTarget'); await wait(p, 600);
     ok(await ev(p, t => cfg.target === t && $('infoSheet').hidden && $('listSheet').hidden, tid), 'Set as target on a phone closes and shows the map');
@@ -499,6 +500,7 @@ const TESTS = {
   // live connection: two devices, codes exchanged as text (the QR step is the same text), then pointing and target live
   async live() {
     const A = await page(), B = await page({ w: 1280, h: 800, mobile: false, perms: ['camera'] });
+    await ev(A, () => { cfg.liveRole = 'scope'; save(); }); await ev(B, () => { cfg.liveRole = 'follow'; save(); });
     const code = await ev(A, () => liveStart({ noScan: true }));
     ok(/^zenigo-live:1:o[rd]:/.test(code || '') && code.length < 1200, 'device A shows a code (offer) small enough for a QR code', code && code.length);
     ok(await ev(A, () => !$('liveSheet').hidden && !$('liveQrBox').hidden), 'the code is shown as a QR code');
@@ -508,7 +510,9 @@ const TESTS = {
     await A.waitForFunction(() => live.state === 'connected', null, { timeout: 15000 }).catch(() => {});
     await B.waitForFunction(() => live.state === 'connected' && !!live.peer, null, { timeout: 15000 }).catch(() => {});
     ok(await ev(A, () => live.state === 'connected') && await ev(B, () => live.state === 'connected'), 'both are connected (directly, no server)');
-    ok(await ev(B, () => /Connected to/.test($('liveStatus').textContent)), 'the settings say so');
+    ok(await ev(B, () => /Following/.test($('liveStatus').textContent)) && await ev(A, () => /This device is the telescope/.test($('liveStatus').textContent)), 'the settings say who is the telescope and who follows');
+    ok(await ev(A, () => !$('liveChip').hidden && /follows/.test($('liveChipTxt').textContent)) && await ev(B, () => !$('liveChip').hidden && /^Following/.test($('liveChipTxt').textContent)), 'the pill bottom right shows the connection on both');
+    ok(await ev(B, () => /following/.test($('liveState').textContent) && !$('btnLive').hidden), 'the menu entry shows it too');
     // A points somewhere (as with Align): B follows it, its directions use A's telescope
     await ev(A, () => { const t = skyNow().t, v = targetById('M13').vec(t), h = horiz(v, t); st.mapView = { az: h.az, alt: h.alt, fov: 30 }; st.sol = Object.assign({}, mapSol(), { approx: false }); st.solMode = 'track'; st.sensor = true; cfg.tele = { x: 0, y: 0 }; });
     await B.waitForFunction(() => !!liveVec(), null, { timeout: 5000 }).catch(() => {});
@@ -521,9 +525,13 @@ const TESTS = {
     ok(await ev(B, () => !$('guide').classList.contains('idle') && /\d/.test($('azV').textContent)), 'B shows the directions from A’s telescope to the target');
     await ev(A, () => clearTarget()); await wait(B, 600);
     ok(await ev(B, () => !cfg.target), 'clearing it on A clears it on B');
-    // ending on one side ends it on both
-    await ev(A, () => liveStop()); await wait(B, 800);
-    ok(await ev(B, () => live.state !== 'connected' && !liveVec()), 'Disconnect ends it on both devices');
+    // the same role on both: the settings say so
+    await ev(B, () => { cfg.liveRole = 'scope'; save(); liveHello(); renderLive(); }); await wait(A, 500);
+    ok(await ev(A, () => /Both devices are set to/.test($('liveStatus').textContent)), 'both on the telescope: a warning to switch one');
+    await ev(B, () => { cfg.liveRole = 'follow'; save(); liveHello(); renderLive(); }); await wait(A, 500);
+    // ending on one side ends it on both (the ✕ in the pill asks first)
+    await ev(A, () => $('liveChipOff').click()); await wait(A, 500); await ev(A, () => $('confirmOk').click()); await wait(B, 800);
+    ok(await ev(B, () => live.state !== 'connected' && !liveVec() && $('liveChip').hidden), 'Disconnect ends it on both devices');
     await done(A); await done(B);
   },
 
