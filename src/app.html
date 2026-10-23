@@ -335,6 +335,21 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
 .ttonight .course { color: var(--muted); font-size: 13px; }
+/* the bigger night bar in the details: green times below, reach marks above, a small legend */
+.obarw.odetail { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 6px 0 0; }
+.obarw.odetail.hasmarks { margin-top: 22px; }
+.obarw.odetail .obar { grid-column: 1 / -1; order: -1; height: 8px; border-radius: 4px; margin-bottom: 22px; }
+.obarw.odetail .oend:last-child { justify-self: end; }
+.obarw.odetail .obar i { top: -3px; height: 14px; }
+.obar .ntime, .obar .nmark { position: absolute; top: 12px; font: 11px var(--font-num); color: #8fd3a6; white-space: nowrap; }
+.obar .nmark { top: auto; bottom: 13px; color: var(--fg); }
+.obar i.nreach { top: -5px !important; height: 18px !important; width: 0 !important; background: none !important; border-left: 2px dotted var(--fg); }
+.nlegend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+.nlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.nlegend i { width: 16px; height: 6px; border-radius: 3px; flex: none; }
+.nlegend i.good { background: #4c9466; } .nlegend i.up { background: #7a5a2c; }
+.nlegend i.now { width: 2px; height: 12px; border-radius: 0; background: var(--target); }
+.nlegend i.reach { width: 0; height: 12px; border-radius: 0; border-left: 2px dotted var(--fg); }
 .epbox .lnk { justify-self: start; background: none; border: 0; padding: 2px 0; color: var(--accent); font: 600 14px var(--font-ui); cursor: pointer; }
 .epbox .eb { display: flex; align-items: center; gap: 10px; }
 .epbox .eb > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
@@ -3594,7 +3609,8 @@ function objById(id) {
 const ICON = {
   star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>',
   plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h5"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M19 15.5v5M16.5 18h5"/></svg>',
-  planned: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h4"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M16 18l2 2 3.5-3.5"/></svg>',
+  // planned: the same list, but solid (amber tile, dark marks), so it stands out from "Plan" at a glance
+  planned: '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="22" height="22" rx="6" fill="currentColor" stroke="none"/><g stroke="#17110a" stroke-width="2"><path d="M10.5 7h7.5M10.5 12h7.5M10.5 17h4"/><path d="M5 7l1.2 1.2L8.4 6M5 12l1.2 1.2L8.4 11M5 17l1.2 1.2L8.4 16"/></g></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg>',
 };
@@ -3890,7 +3906,7 @@ function fillMoonPhase(box) {
 // The night bar: sunset (left) to sunrise (right), amber while the object is well placed, red tick = now
 const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v7M9 7.5l3 3 3-3"/></svg>';
 const SUN_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 10V3M9 6l3-3 3 3"/></svg>';
-function nightBar(p) {
+function nightBar(p, detail) {
   const tn = nightPlan(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (!tn.endsTxt) tn.endsTxt = [fmt(tn.start), fmt(tn.end)];   // formatting times is slow: once per night plan
   const w = document.createElement("div"); w.className = "obarw";
@@ -3900,7 +3916,68 @@ function nightBar(p) {
   if (p.now != null) { const i = document.createElement("i"); i.style.left = p.now + "%"; bar.append(i); }
   const b = document.createElement("span"); b.className = "oend"; b.append(tn.endsTxt[1]); if (tn.sunrise) b.insertAdjacentHTML("beforeend", SUN_UP);
   b.setAttribute("aria-label", (tn.sunrise ? "Sunrise " : "To ") + tn.endsTxt[1]);
-  w.append(a, bar, b); return w;
+  w.append(a, bar, b);
+  if (detail) nightDetail(bar, w, p);
+  return w;
+}
+// In the details: the times of the well placed part under the bar, and above it when the object comes into or leaves
+// the telescope's reach (lowest/highest altitude in Settings › Telescope); no marks when it stays in reach all night.
+function nightDetail(bar, w, p) {
+  const tn = nightPlan(), span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
+  const fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), pts = p.pts || [];
+  const label = (row, at, txt, cls) => {
+    if (row.some(x => Math.abs(x - at) < 0.5)) return; row.push(at);
+    const e = document.createElement("span"); e.className = cls; e.textContent = txt; e.style.left = at + "%"; e.dataset.at = at; bar.append(e);
+  };
+  // well placed: start and end of each green stretch
+  const below = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (!pts[i].good || (i && pts[i - 1].good)) continue;
+    let j = i; while (j + 1 < pts.length && pts[j + 1].good) j++;
+    const end = j + 1 < pts.length ? pts[j + 1].d : tn.end;
+    label(below, pct(pts[i].d), fmt(pts[i].d), "ntime"); label(below, pct(end), fmt(end), "ntime");
+    i = j;
+  }
+  // reach: where the altitude crosses the lowest or highest the telescope points (while above the horizon)
+  const R = reach(), marks = [];
+  if (R.limited) for (let i = 1; i < pts.length; i++) {
+    const a0 = pts[i - 1].a, a1 = pts[i].a;
+    for (const lim of [R.lo, R.hi]) {
+      if (lim <= 0 || lim >= 90 || Math.max(a0, a1) <= 0 || (a0 < lim) === (a1 < lim)) continue;
+      const f = (lim - a0) / (a1 - a0), d = new Date(+pts[i - 1].d + f * (pts[i].d - pts[i - 1].d));
+      const into = lim === R.lo ? a1 > a0 : a1 < a0;
+      marks.push({ d, into });
+    }
+  }
+  const above = [];
+  marks.forEach(m => {
+    const at = pct(m.d), t = document.createElement("i"); t.className = "nreach"; t.style.left = at + "%"; bar.append(t);
+    label(above, at, (m.into ? "in " : "out ") + fmt(m.d), "nmark");
+  });
+  w.classList.add("odetail"); if (marks.length) w.classList.add("hasmarks");
+  requestAnimationFrame(() => spreadLabels(bar));
+}
+// Times on the bar: each as close to its place as possible, without covering each other or leaving the bar
+function spreadLabels(bar) {
+  const W = bar.clientWidth; if (!W) return;
+  for (const cls of ["ntime", "nmark"]) {
+    const els = [...bar.querySelectorAll("." + cls)].map(e => ({ e, w: e.offsetWidth, want: +e.dataset.at / 100 * W })).sort((a, b) => a.want - b.want);
+    els.forEach(o => { o.x = Math.max(0, Math.min(W - o.w, o.want - o.w / 2)); });
+    for (let i = 1; i < els.length; i++) els[i].x = Math.max(els[i].x, els[i - 1].x + els[i - 1].w + 8);
+    for (let i = els.length - 1; i >= 0; i--) { const lim = i === els.length - 1 ? W : els[i + 1].x - 8; if (els[i].x + els[i].w > lim) els[i].x = lim - els[i].w; }
+    els.forEach((o, i) => { const clash = o.x < 0 || (i && o.x < els[i - 1].x + els[i - 1].w); o.e.hidden = clash; o.e.style.left = o.x + "px"; });
+  }
+}
+function nightLegend(p) {
+  const l = document.createElement("div"); l.className = "nlegend";
+  const item = (cls, txt) => { const s = document.createElement("span"); const i = document.createElement("i"); i.className = cls; s.append(i, txt); l.append(s); };
+  item("good", "well placed: dark, above 20°" + (reach().limited ? ", in reach" : ""));
+  item("up", "above the horizon");
+  item("now", "now");
+  const R = reach();
+  if (R.limited && (p.pts || []).some((q, i, a) => i && [R.lo, R.hi].some(lim => lim > 0 && lim < 90 && Math.max(a[i - 1].a, q.a) > 0 && (a[i - 1].a < lim) !== (q.a < lim))))
+    item("reach", "in/out: comes into or leaves your telescope’s reach (" + R.lo + "–" + R.hi + "°)");
+  return l;
 }
 // Rising, highest point and setting during the night (from the 10-minute samples)
 function nightCourse(p) {
@@ -3923,7 +4000,8 @@ function fillTonight(box, p) {
   const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; box.append(k);
   const d = document.createElement("div"); d.textContent = p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
   const c = nightCourse(p); if (c) { const cd = document.createElement("div"); cd.className = "course"; cd.textContent = c; box.append(cd); }
-  box.append(nightBar(p));
+  box.append(nightBar(p, true));
+  box.append(nightLegend(p));
 }
 // The list opens on the tab used last (remembered across starts)
 const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };

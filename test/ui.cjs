@@ -455,6 +455,18 @@ const TESTS = {
     ok(c.n > 0 && c.out > 0, 'My telescope also lists objects out of reach now, saying so next to the altitude', c);
     ok(c.good.length > 0 && c.good.every(a => a >= 30 && a <= 60), 'with Good now only what is in reach now', c.good);
     ok(c.south === 0 && c.southAll > 0, 'In reach leaves out objects that never climb above the lowest altitude; My telescope alone keeps them', [c.south, c.southAll]);
+    // details: the night bar shows the times of the green part, the reach marks and a legend
+    const d = await ev(p, async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms)), get = () => { const b = $('infoTonight') || document.querySelector('#infoSheet .ttonight'); return { times: [...b.querySelectorAll('.ntime')].filter(e => !e.hidden).map(e => e.textContent), marks: [...b.querySelectorAll('.nmark')].map(e => e.textContent), legend: b.querySelector('.nlegend') ? b.querySelector('.nlegend').textContent : '' }; };
+      setOptics({ altMin: 25, altMax: 60 }); reachChanged(); showInfo(objById('M57')); await wait(400); const a = get();
+      setOptics({ altMin: 0, altMax: 90 }); reachChanged(); showInfo(objById('M57')); await wait(400); const b = get();
+      obs.list.push({ id: 'M57', name: 'M57', added: Date.now() }); saveObs(); showInfo(objById('M57'));
+      const planned = $('infoPlan').innerHTML.includes('<rect'); obs.list = obs.list.filter(x => x.id !== 'M57'); saveObs(); showInfo(objById('M57'));
+      return { a, b, planned, plan: !$('infoPlan').innerHTML.includes('<rect') };
+    });
+    ok(d.a.times.length >= 2 && d.a.marks.some(m => /^in /.test(m)) && d.a.marks.some(m => /^out /.test(m)) && /reach \(25–60°\)/.test(d.a.legend), 'details: green times, in/out marks for the reach, legend', d.a);
+    ok(d.b.times.length >= 2 && d.b.marks.length === 0 && !/reach \(/.test(d.b.legend) && /well placed/.test(d.b.legend), 'without a set reach: no marks', d.b);
+    ok(d.planned && d.plan, 'Planned has its own solid icon, Plan the outline');
     await wait(p, 300);
     await done(p);
   },
