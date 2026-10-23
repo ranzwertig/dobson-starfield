@@ -52,6 +52,7 @@
     <a class="sub" href="#settings-scope">Telescope</a>
     <a class="sub" href="#settings-cam">Camera &amp; sensors</a>
     <a class="sub" href="#settings-sync">Sync</a>
+    <a class="sub" href="#settings-live">Live</a>
     <a href="#offline">Offline and updates</a>
     <a href="#permissions">Camera and sensor access</a>
     <a class="sub" href="#permissions-ios">iPhone and iPad</a>
@@ -497,6 +498,21 @@
         <ul>
           <li><b>On a new device:</b> open the link, or open Zenigo and go to Menu → Sync with other devices → Join with a code, and scan the saved image or paste the link. The lists, the logbook and the telescope settings come back.</li>
           <li><b>Without Zenigo:</b> the small script <a href="/help/sync-recover.py" download>sync-recover.py</a> (Python 3, needs <code>pip install cryptography</code>) fetches the encrypted copy and decrypts it on your computer: <code>python3 sync-recover.py "&lt;link&gt;" &gt; zenigo-data.json</code>. The result is plain JSON with the observing list, starred objects, logbook entries and settings. The script also describes the encryption, so the data can be read with any other tool too.</li>
+        </ul>
+      </dd>
+    </dl>
+
+    <h3 id="settings-live">Live</h3>
+    <dl class="ref">
+      <dt id="live">Live connection</dt>
+      <dd>Connects two devices directly, phone to tablet, phone to phone or tablet to tablet, for example the phone on the telescope and a tablet in your hand. There is no server and no internet involved: the devices exchange their connection details as two QR codes and then talk to each other over the local network.
+        <ul>
+          <li><b>What it needs:</b> both devices in the same Wi-Fi, or one in the other’s hotspot (it also works without internet, as long as the hotspot can be switched on). On iPhone and iPad the Personal Hotspot needs mobile data switched on. Two devices that are each online with their own SIM card can’t reach each other this way: put one into the other’s hotspot.</li>
+          <li><b>Connecting:</b> on one device Settings → Live → <b>Show a code</b>; on the other <b>Scan a code</b> and scan it. That device then shows its own code: hold it in front of the first device’s camera. A second or two later both say “Connected”. Do this before the phone goes into its holder.</li>
+          <li><b>What is shared:</b> where the telescope points, from the device that knows it (camera, Align or compass), about ten times a second at most and only when it moves; and the target: choosing or clearing it on one device does the same on the other. No camera image, no video, nothing else.</li>
+          <li><b>Following:</b> with <b>Follow the other device’s telescope</b> on, a device that doesn’t point by itself turns its map to the other device’s telescope, shows the crosshair there and gives the directions to the target from it, also with sound. The label at the bottom left says “Live · iPhone’s telescope”. Once the device points by itself (camera, Align), its own pointing counts.</li>
+          <li><b>Lost connection:</b> when a device is locked, goes out of Wi-Fi range or the app is closed, the connection ends and both say so; connect again with the codes. <b>Disconnect</b> ends it on both devices.</li>
+          <li>The codes are valid for this one connection. The connection is encrypted, and only the device that has seen the code can connect.</li>
         </ul>
       </dd>
     </dl>

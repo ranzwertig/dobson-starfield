@@ -496,6 +496,37 @@ const TESTS = {
     }
   },
 
+  // live connection: two devices, codes exchanged as text (the QR step is the same text), then pointing and target live
+  async live() {
+    const A = await page(), B = await page({ w: 1280, h: 800, mobile: false, perms: ['camera'] });
+    const code = await ev(A, () => liveStart({ noScan: true }));
+    ok(/^zenigo-live:1:o[rd]:/.test(code || '') && code.length < 1200, 'device A shows a code (offer) small enough for a QR code', code && code.length);
+    ok(await ev(A, () => !$('liveSheet').hidden && !$('liveQrBox').hidden), 'the code is shown as a QR code');
+    const ans = await ev(B, c => liveJoin(c), code);
+    ok(/^zenigo-live:1:a[rd]:/.test(ans || ''), 'device B answers with its own code', ans && ans.length);
+    await ev(A, async a => liveAnswer(await liveDecode(a)), ans);
+    await A.waitForFunction(() => live.state === 'connected', null, { timeout: 15000 }).catch(() => {});
+    await B.waitForFunction(() => live.state === 'connected' && !!live.peer, null, { timeout: 15000 }).catch(() => {});
+    ok(await ev(A, () => live.state === 'connected') && await ev(B, () => live.state === 'connected'), 'both are connected (directly, no server)');
+    ok(await ev(B, () => /Connected to/.test($('liveStatus').textContent)), 'the settings say so');
+    // A points somewhere (as with Align): B follows it, its directions use A's telescope
+    await ev(A, () => { const t = skyNow().t, v = targetById('M13').vec(t), h = horiz(v, t); st.mapView = { az: h.az, alt: h.alt, fov: 30 }; st.sol = Object.assign({}, mapSol(), { approx: false }); st.solMode = 'track'; st.sensor = true; cfg.tele = { x: 0, y: 0 }; });
+    await B.waitForFunction(() => !!liveVec(), null, { timeout: 5000 }).catch(() => {});
+    const f = await ev(B, () => { const v = liveVec(), m13 = targetById('M13').vec(skyNow().t); return { sep: v ? Solver.angDeg(v, m13) : null, tag: $('srcTag').textContent, map: st.mapView }; });
+    ok(f.sep != null && f.sep < 0.5, 'B receives where A’s telescope points', f.sep);
+    ok(/Live/.test(f.tag), 'B’s map follows it and says so', f.tag);
+    // a target chosen on B becomes A's target; directions on B are from A's telescope
+    await ev(B, () => selectTarget('M92', true)); await wait(A, 600);
+    ok(await ev(A, () => cfg.target === 'M92'), 'a target chosen on B is the target on A');
+    ok(await ev(B, () => !$('guide').classList.contains('idle') && /\d/.test($('azV').textContent)), 'B shows the directions from A’s telescope to the target');
+    await ev(A, () => clearTarget()); await wait(B, 600);
+    ok(await ev(B, () => !cfg.target), 'clearing it on A clears it on B');
+    // ending on one side ends it on both
+    await ev(A, () => liveStop()); await wait(B, 800);
+    ok(await ev(B, () => live.state !== 'connected' && !liveVec()), 'Disconnect ends it on both devices');
+    await done(A); await done(B);
+  },
+
   async categories() {
     const p = await page();
     await ev(p, () => { setOptics({ scope: 1200, ap: 203 }); cfg.searchCats = []; }); await p.waitForFunction(() => LISTS.ok && NGC.length > 1000, null, { timeout: 10000 });

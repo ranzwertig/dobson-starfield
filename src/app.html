@@ -540,9 +540,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   /* the menu has its own, narrower width, so the panel on the right never changes size when it opens */
   :root { --menu-w: min(360px, 30vw); }
   body.menu-open { --pl: var(--menu-w); }
-  #menu.sheet, #logSheet.sheet, #seenSheet.sheet, #sheet.sheet, #syncSheet.sheet { inset: 0 auto 0 0; width: var(--menu-w); }
-  #menu .inner, #logSheet .inner, #seenSheet .inner, #sheet .inner, #syncSheet .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
-  #menu.open .inner, #logSheet.open .inner, #seenSheet.open .inner, #sheet.open .inner, #syncSheet.open .inner { transform: translateX(0); }
+  #menu.sheet, #logSheet.sheet, #seenSheet.sheet, #sheet.sheet, #syncSheet.sheet, #liveSheet.sheet { inset: 0 auto 0 0; width: var(--menu-w); }
+  #menu .inner, #logSheet .inner, #seenSheet .inner, #sheet .inner, #syncSheet .inner, #liveSheet .inner { border-left: 0; border-right: 1px solid var(--line); transform: translateX(-105%); box-shadow: 12px 0 40px rgba(0,0,0,.35); }
+  #menu.open .inner, #logSheet.open .inner, #seenSheet.open .inner, #sheet.open .inner, #syncSheet.open .inner, #liveSheet.open .inner { transform: translateX(0); }
   .grab { cursor: default; padding-top: 14px; margin-inline: -18px; padding-inline: 18px; }
   .grab::before { display: none; }
   .sheet h2 { font-size: 21px; }
@@ -651,6 +651,9 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 #syncStatus.err { color: var(--target); }
 .row input#syncName { font-family: var(--font-ui); }
 .syncpane { display: grid; gap: 12px; }
+#liveSheet .qrbox canvas { width: min(300px, 74vw); }
+#liveSheet .scanbox { max-height: 30vh; justify-self: center; width: min(320px, 100%); }
+#liveStatus.on { color: var(--ok); } #liveStatus.err { color: var(--target); }
 .qrbox { justify-self: center; background: #fff; padding: 14px; border-radius: 14px; line-height: 0; }
 .qrbox canvas { width: min(240px, 62vw); height: auto; image-rendering: pixelated; }
 .scanbox { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; max-height: 46vh; }
@@ -979,6 +982,16 @@ a.btn { text-decoration: none; color: var(--fg); }
   </div>
 </div>
 
+<div class="sheet" id="liveSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="liveTitle">
+    <div class="grab"><h2 id="liveTitle"><button class="iconbtn" id="liveBack" aria-label="Back to the settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="liveTitleTxt">Live connection</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="note" id="liveStep"></p>
+    <div class="qrbox" id="liveQrBox" hidden><canvas id="liveQr" width="300" height="300" role="img" aria-label="QR code for the live connection"></canvas></div>
+    <div class="scanbox" id="liveScanBox" hidden><video id="liveVideo" playsinline muted></video><i></i></div>
+    <p class="note" id="liveScanMsg"></p>
+  </div>
+</div>
+
 <div class="sheet" id="confirmSheet" hidden>
   <div class="inner" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
@@ -1175,7 +1188,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync</button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync</button><button class="chip" role="tab" data-stab="live">Live</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -1218,6 +1231,15 @@ a.btn { text-decoration: none; color: var(--fg); }
         </details>
       </div>
       <p class="note">What is synced, and what stays on each device: <a href="/help/#sync" target="_blank" rel="noopener">Help</a> · <a href="/privacy/#sync" target="_blank" rel="noopener">Privacy</a></p>
+    </fieldset>
+    <fieldset data-stab="live" id="liveBox">
+      <legend>Live connection</legend>
+      <p class="note">Connect two devices directly, for example the phone on the telescope and a tablet in your hand: the other device shows where the telescope points, with the directions to the target, and a target chosen on one is the target on both. No server and no internet: both devices only have to be in the same Wi-Fi, or one in the other’s hotspot.</p>
+      <p class="note" id="liveStatus"></p>
+      <div class="row" id="liveIdle"><button class="btn primary" id="liveStart">Show a code</button><button class="btn" id="liveJoin">Scan a code</button></div>
+      <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button></div>
+      <label class="check"><input type="checkbox" id="liveFollow"> Follow the other device’s telescope (map, crosshair and directions)</label>
+      <p class="note">How to connect: on one device tap <b>Show a code</b>, on the other <b>Scan a code</b> and scan it; then hold the code the second device shows in front of the first device’s camera. Do it before the phone goes into its holder. <a href="/help/#live" target="_blank" rel="noopener">Help</a></p>
     </fieldset>
     <fieldset data-stab="general" id="backup">
       <legend>Backup and restore</legend>
@@ -2034,12 +2056,14 @@ function clearTarget() {
   if (!cfg.target) return;
   cfg.target = null; save(); renderChips(); updateGuide(); renderReadout();
   if (!$("searchSheet").hidden) showResults();
+  liveTarget(null);
   hint("Target cleared. Choose a new one with Find target.", 3000);
 }
 function selectTarget(id, confirmed) {
   // Sun only after explicit confirmation of the solar filter
   if (id === "Sun" && !confirmed && !st.sunOk) { openSheet("sunSheet"); return; }
   cfg.target = id; save(); renderChips(); updateGuide(); renderReadout();
+  liveTarget(id);
 }
 
 /* ---------------- Telescope direction + guidance ---------------- */
@@ -2062,6 +2086,8 @@ function telePix(sol) {
   return p || { x: sol.cx + sol.f * (+curTele().x || 0), y: sol.cy + sol.f * (+curTele().y || 0) };
 }
 function teleVec() { if (!st.sol || st.solMode === "map") return null; return Solver.mul(st.sol.R, teleCam()); }
+// Where the telescope points for the directions: this device's own, else the one a live-connected device sends
+function pointVec() { return teleVec() || liveVec(); }
 const fmtDeg = (v, d = 1) => v.toFixed(d) + "°";
 function fmtRA(ra) { const T = Math.round(ra / 15 * 3600) % 86400, H = Math.floor(T / 3600), M = Math.floor(T / 60) % 60, S = T % 60; return `${String(H).padStart(2, "0")}h ${String(M).padStart(2, "0")}m ${String(S).padStart(2, "0")}s`; }
 function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) * 60), D = Math.floor(T / 60), M = T % 60; return `${s}${D}° ${String(M).padStart(2, "0")}′`; }
@@ -2081,8 +2107,8 @@ function tgtPill(txt, cls) {
 }
 function updateGuide() {
   syncHudNext(); syncTargetPanel(false); syncTargetFab();
-  const T = targetById(cfg.target), tv = teleVec(), t = skyNow().t;
-  const g = $("guide"); g.classList.remove("hit", "stale", "abs", "tog"); g.classList.toggle("idle", !teleVec());
+  const T = targetById(cfg.target), tv = pointVec(), t = skyNow().t;
+  const g = $("guide"); g.classList.remove("hit", "stale", "abs", "tog"); g.classList.toggle("idle", !tv);
   // where the telescope points: azimuth and altitude (without a target always, with one after a tap on the boxes)
   const showAbs = ph => {
     g.classList.add("abs"); g.classList.toggle("tog", !!T);
@@ -2116,7 +2142,7 @@ function updateGuide() {
 }
 // With a target: a tap on the boxes switches between the way to it and where the telescope points
 document.querySelectorAll("#guide .hcell").forEach(c => c.onclick = () => {
-  if (!targetById(cfg.target) || !teleVec()) return;
+  if (!targetById(cfg.target) || !pointVec()) return;
   cfg.hudAbs = !cfg.hudAbs; save(); updateGuide();
   hint(cfg.hudAbs ? "Showing where the telescope points (azimuth, altitude). Tap again for the way to the target." : "Showing the way to the target. Tap again for where the telescope points.", 3000);
 });
@@ -2126,7 +2152,7 @@ document.querySelectorAll("#guide .hcell").forEach(c => c.onclick = () => {
 // The closer, the faster they repeat. In the eyepiece field a soft chord, then silence until it drifts out again.
 const sound = { on: false, ctx: null, gain: null, timer: 0, phase: "az", found: false, wake: null };
 function guideNow() {
-  const T = targetById(cfg.target), tv = teleVec(); if (!T || !tv || st.tOff) return null;
+  const T = targetById(cfg.target), tv = pointVec(); if (!T || !tv || st.tOff) return null;
   const t = skyNow().t, tgt = vecNow(T), th = horiz(tgt, t), ph = horiz(tv, t);
   const dAz = ((th.az - ph.az + 540) % 360) - 180, dAlt = th.alt - ph.alt;
   return { dAz, dAlt, azSky: Math.abs(dAz) * Math.max(0.05, Math.cos(ph.alt * D2R)), sep: Solver.angDeg(tv, tgt), below: th.alt < 0 };
@@ -2195,7 +2221,7 @@ function renderReadout() {
   const s0 = st.sol, short = s0 ? "FOV " + fmtDeg(longFromSol(s0)) + (s0.approx ? "" : " · ±" + (s0.rms * 60).toFixed(1) + "′ · " + s0.nMatch + " stars") : st.stars.length ? st.stars.length + " points of light" : "No position yet";
   if ($("rdShort").textContent !== short) $("rdShort").textContent = short;
   const add = (k, v) => { const d = document.createElement("div"); const a = document.createElement("span"); a.textContent = k; const b = document.createElement("span"); b.textContent = v; d.append(a, b); r.append(d); };
-  const t = A.MakeTime(new Date()), tv = teleVec();
+  const t = A.MakeTime(new Date()), tv = pointVec();
   if (tv) {
     const rd = Solver.v2radec(tv), h = horiz(tv, t);
     add("Telescope RA", fmtRA(rd.ra)); add("Telescope Dec", fmtDec(rd.dec));
@@ -2940,7 +2966,7 @@ function drawHorizon(c, sol, dpr, t, col) {
 function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
   const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
-  const txt = m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+  const txt = liveVec() ? "Live · " + (live.peer || "other device") + "’s telescope" : m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
   syncPin();
   if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
@@ -3493,7 +3519,12 @@ function drawOverlay(dpr) {
   drawHorizon(c, sol, dpr, t, col);
   const freeMap = st.solMode === "map";
   let tx, ty;
-  if (freeMap) { tx = viewCx(); ty = H / 2; }
+  if (freeMap) {
+    tx = viewCx(); ty = H / 2;
+    // following a live-connected telescope: the map is turned to it, the crosshair marks it in the middle
+    if (liveVec()) { c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr; c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); }); c.stroke(); }
+  }
   else {
     const tp = telePix(sol); [tx, ty] = P(tp.x, tp.y);
     c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr; c.globalAlpha = sol.approx ? 0.6 : 1;
@@ -3530,7 +3561,7 @@ function drawOverlay(dpr) {
       c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
       c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - 14 * dpr * Math.cos(a - 0.45), y2 - 14 * dpr * Math.sin(a - 0.45)); c.lineTo(x2 - 14 * dpr * Math.cos(a + 0.45), y2 - 14 * dpr * Math.sin(a + 0.45)); c.closePath(); c.fill();
       if (!inside) {   // target outside: hint label at the arrow tip with distance
-        const tv = teleVec() || Solver.mul(sol.R, [0, 0, 1]), sep = Solver.angDeg(tv, tvec);
+        const tv = pointVec() || Solver.mul(sol.R, [0, 0, 1]), sep = Solver.angDeg(tv, tvec);
         const txt = T.name + " · " + fmtDeg(sep, 0) + " away";
         c.font = `600 ${13 * dpr}px ${col("--font-ui")}`;
         const tw = c.measureText(txt).width, ph = 22 * dpr, pw = tw + 16 * dpr;
@@ -4031,7 +4062,7 @@ function routeOrder(items) {
   const leaveSoon = r => r.p.sort < 9e14 && r.p.sort - now < ROUTE_URGENT;
   const urgent = up.filter(leaveSoon), rest = up.filter(r => !leaveSoon(r));
   const vec = r => mountPos(vecNow(r.p.T));
-  const CT = targetById(cfg.target), tv = teleVec();
+  const CT = targetById(cfg.target), tv = pointVec();
   let start = urgent.length ? vec(urgent[urgent.length - 1]) : CT ? mountPos(vecNow(CT)) : tv ? mountPos(tv) : null;
   // the target itself, if planned, is where we are: first
   const ti = rest.findIndex(r => r.x.id === cfg.target);
@@ -4187,7 +4218,7 @@ function syncTargetPanel(force) {
   $("tgtSub").textContent = [o.desig, T.mag != null ? (+T.mag).toFixed(1) + " mag" : "", "in " + con].filter(Boolean).join(" · ");
   $("tgtWarn").hidden = T.id !== "Sun";
   // directions from the crosshair, like the HUD
-  const g = $("tgtGuide"), tv = teleVec(); g.textContent = ""; g.classList.remove("hit");
+  const g = $("tgtGuide"), tv = pointVec(); g.textContent = ""; g.classList.remove("hit");
   const cell = (svg, val, txt) => { const c = document.createElement("div"); c.className = "c"; c.innerHTML = svg + "<div><b></b><small></small></div>"; c.querySelector("b").textContent = val; c.querySelector("small").textContent = txt; g.append(c); };
   const w = document.createElement("div"); w.className = "w";
   if (tv) {
@@ -4455,7 +4486,7 @@ function exportBackup(all) {
 try { if (sessionStorage.getItem("zenigo-restored")) { sessionStorage.removeItem("zenigo-restored"); setTimeout(() => hint("Settings and lists restored from the backup.", 4000), 800); } } catch (e) {}
 /* Settings sections as tabs; the last one is kept */
 function setSetTab(t) {
-  if (!["general", "scope", "cam", "sync"].includes(t) || (t === "sync" && $("setTabSync").hidden)) t = "general";
+  if (!["general", "scope", "cam", "sync", "live"].includes(t) || (t === "sync" && $("setTabSync").hidden)) t = "general";
   cfg.setTab = t; save();
   document.querySelectorAll("#sheet [data-stab]").forEach(el => {
     if (el.classList.contains("chip")) { const on = el.dataset.stab === t; el.classList.toggle("sel", on); el.setAttribute("aria-selected", on); }
@@ -4850,6 +4881,218 @@ if (/[#&]join=/.test(location.hash)) {
   history.replaceState(null, "", location.pathname + location.search);
   setTimeout(async () => { if (await joinSync(code, true)) showSyncSettings(); }, 1200);
 }
+/* ---------------- Live connection: two devices directly (WebRTC), paired by QR codes ---------------- */
+// No server: the two devices exchange their connection details (offer and answer) as QR codes and then talk directly
+// over the local network (same Wi-Fi or hotspot). Only small messages, about 10 a second at most, never video:
+//   hello  {t, proto, name}             once, after connecting
+//   pose   {t, v: [x,y,z] | null}      where this device's telescope points (sky direction), while it knows it
+//   target {t, id | null}              a target was chosen or cleared
+// Unknown messages are ignored (newer versions can add some). Everything else in the app stays as it is: the
+// receiving side only uses the pointing in pointVec() (directions, readout, sound) and turns its free map to it.
+const LIVE_PROTO = 1, LIVE_PREFIX = "zenigo-live:1:";
+var live = { pc: null, dc: null, state: "off", role: null, peer: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
+// the other device's telescope, while we follow it (and this device doesn't point by itself)
+function liveVec() {
+  if (!live || live.state !== "connected" || !live.remote || cfg.liveFollow === false) return null;
+  if (Date.now() - live.remoteAt > 6000) return null;   // nothing heard for a while: not current any more
+  if (st.sol && st.solMode !== "map") return null;      // this device has its own pointing
+  return live.remote;
+}
+// connection details as text for a QR code: the SDP, candidates over UDP only, compressed
+async function liveEncode(kind, sdp) {
+  let n = 0;
+  const lines = sdp.split(/\r?\n/).filter(l => l && !(/^a=candidate:/.test(l) && (/ tcp /i.test(l) || ++n > 6)));
+  let data = new TextEncoder().encode(lines.join("\n")), z = "r";
+  if (typeof CompressionStream === "function") { data = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer()); z = "d"; }
+  return LIVE_PREFIX + kind + z + ":" + ZSync.b64u(data);
+}
+async function liveDecode(text) {
+  const m = String(text || "").trim().match(/^zenigo-live:1:([oa])([rd]):([A-Za-z0-9_-]+)$/);
+  if (!m) return null;
+  const b = atob(m[3].replace(/-/g, "+").replace(/_/g, "/") + "===".slice((m[3].length + 3) % 4));
+  let data = Uint8Array.from(b, c => c.charCodeAt(0));
+  if (m[2] === "d") data = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer());
+  return { kind: m[1], sdp: new TextDecoder().decode(data).split("\n").join("\r\n") + "\r\n" };
+}
+function liveGathered(pc) {
+  return new Promise(res => {
+    if (pc.iceGatheringState === "complete") return res();
+    const t = setTimeout(res, 3000);   // enough for the local network; the codes don't wait for more
+    pc.addEventListener("icegatheringstatechange", () => { if (pc.iceGatheringState === "complete") { clearTimeout(t); res(); } });
+  });
+}
+function liveNewPc() {
+  const pc = new RTCPeerConnection({ iceServers: [] });   // local network only: no STUN, no relay, no server
+  pc.onconnectionstatechange = () => {
+    const s = pc.connectionState;
+    if (pc !== live.pc) return;
+    if (s === "failed" || s === "closed" || (s === "disconnected" && live.state === "connected")) liveLost();
+  };
+  return pc;
+}
+function liveChannel(dc) {
+  live.dc = dc;
+  dc.onopen = () => {
+    live.state = "connected"; clearTimeout(live.waitT); liveScanStop();
+    liveSendRaw({ t: "hello", proto: LIVE_PROTO, name: myDevice().name });
+    if (cfg.target) liveSendRaw({ t: "target", id: cfg.target });
+    live.sent = null; clearInterval(live.timer); live.timer = setInterval(livePoseTick, 100);
+    closeSheet("liveSheet"); renderLive(); hint("Live connection ready.", 3000);
+  };
+  dc.onclose = () => { if (live.dc === dc && live.state === "connected") liveLost(); };
+  dc.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } liveReceive(m); };
+}
+function liveSendRaw(m) { try { if (live.dc && live.dc.readyState === "open") live.dc.send(JSON.stringify(m)); } catch (e) {} }
+// this device's pointing, ten times a second at most, and only when it moved (or every 2 s, so the other side knows it is current)
+function livePoseTick() {
+  const v = teleVec(), now = Date.now();
+  if (!v) { if (live.sent) { live.sent = null; liveSendRaw({ t: "pose", v: null }); } return; }
+  const moved = !live.sent || v[0] * live.sent[0] + v[1] * live.sent[1] + v[2] * live.sent[2] < Math.cos(0.01 * D2R);
+  if (!moved && now - live.sentAt < 2000) return;
+  live.sent = v; live.sentAt = now; liveSendRaw({ t: "pose", v: v.map(x => +x.toFixed(6)) });
+}
+function liveReceive(m) {
+  if (m.t === "hello") { live.peer = String(m.name || "other device").slice(0, 40); renderLive(); return; }
+  if (m.t === "bye") { liveStop(true); hint((live.peer || "The other device") + " ended the live connection.", 4000); return; }
+  if (m.t === "pose") {
+    const had = !!liveVec();
+    live.remote = Array.isArray(m.v) && m.v.length === 3 && m.v.every(Number.isFinite) ? m.v : null; live.remoteAt = Date.now();
+    const v = liveVec();
+    if (v && st.source === "map") { const h = horiz(v, skyNow().t); st.mapView.az = h.az; st.mapView.alt = Math.max(-90, Math.min(90, h.alt)); }
+    if (v || had) { lastSig = []; const now = performance.now(); if (now - live.guideAt > 90) { live.guideAt = now; updateGuide(); } }
+    if (!!v !== had) { updateTag(); renderLive(); }
+    return;
+  }
+  if (m.t === "target") {
+    const id = m.id || null; if (id === (cfg.target || null)) return;
+    live.applying = true;
+    try {
+      if (!id) { if (cfg.target) { cfg.target = null; save(); renderChips(); updateGuide(); renderReadout(); } }
+      else if (targetById(id)) { cfg.target = id; save(); renderChips(); updateGuide(); renderReadout(); hint("Target from " + (live.peer || "the other device") + ": " + targetById(id).name + (id === "Sun" ? " – solar filter on!" : "."), 3000); }
+    } finally { live.applying = false; }
+  }
+}
+// a target chosen or cleared here goes to the other device
+function liveTarget(id) { if (live && live.state === "connected" && !live.applying) liveSendRaw({ t: "target", id: id || null }); }
+function liveLost() {
+  const was = live.state === "connected"; liveStop(true);
+  live.state = "lost"; renderLive();
+  if (was) hint("Live connection lost. To connect again: Settings › Live, show and scan the codes once more.", 8000);
+}
+function liveStop(quiet) {
+  clearInterval(live.timer); clearTimeout(live.waitT); liveScanStop();
+  if (live.dc && !quiet) liveSendRaw({ t: "bye" });
+  try { if (live.dc) live.dc.close(); } catch (e) {}
+  try { if (live.pc) live.pc.close(); } catch (e) {}
+  const was = !!liveVec();
+  Object.assign(live, { pc: null, dc: null, state: "off", role: null, remote: null, sent: null });
+  if (was) { lastSig = []; updateGuide(); }
+  renderLive();
+}
+function renderLive() {
+  const s = $("liveStatus"), on = live.state === "connected";
+  s.className = "note" + (on ? " on" : live.state === "lost" || live.state === "fail" ? " err" : "");
+  s.textContent = on ? "Connected to " + (live.peer || "the other device") + (liveVec() ? ". Following its telescope." : live.remote ? "." : ". Its telescope doesn’t point anywhere yet (camera or Align off).")
+    : live.state === "offer" ? "Waiting for the other device…" : live.state === "answer" ? "Show this device’s code to the other device…"
+    : live.state === "lost" ? "The connection was lost. Connect again with the codes."
+    : live.state === "fail" ? "No connection. Are both devices in the same Wi-Fi, or one in the other’s hotspot?" : "Not connected.";
+  $("liveIdle").hidden = on; $("liveOn").hidden = !on;
+  $("liveFollow").checked = cfg.liveFollow !== false;
+  updateTag();
+}
+function liveShowQr(text) {
+  const q = qrcode(0, "L"); q.addData(text); q.make();
+  const n = q.getModuleCount(), sc = Math.max(3, Math.floor(420 / n)), c = $("liveQr"), x = c.getContext("2d");
+  c.width = c.height = n * sc; x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.fillStyle = "#000";
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect(k * sc, r * sc, sc, sc);
+  $("liveQrBox").hidden = false;
+}
+// the camera looks for the other device's code (it also lets the browser use the real local addresses for the connection)
+async function liveScanStart(want, onCode) {
+  liveScanStop();
+  if (st.stream) stopCamera();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }); }
+  catch (e) { if (e && e.name === "NotAllowedError" && isSecureContext) showPermissionHelp("camera"); else hint("Could not start the camera" + (e && e.name ? " (" + e.name + ")" : "") + ".", 6000); return false; }
+  const v = $("liveVideo"); v.srcObject = stream; try { await v.play(); } catch (e) {}
+  live.scan = { stream, t: 0 }; $("liveScanBox").hidden = false;
+  let read; try { read = await qrReader(v); } catch (e) { liveScanStop(); hint("The code reader could not be loaded.", 5000); return false; }
+  const sc = live.scan;
+  const tick = async () => {
+    if (live.scan !== sc) return;
+    let txt = null; try { txt = await read(); } catch (e) {}
+    const c = txt ? await liveDecode(txt) : null;
+    if (c && c.kind === want) { onCode(c); return; }
+    if (txt) $("liveScanMsg").textContent = c ? "That is the wrong code: scan the code the other device shows now." : "That is not a Zenigo live code.";
+    sc.t = setTimeout(tick, 180);
+  };
+  tick(); return true;
+}
+function liveScanStop() {
+  if (!live || !live.scan) return;
+  clearTimeout(live.scan.t); live.scan.stream.getTracks().forEach(t => t.stop()); live.scan = null;
+  $("liveVideo").srcObject = null; $("liveScanBox").hidden = true;
+}
+function liveSheet(title, step) {
+  $("liveTitleTxt").textContent = title; $("liveStep").innerHTML = step; $("liveScanMsg").textContent = "";
+  $("liveQrBox").hidden = true; $("liveScanBox").hidden = true; openSheet("liveSheet");
+}
+// Device A: shows its code (offer), then reads the other device's answer with the camera
+async function liveStart(opts = {}) {
+  liveStop(true);
+  liveSheet("Show a code", "1. On the other device: Settings › Live › <b>Scan a code</b>, and scan this code.<br>2. Then hold the code it shows in front of this device’s camera.");
+  if (!opts.noScan && !(await liveScanStart("a", c => liveAnswer(c)))) { closeSheet("liveSheet"); return null; }
+  const pc = liveNewPc(); live.pc = pc; live.role = "A"; live.state = "offer"; renderLive();
+  liveChannel(pc.createDataChannel("zenigo", { ordered: true }));
+  await pc.setLocalDescription(await pc.createOffer()); await liveGathered(pc);
+  if (live.pc !== pc) return null;
+  const code = await liveEncode("o", pc.localDescription.sdp); liveShowQr(code);
+  $("liveScanMsg").textContent = "The camera is ready for the other device’s code.";
+  return code;
+}
+async function liveAnswer(c) {
+  if (!live.pc || live.role !== "A") return;
+  liveScanStop(); $("liveScanMsg").textContent = "Connecting…";
+  try { await live.pc.setRemoteDescription({ type: "answer", sdp: c.sdp }); } catch (e) { live.state = "fail"; renderLive(); hint("That code doesn’t fit this connection. Start again.", 5000); return; }
+  liveWaitConnected();
+}
+// Device B: scans the other device's code, then shows its answer
+async function liveJoin(code) {
+  liveStop(true);
+  liveSheet("Scan a code", "1. Scan the code the other device shows (Settings › Live › Show a code).<br>2. Then hold this device’s code in front of the other device’s camera.");
+  if (code) return liveAccept(await liveDecode(code), true);
+  if (!(await liveScanStart("o", c => liveAccept(c)))) { closeSheet("liveSheet"); return null; }
+  $("liveScanMsg").textContent = "Hold the other device’s code inside the frame.";
+  return null;
+}
+async function liveAccept(c, noScan) {
+  if (!c || c.kind !== "o") return null;
+  const pc = liveNewPc(); live.pc = pc; live.role = "B"; live.state = "answer"; renderLive();
+  pc.ondatachannel = e => liveChannel(e.channel);
+  try { await pc.setRemoteDescription({ type: "offer", sdp: c.sdp }); } catch (e) { live.state = "fail"; renderLive(); hint("That code could not be read as a connection.", 5000); return null; }
+  await pc.setLocalDescription(await pc.createAnswer()); await liveGathered(pc);
+  if (live.pc !== pc) return null;
+  // keep the camera running (it lets the browser use the real local address) until connected, but stop reading codes
+  if (live.scan) clearTimeout(live.scan.t);
+  const answer = await liveEncode("a", pc.localDescription.sdp); liveShowQr(answer);
+  $("liveScanBox").hidden = true;
+  $("liveStep").innerHTML = "Now hold this code in front of the other device’s camera.";
+  $("liveScanMsg").textContent = "";
+  liveWaitConnected();
+  return answer;
+}
+function liveWaitConnected() {
+  clearTimeout(live.waitT);
+  live.waitT = setTimeout(() => { if (live.state !== "connected") { liveStop(true); live.state = "fail"; renderLive(); $("liveScanMsg").textContent = "No connection. Both devices have to be in the same Wi-Fi, or one in the other’s hotspot."; hint("No live connection: are both devices in the same Wi-Fi, or one in the other’s hotspot?", 8000); } }, 45000);
+}
+function liveSettings() { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("live"); }
+$("liveStart").onclick = () => liveStart();
+$("liveJoin").onclick = () => liveJoin();
+$("liveEnd").onclick = () => { liveStop(); hint("Live connection ended.", 2500); };
+$("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings(); };
+$("liveFollow").onchange = () => { cfg.liveFollow = $("liveFollow").checked; save(); lastSig = []; updateGuide(); renderLive(); };
+addEventListener("pagehide", () => { if (live.state === "connected") liveSendRaw({ t: "bye" }); });
+renderLive();
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
 $("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
 // right below the target line, wherever it ends (its height changes with the directions shown)
@@ -5106,7 +5349,7 @@ function drawEyepiece() {
   const fov = finder ? finderViewFov() : epData(ep).fov, orient = naked ? "upright" : finder ? o.finderOrient || "newton" : o.orient, rotDeg = finder ? 0 : +o.rot || 0;
   const lab = finder ? finderLabel() : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const v = teleVec() || Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(sk.M, [0, 0, 1]);
+  const v = pointVec() || Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(sk.M, [0, 0, 1]);
   let up = zen.map((q, i) => q - dot(zen, v) * v[i]), n = Math.hypot(...up);
   if (n < 1e-4) { up = Solver.mul(sol.R, [0, -1, 0]); n = Math.hypot(...up); }
   up = up.map(q => q / n);
@@ -5544,7 +5787,7 @@ function afterPick(fromSheet, id) {
 }
 const bothPanels = () => sidePanels() && innerWidth >= 1000;
 // tablet and desktop: the menu and everything about the logbook and the settings open on the left, the rest on the right
-const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet", "syncSheet"]);
+const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet", "syncSheet", "liveSheet"]);
 const sheetSide = id => (LEFT.has(id) ? "L" : "R");
 // is a panel open where this one would go back to? (on wide screens only the same side counts)
 const sideBusy = id => SHEETS.some(x => !x.hidden && x.classList.contains("open") && (!bothPanels() || sheetSide(x.id) === sheetSide(id)));
@@ -5612,6 +5855,7 @@ function askConfirm(title, text, okLabel, altLabel) {
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
   if (id === "syncSheet") stopScan();
+  if (id === "liveSheet") { liveScanStop(); if (live.state === "offer" || live.state === "answer") { liveStop(true); } }
   sh._tok = (sh._tok || 0) + 1;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
@@ -5816,7 +6060,7 @@ function showInfo(o, fromList) {
   fillFitBox($("infoFit"), o);
   const ep = curEp(); if (!fillEpBox($("infoEp"), o) && ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
   facts.push(["RA", fmtRA(rd.ra)], ["Dec", fmtDec(rd.dec)]);
-  const tv = teleVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
+  const tv = pointVec(); if (tv) facts.push(["From eyepiece", fmtDeg(Solver.angDeg(tv, v))]);
   // tonight: when it is well placed, rising / highest / setting, night bar
   if (o.body === "Moon" || o.id === "Moon") fillMoonPhase($("infoMoon")); else $("infoMoon").hidden = true;
   $("infoPlanet")._key = null; fillPlanetBox($("infoPlanet"), o.body || o.id);
