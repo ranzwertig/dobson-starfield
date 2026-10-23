@@ -1218,6 +1218,9 @@ a.btn { text-decoration: none; color: var(--fg); }
         </select></label>
         <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
         <label>Aperture (mm)<input type="number" id="oAp" min="30" max="1500" step="1"></label>
+        <label>Lowest it points (°)<input type="number" id="oAltMin" min="0" max="80" step="1"></label>
+        <label>Highest it points (°)<input type="number" id="oAltMax" min="10" max="90" step="1"></label>
+        <p class="note" style="flex-basis:100%;margin:0">How far down and up you can point the telescope, for example 15° because of the rocker box or a hedge, 80° because the tube hits the base. Objects outside this range are not suggested, and plans, best times and night bars keep inside it.</p>
         <label style="flex-basis:100%">Finder<select id="oFinderType">
           <option value="reddot">Red-dot or LED finder (no magnification)</option>
           <option value="telrad">Telrad (rings 0.5°, 2°, 4°)</option>
@@ -1347,7 +1350,7 @@ const DEF = { lat: 48.18, lon: 10.08, fov: { video: null, photo: null, demo: 60 
 let cfg = DEF;
 try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (s) cfg = Object.assign({}, DEF, s, { fov: Object.assign({}, DEF.fov, s.fov || {}) }); } catch (e) {}
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
-const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, finderType: null, finderOrient: "newton", eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0 };
+const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, finderType: null, finderOrient: "newton", eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0, altMin: 0, altMax: 90 };
 cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
@@ -1858,9 +1861,9 @@ function showResults() {
     list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
   } else if (!q) {
-    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => x.alt > 15)
+    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => inReach(x.alt, 15))
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
-    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (above 15°)"; box.append(g);
+    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (" + (reach().limited ? Math.max(15, reach().lo) + "–" + reach().hi + "°, in your telescope’s reach" : "above 15°") + ")"; box.append(g);
   } else {
     // exact names first, then names starting with the query, then matches anywhere (also in the description)
     // normalised names are kept on the target: normalising some 2000 names on every key press is what made typing slow
@@ -1958,9 +1961,12 @@ function nowFit(T) {
     fitCache.env = { sun, mv, moonAlt, ill };
   }
   const E = fitCache.env, v = T.vec(t), h = horiz(v, t), h1 = horiz(T.vec(t1), t1), why = [];
-  const deep = T.kind === "dso", minAlt = deep ? 25 : 15;
-  let ok = h.alt >= minAlt && h1.alt >= minAlt - 5, score = Math.max(0, Math.min(1, (h.alt - 10) / 50));
+  const deep = T.kind === "dso", R = reach(), minAlt = Math.max(deep ? 25 : 15, R.lo);
+  let ok = h.alt >= minAlt && h1.alt >= minAlt - 5 && h.alt <= R.hi, score = Math.max(0, Math.min(1, (h.alt - 10) / 50));
   why.push(h.alt < 0 ? "Below the horizon " + (st.tOff ? "then" : "now") + "." : Math.round(h.alt) + "° high in the " + compass(h.az) + (h1.alt < h.alt - 2 ? ", " + Math.max(0, Math.round(h1.alt)) + "° in an hour" : ", still rising") + ".");
+  if (h.alt > R.hi) why.push("Too high for your telescope (it points up to " + R.hi + "°).");
+  else if (h.alt >= 0 && h.alt < R.lo) why.push("Too low for your telescope (it points down to " + R.lo + "°).");
+  else if (h.alt >= minAlt && h1.alt > R.hi) why.push("Out of reach within the hour: it climbs above " + R.hi + "°.");
   if (deep && E.sun > -12) { ok = false; why.push("Not dark enough (Sun " + Math.round(E.sun) + "°)."); }
   else if (!deep && T.id !== "Moon" && E.sun > -4) { ok = false; why.push("The sky is still too bright."); }
   if (deep && E.moonAlt > 0 && E.ill > 0.4) {
@@ -2035,6 +2041,8 @@ function fmtDec(d) { const s = d < 0 ? "−" : "+", T = Math.round(Math.abs(d) *
 
 let lastGuide = null;
 // state of the target in its pill bottom left (the line under the directions is gone)
+// the target is above the horizon but out of the telescope's reach
+const reachTxt = alt => fmtDeg(alt, 0) + " high: " + (alt > reach().hi ? "too high" : "too low") + " for your telescope";
 function belowTxt(T) {
   const x = T.kind === "sat" && SAT.list.find(q => "SAT" + q.norad === T.id);
   if (x) { const pp = nextPass(x); return pp ? "next pass " + fmtClock(pp.at) : "no pass in 24 h"; }
@@ -2058,7 +2066,8 @@ function updateGuide() {
   const tgt = vecNow(T), th = horiz(tgt, t);
   if (!tv) {
     $("azV").textContent = "–"; $("altV").textContent = "–"; $("azW").textContent = "Azimuth"; $("altW").textContent = "Altitude";
-    tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : fmtDeg(th.alt, 0) + " high, " + compass(th.az), T.id === "Sun" ? "warn" : "");
+    const oor = th.alt >= 0 && !inReach(th.alt);
+    tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : oor ? reachTxt(th.alt) : fmtDeg(th.alt, 0) + " high, " + compass(th.az), T.id === "Sun" || oor ? "warn" : "");
     lastGuide = null; return;
   }
   const ph = horiz(tv, t);
@@ -2073,7 +2082,8 @@ function updateGuide() {
   const hit = sep < hitRadius();
   g.classList.toggle("hit", hit);
   g.classList.toggle("stale", Date.now() - st.solAt > 15000 && st.source === "video" && !st.sensor);
-  tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : hit ? "in the eyepiece" : fmtDeg(sep) + " away", T.id === "Sun" ? "warn" : hit ? "hit" : "");
+  const oor = th.alt >= 0 && !inReach(th.alt);
+  tgtPill(T.id === "Sun" ? "solar filter on!" : th.alt < 0 ? belowTxt(T) : hit ? "in the eyepiece" : oor ? reachTxt(th.alt) : fmtDeg(sep) + " away", T.id === "Sun" || oor ? "warn" : hit ? "hit" : "");
   lastGuide = { ph, th, sep };
   if (cfg.hudAbs) showAbs(ph); else g.classList.add("tog");
 }
@@ -2878,6 +2888,21 @@ function drawHorizon(c, sol, dpr, t, col) {
   let prev = null;
   for (let az = 0; az <= 360; az += 2) { const q = toPix(az, 0); if (q && prev) { c.moveTo(prev[0], prev[1]); c.lineTo(q[0], q[1]); } prev = q; }
   c.stroke();
+  // the telescope's reach (Settings › Telescope): dashed circles at its lowest and highest altitude
+  const R = reach();
+  if (R.limited) {
+    c.save(); c.setLineDash([6 * dpr, 6 * dpr]); c.strokeStyle = "rgba(150,190,120,.5)"; c.fillStyle = "rgba(190,225,160,.85)"; c.lineWidth = 1.2 * dpr;
+    c.font = `${11 * dpr}px ${col("--font-ui")}`; c.textAlign = "center"; c.textBaseline = "bottom";
+    [[R.lo, "min"], [R.hi, "max"]].forEach(([alt, txt]) => {
+      if (alt <= 0 || alt >= 90) return;
+      c.beginPath(); let pv = null;
+      for (let az = 0; az <= 360; az += 2) { const q = toPix(az, alt); if (q && pv) { c.moveTo(pv[0], pv[1]); c.lineTo(q[0], q[1]); } pv = q; }
+      c.stroke();
+      const ctr = toPix(st.mapView ? (st.source === "map" ? st.mapView.az : 180) : 180, alt);
+      if (ctr && ctr[0] > 0 && ctr[0] < W && ctr[1] > 20 * dpr && ctr[1] < H) c.fillText(txt + " " + alt + "°", ctr[0], ctr[1] - 3 * dpr);
+    });
+    c.restore();
+  }
   c.font = `600 ${13 * dpr}px ${col("--font-ui")}`; c.textAlign = "center"; c.textBaseline = "top";
   [["N", 0], ["NE", 45], ["E", 90], ["SE", 135], ["S", 180], ["SW", 225], ["W", 270], ["NW", 315]].forEach(([l, az]) => {
     const q = toPix(az, 0); if (!q || q[0] < 0 || q[1] < 0 || q[0] > W || q[1] > H) return;
@@ -3555,8 +3580,8 @@ function togglePlan(o) {
   if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from tonight’s plan.", 2500); }
   else {
     obs.list.push({ id: o.id, name: o.name, added: Date.now() });
-    const T = targetById(o.id), t = A.MakeTime(new Date()), up = T ? horiz(vecNow(T), t).alt > 10 : true;
-    hint(o.name + " planned for tonight" + (sets().tonight.has(o.id) ? ", already under “Seen tonight”." : up ? "." : ", marked “later”: it is low or below the horizon now."), 3500);
+    const T = targetById(o.id), t = A.MakeTime(new Date()), up = T ? inReach(horiz(vecNow(T), t).alt, 10) : true;
+    hint(o.name + " planned for tonight" + (sets().tonight.has(o.id) ? ", already under “Seen tonight”." : up ? "." : ", marked “later”: it is out of reach or below the horizon now."), 3500);
   }
   saveObs();
 }
@@ -3612,17 +3637,20 @@ function planFor(T, tn) {
   const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const tNow = A.MakeTime(now), altNow = horiz(T.kind === "planet" || T.kind === "sun" ? T.vec(tNow) : vecNow(T), tNow).alt;
   const planet = T.kind === "planet";
-  const pts = tn.samples.map(sm => { const [a, az] = sm.alt(T.vec(A.MakeTime(sm.d))); return { d: sm.d, a, az, good: a > 20 && sm.sun < (planet ? -6 : -12) }; });
+  const ok = a => inReach(a, 20);   // well placed: above 20° and in the telescope's reach
+  const pts = tn.samples.map(sm => { const [a, az] = sm.alt(T.vec(A.MakeTime(sm.d))); return { d: sm.d, a, az, good: ok(a) && sm.sun < (planet ? -6 : -12) }; });
   let best = null; pts.forEach(p => { if (p.good && (!best || p.a > best.a)) best = p; });
-  const fut = pts.filter(p => p.d > now), leave = altNow > 20 ? fut.find(p => p.a < 20) : null, rise = altNow <= 20 ? fut.find(p => p.good) : null;
+  const fut = pts.filter(p => p.d > now), leave = ok(altNow) ? fut.find(p => !ok(p.a)) : null, rise = !ok(altNow) ? fut.find(p => p.good) : null;
   const span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
   const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? BAR_GOOD : p.a > 0 ? BAR_UP : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
-  const later = altNow <= 10;
+  const R = reach(), high = altNow > R.hi, later = !inReach(altNow, 10);
   let sub;
-  if (later && rise) sub = "well placed from " + fmt(rise.d) + (best && +best.d !== +rise.d ? ", best " + fmt(best.d) : "");
+  if (high && rise) sub = "too high now, in reach from " + fmt(rise.d);
+  else if (high) sub = "too high for your telescope tonight";
+  else if (later && rise) sub = "well placed from " + fmt(rise.d) + (best && +best.d !== +rise.d ? ", best " + fmt(best.d) : "");
   else if (later) sub = best ? "best " + fmt(best.d) : "not well placed tonight";
   else sub = !best ? "low tonight" : best.d < now ? "past its best" : "best " + fmt(best.d) + ", " + compass(best.az);
-  const warn = !later && leave && leave.d - now < 3 * 3600e3 ? "low after " + fmt(leave.d) : "";
+  const warn = !later && leave && leave.d - now < 3 * 3600e3 ? (leave.a > R.hi ? "too high after " : "low after ") + fmt(leave.d) : "";
   const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
   return { T, pts, best, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
 }
@@ -4273,7 +4301,7 @@ function renderLog() {
   $("logTiles").innerHTML = tile("Messier", mCount, 110) + tile("Planets", pCount, 7) + tile("Nights", nights);
   // suggestion: Messier objects not seen yet that are well placed tonight
   const tn = nightPlan(), have = sets().list;
-  const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && sm.alt(v)[0] > 30); }) : [];
+  const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && inReach(sm.alt(v)[0], Math.min(30, reach().hi - 5))); }) : [];
   const sb = $("logSuggest"); sb.hidden = !sug.length;
   if (sug.length) {
     sb.innerHTML = ICON.plan + "<span></span><b>Plan</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
@@ -4450,6 +4478,7 @@ function afterSyncedSettings() {
   syncOptics(); syncFilter(); syncSettings(); updateGuide(); renderChips(); renderReadout(); syncHudNext();
   if (cfg.show.sats) loadSats(false);
   if (cfg.show.mw) loadMilkyWay();
+  reachChanged();
 }
 function syncErrText(c) {
   return ({
@@ -4787,6 +4816,17 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
 function opt() { return cfg.optics; }
+// How low and how high the telescope can point (Settings › Telescope: base, mount, rocker box, obstacles). Suggestions,
+// plans, "well placed" times, night bars and the target line keep inside this range.
+function reach() {
+  const o = cfg.optics, lo = Math.max(0, Math.min(80, +o.altMin || 0));
+  const hi = Math.max(lo + 5, Math.min(90, o.altMax == null || o.altMax === "" ? 90 : +o.altMax));
+  return { lo, hi, limited: lo > 0 || hi < 90 };
+}
+// in reach and at least `low` high (the usual minimum of each place, e.g. 20° for "well placed")
+function inReach(alt, low = 0) { const r = reach(); return alt >= Math.max(low, r.lo) && alt <= r.hi; }
+// after the reach changed (here or from another device): everything that depends on it is worked out again
+function reachChanged() { planCache.t = null; fitCache.nk = ""; nextCache.key = ""; lastSig = []; syncHudNext(); updateGuide(); if (!$("listSheet").hidden) renderList(); }
 // Finders: optical finder scopes have a field (shown on the map and in the eyepiece view); red-dot finders and the
 // Telrad have none (the Telrad's rings are drawn instead). Old settings: 6° was the default, other values are "other".
 const FINDERS = {
@@ -5034,6 +5074,7 @@ const epLine = e => Math.round(epData(e).mag) + "× · true field " + fmtField(e
 function syncOptics() {
   const o = opt(), box = $("oEps");
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
+  { const r = reach(); if (document.activeElement !== $("oAltMin")) $("oAltMin").value = r.lo; if (document.activeElement !== $("oAltMax")) $("oAltMax").value = r.hi; }
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
   const ft = finderType(), F = FINDERS[ft];
   $("oFinderType").value = ft; $("oFinderOrient").value = o.finderOrient || "newton";
@@ -5078,6 +5119,11 @@ function syncOptics() {
   q.value = curEpKey();
 }
 $("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
+$("oAltMin").onchange = $("oAltMax").onchange = () => {
+  const lo = Math.round(+$("oAltMin").value), hi = Math.round(+$("oAltMax").value);
+  if (!(lo >= 0 && lo <= 80 && hi >= 10 && hi <= 90 && hi >= lo + 5)) { hint("The highest altitude has to be at least 5° above the lowest (0–80° and 10–90°).", 4000); syncOptics(); return; }
+  setOptics({ altMin: lo, altMax: hi }); reachChanged();
+};
 $("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
 $("oBarlow").onchange = () => { const v = +$("oBarlow").value; setOptics(v > 1 ? { barlow: v } : { barlow: 0, useB: false }); };
 $("oAp").onchange = () => { const v = +$("oAp").value; setOptics({ ap: v >= 30 ? v : null }); };
@@ -5176,7 +5222,8 @@ function wizGo(step) { wiz.step = step; wiz.note = wiz.note || ""; wizRender(); 
 // The Moon is left out: its glare blinds the camera, and it is too large to centre precisely.
 function wizCandidates(away) {
   const t = skyNow().t, out = [], sep = (a, b) => Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]))) * R2D;
-  const add = (name, v, mag, k) => { const h = horiz(v, t); if (h.alt < 15 || h.alt > 60) return; if (away && sep(v, away) < 30) return;
+  const R = reach(), lo = Math.max(15, R.lo), hi = Math.max(lo + 5, Math.min(60, R.hi));
+  const add = (name, v, mag, k) => { const h = horiz(v, t); if (h.alt < lo || h.alt > hi) return; if (away && sep(v, away) < 30) return;
     out.push({ k, name, v, mag, alt: h.alt, az: h.az, score: -mag * 1.5 - Math.abs(h.alt - 35) / 10 }); };
   for (const S of NAMED) { if (S.mag > 2.3) break; if (S.lab) add(S.lab, Solver.cat.v[S.k], S.mag); }
   for (const en of ["Venus", "Jupiter", "Mars", "Saturn"]) { try { const m = A.Illumination(A.Body[en], t).mag; if (m < 1.5) add(en, targetById(en).vec(t), m, null); } catch (e) {} }
@@ -5794,9 +5841,10 @@ function tonightData() {
     const sa = sunAlt(d);
     samples.push({ d, alt, sun: sa, dark: sa <= darkLimit + 0.01, moon: alt(targetById("Moon").vec(at))[0] });
   }
+  const R = reach();   // the best moment is the highest one the telescope still reaches
   const best = (vecAt, onlyDark, sunMax = 90) => {
     let m = null;
-    for (const sm of samples) { if (onlyDark && !sm.dark) continue; if (sm.sun > sunMax) continue; const [a, az] = sm.alt(vecAt(sm.d)); if (!m || a > m.alt) m = { alt: a, az, d: sm.d }; }
+    for (const sm of samples) { if (onlyDark && !sm.dark) continue; if (sm.sun > sunMax) continue; const [a, az] = sm.alt(vecAt(sm.d)); if (a > R.hi) continue; if (!m || a > m.alt) m = { alt: a, az, d: sm.d }; }
     return m;
   };
   // Moon
@@ -5809,11 +5857,11 @@ function tonightData() {
     const T0 = targetById(en), b = best(d => T0.vec(T(d)), false, en === "Venus" || en === "Mercury" ? -3 : -6);   // visible once the sky has darkened
     const mag = A.Illumination(A.Body[en], T(b ? b.d : ref)).mag;
     return { de, en, b, mag };
-  }).filter(p => p.b && p.b.alt > 8).sort((a, b) => a.mag - b.mag);
+  }).filter(p => p.b && p.b.alt > Math.max(8, R.lo)).sort((a, b) => a.mag - b.mag);
   // deep-sky: brightest Messier objects that climb above 30° in darkness, preferably without the Moon
   const dso = darkS.length ? MESSIER.filter(m => m[3] != null && m[3] <= 8.5).map(row => {
     const v = Solver.radec2v(row[1], row[2]); return { row, b: best(() => v, true) };
-  }).filter(x => x.b && x.b.alt > 30).sort((a, b) => a.row[3] - b.row[3]).slice(0, 10) : [];
+  }).filter(x => x.b && x.b.alt > Math.max(R.lo, Math.min(30, R.hi - 5))).sort((a, b) => a.row[3] - b.row[3]).slice(0, 10) : [];
   return { now, sunset, dusk, dawn, sunrise, darkLimit, start, end, samples, phase, illum, moonRise, moonSet, moonFree, planets, dso };
 }
 /* ---------------- Coming up: events calculated on the phone ---------------- */

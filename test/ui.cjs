@@ -414,6 +414,34 @@ const TESTS = {
   },
 
   // categories under the search field: conditions together, lists and kinds either way; "Suits you?" in the details
+  // the telescope's reach (lowest and highest altitude): suggestions, plans, the target line and the map keep to it
+  async reach() {
+    const p = await page();
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('scope'); }); await wait(p, 400);
+    ok(await ev(p, () => $('oAltMin').value === '0' && $('oAltMax').value === '90'), 'by default the whole sky: 0° to 90°');
+    await p.fill('#oAltMin', '30'); await p.fill('#oAltMax', '60'); await ev(p, () => $('oAltMax').dispatchEvent(new Event('change'))); await wait(p, 300);
+    ok(await ev(p, () => opt().altMin === 30 && opt().altMax === 60 && reach().limited), 'the range is stored');
+    const r = await ev(p, () => {
+      const t = skyNow().t, M31 = targetById('M31'), alt = horiz(M31.vec(t), t).alt;
+      const fit = nowFit(M31), plan = planFor(M31, nightPlan());
+      selectTarget('M31', true); updateGuide();
+      const tn = nightPlan(), wc = wizCandidates();
+      closeSheet('sheet'); openSheet('searchSheet'); $('q').value = ''; showResults();
+      const shown = [...document.querySelectorAll('#results .alt')].map(x => parseFloat(x.textContent)).filter(x => !isNaN(x));
+      return { alt, fit, sub: plan.sub, pill: $('tgtChipState').textContent, warn: $('tgtChip').classList.contains('warn'),
+        dso: tn.dso.map(x => x.b.alt), wiz: wc.map(c => c.alt), shown, grp: (document.querySelector('#results .grp') || {}).textContent || '' };
+    });
+    ok(r.alt > 60, 'M31 is above 60° on the test night', r.alt);
+    ok(!r.fit.ok && r.fit.why.some(w => /Too high for your telescope/.test(w)), '“Suits you?” says it is too high', r.fit.why);
+    ok(/too high now/.test(r.sub), 'its plan says too high now', r.sub);
+    ok(/too high for your telescope/.test(r.pill) && r.warn, 'the target line warns', r.pill);
+    ok(r.dso.length > 0 && r.dso.every(a => a >= 30 && a <= 60), 'Tonight’s objects are best within the range', r.dso);
+    ok(r.wiz.every(a => a >= 30 && a <= 60), 'the setup assistant suggests stars within the range', r.wiz);
+    ok(r.shown.length > 0 && r.shown.every(a => a >= 30 && a <= 60) && /30–60°/.test(r.grp), 'Find target: well placed now = within the range', [r.shown, r.grp]);
+    await wait(p, 300);
+    await done(p);
+  },
+
   async categories() {
     const p = await page();
     await ev(p, () => { setOptics({ scope: 1200, ap: 203 }); cfg.searchCats = []; }); await p.waitForFunction(() => LISTS.ok && NGC.length > 1000, null, { timeout: 10000 });

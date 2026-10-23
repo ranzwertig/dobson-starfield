@@ -22,7 +22,7 @@ const ZSync = (() => {
   // correction, red light, display and layout.
   const SETTINGS = ["lat", "lon", "loc", "mount", "show",
     "optics.scope", "optics.ap", "optics.barlow", "optics.useB", "optics.finder", "optics.finderType", "optics.finderOrient",
-    "optics.eps", "optics.telrad", "optics.ring", "optics.orient", "optics.rot"];
+    "optics.eps", "optics.telrad", "optics.ring", "optics.orient", "optics.rot", "optics.altMin", "optics.altMax"];
   // Settings that only make sense together: when they collide, all of them come from the same device
   const GROUPS = [["lat", "lon", "loc"]];
   // Lists inside a setting that are merged item by item: an eyepiece added on each of two devices keeps both
