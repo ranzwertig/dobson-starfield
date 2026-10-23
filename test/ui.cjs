@@ -533,8 +533,11 @@ const TESTS = {
     const A = await page(), B = await page({ w: 1280, h: 800, mobile: false });
     // device A: a planned object, a logbook entry, its own telescope; then "Set up sync"
     await ev(A, () => { obs.list.push({ id: 'M13', name: 'M13', added: Date.now() }); obs.log.push({ uid: 'a1', obj: 'M31', name: 'Andromeda Galaxy', t: '2026-10-19T20:00:00.000Z', result: 'easy', note: 'dust lane seen', ep: '25 mm' }); saveObs(); setOptics({ scope: 1000 }); cfg.tele = { x: 0.05, y: 0.02 }; save(); });
-    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 500);
-    ok(await ev(A, () => !$('syncBox').hidden && !$('syncOff').hidden), 'the sync section shows when the server offers sync');
+    // the menu entry: not set up yet, it opens the Sync tab of the settings
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('menu'); }); await wait(A, 600);
+    ok(await ev(A, () => !$('btnSync').hidden && $('syncState').textContent === 'set up'), 'the menu offers sync when the server does');
+    await A.tap('#btnSync'); await wait(A, 700);
+    ok(await ev(A, () => !$('sheet').hidden && cfg.setTab === 'sync' && !$('setTabSync').hidden && !$('syncOff').hidden), 'it opens the Sync tab of the settings');
     await A.tap('#syncSetup'); await wait(A, 1200);
     const code = await ev(A, () => syncS.code);
     ok(/^[A-Za-z0-9_-]{43}$/.test(code || ''), 'a sync code is made on the device');
@@ -569,10 +572,17 @@ const TESTS = {
     await ev(B, () => syncNow());
     ok(await ev(B, () => obs.list.length === 0 && opt().scope === 1200), 'a deletion and a new focal length on A arrive on B');
     // the settings show the group
-    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 400);
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('sync'); }); await wait(A, 400);
     ok(await ev(A, () => !$('syncOn').hidden && /Synced/.test($('syncStatus').textContent) && $('syncDevs').children.length === 2), 'the settings show the status and both devices');
+    // set up: the menu entry syncs at once and says when it last did
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('menu'); }); await wait(A, 600);
+    const v0 = [...syncStore.values()][0].version; await ev(B, () => { obs.starred.push({ id: 'M101', name: 'M101', added: Date.now() }); saveObs(); return syncNow(); });
+    await A.tap('#btnSync'); await wait(A, 900);
+    ok(await ev(A, () => $('menu').classList.contains('open') && obs.starred.some(x => x.id === 'M101') && /^synced/.test($('syncState').textContent)), 'the menu entry syncs at once, the menu stays open', v0);
+    await ev(A, () => { closeSheet('menu'); syncSettings(); openSheet('sheet'); setSetTab('sync'); }); await wait(A, 400);
     // an old backup (version 1) can still be restored, and its entries reach the group
     await ev(A, () => { obs.log = obs.log.filter(e => e.uid !== 'mgx1a2b3'); saveObs(true); });
+    await ev(A, () => setSetTab('general')); await wait(A, 300);
     await A.setInputFiles('#bkFile', path.join(__dirname, 'fixtures', 'backup-v1.json')); await wait(A, 700);
     ok(await ev(A, () => obs.log.some(e => e.uid === 'mgx1a2b3') && obs.list.some(x => x.id === 'M13')), 'a version 1 backup is restored');
     await ev(A, () => syncNow()); await ev(B, () => syncNow());
@@ -589,7 +599,7 @@ const TESTS = {
     ok([...syncStore.values()][0].version === v2 && v2 === before + 1, 'and doesn’t overwrite it');
     // delete from the server: every device stops syncing, their data stays
     await ev(B, async () => { const k = await syncKeys(); const g = await syncGet(k); await syncPut(k, g.ver, { ...g.data, schema: { major: 1, minor: 0 } }); });
-    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 400);
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('sync'); }); await wait(A, 400);
     await ev(A, () => { $('syncBox').querySelector('details').open = true; }); await A.tap('#syncDelete'); await wait(A, 500); await A.tap('#confirmOk'); await wait(A, 800);
     ok(syncStore.size === 0 && await ev(A, () => !syncS.code && obs.log.length >= 2), 'Delete removes the group from the server; the lists stay');
     await ev(B, () => syncNow());

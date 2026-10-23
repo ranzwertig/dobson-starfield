@@ -51,6 +51,7 @@
     <a class="sub" href="#settings-general">General</a>
     <a class="sub" href="#settings-scope">Telescope</a>
     <a class="sub" href="#settings-cam">Camera &amp; sensors</a>
+    <a class="sub" href="#settings-sync">Sync</a>
     <a href="#offline">Offline and updates</a>
     <a href="#permissions">Camera and sensor access</a>
     <a class="sub" href="#permissions-ios">iPhone and iPad</a>
@@ -75,7 +76,7 @@
       <dt>Map or image</dt>
       <dd>The camera image or the star map, with stars (fainter ones as you zoom in), constellation lines and names (both can be switched in <a href="#settings-display">Settings → General → Display</a>), Messier and other deep-sky objects, planets, <a href="#satellites">satellites</a> when online, and the horizon with the cardinal points. The <span class="c-amber">orange crosshair</span> is where the telescope points; map and image are shifted so that it always stays in the middle of the screen, even when the phone sits crooked on the tube, the <span class="c-coral">red ring</span> is the target and the red arrow shows the way to it. Green circles mark the stars recognised in the last image. Optional <a href="#optics">Telrad and eyepiece rings</a> sit around the crosshair, and small marks show objects you planned (amber flag), starred (star outline) or have seen (green tick).</dd>
       <dt>Menu (top left)</dt>
-      <dd>The button with the Z logo (top left) opens the menu: <a href="#logbook">logbook</a>, <a href="#time">time</a>, settings, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers the menu, the logbook (with its entries and “Seen”) and the settings open on the left, everything about the sky and objects (details, target, search, list, filter, quick settings) on the right; they float over the map, which stays where it is, and the buttons move next to them. From 1000 pixels width the menu and a panel on the right can be open at the same time. A panel on the right stays open while you work in it: setting a target shows the target panel, Seen returns to the details or the target, and tapping the map shows the next object’s details. Close it with ✕ or the Esc key.</dd>
+      <dd>The button with the Z logo (top left) opens the menu: <a href="#logbook">logbook</a>, <a href="#time">time</a>, settings, <a href="#sync">sync with other devices</a> (when the server offers it), <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers the menu, the logbook (with its entries and “Seen”) and the settings open on the left, everything about the sky and objects (details, target, search, list, filter, quick settings) on the right; they float over the map, which stays where it is, and the buttons move next to them. From 1000 pixels width the menu and a panel on the right can be open at the same time. A panel on the right stays open while you work in it: setting a target shows the target panel, Seen returns to the details or the target, and tapping the map shows the next object’s details. Close it with ✕ or the Esc key.</dd>
       <dt>Hiding the pills bottom left</dt>
       <dd>The small ‹ above the pills at the bottom left (target, corrections, filter, status) pushes them out to the left, for a freer view of the map. A small tab at the left edge brings them back; a red dot on it means a target is set. The app remembers it. Messages below the menu button close with their ✕ or go by themselves. Settings → General → Display → <b>Info messages</b> turns off the ones that only confirm something (a mode switched, “Compass mode: rough alignment …”, the switch of the direction boxes); warnings, errors and steps you have to do are always shown.</dd>
       <dt>Status (bottom left)</dt>
@@ -399,19 +400,6 @@
           <li><b>Labels next to the buttons</b>, which you can switch off once you know them.</li>
         </ul>
       </dd>
-      <dt id="sync">Sync between devices</dt>
-      <dd>Keeps the observing list, starred objects, logbook and the telescope settings the same on your phone, tablet and computer. End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server, so only your devices can read it.
-        <ul>
-          <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
-          <li>On the next device: Settings → General → Sync between devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
-          <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
-          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, eyepieces, Barlow, finder, eyepiece view orientation. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
-          <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online. If the same thing was changed on two devices, the later change wins.</li>
-          <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
-          <li>Keep the link somewhere safe, for example in a password manager: anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
-          <li>If a device runs an older version of Zenigo than the others, it keeps syncing as long as the data is compatible; otherwise it says so and waits for an update instead of overwriting newer data.</li>
-        </ul>
-      </dd>
       <dt id="backup">Backup and restore</dt>
       <dd>Everything is stored on your device (and in your sync group if sync is on); clearing the browser’s website data deletes it from the device. Back up now and then, and use a backup to move to a new phone.
         <ul>
@@ -482,6 +470,24 @@
       <dd>Shows the <a href="#compass">compass correction</a>; <b>Reset compass correction</b> removes it.</dd>
     </dl>
     <p>The settings you change most often are also in <a href="#buttons">Quick settings</a> (the button at the top of the button column). <b>Red light</b> tints the whole app red to keep your eyes dark-adapted. To go back to the map, tap the camera button while the live camera runs, or ✕ on the photo chip.</p>
+
+    <h3 id="settings-sync">Sync</h3>
+    <dl>
+      <dt id="sync">Sync between devices</dt>
+      <dd>Keeps the observing list, starred objects, logbook and the telescope settings the same on your phone, tablet and computer. End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server, so only your devices can read it.
+        <ul>
+          <li>Menu → <b>Sync with other devices</b> opens this tab while sync isn’t set up; once it is, the menu entry syncs at once and shows when it last did.</li>
+          <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
+          <li>On the next device: Menu → Sync with other devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
+          <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
+          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, eyepieces, Barlow, finder, eyepiece view orientation. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
+          <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online. If the same thing was changed on two devices, the later change wins.</li>
+          <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
+          <li>Keep the link somewhere safe, for example in a password manager: anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
+          <li>If a device runs an older version of Zenigo than the others, it keeps syncing as long as the data is compatible; otherwise it says so and waits for an update instead of overwriting newer data.</li>
+        </ul>
+      </dd>
+    </dl>
 
     <h2 id="offline">Offline and updates</h2>
     <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>

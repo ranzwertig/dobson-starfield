@@ -813,6 +813,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span>Logbook</span><em id="logState"></em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
+      <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices</span><em id="syncState"></em></button>
     </div>
     <div class="label">Tonight <span class="lbl-sub" id="wxLoc"></span></div>
     <div class="menu-list">
@@ -942,14 +943,14 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="syncTitle"><button class="iconbtn" id="syncBack" aria-label="Back to the settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="syncTitleTxt">Add a device</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="syncpane" id="syncShowBox">
       <div class="qrbox"><canvas id="syncQr" width="300" height="300" role="img" aria-label="QR code with the sync link"></canvas></div>
-      <p class="note">On the other device open Zenigo, then Settings › <b>Sync between devices</b> › <b>Join with a code</b>, and scan this code. Or send the link to it:</p>
+      <p class="note">On the other device open Zenigo, then Menu › <b>Sync with other devices</b> › <b>Join with a code</b>, and scan this code. Or send the link to it:</p>
       <div class="row"><button class="btn" id="syncCopy">Copy link</button><button class="btn" id="syncShare" hidden>Share link</button></div>
       <p class="warn"><b>Only for your own devices.</b> Anyone with this code or link can read and change your synced lists, logbook and location.</p>
       <p class="note">Keep the link somewhere safe, for example in a password manager. If all your devices are lost, it is the only way back to the synced data: nobody else can open it, not even Zenigo.</p>
     </div>
     <div class="syncpane" id="syncJoinBox">
       <div class="scanbox" id="syncScanBox" hidden><video id="syncVideo" playsinline muted></video><i></i></div>
-      <p class="note" id="syncScanMsg">Show the sync code on the device that already syncs: Settings › Sync between devices › Add a device.</p>
+      <p class="note" id="syncScanMsg">Show the sync code on the device that already syncs: Settings › Sync › Add a device.</p>
       <div class="row"><button class="btn primary" id="syncScan">Scan code</button></div>
       <div class="row"><label>Or paste the link<input type="text" id="syncPaste" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://zenigo.app/app/#join=…"></label><button class="btn" id="syncPasteGo">Join</button></div>
       <p class="note" id="syncIosNote" hidden></p>
@@ -1153,7 +1154,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -1179,7 +1180,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optInfoHints"> Info messages (modes switched, confirmations). Warnings and what you have to do are always shown.</label>
       </div>
     </fieldset>
-    <fieldset data-stab="general" id="syncBox" hidden>
+    <fieldset data-stab="sync" id="syncBox" hidden>
       <legend>Sync between devices</legend>
       <div id="syncOff">
         <p class="note">Keep the observing list, starred objects, logbook and telescope settings (eyepieces, location, mount, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
@@ -4315,7 +4316,7 @@ function exportBackup(all) {
 try { if (sessionStorage.getItem("zenigo-restored")) { sessionStorage.removeItem("zenigo-restored"); setTimeout(() => hint("Settings and lists restored from the backup.", 4000), 800); } } catch (e) {}
 /* Settings sections as tabs; the last one is kept */
 function setSetTab(t) {
-  if (!["general", "scope", "cam"].includes(t)) t = "general";
+  if (!["general", "scope", "cam", "sync"].includes(t) || (t === "sync" && $("setTabSync").hidden)) t = "general";
   cfg.setTab = t; save();
   document.querySelectorAll("#sheet [data-stab]").forEach(el => {
     if (el.classList.contains("chip")) { const on = el.dataset.stab === t; el.classList.toggle("sel", on); el.setAttribute("aria-selected", on); }
@@ -4495,8 +4496,10 @@ const agoText = t => {
   const d = Math.round(h / 24); return d === 1 ? "yesterday" : d + " days ago";
 };
 function renderSync() {
-  const on = !!syncS.code;
-  $("syncBox").hidden = !on && syncRt.avail !== true;
+  const on = !!syncS.code, avail = on || syncRt.avail === true;
+  $("syncBox").hidden = $("setTabSync").hidden = $("btnSync").hidden = !avail;
+  if (!avail && cfg.setTab === "sync") setSetTab("general");
+  $("syncState").textContent = !on ? "set up" : syncRt.busy ? "syncing…" : syncS.err ? "not synced" : syncS.at ? "synced " + agoText(syncS.at) : "";
   $("syncOff").hidden = on; $("syncOn").hidden = !on;
   if (!on) return;
   const s = $("syncStatus");
@@ -4526,7 +4529,7 @@ async function joinSync(code, fromLink) {
   const a = await askConfirm("Join this sync group?",
     "The observing list, starred objects, logbook and telescope settings of this device will be shared with every device in the group. Only join a group of your own devices."
     + (syncS.code ? " This device leaves the group it syncs with now." : "")
-    + (iosSafari ? " This link opened Zenigo in Safari. If you use Zenigo from the Home Screen, cancel and scan the code in that app instead (Settings › Sync between devices › Join with a code): it keeps its own data." : ""),
+    + (iosSafari ? " This link opened Zenigo in Safari. If you use Zenigo from the Home Screen, cancel and scan the code in that app instead (Menu › Sync with other devices › Join with a code): it keeps its own data." : ""),
     "Join", "Cancel");
   if (a !== true) return false;
   let peek;
@@ -4546,7 +4549,7 @@ async function joinSync(code, fromLink) {
   return true;
 }
 // After joining from the sync panel or a link: the settings with the sync section, so the result is visible
-function showSyncSettings() { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("general"); setTimeout(() => $("syncBox").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); }
+function showSyncSettings() { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("sync"); }
 function drawSyncQr() {
   const q = qrcode(0, "M"); q.addData(ZSync.joinLink(location.origin, syncS.code)); q.make();
   const n = q.getModuleCount(), sc = Math.max(4, Math.floor(320 / n)), c = $("syncQr"), x = c.getContext("2d");
@@ -4559,7 +4562,7 @@ function openSyncSheet(mode) {
   if (mode === "show") { drawSyncQr(); $("syncShare").hidden = !navigator.share; }
   else {
     $("syncPaste").value = ""; $("syncScanBox").hidden = true;
-    $("syncScanMsg").textContent = "Show the sync code on a device that already syncs: Settings › Sync between devices › Add a device. Then scan it here.";
+    $("syncScanMsg").textContent = "Show the sync code on a device that already syncs: Settings › Sync › Add a device. Then scan it here.";
     const ios = platform() === "ios";
     $("syncIosNote").hidden = !ios;
     $("syncIosNote").textContent = installedApp() ? "Scan the code here in the app, not with the Camera app: the Camera app would open Zenigo in Safari, which keeps its own data apart from the Home Screen app."
@@ -4619,7 +4622,9 @@ function stopScan() {
 $("syncScan").onclick = startScan;
 $("syncPasteGo").onclick = async () => { const code = ZSync.parseJoin($("syncPaste").value); if (!code) { hint("That is not a Zenigo sync link or code.", 4000); return; } stopScan(); closeSheet("syncSheet"); if (await joinSync(code)) showSyncSettings(); };
 $("syncPaste").onkeydown = e => { if (e.key === "Enter") $("syncPasteGo").click(); };
-$("syncBack").onclick = () => { stopScan(); syncSettings(); listCameras(); openSheet("sheet"); setSetTab("general"); };
+$("syncBack").onclick = () => { stopScan(); showSyncSettings(); };
+// Menu: not set up yet → the Sync settings; set up → sync now (the line under it shows how it went)
+$("btnSync").onclick = async () => { if (!syncS.code) { showSyncSettings(); return; } if (await syncNow({ loud: true })) hint("Synced.", 2000); };
 $("syncSetup").onclick = async () => {
   const dev = myDevice(); syncS = { code: ZSync.newCode(), dev, ver: 0 }; saveSyncS();
   if (!(await syncNow({ loud: true }))) { syncS = { dev }; saveSyncS(); renderSync(); return; }
