@@ -15,7 +15,7 @@
 <main class="wrap">
   <article class="legal">
     <h1>Privacy policy</h1>
-    <p class="stamp">Last updated: 19 October 2026</p>
+    <p class="stamp">Last updated: 23 October 2026</p>
 
     <p>Zenigo is built so that your data stays on your device. The app works entirely in your browser: camera images, your location and motion sensor data are processed locally and are never sent to us or to anyone else. This policy explains the little data that is processed anyway.</p>
 
@@ -43,15 +43,27 @@
     <h3>Camera and photos</h3>
     <p>When you start the camera or choose a photo, the image is analysed in your browser to find the stars in it. Images are not stored and not uploaded. The camera only runs while you have it switched on, and only after you have allowed access.</p>
     <h3>Location</h3>
-    <p>The app needs your approximate position to convert star positions into directions for your telescope. You can enter it by hand or let the browser determine it (the “GPS” button in Settings), which asks for your permission first. The position is only stored on your device.</p>
+    <p>The app needs your approximate position to convert star positions into directions for your telescope. You can enter it by hand or let the browser determine it (the “GPS” button in Settings), which asks for your permission first. The position is stored on your device, and in your sync group if you turn on <a href="#sync">sync between devices</a>.</p>
     <h3>Motion sensors and compass</h3>
     <p>If you turn on “Align”, the app reads the orientation sensors of your device to move the map with the phone. This data is processed in the moment and not stored, except for a compass correction you choose to save.</p>
     <h3>Observing list and logbook</h3>
-    <p>Your observing list and logbook entries (object, date and time, eyepiece, altitude, Moon, the coordinates of your site and your notes) are stored in your browser’s local storage only. They are not uploaded. An export creates a file on your device; what happens with it is up to you.</p>
+    <p>Your observing list and logbook entries (object, date and time, eyepiece, altitude, Moon, the coordinates of your site and your notes) are stored in your browser’s local storage. They are only uploaded if you turn on <a href="#sync">sync between devices</a>, and then only end-to-end encrypted. An export creates a file on your device; what happens with it is up to you.</p>
     <h3>Satellites</h3>
     <p>When you are online and satellites are switched on in the map filter, the app loads the current orbital elements of the ISS and other bright satellites from our own server (zenigo.app), which gets them from CelesTrak (celestrak.org). No location or other personal data is sent with this request; it is an ordinary page request handled by Cloudflare as described under Hosting. The positions are calculated on your device. The orbital elements are not stored, so satellites are not shown offline.</p>
     <h3>Settings stored on your device</h3>
-    <p>Your settings (location, pointing mode, chosen camera, camera field of view, eyepiece point, compass correction, map filter, chosen target and display options) are saved in your browser’s local storage, so they are still there next time. For offline use the browser also keeps a copy of the app (service worker cache). This data never leaves your device. You can delete it at any time by clearing the website data for Zenigo in your browser settings.</p>
+    <p>Your settings (location, pointing mode, chosen camera, camera field of view, eyepiece point, compass correction, map filter, chosen target and display options) are saved in your browser’s local storage, so they are still there next time. For offline use the browser also keeps a copy of the app (service worker cache). This data stays on your device, except for the settings that sync between your devices if you turn on <a href="#sync">sync</a>. You can delete it at any time by clearing the website data for Zenigo in your browser settings.</p>
+
+    <h2 id="sync">Sync between devices (optional)</h2>
+    <p>Sync is off until you turn it on (Settings › General › Sync between devices). It keeps your observing list, starred objects, logbook and the telescope settings that travel with you (location, mount, map filter, focal length, eyepieces, Barlow and finder) the same on your devices. Eyepiece point, pointing, camera, compass correction and display settings stay on each device.</p>
+    <ul>
+      <li><b>End-to-end encrypted:</b> setting up sync creates a random sync code on your device. The data is encrypted on your device (AES-256-GCM) with a key derived from this code before it is sent. The code and the key never reach our server, so we cannot read your synced data. The code is passed from device to device as a QR code or a link; the code is in the part of the link after “#”, which browsers do not send to any server.</li>
+      <li><b>What our server stores per sync group:</b> the encrypted copy, a random identifier derived from the code, a hash of an access password derived from the code, the size, and when the group was created and last changed. No name, no email address, no account.</li>
+      <li><b>Where:</b> in a Cloudflare D1 database located in the European Union, as part of the hosting described above.</li>
+      <li><b>Connection data:</b> each sync is a request to our server, processed as described under Hosting (IP address and so on). The server keeps no log of sync requests; to limit misuse, Cloudflare counts requests per IP address for a minute without storing them.</li>
+      <li><b>Legal basis:</b> Art. 6(1)(b) GDPR: you turn sync on to use this service. Storing the sync code on your device is necessary for the service you asked for (§ 25(2) no. 2 TDDDG); no consent banner is needed, and sync sets no cookies.</li>
+      <li><b>How long:</b> until you delete it (Settings › Sync between devices › Delete from the server, or a new sync code, which deletes the old copy). Groups that have not been changed for more than 12 months may be deleted by us.</li>
+      <li><b>Your rights:</b> you can delete the synced copy yourself at any time. Without your sync code we cannot tell which encrypted copy is yours, so we cannot give access to it or delete it on request (Art. 11 GDPR).</li>
+    </ul>
 
     <h2>No cookies, no tracking</h2>
     <p>Zenigo sets no cookies, uses no analytics or advertising services and has no social media plugins. Fonts are delivered from our own server, not from third-party providers.</p>

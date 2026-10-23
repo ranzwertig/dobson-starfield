@@ -1,0 +1,6 @@
+{
+ "app": "Zenigo",
+ "version": 1,
+ "list": [{ "id": "M13", "name": "M13", "added": 1760000000000 }],
+ "log": [{ "uid": "mgx1a2b3", "obj": "M31", "name": "Andromeda Galaxy", "t": "2025-10-10T20:15:00.000Z", "lat": 48.18, "lon": 10.08, "alt": 52, "moon": 0.31, "result": "easy", "seeing": 3, "transp": 4, "note": "dust lane", "ep": "25 mm" }]
+}

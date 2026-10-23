@@ -616,6 +616,21 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .maprd .readout span:last-child { font-size: 11.5px; }
 .note { font-size: 13px; color: var(--muted); line-height: 1.45; max-width: 65ch; margin: 0; }
 .note b { color: var(--fg); font-weight: 600; }
+/* Sync between devices */
+.syncdevs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.syncdevs li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--line); padding: 3px 0; }
+.syncdevs li small { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.syncdevs li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.syncmore summary { cursor: pointer; color: var(--muted); font-size: 13.5px; padding: 4px 0; }
+.syncmore[open] { display: grid; gap: 10px; }
+#syncStatus.err { color: var(--target); }
+.row input#syncName { font-family: var(--font-ui); }
+.syncpane { display: grid; gap: 12px; }
+.qrbox { justify-self: center; background: #fff; padding: 14px; border-radius: 14px; line-height: 0; }
+.qrbox canvas { width: min(240px, 62vw); height: auto; image-rendering: pixelated; }
+.scanbox { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; max-height: 46vh; }
+.scanbox video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanbox i { position: absolute; inset: 18% 22%; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
 
 /* Object info */
 .info-sub { color: var(--muted); font-size: 14px; margin-top: -8px; }
@@ -917,6 +932,26 @@ a.btn { text-decoration: none; color: var(--fg); }
   </div>
 </div>
 
+<div class="sheet" id="syncSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="syncTitle">
+    <div class="grab"><h2 id="syncTitle"><button class="iconbtn" id="syncBack" aria-label="Back to the settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="syncTitleTxt">Add a device</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="syncpane" id="syncShowBox">
+      <div class="qrbox"><canvas id="syncQr" width="300" height="300" role="img" aria-label="QR code with the sync link"></canvas></div>
+      <p class="note">On the other device open Zenigo, then Settings › <b>Sync between devices</b> › <b>Join with a code</b>, and scan this code. Or send the link to it:</p>
+      <div class="row"><button class="btn" id="syncCopy">Copy link</button><button class="btn" id="syncShare" hidden>Share link</button></div>
+      <p class="warn"><b>Only for your own devices.</b> Anyone with this code or link can read and change your synced lists, logbook and location.</p>
+      <p class="note">Keep the link somewhere safe, for example in a password manager. If all your devices are lost, it is the only way back to the synced data: nobody else can open it, not even Zenigo.</p>
+    </div>
+    <div class="syncpane" id="syncJoinBox">
+      <div class="scanbox" id="syncScanBox" hidden><video id="syncVideo" playsinline muted></video><i></i></div>
+      <p class="note" id="syncScanMsg">Show the sync code on the device that already syncs: Settings › Sync between devices › Add a device.</p>
+      <div class="row"><button class="btn primary" id="syncScan">Scan code</button></div>
+      <div class="row"><label>Or paste the link<input type="text" id="syncPaste" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://zenigo.app/app/#join=…"></label><button class="btn" id="syncPasteGo">Join</button></div>
+      <p class="note" id="syncIosNote" hidden></p>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="confirmSheet" hidden>
   <div class="inner" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
@@ -1139,6 +1174,24 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optInfoHints"> Info messages (modes switched, confirmations). Warnings and what you have to do are always shown.</label>
       </div>
     </fieldset>
+    <fieldset data-stab="general" id="syncBox" hidden>
+      <legend>Sync between devices</legend>
+      <div id="syncOff">
+        <p class="note">Keep the observing list, starred objects, logbook and telescope settings (eyepieces, location, mount, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
+        <div class="row"><button class="btn" id="syncSetup">Set up sync</button><button class="btn" id="syncJoin">Join with a code</button></div>
+      </div>
+      <div id="syncOn" hidden>
+        <p class="note" id="syncStatus"></p>
+        <ul class="syncdevs" id="syncDevs"></ul>
+        <div class="row"><label>Name of this device<input type="text" id="syncName" maxlength="40" autocomplete="off"></label></div>
+        <div class="row"><button class="btn" id="syncNowBtn">Sync now</button><button class="btn" id="syncAdd">Add a device</button><button class="btn" id="syncLeave">Turn off here</button></div>
+        <details class="syncmore"><summary>Lost a device, or done with sync?</summary>
+          <p class="note"><b>New sync code</b> moves the group to a new code: devices with the old code stop syncing until you add them again. <b>Delete</b> removes the synced copy from the server; the lists and settings on your devices stay.</p>
+          <div class="row"><button class="btn" id="syncRekey">New sync code</button><button class="btn danger" id="syncDelete">Delete from the server</button></div>
+        </details>
+      </div>
+      <p class="note">What is synced, and what stays on each device: <a href="/help/#sync" target="_blank" rel="noopener">Help</a> · <a href="/privacy/#sync" target="_blank" rel="noopener">Privacy</a></p>
+    </fieldset>
     <fieldset data-stab="general" id="backup">
       <legend>Backup and restore</legend>
       <p class="note" id="backupInfo"></p>
@@ -1244,6 +1297,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <script>/*__ASTRONOMY__*/</script>
 <script>/*__SATELLITE__*/</script>
 <script id="core">/*__CORE__*/</script>
+<script>/*__SYNC__*/</script>
 <script id="main">
 "use strict";
 const $ = id => document.getElementById(id);
@@ -1320,7 +1374,14 @@ if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fra
   const k = 2 * Math.tan((cfg.fov.video || 66) / 2 * Math.PI / 180);
   cfg.tele = { x: cfg.tele.u * k, y: cfg.tele.v * k };
 }
-function save() { try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} }
+// Settings that sync between devices get a change time on every save (ZSync.SETTINGS lists them); a change starts a sync
+let setSnap = ZSync.snapSettings(cfg);
+function save() {
+  const before = JSON.stringify(cfg.syncT || {});
+  setSnap = ZSync.stampSettings(cfg, setSnap, Date.now());
+  try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {}
+  if (JSON.stringify(cfg.syncT) !== before && typeof syncSoon === "function") syncSoon();
+}
 
 /* ---------------- State ---------------- */
 const st = {
@@ -3418,16 +3479,23 @@ function drawOverlay(dpr) {
 }
 
 /* ---------------- Observing list and logbook ---------------- */
-// Stored on the device only, separately from the settings:
-// { list: planned for tonight [{id, name, added}], starred: wishlist [{id, name, added}], log: [entry], exportedAt }
-// A log entry: { uid, obj, name, t (ISO), lat, lon, alt, ep, moon, result: easy|hard|miss, seeing, transp, note }
+// Stored on the device, separately from the settings, and shared with the sync group when sync is on:
+// { v, list: planned for tonight [{id, name, added, u}], starred: wishlist [{id, name, added, u}], log: [entry],
+//   del: deletion marks {key: time}, exportedAt }
+// A log entry: { uid, obj, name, t (ISO), lat, lon, alt, ep, moon, result: easy|hard|miss, seeing, transp, note, u }
+// u is the time of the last change; it's set on save for whatever changed (ZSync.stampObs), so sync can tell which
+// copy is newer. Entries are kept whole: fields from newer app versions survive here.
 const OBS_KEY = "zenigo-obs";
 let obs = { list: [], starred: [], log: [], exportedAt: 0 };
 try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || "null"); if (o && Array.isArray(o.log)) obs = Object.assign(obs, o); } catch (e) {}
-if (!Array.isArray(obs.starred)) obs.starred = [];
-function saveObs() {
+obs = ZSync.migrateObs(obs);
+let obsSnap = ZSync.snapObs(obs);
+// fromSync: the lists came from the sync group (they carry their own change times), nothing new to send
+function saveObs(fromSync) {
+  if (!fromSync) obsSnap = ZSync.stampObs(obs, obsSnap, Date.now());
   try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup in the settings.", 7000); }
   st.obsVer = (st.obsVer || 0) + 1; lastSig = []; syncListFab(); syncHudNext();
+  if (!fromSync && typeof syncSoon === "function") syncSoon();
 }
 const pad2 = n => String(n).padStart(2, "0");
 // A night runs from noon to noon: entries after midnight belong to the evening before
@@ -4230,12 +4298,12 @@ const stamp = () => new Date().toISOString().slice(0, 10);
 /* ---------------- Backup (in the settings): lists, or everything including the settings ---------------- */
 function syncBackup() {
   const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
-  $("backupInfo").textContent = "Lists and settings are stored only on this device. Clearing the browser’s website data deletes them. Last backup: " + (ago == null ? "never" : ago === 0 ? "today" : ago === 1 ? "yesterday" : ago + " days ago") + ".";
+  if (syncS) { renderSync(); checkSyncAvail(); }   // (not yet while the app is starting)
+  $("backupInfo").textContent = (syncS && syncS.code ? "Lists and settings are stored on this device and, end-to-end encrypted, in your sync group. " : "Lists and settings are stored only on this device. Clearing the browser’s website data deletes them. ") + "Last backup: " + (ago == null ? "never" : ago === 0 ? "today" : ago === 1 ? "yesterday" : ago + " days ago") + ".";
   $("bkCsv").disabled = !obs.log.length;
 }
 function exportBackup(all) {
-  const d = { app: "Zenigo", version: 3, kind: all ? "all" : "lists", exportedAt: new Date().toISOString(), list: obs.list, starred: obs.starred, log: obs.log };
-  if (all) d.settings = cfg;
+  const d = ZSync.makeBackup(obs, cfg, all);   // version 4: the shape of version 3 plus change times and deletion marks
   download("zenigo-" + (all ? "backup" : "lists") + "-" + stamp() + ".json", JSON.stringify(d, null, 1), "application/json");
   obs.exportedAt = Date.now(); saveObs(); syncBackup();
 }
@@ -4264,9 +4332,9 @@ $("bkImport").onclick = () => $("bkFile").click();
 $("bkFile").onchange = async () => {
   const f = $("bkFile").files[0]; $("bkFile").value = ""; if (!f) return;
   let d;
-  try { d = JSON.parse(await f.text()); if (!d || (!Array.isArray(d.log) && !d.settings)) throw new Error("format"); }
+  try { d = JSON.parse(await f.text()); if (!ZSync.readBackup(d)) throw new Error("format"); }
   catch (e) { hint("That file is not a Zenigo backup.", 4000); return; }
-  // lists: add what is missing, never delete
+  // lists: add what is missing (also entries deleted here since the backup), never delete; any backup version
   const have = new Set(obs.log.map(e => e.uid)); let n = 0, m = 0;
   (d.log || []).forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); have.add(e.uid); n++; } });
   const lh = new Set(obs.list.map(x => x.id)); (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); lh.add(x.id); m++; } });
@@ -4276,12 +4344,327 @@ $("bkFile").onchange = async () => {
   if (d.settings && typeof d.settings === "object") {
     const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: telescope and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
     if (r === true) {
+      // restored settings count as changed now, so the sync group takes them over
+      const now = Date.now(); d.settings.syncT = Object.fromEntries(ZSync.SETTINGS.map(p => [p, now]));
       try { localStorage.setItem("dobson-lotse", JSON.stringify(d.settings)); sessionStorage.setItem("zenigo-restored", "1"); } catch (e) { hint("Could not store the settings.", 4000); return; }
       location.reload(); return;
     }
   }
   hint(lists, 4000);
 };
+/* ---------------- Sync between devices ---------------- */
+// End-to-end encrypted (src/sync.js): the sync code stays on the devices, the server (worker/sync.js) keeps one encrypted
+// copy per group. This device's data is always the truth here: the app works the same offline, and a sync fetches the
+// group's copy, merges it with the local lists and settings and writes the result back when it differs.
+// State (localStorage "zenigo-sync"): { code, dev: {id, name}, ver: last version seen, at: last good sync, err, devs }
+const SYNC_KEY = "zenigo-sync", SYNC_API = "/api/sync/v1";
+var syncS = {};   // var: save() and saveObs() may ask for a sync while the script is still starting
+try { syncS = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}") || {}; } catch (e) {}
+var syncRt = { busy: false, again: false, timer: 0, keys: null, avail: null, lastTry: 0, leaving: false };
+function saveSyncS() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(syncS)); } catch (e) {} }
+function deviceName() {
+  const ua = navigator.userAgent;
+  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
+  if (/iPhone|iPod/.test(ua)) return "iPhone";
+  if (/Android/.test(ua)) return /Mobile/.test(ua) ? "Android phone" : "Android tablet";
+  if (/Macintosh/.test(ua)) return "Mac";
+  if (/Windows/.test(ua)) return "Windows PC";
+  if (/CrOS/.test(ua)) return "Chromebook";
+  if (/Linux/.test(ua)) return "Linux computer";
+  return "Device";
+}
+function myDevice() {
+  if (!syncS.dev || !syncS.dev.id) syncS.dev = { id: ZSync.b64u(crypto.getRandomValues(new Uint8Array(8))), name: deviceName() };
+  return syncS.dev;
+}
+async function syncKeys(code = syncS.code) {
+  if (!syncRt.keys || syncRt.keys.code !== code) syncRt.keys = { code, ...(await ZSync.keys(code)) };
+  return syncRt.keys;
+}
+const syncErr = (msg, code) => Object.assign(new Error(msg), { code });
+async function syncFetch(k, method, ver, body) {
+  const headers = { Authorization: "Bearer " + k.token };
+  if (ver != null) headers["If-Match"] = String(ver);
+  try { return await fetch(SYNC_API + "/" + k.id, { method, headers, body, cache: "no-store" }); }
+  catch (e) { throw syncErr("offline", "offline"); }
+}
+const syncHttpErr = r => syncErr("server " + r.status, r.status === 503 ? "unavailable" : r.status === 429 ? "busy" : r.status === 413 ? "large" : "server");
+async function syncGet(k) {
+  const r = await syncFetch(k, "GET");
+  if (r.status === 404) return null;
+  if (!r.ok) throw syncHttpErr(r);
+  return { ver: +r.headers.get("X-Sync-Version") || 0, data: await ZSync.open(k, await r.arrayBuffer()) };
+}
+async function syncPut(k, ver, payload) {
+  const r = await syncFetch(k, "PUT", ver, await ZSync.seal(k, payload));
+  if (r.status === 409) return { conflict: true };
+  if (!r.ok) throw syncHttpErr(r);
+  return { ver: (await r.json()).version };
+}
+// This device's copy: lists, synced settings and this device in the device list (its "last seen" is refreshed once a
+// day, so an unchanged group isn't written on every start)
+function syncLocal(base) {
+  const me = myDevice(), known = base && base.devices && base.devices[me.id], now = Date.now();
+  const d = syncRt.leaving ? { name: me.name, at: now, left: true }
+    : known && known.name === me.name && !known.left && now - (known.at || 0) < 86400e3 ? known : { name: me.name, at: now };
+  return ZSync.fromLocal(obs, cfg, { [me.id]: d });
+}
+function applySynced(m) {
+  const changed = ZSync.apply(m, obs, cfg);
+  obsSnap = ZSync.snapObs(obs); saveObs(true);
+  if (!$("logSheet").hidden) renderLog();
+  if (!$("listSheet").hidden) renderList();
+  if (changed) { setSnap = ZSync.snapSettings(cfg); try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} afterSyncedSettings(); }
+}
+// Settings came from another device: the eyepiece list may have changed under the chosen eyepiece, the filter may lack keys
+function afterSyncedSettings() {
+  const o = cfg.optics;
+  if (!Array.isArray(o.eps) || !o.eps.length) o.eps = JSON.parse(JSON.stringify(OPT_DEF.eps));
+  if (!(o.ep >= 0 && o.ep < o.eps.length)) o.ep = 0;
+  cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
+  st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; nextCache.key = ""; lastSig = [];
+  syncOptics(); syncFilter(); syncSettings(); updateGuide(); renderChips(); renderReadout(); syncHudNext();
+  if (cfg.show.sats) loadSats(false);
+  if (cfg.show.mw) loadMilkyWay();
+}
+function syncErrText(c) {
+  return ({
+    offline: "Not synced: no connection. It syncs when the device is online again.",
+    newer: "Not synced: another device uses a newer version of Zenigo. Update this app (close it and open it again) to keep syncing.",
+    nogroup: "No sync group found for this code. Is the code complete, and still the current one?",
+    unavailable: "Sync is not available on the server right now.",
+    large: "Not synced: the synced data is too large (over 1 MB).",
+    busy: "Not synced: too many requests. It tries again in a minute.",
+  })[c] || "Sync failed. It tries again later.";
+}
+// One sync: fetch, merge, apply, write back if needed. A write that comes too late (someone wrote in between) starts over.
+// opts: { join: the group must exist, settings: "remote" to take the group's settings, loud: report problems }
+async function syncNow(opts = {}) {
+  if (!syncS.code) return false;
+  if (syncRt.busy) { syncRt.again = true; return false; }
+  syncRt.busy = true; syncRt.lastTry = Date.now(); renderSync();
+  try {
+    const k = await syncKeys();
+    let done = false;
+    for (let i = 0; i < 5 && !done; i++) {
+      const r = await syncGet(k);
+      if (!r) {
+        if (syncS.ver) { syncGone(); return false; }          // deleted on another device, or moved to a new code
+        if (opts.join) throw syncErr("no group", "nogroup");
+        const p = syncLocal(null), w = await syncPut(k, 0, p);   // a new group with this device's lists and settings
+        if (w.conflict) continue;
+        syncS.ver = w.ver; syncS.devs = p.devices; done = true; break;
+      }
+      const m = ZSync.merge(r.data, syncLocal(r.data), i ? {} : opts);   // throws "newer" for a newer app's data
+      applySynced(m);
+      if (!ZSync.same(m, r.data)) { const w = await syncPut(k, r.ver, m); if (w.conflict) continue; syncS.ver = w.ver; }
+      else syncS.ver = r.ver;
+      syncS.devs = m.devices; done = true;
+    }
+    if (!done) throw syncErr("busy", "busy");
+    syncS.at = Date.now(); syncS.err = null; saveSyncS();
+    return true;
+  } catch (e) {
+    syncS.err = e.code || "failed"; saveSyncS();
+    if (opts.loud) hint(syncErrText(syncS.err), 7000);
+    return false;
+  } finally {
+    syncRt.busy = false; renderSync();
+    if (syncRt.again) { syncRt.again = false; syncSoon(); }
+  }
+}
+// after a change: wait a moment, so a few quick changes go in one sync
+function syncSoon(ms = 4000) {
+  if (!syncS || !syncS.code) return;
+  clearTimeout(syncRt.timer); syncRt.timer = setTimeout(() => syncNow(), ms);
+}
+function syncGone() {
+  syncS = { dev: syncS.dev }; syncRt.keys = null; saveSyncS(); renderSync();
+  hint("Sync stopped: the group no longer exists on the server (deleted on another device, or moved to a new sync code). Your lists and settings stay here. To sync again, add this device with the current code.", 12000);
+}
+const agoText = t => {
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + (m === 1 ? " minute ago" : " minutes ago");
+  const h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+  const d = Math.round(h / 24); return d === 1 ? "yesterday" : d + " days ago";
+};
+function renderSync() {
+  const on = !!syncS.code;
+  $("syncBox").hidden = !on && syncRt.avail !== true;
+  $("syncOff").hidden = on; $("syncOn").hidden = !on;
+  if (!on) return;
+  const s = $("syncStatus");
+  s.classList.toggle("err", !!syncS.err && !syncRt.busy);
+  s.textContent = syncRt.busy ? "Syncing…" : syncS.err ? syncErrText(syncS.err) + (syncS.at ? " Last sync: " + agoText(syncS.at) + "." : "")
+    : syncS.at ? "Synced " + agoText(syncS.at) + "." : "Not synced yet.";
+  const me = myDevice(), ul = $("syncDevs"); ul.textContent = "";
+  Object.entries(syncS.devs || {}).filter(([id, d]) => d && !d.left).sort((a, b) => (a[0] === me.id ? -1 : b[0] === me.id ? 1 : (b[1].at || 0) - (a[1].at || 0))).forEach(([id, d]) => {
+    const li = document.createElement("li"), b = document.createElement("b"), sm = document.createElement("small");
+    b.textContent = id === me.id ? me.name : d.name || "Device";
+    sm.textContent = id === me.id ? "this device" : "last sync " + (Date.now() - (d.at || 0) < 86400e3 ? "today" : agoText(d.at || 0));
+    li.append(b, sm); ul.append(li);
+  });
+  if (document.activeElement !== $("syncName")) $("syncName").value = me.name;
+}
+// Is sync available on this server? Asked once when the settings open; the section stays hidden until it is
+async function checkSyncAvail() {
+  if (syncRt.avail !== null || syncS.code) return;
+  try { const r = await fetch(SYNC_API, { cache: "no-store" }); syncRt.avail = r.ok; } catch (e) {}
+  renderSync();
+}
+// Join a group with its code (scanned, pasted or from a link). Nothing changes here before both questions are answered.
+async function joinSync(code, fromLink) {
+  if (!code) { hint("That is not a Zenigo sync link or code.", 4000); return false; }
+  if (syncS.code === code) { hint("This device already syncs with this group.", 3000); return true; }
+  const iosSafari = fromLink && platform() === "ios" && !installedApp();
+  const a = await askConfirm("Join this sync group?",
+    "The observing list, starred objects, logbook and telescope settings of this device will be shared with every device in the group. Only join a group of your own devices."
+    + (syncS.code ? " This device leaves the group it syncs with now." : "")
+    + (iosSafari ? " This link opened Zenigo in Safari. If you use Zenigo from the Home Screen, cancel and scan the code in that app instead (Settings › Sync between devices › Join with a code): it keeps its own data." : ""),
+    "Join", "Cancel");
+  if (a !== true) return false;
+  let peek;
+  try { peek = await syncGet(await syncKeys(code)); } catch (e) { hint(syncErrText(e.code || "failed"), 7000); return false; }
+  if (!peek) { hint(syncErrText("nogroup"), 7000); return false; }
+  const opts = { join: true, loud: true };
+  if (ZSync.settingsDiffer(peek.data, syncLocal(null))) {
+    const r = await askConfirm("Which telescope settings?", "The group has other telescope settings than this device (eyepieces, location, mount or map filter). The lists and the logbook are combined either way; the eyepiece point and the camera stay as they are on each device.", "Use the group’s", "Keep this device’s");
+    if (r === true) opts.settings = "remote";
+    else if (r === "alt") { const now = Date.now(); cfg.syncT = cfg.syncT || {}; ZSync.SETTINGS.forEach(p => { cfg.syncT[p] = now; }); try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} }
+    else return false;
+  }
+  const prev = syncS, dev = myDevice();
+  syncS = { code, dev, ver: 0 }; saveSyncS();
+  if (!(await syncNow(opts))) { syncS = prev; saveSyncS(); renderSync(); return false; }
+  hint("This device now syncs with the group.", 4000);
+  return true;
+}
+// After joining from the sync panel or a link: the settings with the sync section, so the result is visible
+function showSyncSettings() { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("general"); setTimeout(() => $("syncBox").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); }
+function drawSyncQr() {
+  const q = qrcode(0, "M"); q.addData(ZSync.joinLink(location.origin, syncS.code)); q.make();
+  const n = q.getModuleCount(), sc = Math.max(4, Math.floor(320 / n)), c = $("syncQr"), x = c.getContext("2d");
+  c.width = c.height = n * sc; x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.fillStyle = "#000";
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect(k * sc, r * sc, sc, sc);
+}
+function openSyncSheet(mode) {
+  $("syncShowBox").hidden = mode !== "show"; $("syncJoinBox").hidden = mode !== "join";
+  $("syncTitleTxt").textContent = mode === "show" ? "Add a device" : "Join with a code";
+  if (mode === "show") { drawSyncQr(); $("syncShare").hidden = !navigator.share; }
+  else {
+    $("syncPaste").value = ""; $("syncScanBox").hidden = true;
+    $("syncScanMsg").textContent = "Show the sync code on a device that already syncs: Settings › Sync between devices › Add a device. Then scan it here.";
+    const ios = platform() === "ios";
+    $("syncIosNote").hidden = !ios;
+    $("syncIosNote").textContent = installedApp() ? "Scan the code here in the app, not with the Camera app: the Camera app would open Zenigo in Safari, which keeps its own data apart from the Home Screen app."
+      : "If you use Zenigo from the Home Screen, join there instead: Safari and the Home Screen app keep their data apart.";
+  }
+  openSheet("syncSheet");
+}
+// QR code reader: BarcodeDetector where the browser has one (Chrome on Android), else jsQR, loaded only now
+const scan = { stream: null, t: 0 };
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  return new Promise((res, rej) => { const s = document.createElement("script"); s.src = "__JSQR_FILE__"; s.onload = res; s.onerror = () => rej(new Error("jsQR")); document.head.append(s); });
+}
+async function qrReader(v) {
+  if ("BarcodeDetector" in window) {
+    try { if ((await BarcodeDetector.getSupportedFormats()).includes("qr_code")) { const d = new BarcodeDetector({ formats: ["qr_code"] }); return async () => { const r = await d.detect(v); return r.length ? r[0].rawValue : null; }; } } catch (e) {}
+  }
+  await loadJsQR();
+  const cv = document.createElement("canvas"), cx = cv.getContext("2d", { willReadFrequently: true });
+  return async () => {
+    const w = v.videoWidth, h = v.videoHeight; if (!w) return null;
+    const k = Math.min(1, 900 / Math.max(w, h)); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+    cx.drawImage(v, 0, 0, cv.width, cv.height);
+    const im = cx.getImageData(0, 0, cv.width, cv.height), r = jsQR(im.data, im.width, im.height, { inversionAttempts: "attemptBoth" });
+    return r ? r.data : null;
+  };
+}
+async function startScan() {
+  if (scan.stream) { stopScan(); return; }
+  if (st.stream) stopCamera();
+  try { scan.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }); }
+  catch (e) {
+    if (e && e.name === "NotAllowedError" && isSecureContext) showPermissionHelp("camera");
+    else hint("Could not start the camera" + (e && e.name ? " (" + e.name + ")" : "") + ". Paste the link instead.", 6000);
+    return;
+  }
+  const v = $("syncVideo"); v.srcObject = scan.stream;
+  try { await v.play(); } catch (e) {}
+  $("syncScanBox").hidden = false; $("syncScan").textContent = "Stop scanning";
+  $("syncScanMsg").textContent = "Hold the code inside the frame.";
+  let read;
+  try { read = await qrReader(v); } catch (e) { stopScan(); hint("The code reader could not be loaded. Check the connection, or paste the link instead.", 6000); return; }
+  const tick = async () => {
+    if (!scan.stream) return;
+    let txt = null; try { txt = await read(); } catch (e) {}
+    const code = txt && ZSync.parseJoin(txt);
+    if (code) { stopScan(); closeSheet("syncSheet"); if (await joinSync(code)) showSyncSettings(); return; }
+    if (txt) $("syncScanMsg").textContent = "That QR code is not a Zenigo sync code.";
+    scan.t = setTimeout(tick, 180);
+  };
+  tick();
+}
+function stopScan() {
+  clearTimeout(scan.t); if (scan.stream) scan.stream.getTracks().forEach(t => t.stop()); scan.stream = null;
+  $("syncVideo").srcObject = null; $("syncScanBox").hidden = true; $("syncScan").textContent = "Scan code";
+}
+$("syncScan").onclick = startScan;
+$("syncPasteGo").onclick = async () => { const code = ZSync.parseJoin($("syncPaste").value); if (!code) { hint("That is not a Zenigo sync link or code.", 4000); return; } stopScan(); closeSheet("syncSheet"); if (await joinSync(code)) showSyncSettings(); };
+$("syncPaste").onkeydown = e => { if (e.key === "Enter") $("syncPasteGo").click(); };
+$("syncBack").onclick = () => { stopScan(); syncSettings(); listCameras(); openSheet("sheet"); setSetTab("general"); };
+$("syncSetup").onclick = async () => {
+  const dev = myDevice(); syncS = { code: ZSync.newCode(), dev, ver: 0 }; saveSyncS();
+  if (!(await syncNow({ loud: true }))) { syncS = { dev }; saveSyncS(); renderSync(); return; }
+  openSyncSheet("show");
+};
+$("syncJoin").onclick = () => openSyncSheet("join");
+$("syncAdd").onclick = () => openSyncSheet("show");
+$("syncNowBtn").onclick = () => syncNow({ loud: true });
+$("syncName").onchange = () => { myDevice().name = $("syncName").value.trim().slice(0, 40) || deviceName(); saveSyncS(); renderSync(); syncNow(); };
+$("syncCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText(ZSync.joinLink(location.origin, syncS.code)); hint("Link copied. Send it only to your own devices.", 4000); }
+  catch (e) { hint("Could not copy: the browser didn’t allow it.", 3000); }
+};
+$("syncShare").onclick = async () => { try { await navigator.share({ title: "Zenigo sync", text: "Open this on your own device to sync Zenigo with it.", url: ZSync.joinLink(location.origin, syncS.code) }); } catch (e) {} };
+$("syncLeave").onclick = async () => {
+  if ((await askConfirm("Turn off sync on this device?", "This device stops syncing. Its lists, logbook and settings stay here, and the other devices keep syncing with each other.", "Turn off")) !== true) return;
+  syncRt.leaving = true; try { await syncNow(); } finally { syncRt.leaving = false; }   // shown as gone on the other devices
+  syncS = { dev: syncS.dev }; syncRt.keys = null; saveSyncS(); renderSync(); syncBackup();
+  hint("Sync is off on this device.", 3000);
+};
+$("syncDelete").onclick = async () => {
+  if ((await askConfirm("Delete the synced copy from the server?", "Every device in the group stops syncing. The lists, logbook and settings on your devices stay. This can’t be undone.", "Delete")) !== true) return;
+  try {
+    const r = await syncFetch(await syncKeys(), "DELETE");
+    if (!r.ok && r.status !== 204) throw syncHttpErr(r);
+  } catch (e) { hint(syncErrText(e.code || "failed"), 6000); return; }
+  syncS = { dev: syncS.dev }; syncRt.keys = null; saveSyncS(); renderSync(); syncBackup();
+  hint("The synced copy is deleted from the server. Sync is off.", 4000);
+};
+$("syncRekey").onclick = async () => {
+  if ((await askConfirm("Move the group to a new sync code?", "Use this when a device with the code is lost or the link got into the wrong hands. The old code stops working; add your other devices again with the new code.", "New code")) !== true) return;
+  if (!(await syncNow({ loud: true }))) return;   // the latest copy first
+  const old = syncS, oldKeys = await syncKeys();
+  syncS = { code: ZSync.newCode(), dev: old.dev, ver: 0 }; saveSyncS();
+  if (!(await syncNow({ loud: true }))) { syncS = old; saveSyncS(); renderSync(); return; }
+  try { await syncFetch(oldKeys, "DELETE"); } catch (e) {}
+  openSyncSheet("show");
+};
+// When to sync: at start, back in the foreground, online again, after changes, and every 5 minutes while open
+if (syncS.code) setTimeout(() => syncNow(), 1500);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && syncS.code && Date.now() - syncRt.lastTry > 30e3) syncNow(); });
+addEventListener("online", () => { if (syncS.code) syncNow(); });
+setInterval(() => { if (!document.hidden && syncS.code && Date.now() - syncRt.lastTry > 240e3) syncNow(); }, 60e3);
+// Opened with a join link (#join=… from a QR code scanned with the camera app, or a link sent to this device). The code
+// is taken out of the address at once, so it doesn't stay in the history.
+if (/[#&]join=/.test(location.hash)) {
+  const code = ZSync.parseJoin(location.hash);
+  history.replaceState(null, "", location.pathname + location.search);
+  setTimeout(async () => { if (await joinSync(code, true)) showSyncSettings(); }, 1200);
+}
 $("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
 $("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
 // right below the target line, wherever it ends (its height changes with the directions shown)
@@ -4958,7 +5341,7 @@ function afterPick(fromSheet, id) {
 }
 const bothPanels = () => sidePanels() && innerWidth >= 1000;
 // tablet and desktop: the menu and everything about the logbook and the settings open on the left, the rest on the right
-const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet"]);
+const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet", "syncSheet"]);
 const sheetSide = id => (LEFT.has(id) ? "L" : "R");
 // is a panel open where this one would go back to? (on wide screens only the same side counts)
 const sideBusy = id => SHEETS.some(x => !x.hidden && x.classList.contains("open") && (!bothPanels() || sheetSide(x.id) === sheetSide(id)));
@@ -5024,6 +5407,7 @@ function askConfirm(title, text, okLabel, altLabel) {
 }
 function closeSheet(id) {
   const sh = $(id); if (sh.hidden) return;
+  if (id === "syncSheet") stopScan();
   sh._tok = (sh._tok || 0) + 1;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it

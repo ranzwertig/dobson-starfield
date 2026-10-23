@@ -334,7 +334,7 @@
       <li><b>One object only:</b> <b>All entries</b> in the target panel, or <b>All entries for …</b> in an object’s details, opens the logbook with just that object. The chip “… only ✕” at the top shows all entries again.</li>
     </ul>
     <p>Object details show how often and when you last saw an object.</p>
-    <p>List and logbook are stored only on your device. Clearing the website data in the browser deletes them, so export a backup now and then: Menu → Settings → General → <a href="#backup">Backup and restore</a>.</p>
+    <p>List and logbook are stored on your device. Clearing the website data in the browser deletes them, so export a backup now and then: Menu → Settings → General → <a href="#backup">Backup and restore</a>. To have them on your phone, tablet and computer at once, turn on <a href="#sync">sync between devices</a>.</p>
 
     <h2 id="tonight">Tonight</h2>
     <p>The <b>Tonight</b> section of the menu starts with <b>Darkness, Moon and what’s up</b>, calculated on the phone for your location, also offline:</p>
@@ -399,12 +399,25 @@
           <li><b>Labels next to the buttons</b>, which you can switch off once you know them.</li>
         </ul>
       </dd>
+      <dt id="sync">Sync between devices</dt>
+      <dd>Keeps the observing list, starred objects, logbook and the telescope settings the same on your phone, tablet and computer. End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server, so only your devices can read it.
+        <ul>
+          <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
+          <li>On the next device: Settings → General → Sync between devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
+          <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
+          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, eyepieces, Barlow, finder, eyepiece view orientation. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
+          <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online. If the same thing was changed on two devices, the later change wins.</li>
+          <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
+          <li>Keep the link somewhere safe, for example in a password manager: anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
+          <li>If a device runs an older version of Zenigo than the others, it keeps syncing as long as the data is compatible; otherwise it says so and waits for an update instead of overwriting newer data.</li>
+        </ul>
+      </dd>
       <dt id="backup">Backup and restore</dt>
-      <dd>Everything is stored only on your device, and clearing the browser’s website data deletes it. Back up now and then, and use a backup to move to a new phone.
+      <dd>Everything is stored on your device (and in your sync group if sync is on); clearing the browser’s website data deletes it from the device. Back up now and then, and use a backup to move to a new phone.
         <ul>
           <li><b>Back up lists</b> saves the observing list, starred objects and logbook as a file.</li>
           <li><b>Back up lists and settings</b> adds all settings (telescope and eyepieces, location, pointing, camera, display).</li>
-          <li><b>Restore from a backup</b> adds the list entries missing here and never deletes any. If the file holds settings, the app asks before replacing yours.</li>
+          <li><b>Restore from a backup</b> adds the list entries missing here (also ones deleted since) and never deletes any. Backups from all earlier versions of Zenigo can be restored. If the file holds settings, the app asks before replacing yours.</li>
           <li><b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar.</li>
         </ul>
       </dd>
@@ -527,7 +540,7 @@
       <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
       <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera &amp; sensors → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
       <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
-      <dt>What happens to my data?</dt><dd>Camera images, location, sensor data, your observing list and logbook stay on your phone and are never uploaded. Export a backup now and then (Settings → General → Backup and restore). Details in the <a href="/privacy/">privacy policy</a>.</dd>
+      <dt>What happens to my data?</dt><dd>Camera images and sensor data stay on your phone and are never uploaded. Location, observing list and logbook stay on your phone too, unless you turn on <a href="#sync">sync between devices</a>: then they are stored end-to-end encrypted on our server, and only your devices can read them. Export a backup now and then (Settings → General → Backup and restore). Details in the <a href="/privacy/">privacy policy</a>.</dd>
       <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>
     </dl>
   </article>

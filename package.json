@@ -8,6 +8,7 @@
     "build": "node scripts/catalog.mjs && node scripts/build.mjs",
     "test": "npm run catalog && node test/synthetic.cjs 21 2",
     "test:photo": "node test/photo.cjs",
+    "test:sync": "node test/sync.cjs",
     "test:ui": "node scripts/build.mjs && node test/ui.cjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
@@ -18,6 +19,8 @@
     "@jscad/modeling": "2.13.0",
     "astronomy-engine": "2.1.19",
     "d3-celestial": "0.7.35",
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
     "satellite.js": "^6.0.2",
     "wrangler": "4.147.0"
   },

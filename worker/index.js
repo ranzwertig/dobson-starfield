@@ -1,7 +1,10 @@
-// Zenigo Worker: serves the static site (dist/) and one small API.
-//   /api/tle  current orbital elements (TLE) of the space stations and about 150 bright satellites, from CelesTrak.
+// Zenigo Worker: serves the static site (dist/) and a small API.
+//   /api/tle      current orbital elements (TLE) of the space stations and about 150 bright satellites, from CelesTrak.
+//   /api/sync/v1  sync between devices: stores end-to-end encrypted copies (worker/sync.js).
 // The app only contacts its own server; the Worker fetches CelesTrak at most twice a day for everyone
 // and keeps the last good copy for when CelesTrak can't be reached.
+import { handleSync } from './sync.js';
+
 const GROUPS = ['stations', 'visual'];
 const FRESH = 12 * 3600e3;           // fetch new data twice a day
 const KEEP = 4 * 86400;              // keep the last copy 4 days (stale fallback)
@@ -50,6 +53,10 @@ export default {
       } catch (e) {
         return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
       }
+    }
+    if (url.pathname === '/api/sync/v1' || url.pathname.startsWith('/api/sync/v1/')) {
+      try { return await handleSync(req, env, url); }
+      catch (e) { return new Response(JSON.stringify({ error: 'server error' }), { status: 500, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
     }
     return env.ASSETS.fetch(req);
   },

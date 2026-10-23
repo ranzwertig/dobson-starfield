@@ -14,6 +14,31 @@ function loadPlaywright() {
 }
 const { chromium } = loadPlaywright();
 
+// ---------- the sync API (worker/sync.js) as an in-memory stand-in, same answers ----------
+const syncStore = new Map(); let syncOn = true;
+function syncApi(req, res, p) {
+  const send = (status, data, h = {}) => { res.writeHead(status, { 'content-type': 'application/json', ...h }); res.end(data === undefined ? '' : JSON.stringify(data)); };
+  if (!syncOn) return send(503, { error: 'off' });
+  const id = p.slice('/api/sync/v1'.length).replace(/^\//, '');
+  if (!id) return send(200, { ok: true });
+  const tok = (req.headers.authorization || '').replace(/^Bearer /, ''), auth = require('node:crypto').createHash('sha256').update(tok).digest('hex');
+  if (!/^[A-Za-z0-9_-]{43}$/.test(tok)) return send(401, { error: 'unauthorized' });
+  const row = syncStore.get(id);
+  if (req.method === 'GET') {
+    if (!row) return send(404, { error: 'not found' });
+    if (row.auth !== auth) return send(401, { error: 'unauthorized' });
+    res.writeHead(200, { 'content-type': 'application/octet-stream', 'x-sync-version': String(row.version) }); return res.end(row.blob);
+  }
+  if (req.method === 'DELETE') { if (row && row.auth !== auth) return send(401, {}); syncStore.delete(id); res.writeHead(204); return res.end(); }
+  const chunks = []; req.on('data', c => chunks.push(c)); req.on('end', () => {
+    const blob = Buffer.concat(chunks), base = Number(req.headers['if-match']);
+    if (!row) { if (base !== 0) return send(404, {}); syncStore.set(id, { auth, version: 1, blob, updated: Date.now() }); return send(200, { version: 1 }); }
+    if (row.auth !== auth) return send(401, {});
+    if (row.version !== base) return send(409, { version: row.version });
+    row.version++; row.blob = blob; row.updated = Date.now(); send(200, { version: row.version });
+  });
+}
+
 // ---------- static server for dist/ ----------
 const DIST = path.join(__dirname, '..', 'dist');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml',
@@ -21,6 +46,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applic
 function serve() {
   const srv = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    if (p.startsWith('/api/sync/v1')) return syncApi(req, res, p);
     if (p.startsWith('/api/')) { res.writeHead(503); return res.end('{}'); }   // no satellites in tests
     if (p.endsWith('/')) p += 'index.html';
     const f = path.join(DIST, path.normalize(p));
@@ -500,6 +526,75 @@ const TESTS = {
       ok(title.includes(h.want), 'tapping a name opens its object', [title, h.want]);
     }
     await done(p);
+  },
+
+  // sync between devices: set up, add a second device, changes both ways, deletions, versions, delete from the server
+  async sync() {
+    const A = await page(), B = await page({ w: 1280, h: 800, mobile: false });
+    // device A: a planned object, a logbook entry, its own telescope; then "Set up sync"
+    await ev(A, () => { obs.list.push({ id: 'M13', name: 'M13', added: Date.now() }); obs.log.push({ uid: 'a1', obj: 'M31', name: 'Andromeda Galaxy', t: '2026-10-19T20:00:00.000Z', result: 'easy', note: 'dust lane seen', ep: '25 mm' }); saveObs(); setOptics({ scope: 1000 }); cfg.tele = { x: 0.05, y: 0.02 }; save(); });
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 500);
+    ok(await ev(A, () => !$('syncBox').hidden && !$('syncOff').hidden), 'the sync section shows when the server offers sync');
+    await A.tap('#syncSetup'); await wait(A, 1200);
+    const code = await ev(A, () => syncS.code);
+    ok(/^[A-Za-z0-9_-]{43}$/.test(code || ''), 'a sync code is made on the device');
+    ok(await ev(A, () => !$('syncSheet').hidden && !$('syncShowBox').hidden && $('syncQr').width > 100), 'the QR code to add a device is shown');
+    // the QR code holds the join link: read it back with the app's own reader
+    const qr = await ev(A, async () => { await loadJsQR(); const c = $('syncQr'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height); const big = document.createElement('canvas'); big.width = big.height = c.width + 80; const x = big.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, big.width, big.height); x.putImageData(d, 40, 40); const im = x.getImageData(0, 0, big.width, big.height); const r = jsQR(im.data, im.width, im.height); return r && r.data; });
+    ok(qr === base + '/app/#join=' + code, 'the QR code reads back as the join link', qr);
+    ok(syncStore.size === 1, 'one group on the server');
+    const blob = [...syncStore.values()][0].blob.toString('latin1');
+    ok(!/M31|dust lane|Andromeda|1000/.test(blob), 'the server stores nothing readable');
+    // device B joins with the link (as from the camera app); it has its own entry and other telescope settings
+    await ev(B, () => { obs.log.push({ uid: 'b1', obj: 'M57', name: 'Ring Nebula', t: '2026-10-19T21:00:00.000Z', result: 'easy', note: '', ep: '10 mm' }); saveObs(); setOptics({ scope: 1500 }); cfg.tele = { x: -0.03, y: 0 }; save(); });
+    await B.goto('about:blank'); await B.goto(base + '/app/#join=' + code); await B.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
+    ok(!(await B.evaluate(() => location.hash)), 'the code is taken out of the address at once');
+    await B.waitForFunction(() => !$('confirmSheet').hidden, null, { timeout: 5000 }).catch(() => {});
+    ok(await ev(B, () => $('confirmTitleTxt').textContent.includes('Join')), 'joining asks first');
+    await B.click('#confirmOk'); await wait(B, 900);
+    ok(await ev(B, () => $('confirmTitleTxt').textContent.includes('telescope settings') && !$('confirmSheet').hidden), 'different telescope settings: it asks which ones to use');
+    await B.click('#confirmOk'); await wait(B, 1200);
+    const b = await ev(B, () => ({ code: syncS.code, log: obs.log.map(e => e.uid).sort(), list: obs.list.map(x => x.id), scope: opt().scope, tele: cfg.tele, devs: Object.values(syncS.devs || {}).length }));
+    ok(b.code === code, 'B is in the group');
+    ok(b.log.join() === 'a1,b1' && b.list.join() === 'M13', 'lists and logbook of both devices are combined', b);
+    ok(b.scope === 1000 && b.tele.x === -0.03, 'B took the group’s telescope; its eyepiece point stays its own', b);
+    ok(b.devs === 2, 'the group knows both devices', b.devs);
+    // a change on B arrives on A; a deletion on A arrives on B
+    await ev(B, () => { const e = obs.log.find(x => x.uid === 'a1'); e.note = 'edited on the desktop'; saveObs(); return syncNow(); });
+    await ev(A, () => syncNow());
+    const a = await ev(A, () => ({ note: (obs.log.find(x => x.uid === 'a1') || {}).note, n: obs.log.length, scope: opt().scope, tele: cfg.tele }));
+    ok(a.note === 'edited on the desktop' && a.n === 2, 'a change made on B shows on A', a);
+    ok(a.tele.x === 0.05, 'A keeps its own eyepiece point', a.tele);
+    await ev(A, () => { obs.list = []; saveObs(); setOptics({ scope: 1200 }); return syncNow(); });
+    await ev(B, () => syncNow());
+    ok(await ev(B, () => obs.list.length === 0 && opt().scope === 1200), 'a deletion and a new focal length on A arrive on B');
+    // the settings show the group
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 400);
+    ok(await ev(A, () => !$('syncOn').hidden && /Synced/.test($('syncStatus').textContent) && $('syncDevs').children.length === 2), 'the settings show the status and both devices');
+    // an old backup (version 1) can still be restored, and its entries reach the group
+    await ev(A, () => { obs.log = obs.log.filter(e => e.uid !== 'mgx1a2b3'); saveObs(true); });
+    await A.setInputFiles('#bkFile', path.join(__dirname, 'fixtures', 'backup-v1.json')); await wait(A, 700);
+    ok(await ev(A, () => obs.log.some(e => e.uid === 'mgx1a2b3') && obs.list.some(x => x.id === 'M13')), 'a version 1 backup is restored');
+    await ev(A, () => syncNow()); await ev(B, () => syncNow());
+    ok(await ev(B, () => obs.log.some(e => e.uid === 'mgx1a2b3')), 'restored entries reach the other device');
+    // a backup made now has the old shape plus change times (older app versions can import it)
+    const dl = A.waitForEvent('download'); await A.tap('#bkAll'); const f = await (await dl).path(); const bk = JSON.parse(fs.readFileSync(f, 'utf8'));
+    ok(bk.version === 4 && Array.isArray(bk.log) && Array.isArray(bk.list) && Array.isArray(bk.starred) && typeof bk.settings === 'object' && bk.log.every(e => e.u > 0 || e.uid === 'mgx1a2b3'), 'backup version 4 keeps the shape of version 3', bk.version);
+    // another device with a newer app (major version 2) wrote the group: this app stops writing instead of breaking it
+    const before = [...syncStore.values()][0].version;
+    await ev(B, async () => { const k = await syncKeys(); const g = await syncGet(k); const d = { ...g.data, schema: { major: 2, minor: 0 } }; await syncPut(k, g.ver, d); });
+    const v2 = [...syncStore.values()][0].version;
+    await ev(A, () => { obs.list.push({ id: 'M27', name: 'M27', added: Date.now() }); saveObs(); return syncNow(); });
+    ok(await ev(A, () => syncS.err === 'newer'), 'data from a newer major version: A reports it and stops');
+    ok([...syncStore.values()][0].version === v2 && v2 === before + 1, 'and doesn’t overwrite it');
+    // delete from the server: every device stops syncing, their data stays
+    await ev(B, async () => { const k = await syncKeys(); const g = await syncGet(k); await syncPut(k, g.ver, { ...g.data, schema: { major: 1, minor: 0 } }); });
+    await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(A, 400);
+    await ev(A, () => { $('syncBox').querySelector('details').open = true; }); await A.tap('#syncDelete'); await wait(A, 500); await A.tap('#confirmOk'); await wait(A, 800);
+    ok(syncStore.size === 0 && await ev(A, () => !syncS.code && obs.log.length >= 2), 'Delete removes the group from the server; the lists stay');
+    await ev(B, () => syncNow());
+    ok(await ev(B, () => !syncS.code && obs.log.length >= 2 && /Sync stopped/.test($('hint').textContent)), 'the other device notices, stops syncing and says so');
+    await done(A); await done(B);
   },
 
   // offline: the service worker keeps page and scripts

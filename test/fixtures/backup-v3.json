@@ -1,0 +1,10 @@
+{
+ "app": "Zenigo",
+ "version": 3,
+ "kind": "all",
+ "exportedAt": "2026-10-01T18:00:00.000Z",
+ "list": [{ "id": "M13", "name": "M13", "added": 1760000000000 }],
+ "starred": [{ "id": "NGC 891", "name": "NGC 891", "added": 1760000100000 }],
+ "log": [{ "uid": "mgx1a2b3", "obj": "M31", "name": "Andromeda Galaxy", "t": "2025-10-10T20:15:00.000Z", "lat": 48.18, "lon": 10.08, "alt": 52, "moon": 0.31, "result": "easy", "seeing": 3, "transp": 4, "note": "dust lane", "ep": "25 mm" }],
+ "settings": { "lat": 48.18, "lon": 10.08, "mount": "altaz", "target": "M31", "tele": { "x": 0.01, "y": -0.02 }, "optics": { "scope": 1200, "ap": 200, "barlow": 0, "useB": false, "finder": 6, "eps": [{ "f": 25, "a": 52 }, { "f": 10, "a": 52 }], "ep": 0 } }
+}

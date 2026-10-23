@@ -53,23 +53,36 @@ const satjs = `/*! satellite.js ${satPkg.version} (c) Shashwat Kandadai and cont
 const data = read('src/data.js');
 const core = ('/* Star catalogue: d3-celestial data (c) Olaf Frohn, BSD-3-Clause */\n' + data + read('src/solver.js'))
   .replace("if (typeof module !== 'undefined') module.exports = Solver;", '');
-for (const chunk of [astronomy, core, satjs]) if (/<\/script/i.test(chunk)) throw new Error('Inline script contains </script');
+// Sync between devices: QR code generator (qrcode-generator, MIT) and the sync core (data model, merge, encryption)
+const qrDir = path.dirname(require.resolve('qrcode-generator'));
+const qrPkg = JSON.parse(readFileSync(path.join(qrDir, '..', 'package.json'), 'utf8'));
+const syncJs = `/*! qrcode-generator ${qrPkg.version} (c) Kazuhiko Arase, MIT License, https://github.com/kazuhikoarase/qrcode-generator */\n`
+  + readFileSync(path.join(qrDir, 'qrcode.js'), 'utf8').replace(/^\(function \(factory\) \{[\s\S]*$/m, '') + '\n' + read('src/sync.js').replace('if (typeof module !== "undefined") module.exports = ZSync;', '');
+// QR code reader for browsers without BarcodeDetector (Safari): jsQR (Apache-2.0), loaded only when a code is scanned
+// and not kept for offline use (joining a sync group needs the network anyway)
+const jsqrSrc = readFileSync(require.resolve('jsqr'), 'utf8');
+let jsqr = jsqrSrc;
+try { jsqr = (await import('esbuild')).transformSync(jsqrSrc, { minify: true }).code; } catch (e) {}
+jsqr = '/*! jsQR 1.4.0 (c) Cosmo Wolfe, Apache License 2.0, https://github.com/cozmo/jsQR */\n' + jsqr;
+for (const chunk of [astronomy, core, satjs, syncJs]) if (/<\/script/i.test(chunk)) throw new Error('Inline script contains </script');
 
 // The scripts are served as separate files (named by their content), loaded with defer: the page with its start screen
 // paints at once, and the browser compiles the scripts in the background instead of blocking on one huge inline script.
 let page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss);
 const mainOpen = '<script id="main">', mi = page.indexOf(mainOpen), me = page.lastIndexOf('</script>');
 if (mi < 0 || me < mi) throw new Error('main script not found');
-const mainJs = page.slice(mi + mainOpen.length, me);
+const fJsqr = `jsqr.${createHash('sha256').update(jsqr).digest('hex').slice(0, 10)}.js`;
+const mainJs = page.slice(mi + mainOpen.length, me).replace('__JSQR_FILE__', fJsqr);
 const hashOf = s => createHash('sha256').update(s).digest('hex').slice(0, 10);
 const jsFiles = {};
 const jsFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; jsFiles[f] = src; return f; };
-const fAstro = jsFile('astronomy', astronomy), fSat = jsFile('satellite', satjs), fCore = jsFile('core', core), fMain = jsFile('app', mainJs);
+const fAstro = jsFile('astronomy', astronomy), fSat = jsFile('satellite', satjs), fCore = jsFile('core', core), fSync = jsFile('sync', syncJs), fMain = jsFile('app', mainJs);
 page = page.slice(0, mi) + `<script id="main" src="${fMain}" defer></script>` + page.slice(me + '</script>'.length);
 page = page.replace('<script>/*__ASTRONOMY__*/</script>', `<script src="${fAstro}" defer></script>`)
   .replace('<script>/*__SATELLITE__*/</script>', `<script src="${fSat}" defer></script>`)
-  .replace('<script id="core">/*__CORE__*/</script>', `<script id="core" src="${fCore}" defer></script>`);
-if (/__ASTRONOMY__|__SATELLITE__|__CORE__/.test(page)) throw new Error('script marker left in the page');
+  .replace('<script id="core">/*__CORE__*/</script>', `<script id="core" src="${fCore}" defer></script>`)
+  .replace('<script>/*__SYNC__*/</script>', `<script src="${fSync}" defer></script>`);
+if (/__ASTRONOMY__|__SATELLITE__|__CORE__|__SYNC__/.test(page)) throw new Error('script marker left in the page');
 // start screen: drawn by the HTML alone, before any script runs; red light is applied right away
 const logoSvg = read('public/app/logo.svg').replace(/<\?xml[^>]*>/, '').trim();
 const splash = '<div id="splash" aria-hidden="true">' + logoSvg.replace('<svg', '<svg class="splogo"') + '<b>zeni<i>go</i></b><div class="sp"></div></div>'
@@ -94,6 +107,7 @@ const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
 if (existsSync(new URL('public/', root))) cpSync(new URL('public/', root), new URL('dist/', root), { recursive: true });
 write('dist/app/index.html', html);
 for (const [f, src] of Object.entries(jsFiles)) write('dist/app/' + f, src);
+write('dist/app/' + fJsqr, jsqr);
 // service worker for offline use; the version changes with the page (which names the scripts by their content)
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
 write('dist/app/sw.js', read('src/sw.js').replace('__VERSION__', version).replace('/*__FONTS__*/', fontFiles.map(f => `'${f}'`).join(', '))
