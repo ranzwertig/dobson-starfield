@@ -649,7 +649,7 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .syncmore > * + * { margin-top: 12px; }
 .syncmore[open] { padding-bottom: 6px; }
 #syncStatus.err { color: var(--target); }
-.row input#syncName, .row input#liveName { font-family: var(--font-ui); }
+.row input#syncName { font-family: var(--font-ui); }
 .syncpane { display: grid; gap: 12px; }
 #liveSheet .qrbox canvas { width: min(300px, 74vw); }
 #liveSheet .scanbox { max-height: 30vh; justify-self: center; width: min(320px, 100%); }
@@ -1250,7 +1250,6 @@ a.btn { text-decoration: none; color: var(--fg); }
       <p class="note" id="liveStatus"></p>
       <div class="row" id="liveIdle"><button class="btn primary" id="liveStart">Show a code</button><button class="btn" id="liveJoin">Scan a code</button></div>
       <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button></div>
-      <div class="row"><label>Name of this device (shown on the other one)<input type="text" id="liveName" maxlength="40" autocomplete="off"></label></div>
       <div class="liverole" role="radiogroup" aria-label="Role of this device">
         <label class="check"><input type="radio" name="liveRole" value="scope"> <span><b>On the telescope</b>: shares where it points</span></label>
         <label class="check"><input type="radio" name="liveRole" value="follow"> <span><b>Follows</b> the other device’s telescope: map, crosshair and directions</span></label>
@@ -2983,7 +2982,7 @@ function drawHorizon(c, sol, dpr, t, col) {
 function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
   const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
-  const txt = liveVec() ? "Live · " + (live.peer || "other device") + "’s telescope" : m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+  const txt = liveVec() ? "Live · following the telescope" : m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
   syncPin();
   if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
@@ -3161,7 +3160,7 @@ function updateAvailability() {
   setAvail("btnTeleReset", Math.hypot(+curTele().x || 0, +curTele().y || 0) > 1e-5, "The telescope is already set to the image centre.");
   // following a live-connected telescope: locating, camera, Align and photos belong to the device on the telescope
   if (liveFollowing()) {
-    const why = "This device follows " + livePeer() + "’s telescope: locating, the camera, Align and photos run on that device. To change it: Settings › Live.";
+    const why = "This device follows the telescope: locating, the camera, Align and photos run on the device on the telescope. To change it: Settings › Live.";
     ["btnTele", "btnAuto", "btnCam", "btnSensor", "btnSolve", "qNight", "qGallery", "infoSync", "btnTeleReset"].forEach(id => setAvail(id, false, why));
   } else ["qNight", "qGallery", "infoSync"].forEach(id => setAvail(id, true, ""));
   // An eyepiece point far from the image centre moves the whole view (the horizon too): shown as a pill with ✕,
@@ -3552,7 +3551,7 @@ function drawOverlay(dpr) {
         tx = lx; ty = ly;
         c.strokeStyle = col("--accent"); c.lineWidth = 2 * dpr; c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
         [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); }); c.stroke();
-        if (live.paused) { c.font = `${11 * dpr}px ${col("--font-ui")}`; c.fillStyle = col("--accent"); c.textAlign = "center"; c.fillText(livePeer() + "’s telescope", tx, ty + 38 * dpr); c.textAlign = "start"; }
+        if (live.paused) { c.font = `${11 * dpr}px ${col("--font-ui")}`; c.fillStyle = col("--accent"); c.textAlign = "center"; c.fillText("telescope", tx, ty + 38 * dpr); c.textAlign = "start"; }
       }
     }
   }
@@ -4843,7 +4842,7 @@ $("syncSetup").onclick = async () => {
 $("syncJoin").onclick = () => openSyncSheet("join");
 $("syncAdd").onclick = () => openSyncSheet("show");
 $("syncNowBtn").onclick = () => syncNow({ loud: true });
-$("syncName").onchange = () => { const v = $("syncName").value.trim().slice(0, 40), d = myDevice(); d.name = v || deviceName(); d.custom = !!v; saveSyncS(); renderSync(); syncNow(); liveHello(); renderLive(); };
+$("syncName").onchange = () => { myDevice().name = $("syncName").value.trim().slice(0, 40) || deviceName(); saveSyncS(); renderSync(); syncNow(); };
 $("syncCopy").onclick = async () => {
   try { await navigator.clipboard.writeText(ZSync.joinLink(location.origin, syncS.code)); hint("Link copied. Send it only to your own devices.", 4000); }
   catch (e) { hint("Could not copy: the browser didn’t allow it.", 3000); }
@@ -4915,13 +4914,13 @@ if (/[#&]join=/.test(location.hash)) {
 /* ---------------- Live connection: two devices directly (WebRTC), paired by QR codes ---------------- */
 // No server: the two devices exchange their connection details (offer and answer) as QR codes and then talk directly
 // over the local network (same Wi-Fi or hotspot). Only small messages, about 10 a second at most, never video:
-//   hello  {t, proto, name, role}       after connecting and when the role changes ("scope" or "follow")
+//   hello  {t, proto, role}             after connecting and when the role changes ("scope" or "follow")
 //   pose   {t, v: [x,y,z] | null}      where this device's telescope points (sky direction), while it knows it
 //   target {t, id | null}              a target was chosen or cleared
 // Unknown messages are ignored (newer versions can add some). Everything else in the app stays as it is: the
 // receiving side only uses the pointing in pointVec() (directions, readout, sound) and turns its free map to it.
 const LIVE_PROTO = 1, LIVE_PREFIX = "zenigo-live:1:";
-var live = { pc: null, dc: null, state: "off", role: null, peer: null, peerRole: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
+var live = { pc: null, dc: null, state: "off", role: null, peerRole: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
 // Roles: one device is on the telescope and shares where it points, the other follows it. Set per device; a guess
 // at first: phones go on the telescope, tablets and computers follow.
 function liveRole() {
@@ -4979,8 +4978,8 @@ function liveChannel(dc) {
   dc.onclose = () => { if (live.dc === dc && live.state === "connected") liveLost(); };
   dc.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } liveReceive(m); };
 }
-function liveHello() { const d = myDevice(); liveSendRaw({ t: "hello", proto: LIVE_PROTO, name: d.custom ? d.name : "", role: liveRole() }); }
-function livePeer() { return (live && live.peer) || "device"; }
+// no names: the devices are simply "this device" and "the other device"
+function liveHello() { liveSendRaw({ t: "hello", proto: LIVE_PROTO, role: liveRole() }); }
 function liveSendRaw(m) { try { if (live.dc && live.dc.readyState === "open") live.dc.send(JSON.stringify(m)); } catch (e) {} }
 // this device's pointing, ten times a second at most, and only when it moved (or every 2 s, so the other side knows it is current)
 function livePoseTick() {
@@ -4991,8 +4990,8 @@ function livePoseTick() {
   live.sent = v; live.sentAt = now; liveSendRaw({ t: "pose", v: v.map(x => +x.toFixed(6)) });
 }
 function liveReceive(m) {
-  if (m.t === "hello") { live.peer = String(m.name || "").slice(0, 40); live.peerRole = m.role === "scope" || m.role === "follow" ? m.role : null; renderLive(); return; }
-  if (m.t === "bye") { liveStop(true); hint((live.peer || "The other device") + " ended the live connection.", 4000); return; }
+  if (m.t === "hello") { live.peerRole = m.role === "scope" || m.role === "follow" ? m.role : null; renderLive(); return; }
+  if (m.t === "bye") { liveStop(true); hint("The other device ended the live connection.", 4000); return; }
   if (m.t === "pose") {
     const had = !!liveVec();
     live.remote = Array.isArray(m.v) && m.v.length === 3 && m.v.every(Number.isFinite) ? m.v : null; live.remoteAt = Date.now();
@@ -5007,7 +5006,7 @@ function liveReceive(m) {
     live.applying = true;
     try {
       if (!id) { if (cfg.target) { cfg.target = null; save(); renderChips(); updateGuide(); renderReadout(); } }
-      else if (targetById(id)) { cfg.target = id; save(); renderChips(); updateGuide(); renderReadout(); hint("Target from " + (live.peer || "the other device") + ": " + targetById(id).name + (id === "Sun" ? " – solar filter on!" : "."), 3000); }
+      else if (targetById(id)) { cfg.target = id; save(); renderChips(); updateGuide(); renderReadout(); hint("Target from the other device: " + targetById(id).name + (id === "Sun" ? " – solar filter on!" : "."), 3000); }
     } finally { live.applying = false; }
   }
 }
@@ -5033,13 +5032,12 @@ function liveStop(quiet) {
   renderLive();
 }
 function renderLive() {
-  const s = $("liveStatus"), on = live.state === "connected", role = liveRole(), peer = live.peer || "the other device";
-  if (document.activeElement !== $("liveName")) { const d = myDevice(); $("liveName").value = d.custom ? d.name : ""; $("liveName").placeholder = deviceName(); }
+  const s = $("liveStatus"), on = live.state === "connected", role = liveRole();
   const clash = on && live.peerRole && live.peerRole === role;
   s.className = "note" + (on && !clash ? " on" : clash || live.state === "lost" || live.state === "fail" ? " err" : "");
   s.textContent = clash ? (role === "scope" ? "Both devices are set to “On the telescope”. Switch one of them to “Follows”." : "Both devices are set to “Follows”. Switch the one on the telescope to “On the telescope”.")
-    : on && role === "scope" ? "This device is the telescope. " + peer + " follows it" + (teleVec() ? "." : ": it doesn’t point anywhere yet (start the camera or Align).")
-    : on ? "Following " + peer + "’s telescope" + (live.paused && liveVec() ? ": the map is paused, the crosshair and directions still come from it." : liveVec() ? "." : ": it doesn’t point anywhere yet.")
+    : on && role === "scope" ? "This device is the telescope. The other device follows it." + (teleVec() ? "" : " This device doesn’t point anywhere yet: start the camera or Align.")
+    : on ? "Following the telescope of the other device" + (live.paused && liveVec() ? ": the map is paused, the crosshair and directions still come from it." : liveVec() ? "." : ": it doesn’t point anywhere yet.")
     : live.state === "offer" ? "Waiting for the other device…" : live.state === "answer" ? "Show this device’s code to the other device…"
     : live.state === "lost" ? "The connection was lost. Connect again with the codes."
     : live.state === "fail" ? "No connection. Are both devices in the same Wi-Fi, or one in the other’s hotspot?" : "Not connected.";
@@ -5049,11 +5047,11 @@ function renderLive() {
   // "follow again" with them on the left while the map is paused
   const follow = on && role === "follow", scope = on && role === "scope";
   $("liveChip").hidden = !follow; $("liveChipL").hidden = !scope;
-  if (follow) $("liveChipTxt").textContent = "Following " + livePeer();
-  if (scope) $("liveChipLTxt").textContent = "Live · " + (live.peer ? live.peer + " follows" : "a device follows");
+  if (follow) $("liveChipTxt").textContent = "Following the telescope";
+  if (scope) $("liveChipLTxt").textContent = "Live · another device follows";
   $("liveChip").classList.toggle("warn", !!clash); $("liveChipL").classList.toggle("warn", !!clash);
   $("liveFollowChip").hidden = !(follow && live.paused && live.remote);
-  $("liveState").textContent = on ? (role === "scope" ? "telescope, " + (live.peer || "a device") + " follows" : "following " + livePeer()) : "";
+  $("liveState").textContent = on ? (role === "scope" ? "telescope, followed" : "following") : "";
   if (follow) liveFollowerOnly();
   updateTag();
 }
@@ -5154,7 +5152,6 @@ $("btnLive").onclick = () => { closeSheet("menu"); liveSettings(); };
 $("liveChipLTxt").onclick = () => liveSettings();
 $("liveChipLOff").onclick = () => $("liveChipOff").click();
 $("liveFollowTxt").onclick = () => liveResume();
-$("liveName").onchange = () => { const v = $("liveName").value.trim().slice(0, 40), d = myDevice(); d.name = v || deviceName(); d.custom = !!v; saveSyncS(); liveHello(); renderLive(); if (syncS.code) { renderSync(); syncNow(); } };
 // Following: what only makes sense on the device on the telescope is switched off (camera, Align, a running solve)
 function liveFollowerOnly() {
   if (st.stream) stopCamera();
@@ -5634,7 +5631,7 @@ function alignOnMap(e) {
 const wiz = { on: false, step: "", star: null, star2: null, quick: false, map: false, note: "", busy: false };
 const wizNeeded = () => st.source !== "photo" && !st.wizSkip && (!st.sensor || !cfg.teleSetAt);
 function wizStart(quick) {
-  if (liveFollowing()) { hint("This device follows " + livePeer() + "’s telescope: set it up on that device.", 5000); return; }
+  if (liveFollowing()) { hint("This device follows the telescope: set it up on the device on the telescope.", 5000); return; }
   wiz.on = true; wiz.quick = quick ?? !!cfg.teleSetAt; wiz.map = false; wiz.note = ""; wiz.star = wiz.star2 = wiz.cands1 = wiz.cands2 = null;
   if (st.tOff) setTimeOffset(0, null);
   wizGo(wiz.quick ? "sensors" : "mount");

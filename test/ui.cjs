@@ -511,10 +511,8 @@ const TESTS = {
     await B.waitForFunction(() => live.state === 'connected' && !!live.peer, null, { timeout: 15000 }).catch(() => {});
     ok(await ev(A, () => live.state === 'connected') && await ev(B, () => live.state === 'connected'), 'both are connected (directly, no server)');
     ok(await ev(B, () => /Following/.test($('liveStatus').textContent)) && await ev(A, () => /This device is the telescope/.test($('liveStatus').textContent)), 'the settings say who is the telescope and who follows');
-    ok(await ev(B, () => !$('liveChip').hidden && $('liveChipTxt').textContent === 'Following device' && $('liveChipL').hidden), 'following: the pill bottom right says “Following device” (no name given)');
+    ok(await ev(B, () => !$('liveChip').hidden && $('liveChipTxt').textContent === 'Following the telescope' && $('liveChipL').hidden), 'following: the pill bottom right says “Following the telescope”');
     ok(await ev(A, () => $('liveChip').hidden && !$('liveChipL').hidden && /follows/.test($('liveChipLTxt').textContent)), 'the telescope side: its pill is with the pills on the left');
-    await ev(A, () => { $('liveName').value = 'Dobson phone'; $('liveName').dispatchEvent(new Event('change')); }); await wait(B, 500);
-    ok(await ev(B, () => $('liveChipTxt').textContent === 'Following Dobson phone'), 'a name given on one device shows on the other');
     ok(await ev(B, () => ['btnCam', 'btnSolve', 'btnSensor', 'btnAuto', 'btnTele', 'qNight', 'qGallery'].every(id => $(id).getAttribute('aria-disabled') === 'true')), 'following: camera, Locate, Align, Continuous, eyepiece point and photos are off');
     ok(await ev(B, () => /following/.test($('liveState').textContent) && !$('btnLive').hidden), 'the menu entry shows it too');
     // A points somewhere (as with Align): B follows it, its directions use A's telescope
