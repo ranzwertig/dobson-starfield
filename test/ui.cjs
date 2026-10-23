@@ -511,7 +511,11 @@ const TESTS = {
     await B.waitForFunction(() => live.state === 'connected' && !!live.peer, null, { timeout: 15000 }).catch(() => {});
     ok(await ev(A, () => live.state === 'connected') && await ev(B, () => live.state === 'connected'), 'both are connected (directly, no server)');
     ok(await ev(B, () => /Following/.test($('liveStatus').textContent)) && await ev(A, () => /This device is the telescope/.test($('liveStatus').textContent)), 'the settings say who is the telescope and who follows');
-    ok(await ev(A, () => !$('liveChip').hidden && /follows/.test($('liveChipTxt').textContent)) && await ev(B, () => !$('liveChip').hidden && /^Following/.test($('liveChipTxt').textContent)), 'the pill bottom right shows the connection on both');
+    ok(await ev(B, () => !$('liveChip').hidden && $('liveChipTxt').textContent === 'Following device' && $('liveChipL').hidden), 'following: the pill bottom right says “Following device” (no name given)');
+    ok(await ev(A, () => $('liveChip').hidden && !$('liveChipL').hidden && /follows/.test($('liveChipLTxt').textContent)), 'the telescope side: its pill is with the pills on the left');
+    await ev(A, () => { $('liveName').value = 'Dobson phone'; $('liveName').dispatchEvent(new Event('change')); }); await wait(B, 500);
+    ok(await ev(B, () => $('liveChipTxt').textContent === 'Following Dobson phone'), 'a name given on one device shows on the other');
+    ok(await ev(B, () => ['btnCam', 'btnSolve', 'btnSensor', 'btnAuto', 'btnTele', 'qNight', 'qGallery'].every(id => $(id).getAttribute('aria-disabled') === 'true')), 'following: camera, Locate, Align, Continuous, eyepiece point and photos are off');
     ok(await ev(B, () => /following/.test($('liveState').textContent) && !$('btnLive').hidden), 'the menu entry shows it too');
     // A points somewhere (as with Align): B follows it, its directions use A's telescope
     await ev(A, () => { const t = skyNow().t, v = targetById('M13').vec(t), h = horiz(v, t); st.mapView = { az: h.az, alt: h.alt, fov: 30 }; st.sol = Object.assign({}, mapSol(), { approx: false }); st.solMode = 'track'; st.sensor = true; cfg.tele = { x: 0, y: 0 }; });
@@ -519,6 +523,15 @@ const TESTS = {
     const f = await ev(B, () => { const v = liveVec(), m13 = targetById('M13').vec(skyNow().t); return { sep: v ? Solver.angDeg(v, m13) : null, tag: $('srcTag').textContent, map: st.mapView }; });
     ok(f.sep != null && f.sep < 0.5, 'B receives where A’s telescope points', f.sep);
     ok(/Live/.test(f.tag), 'B’s map follows it and says so', f.tag);
+    // turning B's map by hand pauses following; the telescope's crosshair stays, "follow again" turns back
+    const az0 = await ev(B, () => st.mapView.az);
+    await ev(B, () => mapRotate(300, 0)); await wait(B, 400);
+    const pz = await ev(B, () => ({ paused: live.paused, chip: !$('liveFollowChip').hidden, az: st.mapView.az, guide: !$('guide').classList.contains('idle') }));
+    ok(pz.paused && pz.chip && Math.abs(pz.az - az0) > 1, 'dragging the map pauses following and offers “follow again”', pz);
+    await ev(A, () => { st.mapView.az = (st.mapView.az + 0.5) % 360; st.sol = Object.assign({}, mapSol(), { approx: false }); }); await wait(B, 500);
+    ok(await ev(B, a => Math.abs(st.mapView.az - a) < 0.01, pz.az), 'while paused, the map stays where it was');
+    await ev(B, () => $('liveFollowTxt').click()); await wait(B, 400);
+    ok(await ev(B, () => !live.paused && $('liveFollowChip').hidden && Solver.angDeg(liveVec(), Solver.pixToSky(st.sol, st.sol.cx, st.sol.cy)) < 0.3), '“follow again” turns the map back to the telescope');
     // a target chosen on B becomes A's target; directions on B are from A's telescope
     await ev(B, () => selectTarget('M92', true)); await wait(A, 600);
     ok(await ev(A, () => cfg.target === 'M92'), 'a target chosen on B is the target on A');
