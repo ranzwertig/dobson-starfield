@@ -597,6 +597,9 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .row label { flex: 1 1 120px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
 .row input[type=number], .row input[type=text], .row select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; }
 .row input[type=range] { width: 100%; accent-color: var(--accent); }
+/* two fields side by side, half and half, on their own line */
+.row.halves { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; }
+.row.halves > label { flex: 1 1 0; }
 .check { display: flex !important; align-items: center; gap: 8px !important; color: var(--fg) !important; font-size: 15px !important; flex: 1 1 100% !important; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; margin: 0; }
 /* a button next to labelled inputs sits on the inputs' baseline, not in the middle of label + input */
@@ -1218,8 +1221,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         </select></label>
         <label>Focal length (mm)<input type="number" id="oScope" min="100" step="10"></label>
         <label>Aperture (mm)<input type="number" id="oAp" min="30" max="1500" step="1"></label>
-        <label>Lowest it points (°)<input type="number" id="oAltMin" min="0" max="80" step="1"></label>
-        <label>Highest it points (°)<input type="number" id="oAltMax" min="10" max="90" step="1"></label>
+        <div class="row halves"><label>Lowest it points (°)<input type="number" id="oAltMin" min="0" max="80" step="1"></label><label>Highest it points (°)<input type="number" id="oAltMax" min="10" max="90" step="1"></label></div>
         <p class="note" style="flex-basis:100%;margin:0">How far down and up you can point the telescope, for example 15° because of the rocker box or a hedge, 80° because the tube hits the base. Objects outside this range are not suggested, and plans, best times and night bars keep inside it.</p>
         <label style="flex-basis:100%">Finder<select id="oFinderType">
           <option value="reddot">Red-dot or LED finder (no magnification)</option>
