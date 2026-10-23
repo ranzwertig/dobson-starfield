@@ -69,6 +69,59 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
     assert.ok(Z.settingsDiffer(Z.fromLocal(freshObs(), mine), Z.fromLocal(freshObs(), theirs)));
     assert.ok(!Z.settingsDiffer(Z.fromLocal(freshObs(), mine), Z.fromLocal(freshObs(), cfgOf({ lat: 47, tele: { x: 9, y: 9 } }))));
   });
+  await t("collisions: an entry edited on both devices keeps both edits (field by field, with the last synced version)", () => {
+    const base = entry("a", "M31", "2025-01-01T20:00:00Z", { u: 5, note: "", result: "easy", seeing: 3 });
+    const onA = { ...base, note: "dust lane", u: 10 }, onB = { ...base, result: "hard", seeing: 2, u: 20 };
+    const A = freshObs(), B = freshObs(); A.log = [onA]; B.log = [onB];
+    const b = { log: [base] };
+    const m1 = Z.merge(Z.fromLocal(B, cfgOf()), Z.fromLocal(A, cfgOf()), { base: b });
+    const m2 = Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal(B, cfgOf()), { base: b });
+    const e = m1.log[0];
+    assert.equal(e.note, "dust lane"); assert.equal(e.result, "hard"); assert.equal(e.seeing, 2); assert.equal(e.u, 21);
+    assert.ok(Z.same(m1.log, m2.log), "same result on both devices");
+    // the device that wrote the later edit gets the combination too, also when it has no base (the combination is newer)
+    assert.equal(Z.merge(m1, Z.fromLocal(B, cfgOf())).log[0].note, "dust lane");
+  });
+  await t("collisions: the same field edited on both devices: the later edit wins that field only", () => {
+    const base = entry("a", "M31", "2025-01-01T20:00:00Z", { u: 5, note: "", ep: "25 mm" });
+    const A = freshObs(), B = freshObs();
+    A.log = [{ ...base, note: "from A", ep: "10 mm", u: 30 }]; B.log = [{ ...base, note: "from B", u: 20 }];
+    const e = Z.merge(Z.fromLocal(B, cfgOf()), Z.fromLocal(A, cfgOf()), { base: { log: [base] } }).log[0];
+    assert.equal(e.note, "from A"); assert.equal(e.ep, "10 mm");
+    const f = Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal({ ...B, log: [{ ...base, note: "from B", seeing: 4, u: 40 }] }, cfgOf()), { base: { log: [base] } }).log[0];
+    assert.equal(f.note, "from B"); assert.equal(f.ep, "10 mm"); assert.equal(f.seeing, 4);
+  });
+  await t("collisions: without the last synced version the newer entry wins as a whole (as before)", () => {
+    const base = entry("a", "M31", "2025-01-01T20:00:00Z", { u: 5, note: "" });
+    const A = freshObs(), B = freshObs(); A.log = [{ ...base, note: "A", u: 10 }]; B.log = [{ ...base, result: "hard", u: 20 }];
+    const e = Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal(B, cfgOf())).log[0];
+    assert.equal(e.note, ""); assert.equal(e.result, "hard");
+  });
+  await t("collisions: eyepieces added, removed or edited on two devices are combined", () => {
+    const e25 = { f: 25, a: 52 }, e10 = { f: 10, a: 52 }, e6 = { f: 6, a: 60 }, e32 = { f: 32, a: 50 };
+    const base = { settings: { v: { "optics.eps": [e25, e10] } } };
+    const ca = cfgOf({ optics: { scope: 1200, eps: [e25, e10, e6], ep: 0 }, syncT: { "optics.eps": 10 } });
+    const cb = cfgOf({ optics: { scope: 1200, eps: [e25, e10, e32], ep: 0 }, syncT: { "optics.eps": 20 } });
+    const m = Z.merge(Z.fromLocal(freshObs(), cb), Z.fromLocal(freshObs(), ca), { base });
+    assert.deepEqual(m.settings.v["optics.eps"].map(e => e.f), [25, 10, 32, 6]); assert.equal(m.settings.t["optics.eps"], 21);
+    const m2 = Z.merge(Z.fromLocal(freshObs(), ca), Z.fromLocal(freshObs(), cb), { base });
+    assert.deepEqual(m2.settings.v["optics.eps"].map(e => e.f).sort(), [10, 25, 32, 6].sort(), "both devices end up with all four");
+    // one device removes the 10 mm and edits the 25 mm, the other adds a 6 mm
+    const cc = cfgOf({ optics: { scope: 1200, eps: [{ f: 25, a: 68 }], ep: 0 }, syncT: { "optics.eps": 30 } });
+    const m3 = Z.merge(Z.fromLocal(freshObs(), ca), Z.fromLocal(freshObs(), cc), { base });
+    assert.deepEqual(m3.settings.v["optics.eps"], [e6, { f: 25, a: 68 }]);
+    // changed on one device only: taken as it is
+    const m4 = Z.merge(Z.fromLocal(freshObs(), cfgOf({ optics: { scope: 1200, eps: [e25, e10], ep: 0 } })), Z.fromLocal(freshObs(), ca), { base });
+    assert.deepEqual(m4.settings.v["optics.eps"].map(e => e.f), [25, 10, 6]);
+  });
+  await t("collisions: latitude, longitude and its source always come from the same device", () => {
+    const ca = cfgOf({ lat: 47.1, lon: 9.1, loc: { src: "gps" }, syncT: { lat: 10, lon: 10, loc: 10 } });
+    const cb = cfgOf({ lat: 52.5, lon: 10.08, loc: { src: "manual" }, syncT: { lat: 20, loc: 20 } });
+    for (const [r, l] of [[ca, cb], [cb, ca]]) {
+      const v = Z.merge(Z.fromLocal(freshObs(), r), Z.fromLocal(freshObs(), l)).settings.v;
+      assert.deepEqual([v.lat, v.lon, v.loc.src], [52.5, 10.08, "manual"]);
+    }
+  });
   await t("apply: merged copy into lists and settings; device settings untouched", () => {
     const o = freshObs(), c = cfgOf({ tele: { x: 3, y: 4 } });
     const p = Z.fromLocal(freshObs(), cfgOf({ lat: 40, optics: { scope: 900, eps: [{ f: 9, a: 60 }], ep: 0 } }));

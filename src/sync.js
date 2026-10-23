@@ -23,6 +23,10 @@ const ZSync = (() => {
   const SETTINGS = ["lat", "lon", "loc", "mount", "show",
     "optics.scope", "optics.ap", "optics.barlow", "optics.useB", "optics.finder", "optics.finderType", "optics.finderOrient",
     "optics.eps", "optics.telrad", "optics.ring", "optics.orient", "optics.rot"];
+  // Settings that only make sense together: when they collide, all of them come from the same device
+  const GROUPS = [["lat", "lon", "loc"]];
+  // Lists inside a setting that are merged item by item: an eyepiece added on each of two devices keeps both
+  const SETS = ["optics.eps"];
   const KINDS = { list: x => "l:" + x.id, starred: x => "s:" + x.id, log: x => "g:" + x.uid };
   const KNOWN = new Set(["app", "schema", "list", "starred", "log", "del", "settings", "devices"]);
 
@@ -79,9 +83,33 @@ const ZSync = (() => {
   }
   const newer = s => !!s && s.major > SCHEMA.major;
   const pick = (a, b, ta, tb) => ta !== tb ? (ta > tb ? a : b) : stable(a) >= stable(b) ? a : b;   // same time: the same choice on every device
+  // An entry changed on both devices: with the last synced version (base) the changes are combined field by field;
+  // only a field changed on both sides is decided by time. Without a base the newer entry wins as a whole.
+  function mergeEntry(base, r, l) {
+    const keys = new Set([...Object.keys(base), ...Object.keys(r), ...Object.keys(l)]); keys.delete("u");
+    const out = {}, rNewer = pick(r, l, r.u || 0, l.u || 0) === r;
+    keys.forEach(k => {
+      const bk = stable(base[k]), rc = stable(r[k]) !== bk, lc = stable(l[k]) !== bk;
+      const x = lc && (!rc || !rNewer) ? l[k] : r[k];
+      if (x !== undefined) out[k] = clone(x);
+    });
+    if (body(out) === body(r)) return r;
+    if (body(out) === body(l)) return l;
+    out.u = Math.max(r.u || 0, l.u || 0) + 1;   // newer than both, so every device takes the combination
+    return out;
+  }
+  // A list inside a setting (the eyepieces), changed on both devices: what one side removed since the base goes,
+  // what it added comes in. Items are compared by content, so an edited eyepiece is "removed + added".
+  function mergeSet(base, r, l) {
+    const key = x => stable(x), bs = new Set(base.map(key)), ls = new Set(l.map(key));
+    const removed = new Set([...bs].filter(k => !ls.has(k))), rs = new Set(r.map(key));
+    return r.filter(x => !removed.has(key(x))).concat(l.filter(x => !bs.has(key(x)) && !rs.has(key(x)))).map(clone);
+  }
   // Merge two copies: per entry and per setting the newer change wins; deletion marks win over older entries.
   // Starts from the remote copy, so whatever this app version doesn't know stays in it.
   // opts.settings: "remote" takes the remote settings as they are (joining a group and choosing the other device's settings).
+  // opts.base: the copy as this device last synced it (kept on the device). With it, an entry or the eyepiece list
+  // changed on both devices is combined instead of one side winning as a whole.
   function merge(remote, local, opts = {}) {
     if (!remote) return clone(local);
     if (newer(remote.schema)) { const e = new Error("newer"); e.code = "newer"; throw e; }
@@ -89,12 +117,16 @@ const ZSync = (() => {
     const del = { ...(remote.del || {}) };
     Object.entries(local.del || {}).forEach(([k, t]) => { if (!(del[k] >= t)) del[k] = t; });
     out.del = del;
+    const base = opts.base || null;
     Object.keys(KINDS).forEach(kind => {
-      const m = new Map(), order = [];
+      const m = new Map(), order = [], bm = new Map();
+      if (base) (base[kind] || []).forEach(r => { if (valid(kind, r)) bm.set(KINDS[kind](r), r); });
       [remote[kind], local[kind]].forEach(arr => (arr || []).forEach(r => {
         if (!valid(kind, r)) return;
         const k = KINDS[kind](r), had = m.get(k);
         if (!had) { m.set(k, r); order.push(k); }
+        else if (body(had) === body(r)) m.set(k, (had.u || 0) >= (r.u || 0) ? had : r);
+        else if (bm.has(k)) m.set(k, mergeEntry(bm.get(k), had, r));
         else m.set(k, pick(had, r, had.u || 0, r.u || 0));
       }));
       out[kind] = order.filter(k => !(del[k] >= (m.get(k).u || 0))).map(k => clone(m.get(k)));
@@ -102,11 +134,30 @@ const ZSync = (() => {
     });
     const rs = remote.settings || { v: {}, t: {} }, ls = local.settings || { v: {}, t: {} };
     const v = { ...(rs.v || {}) }, t = { ...(rs.t || {}) };
-    if (opts.settings !== "remote") Object.keys(ls.v || {}).forEach(p => {
-      if (!(p in v)) { v[p] = ls.v[p]; t[p] = ls.t[p] || 0; return; }
-      const lt = ls.t[p] || 0, rt = t[p] || 0, w = pick({ x: v[p] }, { x: ls.v[p] }, rt, lt);
-      v[p] = clone(w.x); t[p] = Math.max(lt, rt);
-    });
+    const bv = (base && base.settings && base.settings.v) || null, inGroup = new Set(GROUPS.flat());
+    if (opts.settings !== "remote") {
+      Object.keys(ls.v || {}).forEach(p => {
+        if (inGroup.has(p)) return;
+        if (!(p in v)) { v[p] = ls.v[p]; t[p] = ls.t[p] || 0; return; }
+        const lt = ls.t[p] || 0, rt = t[p] || 0;
+        if (stable(v[p]) === stable(ls.v[p])) { t[p] = Math.max(lt, rt); return; }
+        if (SETS.includes(p) && bv && Array.isArray(bv[p]) && Array.isArray(v[p]) && Array.isArray(ls.v[p])
+          && stable(bv[p]) !== stable(v[p]) && stable(bv[p]) !== stable(ls.v[p])) {
+          v[p] = mergeSet(bv[p], v[p], ls.v[p]); t[p] = Math.max(lt, rt) + 1; return;   // both changed the list
+        }
+        const w = pick({ x: v[p] }, { x: ls.v[p] }, rt, lt);
+        v[p] = clone(w.x); t[p] = Math.max(lt, rt);
+      });
+      // groups: the newest change to any member decides which device's values all members take
+      GROUPS.forEach(g => {
+        if (!g.some(p => p in (ls.v || {}))) return;
+        const gt = (s, ps) => Math.max(0, ...ps.map(p => (s.t && s.t[p]) || 0));
+        const rv = g.map(p => v[p]), lv = g.map(p => ls.v[p]);
+        if (!g.some(p => p in v)) { g.forEach(p => { if (p in ls.v) { v[p] = clone(ls.v[p]); t[p] = ls.t[p] || 0; } }); return; }
+        const rt = gt({ t }, g), lt = gt(ls, g), w = pick(rv, lv, rt, lt);
+        g.forEach((p, i) => { if (w[i] !== undefined) v[p] = clone(w[i]); t[p] = Math.max(rt, lt); });
+      });
+    }
     else Object.keys(ls.v || {}).forEach(p => { if (!(p in v)) { v[p] = ls.v[p]; t[p] = ls.t[p] || 0; } });
     out.settings = { ...rs, v, t };
     const dv = { ...(remote.devices || {}) };
@@ -195,7 +246,7 @@ const ZSync = (() => {
     return CODE_RE.test(s) ? s : null;
   }
 
-  return { SCHEMA, ENV_V, OBS_V, BACKUP_V, SETTINGS, KNOWN, stable, migrateObs, snapObs, stampObs, snapSettings, stampSettings,
+  return { SCHEMA, ENV_V, OBS_V, BACKUP_V, SETTINGS, GROUPS, SETS, KNOWN, stable, migrateObs, snapObs, stampObs, snapSettings, stampSettings,
     fromLocal, merge, settingsDiffer, apply, same, makeBackup, readBackup, newCode, keys, seal, open, joinLink, parseJoin, b64u };
 })();
 if (typeof module !== "undefined") module.exports = ZSync;

@@ -571,6 +571,13 @@ const TESTS = {
     await ev(A, () => { obs.list = []; saveObs(); setOptics({ scope: 1200 }); return syncNow(); });
     await ev(B, () => syncNow());
     ok(await ev(B, () => obs.list.length === 0 && opt().scope === 1200), 'a deletion and a new focal length on A arrive on B');
+    // both devices change the same entry and the eyepieces before syncing: both changes survive on both
+    await ev(A, () => { const e = obs.log.find(x => x.uid === 'b1'); e.note = 'faint ring'; saveObs(); setOptics({ eps: [...opt().eps, { f: 6, a: 60 }] }); });
+    await ev(B, () => { const e = obs.log.find(x => x.uid === 'b1'); e.seeing = 4; saveObs(); setOptics({ eps: [...opt().eps, { f: 32, a: 50 }] }); });
+    await ev(A, () => syncNow()); await ev(B, () => syncNow()); await ev(A, () => syncNow());
+    const both = await Promise.all([A, B].map(p => ev(p, () => ({ e: obs.log.find(x => x.uid === 'b1'), eps: opt().eps.map(x => x.f).sort((a, b) => a - b).join() }))));
+    ok(both.every(x => x.e.note === 'faint ring' && x.e.seeing === 4), 'an entry edited on both devices keeps both edits', both.map(x => x.e));
+    ok(both.every(x => x.eps === both[0].eps) && both[0].eps.includes('6') && both[0].eps.includes('32'), 'eyepieces added on each device: both on both', both.map(x => x.eps));
     // the settings show the group
     await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('sync'); }); await wait(A, 400);
     ok(await ev(A, () => !$('syncOn').hidden && /Synced/.test($('syncStatus').textContent) && $('syncDevs').children.length === 2), 'the settings show the status and both devices');

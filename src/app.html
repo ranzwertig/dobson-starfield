@@ -4369,7 +4369,15 @@ const SYNC_KEY = "zenigo-sync", SYNC_API = "/api/sync/v1";
 var syncS = {};   // var: save() and saveObs() may ask for a sync while the script is still starting
 try { syncS = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}") || {}; } catch (e) {}
 var syncRt = { busy: false, again: false, timer: 0, keys: null, avail: null, lastTry: 0, leaving: false };
-function saveSyncS() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(syncS)); } catch (e) {} }
+function saveSyncS() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(syncS)); if (!syncS.code) localStorage.removeItem(SYNC_BASE); } catch (e) {} }
+// The group's copy as this device last synced it: lets a sync combine an entry or the eyepiece list changed on two
+// devices field by field instead of one side winning as a whole (ZSync.merge, opts.base)
+const SYNC_BASE = "zenigo-sync-base";
+function syncBase() { try { const b = JSON.parse(localStorage.getItem(SYNC_BASE) || "null"); return b && b.code === syncS.code ? b.data : null; } catch (e) { return null; } }
+function saveSyncBase(p) {
+  try { localStorage.setItem(SYNC_BASE, JSON.stringify({ code: syncS.code, data: { list: p.list, starred: p.starred, log: p.log, settings: { v: (p.settings || {}).v || {} } } })); }
+  catch (e) { try { localStorage.removeItem(SYNC_BASE); } catch (x) {} }   // storage full: sync works on without it
+}
 function deviceName() {
   const ua = navigator.userAgent;
   if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
@@ -4461,13 +4469,13 @@ async function syncNow(opts = {}) {
         if (opts.join) throw syncErr("no group", "nogroup");
         const p = syncLocal(null), w = await syncPut(k, 0, p);   // a new group with this device's lists and settings
         if (w.conflict) continue;
-        syncS.ver = w.ver; syncS.devs = p.devices; done = true; break;
+        syncS.ver = w.ver; syncS.devs = p.devices; saveSyncBase(p); done = true; break;
       }
-      const m = ZSync.merge(r.data, syncLocal(r.data), i ? {} : opts);   // throws "newer" for a newer app's data
+      const m = ZSync.merge(r.data, syncLocal(r.data), { ...(i ? {} : opts), base: syncBase() });   // throws "newer" for a newer app's data
       applySynced(m);
       if (!ZSync.same(m, r.data)) { const w = await syncPut(k, r.ver, m); if (w.conflict) continue; syncS.ver = w.ver; }
       else syncS.ver = r.ver;
-      syncS.devs = m.devices; done = true;
+      syncS.devs = m.devices; saveSyncBase(m); done = true;
     }
     if (!done) throw syncErr("busy", "busy");
     syncS.at = Date.now(); syncS.err = null; saveSyncS();
