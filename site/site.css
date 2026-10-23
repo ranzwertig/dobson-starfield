@@ -207,6 +207,8 @@ footer a:hover { color: var(--amber); }
 /* accessories: configurator for printable parts */
 .doc.wide { max-width: 760px; padding-bottom: 0; }
 .doc.wide:last-child { padding-bottom: 80px; }
+/* getting started and DIY accessories: the full content width of the home page */
+.doc.full { max-width: none; }
 .cfg { display: grid; grid-template-columns: minmax(0, 7fr) minmax(300px, 5fr); gap: 28px; align-items: start; padding: 8px 0 40px; border-top: 0; }
 .cfg-view { position: sticky; top: 16px; }
 .cfg-view canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 18px; border: 1px solid var(--line); background: #060810; touch-action: none; cursor: grab; }
