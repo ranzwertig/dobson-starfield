@@ -948,7 +948,8 @@ a.btn { text-decoration: none; color: var(--fg); }
       <p class="note">On the other device open Zenigo, then Menu › <b>Sync with other devices</b> › <b>Join with a code</b>, and scan this code. Or send the link to it:</p>
       <div class="row"><button class="btn" id="syncCopy">Copy link</button><button class="btn" id="syncShare" hidden>Share link</button></div>
       <p class="warn"><b>Only for your own devices.</b> Anyone with this code or link can read and change your synced lists, logbook and location.</p>
-      <p class="note">Keep the link somewhere safe, for example in a password manager. If all your devices are lost, it is the only way back to the synced data: nobody else can open it, not even Zenigo.</p>
+      <p class="note"><b>Keep the code somewhere safe</b>, for example in a password manager or printed at home. If all your devices are lost, it is the only way back to the synced data: nobody else can open it, not even Zenigo. With it you get the data back on any device, and even without Zenigo (<a href="/help/#sync-recovery" target="_blank" rel="noopener">how</a>).</p>
+      <div class="row"><button class="btn" id="syncSaveImg">Save as image</button><button class="btn" id="syncSaveTxt">Save as text</button></div>
     </div>
     <div class="syncpane" id="syncJoinBox">
       <div class="scanbox" id="syncScanBox" hidden><video id="syncVideo" playsinline muted></video><i></i></div>
@@ -3503,7 +3504,14 @@ function saveObs(fromSync) {
   if (!fromSync) obsSnap = ZSync.stampObs(obs, obsSnap, Date.now());
   try { localStorage.setItem(OBS_KEY, JSON.stringify(obs)); } catch (e) { hint("Could not save: the browser storage is full or blocked. Export a backup in the settings.", 7000); }
   st.obsVer = (st.obsVer || 0) + 1; lastSig = []; syncListFab(); syncHudNext();
-  if (!fromSync && typeof syncSoon === "function") syncSoon();
+  if (!fromSync) { syncSoon(); askPersist(); }
+}
+// Ask the browser to keep this site's data even when the device runs low on space. Chrome decides by itself (an
+// installed app gets it), Firefox asks the user, so it is asked once something worth keeping was saved, or at the
+// start of the installed app.
+function askPersist() {
+  if (askPersist.done) return; askPersist.done = true;
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {}); } catch (e) {}
 }
 const pad2 = n => String(n).padStart(2, "0");
 // A night runs from noon to noon: entries after midnight belong to the evening before
@@ -4555,7 +4563,7 @@ async function joinSync(code, fromLink) {
   const prev = syncS, dev = myDevice();
   syncS = { code, dev, ver: 0 }; saveSyncS();
   if (!(await syncNow(opts))) { syncS = prev; saveSyncS(); renderSync(); return false; }
-  hint("This device now syncs with the group.", 4000);
+  hint("This device now syncs with the group.", 4000); askPersist();
   return true;
 }
 // After joining from the sync panel or a link: the settings with the sync section, so the result is visible
@@ -4636,7 +4644,7 @@ $("syncBack").onclick = () => { stopScan(); showSyncSettings(); };
 // Menu: not set up yet → the Sync settings; set up → sync now (the line under it shows how it went)
 $("btnSync").onclick = async () => { if (!syncS.code) { showSyncSettings(); return; } if (await syncNow({ loud: true })) hint("Synced.", 2000); };
 $("syncSetup").onclick = async () => {
-  const dev = myDevice(); syncS = { code: ZSync.newCode(), dev, ver: 0 }; saveSyncS();
+  const dev = myDevice(); syncS = { code: ZSync.newCode(), dev, ver: 0 }; saveSyncS(); askPersist();
   if (!(await syncNow({ loud: true }))) { syncS = { dev }; saveSyncS(); renderSync(); return; }
   openSyncSheet("show");
 };
@@ -4648,6 +4656,33 @@ $("syncCopy").onclick = async () => {
   try { await navigator.clipboard.writeText(ZSync.joinLink(location.origin, syncS.code)); hint("Link copied. Send it only to your own devices.", 4000); }
   catch (e) { hint("Could not copy: the browser didn’t allow it.", 3000); }
 };
+// Save the code: the QR code as a picture with what it is, or the link and code as a text file
+function syncCodeFile(kind) {
+  const link = ZSync.joinLink(location.origin, syncS.code), day = stamp(), dev = myDevice().name;
+  if (kind === "txt") {
+    download("zenigo-sync-code-" + day + ".txt", ["Zenigo sync code", "Saved " + day + " on " + dev, "",
+      "Link (opens Zenigo and joins your sync group):", link, "", "Code: " + syncS.code, "",
+      "To get your data back on another device, open the link there, or open Zenigo, then Menu > Sync with other devices > Join with a code, and paste the link.",
+      "Without Zenigo: " + location.origin + "/help/#sync-recovery", "",
+      "Keep this file private. Anyone with it can read and change your synced observing list, logbook and location.",
+      "The data is end-to-end encrypted with this code. Without it nobody can read it, not even Zenigo."].join("\r\n") + "\r\n", "text/plain");
+    return;
+  }
+  const q = qrcode(0, "M"); q.addData(link); q.make();
+  const n = q.getModuleCount(), sc = Math.floor(440 / n), W = 600, qs = n * sc, top = 96, c = document.createElement("canvas"), x = c.getContext("2d");
+  c.width = W; c.height = top + qs + 280;
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W, c.height); x.fillStyle = "#000";
+  x.font = "600 30px system-ui, sans-serif"; x.textAlign = "center"; x.fillText("Zenigo sync code", W / 2, 56);
+  const ox = Math.round((W - qs) / 2);
+  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect(ox + k * sc, top + r * sc, sc, sc);
+  x.textAlign = "left"; x.font = "17px system-ui, sans-serif"; let y = top + qs + 42;
+  ["Saved " + day + " on " + dev + ".", "Scan it in Zenigo: Menu › Sync with other devices ›", "Join with a code.",
+    "Only for your own devices: anyone with this code can read and", "change your synced lists, logbook and location."].forEach(l => { x.fillText(l, 40, y); y += 27; });
+  x.font = "15px ui-monospace, Menlo, monospace"; x.fillText(syncS.code, 40, y + 18);
+  c.toBlob(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "zenigo-sync-code-" + day + ".png"; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, "image/png");
+}
+$("syncSaveImg").onclick = () => syncCodeFile("png");
+$("syncSaveTxt").onclick = () => syncCodeFile("txt");
 $("syncShare").onclick = async () => { try { await navigator.share({ title: "Zenigo sync", text: "Open this on your own device to sync Zenigo with it.", url: ZSync.joinLink(location.origin, syncS.code) }); } catch (e) {} };
 $("syncLeave").onclick = async () => {
   if ((await askConfirm("Turn off sync on this device?", "This device stops syncing. Its lists, logbook and settings stay here, and the other devices keep syncing with each other.", "Turn off")) !== true) return;
@@ -5386,6 +5421,7 @@ function platform() {
   return "desktop";
 }
 const installedApp = () => navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+if (installedApp()) setTimeout(askPersist, 3000);   // keep the data of the installed app (see askPersist)
 function showPermissionHelp(kind) {   // kind: "camera" | "motion"
   const pf = platform(), app = installedApp(), cam = kind === "camera";
   const what = cam ? "Camera" : (pf === "ios" ? "Motion & Orientation" : "Motion sensors");

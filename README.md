@@ -119,6 +119,7 @@ The map redraws only when something changed: for the passing time only once the 
 | `worker/sync.js` | sync API: one end-to-end encrypted copy per sync group in D1, versioned writes (`If-Match`), auth by token hash, table created on first use |
 | `src/sync.js` | sync core without DOM (`ZSync`): data model and versions, change times and deletion marks, merge, settings split, backups, encryption (HKDF, AES-GCM), join links; bundled with the QR generator into `sync.*.js` |
 | `scripts/catalog.mjs` | generates `src/data.js` from d3-celestial: stars to magnitude 6 (also used by the solver), names, designations, Messier objects with sizes, constellation lines; plus `public/app/deep-stars.bin` (78,000 stars 6–9 mag, 7 bytes each) and `public/app/dso.json` (about 1,900 NGC/IC and other deep-sky objects), loaded after start and precached for offline use |
+| `scripts/sync-recover.py` | gets the synced data back without the app: fetches and decrypts a sync group by its code (published as `/help/sync-recover.py`) |
 | `scripts/build.mjs` | builds the website and the app: `dist/app/index.html` with the start screen, the scripts as content-hashed files (`astronomy.*.js`, `satellite.*.js`, `core.*.js`, `app.*.js`, all precached by the service worker; the solver worker fetches `core.*.js`), copies the fonts |
 | `scripts/image_to_f32.py` | converts a photo for `test/photo.cjs` |
 | `test/synthetic.cjs` | synthetic star fields with a known solution |
@@ -139,7 +140,7 @@ npm run test:sync    # sync core: merge, deletions, settings, compatibility betw
 # SYNC_URL=http://localhost:8787 node test/sync-api.cjs   # the sync API of a running Worker (wrangler dev with a D1 binding)
 npm run test:ui      # the built app in Chromium: navigation, logbook and backup, camera choice, eyepieces and
                      # Barlow, finders, side panels, sound, locate and diagnostics, sync between two devices
-                     # against a stand-in API, offline start (164 checks);
+                     # against a stand-in API, offline start (166 checks);
                      # needs Playwright: npm i --no-save playwright && npx playwright install chromium
 npm run dev          # local server via wrangler dev
 npm run deploy       # manual deploy (otherwise on push to main)

@@ -401,7 +401,7 @@
         </ul>
       </dd>
       <dt id="backup">Backup and restore</dt>
-      <dd>Everything is stored on your device (and in your sync group if sync is on); clearing the browser’s website data deletes it from the device. Back up now and then, and use a backup to move to a new phone.
+      <dd>Everything is stored on your device (and in your sync group if sync is on); clearing the browser’s website data deletes it from the device. Zenigo asks the browser to keep its data even when the device runs low on space (persistent storage; Firefox asks you once). In Safari on iPhone and iPad, data of a website you haven’t opened for 7 days can be cleared: add Zenigo to the Home Screen, where this doesn’t apply. Back up now and then, and use a backup to move to a new phone.
         <ul>
           <li><b>Back up lists</b> saves the observing list, starred objects and logbook as a file.</li>
           <li><b>Back up lists and settings</b> adds all settings (telescope and eyepieces, location, pointing, camera, display).</li>
@@ -484,8 +484,15 @@
           <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online.</li>
           <li><b>Changed on two devices before they synced:</b> different entries and settings are simply combined. A logbook entry edited on both keeps both edits, field by field (note on one, seeing on the other); only a field changed on both takes the later edit. Eyepieces added or removed on each device are combined too. Location (latitude, longitude, where it came from) always comes from one device, the one that changed it last. Deleted on one device and changed on the other: the later of the two counts.</li>
           <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
-          <li>Keep the link somewhere safe, for example in a password manager: anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
+          <li>Keep the code somewhere safe: <b>Add a device</b> → <b>Save as image</b> (the QR code with a short explanation, to print or keep in your photos) or <b>Save as text</b> (link and code, for a password manager). Anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
           <li>If a device runs an older version of Zenigo than the others, it keeps syncing as long as the data is compatible; otherwise it says so and waits for an update instead of overwriting newer data.</li>
+        </ul>
+      </dd>
+      <dt id="sync-recovery">Getting the data back</dt>
+      <dd>All you need is the saved code or link.
+        <ul>
+          <li><b>On a new device:</b> open the link, or open Zenigo and go to Menu → Sync with other devices → Join with a code, and scan the saved image or paste the link. The lists, the logbook and the telescope settings come back.</li>
+          <li><b>Without Zenigo:</b> the small script <a href="/help/sync-recover.py" download>sync-recover.py</a> (Python 3, needs <code>pip install cryptography</code>) fetches the encrypted copy and decrypts it on your computer: <code>python3 sync-recover.py "&lt;link&gt;" &gt; zenigo-data.json</code>. The result is plain JSON with the observing list, starred objects, logbook entries and settings. The script also describes the encryption, so the data can be read with any other tool too.</li>
         </ul>
       </dd>
     </dl>

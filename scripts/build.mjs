@@ -108,6 +108,8 @@ if (existsSync(new URL('public/', root))) cpSync(new URL('public/', root), new U
 write('dist/app/index.html', html);
 for (const [f, src] of Object.entries(jsFiles)) write('dist/app/' + f, src);
 write('dist/app/' + fJsqr, jsqr);
+// for getting synced data back without the app (help: #sync-recovery)
+write('dist/help/sync-recover.py', read('scripts/sync-recover.py'));
 // service worker for offline use; the version changes with the page (which names the scripts by their content)
 const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
 write('dist/app/sw.js', read('src/sw.js').replace('__VERSION__', version).replace('/*__FONTS__*/', fontFiles.map(f => `'${f}'`).join(', '))

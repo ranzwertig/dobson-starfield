@@ -545,6 +545,13 @@ const TESTS = {
     // the QR code holds the join link: read it back with the app's own reader
     const qr = await ev(A, async () => { await loadJsQR(); const c = $('syncQr'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height); const big = document.createElement('canvas'); big.width = big.height = c.width + 80; const x = big.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, big.width, big.height); x.putImageData(d, 40, 40); const im = x.getImageData(0, 0, big.width, big.height); const r = jsQR(im.data, im.width, im.height); return r && r.data; });
     ok(qr === base + '/app/#join=' + code, 'the QR code reads back as the join link', qr);
+    // the code can be saved: as a text file with link and code, and as a picture of the QR code
+    let dlp = A.waitForEvent('download'); await A.tap('#syncSaveTxt'); let dlf = await dlp;
+    const txt = fs.readFileSync(await dlf.path(), 'utf8');
+    ok(/\.txt$/.test(dlf.suggestedFilename()) && txt.includes('#join=' + code) && txt.includes('Code: ' + code), 'Save as text: link and code in a text file');
+    dlp = A.waitForEvent('download'); await A.tap('#syncSaveImg'); dlf = await dlp;
+    const png = fs.readFileSync(await dlf.path());
+    ok(/\.png$/.test(dlf.suggestedFilename()) && png.slice(1, 4).toString() === 'PNG' && png.length > 5000, 'Save as image: a PNG of the QR code', png.length);
     ok(syncStore.size === 1, 'one group on the server');
     const blob = [...syncStore.values()][0].blob.toString('latin1');
     ok(!/M31|dust lane|Andromeda|1000/.test(blob), 'the server stores nothing readable');
