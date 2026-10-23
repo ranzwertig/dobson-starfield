@@ -1798,7 +1798,7 @@ Object.entries(STARLABELS).forEach(([i, nm]) => { const k = +i; if (STARS[3 * k 
 // Categories under the search field. Conditions (telescope, now, popular) all have to hold; within the lists and within
 // the kinds one is enough (Messier or Caldwell; galaxies or clusters).
 const CATS = [
-  { id: "scope", g: "cond", label: "My telescope" }, { id: "now", g: "cond", label: "Good now" }, { id: "pop", g: "cond", label: "Popular" },
+  { id: "scope", g: "cond", label: "My telescope" }, { id: "reach", g: "cond", label: "In reach" }, { id: "now", g: "cond", label: "Good now" }, { id: "pop", g: "cond", label: "Popular" },
   { id: "messier", g: "list", label: "Messier" }, { id: "caldwell", g: "list", label: "Caldwell" }, { id: "h400", g: "list", label: "Herschel 400" },
   { id: "solar", g: "kind", label: "Solar system" }, { id: "gal", g: "kind", label: "Galaxies" }, { id: "clusters", g: "kind", label: "Clusters" }, { id: "neb", g: "kind", label: "Nebulae" }];
 function targetById(id) {
@@ -1837,14 +1837,16 @@ function inCat(T, c) {
     case "h400": return LISTS.h400.has(T.id);
     case "scope": { const f = scopeFit(T); return !!f && f.ok; }
     case "now": return nowFit(T).ok;
+    case "reach": return everInReach(T);
     default: return catKind(T) === c;
   }
 }
 // Entries for the active categories, best first
-// Does the object ever come into the telescope's reach from here? Its highest point is 90° − |latitude − declination|,
-// its lowest |latitude + declination| − 90°. (Planets move, but their declination changes slowly.)
+// Category "In reach": does the object ever come into the telescope's reach from here, at any time of night or year?
+// Its highest point is 90° − |latitude − declination|, its lowest |latitude + declination| − 90°. Without a set reach
+// that means: it rises here at all. (Planets move, but their declination changes slowly.)
 function everInReach(T) {
-  const R = reach(); if (!R.limited) return true;
+  const R = reach();
   const v = T.vec(skyNow().t), dec = Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D, lat = +cfg.lat;
   return 90 - Math.abs(lat - dec) >= R.lo && Math.abs(lat + dec) - 90 <= R.hi;
 }
@@ -1853,7 +1855,7 @@ function catList(cats, pool) {
   const cond = has("cond"), lists = has("list"), kinds = has("kind");
   const listed = T => /^M\d+$/.test(T.id) || LISTS.pop.has(T.id) || LISTS.caldwell.has(T.id) || LISTS.h400.has(T.id);
   const out = pool.filter(T => (T.kind === "planet" || T.kind === "dso") && T.id !== "Sun" && (listed(T) || !/^(PGC|LDN|B|Ced) /.test(T.id))
-    && everInReach(T) && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
+    && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
   const score = T => (cats.includes("scope") ? (scopeFit(T)?.score || 0) : 0) + (cats.includes("now") ? nowFit(T).score : 0) + (LISTS.pop.has(T.id) ? 0.3 : 0) + (listed(T) ? 0.3 : 0) - (T.mag ?? 10) / 50;
   return out.map(T => [T, score(T)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
 }

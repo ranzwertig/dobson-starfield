@@ -445,13 +445,14 @@ const TESTS = {
       cfg.searchCats = ['scope', 'now']; showResults();
       const good = [...document.querySelectorAll('#results .alt')].map(a => parseFloat(a.textContent));
       setOptics({ altMin: 60, altMax: 90 }); reachChanged();
-      const south = catList(['scope'], TARGETS).filter(T => { const v = T.vec(skyNow().t); return Math.asin(v[2]) * R2D < 10; }).length;
+      const southIn = n => catList(n, TARGETS).filter(T => { const v = T.vec(skyNow().t); return Math.asin(v[2]) * R2D < 10; }).length;
+      const south = southIn(['scope', 'reach']), southAll = southIn(['scope']);
       setOptics({ altMin: 30, altMax: 60 }); reachChanged(); cfg.searchCats = []; save();
-      return { n: rows.length, out: rows.filter(r => /too low|too high|below hor/.test(r)).length, good, south };
+      return { n: rows.length, out: rows.filter(r => /too low|too high|below hor/.test(r)).length, good, south, southAll };
     });
     ok(c.n > 0 && c.out > 0, 'My telescope also lists objects out of reach now, saying so next to the altitude', c);
     ok(c.good.length > 0 && c.good.every(a => a >= 30 && a <= 60), 'with Good now only what is in reach now', c.good);
-    ok(c.south === 0, 'objects that never climb above the lowest altitude are left out', c.south);
+    ok(c.south === 0 && c.southAll > 0, 'In reach leaves out objects that never climb above the lowest altitude; My telescope alone keeps them', [c.south, c.southAll]);
     await wait(p, 300);
     await done(p);
   },
