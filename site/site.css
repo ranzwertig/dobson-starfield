@@ -260,3 +260,11 @@ footer a:hover { color: var(--amber); }
 .diagram figcaption ol { display: flex; flex-wrap: wrap; gap: 6px 22px; list-style: none; padding: 0 !important; margin: 10px 0 0; counter-reset: dg; font-size: 15px; color: var(--mist); }
 .diagram figcaption li { counter-increment: dg; display: flex; align-items: center; gap: 8px; margin: 0; }
 .diagram figcaption li::before { content: counter(dg); display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--amber); color: #1b1206; font: 700 12px var(--ui); }
+
+/* Photos on the site: a pair (wide + tall) side by side, stacked on phones */
+.photos { display: grid; grid-template-columns: minmax(0, 16fr) minmax(0, 9fr); gap: 16px; align-items: start; margin: 26px 0 8px; }
+.photos figure, .photo1 { margin: 0; }
+.photos img, .photo1 img { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
+.photos figcaption, .photo1 figcaption { font-size: 14px; color: var(--mist); margin-top: 8px; }
+.photo1 { margin: 14px 0 4px; }
+@media (max-width: 760px) { .photos { grid-template-columns: 1fr; } }
