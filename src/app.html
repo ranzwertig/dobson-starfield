@@ -627,7 +627,9 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .syncdevs li small { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 .syncdevs li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .syncmore summary { cursor: pointer; color: var(--muted); font-size: 13.5px; padding: 2px 0; }
-.syncmore[open] { display: grid; gap: 10px; }
+/* a details box can't be a grid in Safari: spacing by margins */
+.syncmore > * + * { margin-top: 12px; }
+.syncmore[open] { padding-bottom: 6px; }
 #syncStatus.err { color: var(--target); }
 .row input#syncName { font-family: var(--font-ui); }
 .syncpane { display: grid; gap: 12px; }
