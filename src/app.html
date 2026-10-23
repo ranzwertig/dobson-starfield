@@ -680,7 +680,6 @@ a.btn { text-decoration: none; color: var(--fg); }
 .results b { font-weight: 600; }
 .results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
-.results button.away b, .results button.away .sub { opacity: .55; }   /* can't be reached now: below the horizon or out of the telescope's reach */
 .results .grp { padding: 7px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
 </style>
 
@@ -1261,7 +1260,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to magnitude 9, deep-sky objects, the Moon and planets.</p>
     </fieldset>
-    <fieldset data-stab="scope">
+    <fieldset data-stab="cam">
       <legend>Pointing</legend>
       <div class="row">
         <label class="check"><input type="radio" name="pointer" value="camera"> Camera: the back camera looks along the telescope</label>
@@ -1269,7 +1268,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       </div>
       <p class="note">“Top edge” suits a phone strapped along the tube or held like a pointer. Without camera the position comes from compass and motion sensor; set the eyepiece point on a bright star to make it accurate. With a periscope mirror or prism that turns the camera’s view over the top of the phone, the camera and Locate work in this mode too (when you start the camera, the app asks whether the optic mirrors the image).</p>
     </fieldset>
-    <fieldset data-stab="scope">
+    <fieldset data-stab="cam">
       <legend>Eyepiece point</legend>
       <p class="note" id="teleInfo"></p>
       <div class="row"><button class="btn" id="btnTeleReset">Reset to image centre</button></div>
@@ -1868,9 +1867,8 @@ function showResults() {
     const nall = T => T._na ?? (T._na = norm(T.name + T.sub)), nid = T => T._ni ?? (T._ni = norm(T.id));
     if (cats.includes("scope") && !aperture()) { note("Enter your telescope’s aperture in the settings for “My telescope”"); return; }
     const all = catList(cats, q ? TARGETS.filter(T => nall(T).includes(q) || nid(T) === q) : TARGETS);
-    // what can't be reached now (below the horizon, too low or too high) goes after the rest, in the same order
-    const rows = all.map(T => ({ T, alt: horiz(T.vec(t), t).alt })), now = rows.filter(x => inReach(x.alt));
-    list = now.concat(rows.filter(x => !inReach(x.alt))).slice(0, 150);
+    // in the order of the categories: where an object is right now only counts with "Good now"
+    list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
   } else if (!q) {
     list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => inReach(x.alt, 15))
@@ -1892,7 +1890,6 @@ function showResults() {
     const n = document.createElement("b"); n.textContent = T.name;
     const s = document.createElement("span"); s.className = "sub"; s.textContent = T.sub;
     const a = document.createElement("span"); a.className = "alt"; a.textContent = alt < 0 ? "below hor." : inReach(alt) ? alt.toFixed(0) + "°" : alt.toFixed(0) + "° " + (alt > reach().hi ? "too high" : "too low");
-    if (T.kind !== "sat" && !inReach(alt)) b.classList.add("away");
     b.append(n, s, a); b.onclick = () => openFromSearch(T);
     if (T.kind === "sat") { box.append(b); return; }
     if (T.kind !== "sun") {

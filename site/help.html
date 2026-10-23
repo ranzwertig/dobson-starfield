@@ -184,7 +184,7 @@
       <li>Tap <b>Eyepiece point</b>, then the same star on the screen. The tap snaps to the nearest star and confirms it by name.</li>
     </ol>
     <p><b>Without image detection</b> (camera off, or <a href="#top-edge">top edge</a> mode): turn on <b>Align</b>, centre a bright star in the eyepiece, tap <b>Eyepiece point</b> and then tap that star on the map. The app corrects the compass by the azimuth difference and stores the height difference between phone and telescope. The crosshair then marks where the telescope points, accurate to about a degree near that star; repeat it on another star when you move far across the sky. The pill at the bottom left then reads “Aligned on the map”; its ✕ removes both the compass correction and the height difference, so the eyepiece point is back as before. If the star you tap stands more than 15° higher or lower than the phone points, only the compass is corrected: that much means another star or a phone not on the tube. An eyepiece point more than 5° from the image centre is always shown at the bottom left (“Eyepiece point 40° off centre”), because it shifts the whole view, the horizon too; its ✕ sets it back to the image centre.</p>
-    <p>Tap the button again to cancel. Camera and top edge mode each keep their own eyepiece point. <a href="#settings-eyepiece-point">Settings → Telescope → Eyepiece point</a> shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre; Quick settings has the same <b>Reset</b>. Set it again whenever the holder has moved.</p>
+    <p>Tap the button again to cancel. Camera and top edge mode each keep their own eyepiece point. <a href="#settings-eyepiece-point">Settings → Camera &amp; sensors → Eyepiece point</a> shows the stored offset, for example “2.8° right and 13.9° above the image centre”, and can reset it to the image centre; Quick settings has the same <b>Reset</b>. Set it again whenever the holder has moved.</p>
 
     <h2 id="compass">Compass correction</h2>
     <p>The phone’s compass is often several degrees off, especially near the metal of a telescope. After a locate with Align on, Zenigo compares the compass with the exact direction from the stars. If they differ by more than about 1.5°, it asks: “The compass is −12.3° off. Correct it?”</p>
@@ -197,7 +197,7 @@
     <p><b>Aligning on a star by hand:</b> in compass mode, aim the telescope (or the top of the phone) at a bright star or planet, tap it on the map and choose <b>I’m pointing at it</b>. The app sets the compass correction so that the direction matches. This works without camera and is the best way to make <a href="#top-edge">top edge mode</a> accurate. If the altitude differs a lot as well, the location is probably wrong.</p>
 
     <h2 id="top-edge">Without camera: top edge</h2>
-    <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Telescope → Pointing → Top edge</b> (or Quick settings → Pointing → <b>Top edge</b>). The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction.</p>
+    <p>If you don’t want to use the camera, for example with the phone strapped flat along the tube or held in the hand like a pointer, choose <b>Settings → Camera &amp; sensors → Pointing → Top edge</b> (or Quick settings → Pointing → <b>Top edge</b>). The top edge of the phone then counts as the pointing direction, and the map shows what lies in that direction.</p>
     <p>The map always stays upright, like in a planetarium program: up on the screen is towards the zenith, down towards the horizon, however you hold the phone, whether you point up or down, with the screen facing up or towards you, or with the phone strapped to the side of the tube. Moving the telescope right moves the sky to the left, as in the eyepiece of a finder. Pointing straight at the zenith, “up” is undefined; the map then keeps its last orientation.</p>
     <ul>
       <li>Align switches on automatically; the position comes from compass and motion sensor only.</li>
@@ -247,7 +247,7 @@
       <dt>Messier, Caldwell, Herschel 400</dt><dd>The classic observing lists: Messier’s 110 objects; Patrick Moore’s Caldwell list of 109 more for amateur telescopes; and the Herschel 400, 400 of William Herschel’s objects chosen for telescopes from about 15 cm.</dd>
       <dt>Solar system, Galaxies, Clusters, Nebulae</dt><dd>The kind of object.</dd>
     </dl>
-    <p>In all categories, objects you can’t point at right now (below the horizon, too low or too high for your telescope) come after the others, dimmed, with the reason next to the altitude.</p>
+    <p>Only <b>Good now</b> depends on the time: the other categories list objects whether they are up or not, and the altitude on the right says where each one is now (“too low” or “too high” when it is out of <a href="#reach">your telescope’s reach</a>).</p>
     <p><b>Combining:</b> My telescope, Good now and Popular all have to apply, so together they show the popular objects that suit your telescope and are well placed now. Among the lists and among the kinds one is enough: Messier and Caldwell show both lists; add Galaxies to see only their galaxies. The best matches come first.</p>
     <p>Why an object suits you or not is in its details, under <b>Suits you?</b>: the lists it is on, how bright it is for your telescope and which eyepiece frames it, and where it stands at the shown time.</p>
 
@@ -426,14 +426,14 @@
           <li>The rings on the map and the eyepiece view, with its orientation and <b>Turn the view by</b>.</li>
         </ul>
       </dd>
-      <dt id="settings-pointing">Pointing</dt>
-      <dd>Whether the back camera looks along the telescope (default, needed for Locate) or the <a href="#top-edge">top edge of the phone</a> points along it.</dd>
-      <dt id="settings-eyepiece-point">Eyepiece point</dt>
-      <dd>Shows the stored <a href="#eyepiece">eyepiece point</a>; <b>Reset to image centre</b> clears it.</dd>
     </dl>
 
     <h3 id="settings-cam">Camera &amp; sensors</h3>
     <dl class="ref">
+      <dt id="settings-pointing">Pointing</dt>
+      <dd>Whether the back camera looks along the telescope (default, needed for Locate) or the <a href="#top-edge">top edge of the phone</a> points along it.</dd>
+      <dt id="settings-eyepiece-point">Eyepiece point</dt>
+      <dd>Shows the stored <a href="#eyepiece">eyepiece point</a>; <b>Reset to image centre</b> clears it.</dd>
       <dt id="camera">Camera</dt>
       <dd>Which camera Locate uses. “Back camera (automatic)” is the phone’s main camera. The list also shows other cameras of the phone and any connected USB webcam or HDMI capture device; the names appear after the camera has been started once. Field of view and eyepiece point are remembered separately for each camera. With an external camera, Align is off, because the phone’s motion sensors don’t know how that camera moves; use Locate or Continuous instead.</dd>
       <dt id="mirror">Mirrored image</dt>

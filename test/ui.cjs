@@ -438,18 +438,19 @@ const TESTS = {
     ok(r.dso.length > 0 && r.dso.every(a => a >= 30 && a <= 60), 'Tonight’s objects are best within the range', r.dso);
     ok(r.wiz.every(a => a >= 30 && a <= 60), 'the setup assistant suggests stars within the range', r.wiz);
     ok(r.shown.length > 0 && r.shown.every(a => a >= 30 && a <= 60) && /30–60°/.test(r.grp), 'Find target: well placed now = within the range', [r.shown, r.grp]);
-    // categories (My telescope): reachable now first, the rest dimmed at the end; never reachable ones left out
+    // categories: My telescope doesn't depend on the time (the altitude says where an object is now), Good now does
     const c = await ev(p, () => {
       setOptics({ ap: 200 }); cfg.searchCats = ['scope']; $('q').value = ''; showResults();
-      const rows = [...document.querySelectorAll('#results .alt')].map(a => ({ away: a.closest('button').classList.contains('away'), alt: a.textContent }));
-      const firstAway = rows.findIndex(r => r.away);
+      const rows = [...document.querySelectorAll('#results .alt')].map(a => a.textContent);
+      cfg.searchCats = ['scope', 'now']; showResults();
+      const good = [...document.querySelectorAll('#results .alt')].map(a => parseFloat(a.textContent));
       setOptics({ altMin: 60, altMax: 90 }); reachChanged();
       const south = catList(['scope'], TARGETS).filter(T => { const v = T.vec(skyNow().t); return Math.asin(v[2]) * R2D < 10; }).length;
       setOptics({ altMin: 30, altMax: 60 }); reachChanged(); cfg.searchCats = []; save();
-      return { n: rows.length, firstAway, after: rows.slice(firstAway).every(r => r.away), labels: rows.filter(r => r.away).slice(0, 3).map(r => r.alt), south };
+      return { n: rows.length, out: rows.filter(r => /too low|too high|below hor/.test(r)).length, good, south };
     });
-    ok(c.n > 0 && c.firstAway > 0 && c.after, 'My telescope: objects in reach now first, the others after them', c);
-    ok(c.labels.every(l => /too low|too high|below hor/.test(l)), 'out-of-reach rows say why', c.labels);
+    ok(c.n > 0 && c.out > 0, 'My telescope also lists objects out of reach now, saying so next to the altitude', c);
+    ok(c.good.length > 0 && c.good.every(a => a >= 30 && a <= 60), 'with Good now only what is in reach now', c.good);
     ok(c.south === 0, 'objects that never climb above the lowest altitude are left out', c.south);
     await wait(p, 300);
     await done(p);
