@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FAQ – Zenigo, push-to for manual telescopes</title>
+<meta name="description" content="Answers about Zenigo: cost, which telescopes and phones work, how accurate plate solving is, light pollution and twilight, battery, offline use, data and sync, and how it compares with StarSense and encoders.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Zenigo – questions and answers">
+<meta property="og:description" content="Cost, telescopes, phones, accuracy, light pollution, battery, offline use, data and sync.">
+<meta property="og:image" content="https://zenigo.app/img/screens/locate-780.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <article class="doc full faq">
+    <h1>Questions and answers</h1>
+    <p class="intro">Something missing? Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</p>
+    <nav class="faq-toc" aria-label="Topics">
+      <a href="#basics">Basics</a><a href="#telescopes">Telescopes and equipment</a><a href="#accuracy">Accuracy and conditions</a><a href="#phone">Phone and camera</a><a href="#data">Data and privacy</a><a href="#other">Compared with other ways</a>
+    </nav>
+
+    <h2 id="basics">Basics</h2>
+    <dl class="ref qa">
+      <dt id="cost">Does it cost anything?</dt>
+      <dd>No. Zenigo is free, with no account, no ads and no in-app purchases.</dd>
+      <dt id="app-store">Is there an app in the App Store or Play Store?</dt>
+      <dd>No, Zenigo is a web app: open <a href="/app/">zenigo.app/app</a> in Safari or Chrome and add it to the home screen. It then starts full screen like any other app and keeps working without a connection. When a new version is ready, the app offers to update.</dd>
+      <dt id="offline">Does it work without signal?</dt>
+      <dd>Yes. Once added to the home screen and opened online, everything runs on the phone: the star catalogue, plate solving, planning, the observing list and the logbook. Only the <a href="/help/#satellites">satellites</a> need a connection, and sync waits until the device is online again.</dd>
+      <dt id="what-is-push-to">What is push-to, and how is it different from GoTo?</dt>
+      <dd>With push-to you move the telescope by hand and a device tells you which way and how far. A GoTo mount has motors and moves by itself. Push-to with Zenigo needs no power for the mount and no alignment routine, and it keeps a Dobson as simple as it is; you do the pushing. Encoder push-to kits need power and an alignment on two stars.</dd>
+      <dt id="first-night">How long does the setup take?</dt>
+      <dd>About 15 minutes the first time: install, enter location and telescope, mount the phone, locate on a bright star and set the eyepiece point. On later nights, with the holder in the same place, it is Locate and go. <a href="/getting-started/">Getting started</a> walks you through it.</dd>
+    </dl>
+
+    <h2 id="telescopes">Telescopes and equipment</h2>
+    <dl class="ref qa">
+      <dt id="which-telescopes">Which telescopes does it work with?</dt>
+      <dd>Telescopes you move by hand: Dobsonians, refractors and Newtonians on alt-az mounts, travel scopes and Maksutovs on a photo tripod, and binoculars on a mount. On equatorial mounts the map, the crosshair and the arrow work, but the “turn” and “tilt” numbers don’t match the mount’s axes. Details for each: <a href="/telescopes/">Which telescopes work</a>.</dd>
+      <dt id="holder">How do I attach the phone?</dt>
+      <dd>Any holder that keeps the phone steady while you push, with the camera looking roughly along the tube: a clamp around the tube, or a holder in the finder shoe. It doesn’t have to be parallel; you set the offset once with a star. With a 3D printer you can build the <a href="/diy-accessories/">phone holder for the finder shoe</a>.</dd>
+      <dt id="through-eyepiece">Can the phone look through the eyepiece or the finder?</dt>
+      <dd>Not for locating. Recognising the star pattern needs a field of at least about 10°, and eyepieces and finders show far less. The camera has to see the sky directly, next to the tube. A 90° mirror or periscope in front of it is fine.</dd>
+      <dt id="webcam">Can I use a webcam or another camera?</dt>
+      <dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in Settings → Camera &amp; sensors → Camera. A photo from any camera can also be solved from the gallery.</dd>
+      <dt id="without-camera">Does it work without the camera?</dt>
+      <dd>Yes, with less accuracy. With Align on, the map follows the phone’s compass and motion sensors, and in <a href="/help/#top-edge">top edge</a> mode the top of the phone is the pointer. Expect one to a few degrees: enough with a finder or a low-power eyepiece.</dd>
+      <dt id="eyepieces">Do I need to enter my eyepieces?</dt>
+      <dd>Not to find objects. With the telescope’s focal length and aperture and your eyepieces entered, Zenigo also shows each eyepiece’s field around the crosshair, an eyepiece view of what you should see, which objects suit your telescope, and which of your eyepieces is best for each object.</dd>
+    </dl>
+
+    <h2 id="accuracy">Accuracy and conditions</h2>
+    <dl class="ref qa">
+      <dt id="how-accurate">How accurate is it?</dt>
+      <dd>After a Locate, the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. With a low-power eyepiece of about one degree field, the target is in view. The motion sensor drifts a little over long moves, so Locate again near the target, or turn on Continuous.</dd>
+      <dt id="why-stars">Why not just use the compass?</dt>
+      <dd>Next to a metal tube a phone’s compass is often 10° or more off, and it gets worse pointing high. Zenigo uses the compass only until the first Locate; after that the position comes from the stars, and the gyroscope carries it along while you push.</dd>
+      <dt id="light-pollution">Does it work from a town or under light pollution?</dt>
+      <dd>Usually, yes. Locate needs about ten stars in the camera image, and the brighter stars show through light pollution. Aim at a part of the sky with bright stars, raise Frames to stack, or take a <a href="/help/#night-photo">night photo</a> with the phone’s camera app, which exposes far longer.</dd>
+      <dt id="twilight">Does it work at dusk or with the Moon up?</dt>
+      <dd>As soon as the brighter stars are visible, Locate works. Keep the Moon out of the camera image: its glare hides the stars around it. Before that, the map follows the compass, roughly; a <a href="/help/#compass">compass correction</a> from an earlier night improves it.</dd>
+      <dt id="clouds">What if there are clouds?</dt>
+      <dd>Locate ignores what it can’t match, so a gap with about ten stars in it is enough. Under complete cover only the compass works.</dd>
+      <dt id="sun">Can it guide me to the Sun?</dt>
+      <dd>Yes, by compass and motion sensor, because Locate doesn’t work in daylight. Only with a certified solar filter covering the front of the telescope and the finder covered: <a href="/help/#sun">read the safety notes</a>.</dd>
+    </dl>
+
+    <h2 id="phone">Phone and camera</h2>
+    <dl class="ref qa">
+      <dt id="devices">Which phones and tablets work?</dt>
+      <dd>Current iPhones and Android phones with Safari or Chrome, and tablets and computers with Chrome, Edge or Safari. For Locate the camera has to show about ten stars in a short exposure, which most phones from the last few years manage. A tablet makes a good second screen in your hand with the <a href="/help/#live">live connection</a>.</dd>
+      <dt id="battery">How long does the battery last?</dt>
+      <dd>Turn the camera off when you don’t need it (Align keeps the position from the motion sensor), lower the brightness or use red light, and take a power bank for long nights: the camera and the screen use the most power, and cold drains batteries faster.</dd>
+      <dt id="dew">The camera finds no stars, although they are there</dt>
+      <dd>Check that the lens is clean and not fogged up, that the camera is focused, and that nothing covers part of the view. Settings → Camera &amp; sensors → Capture has a <a href="/help/#diagnostics">diagnostics</a> view that shows what Locate saw.</dd>
+      <dt id="second-device">Can I use a tablet in my hand while the phone sits on the telescope?</dt>
+      <dd>Yes. The <a href="/help/#live">live connection</a> pairs the two by QR codes; the tablet then shows where the telescope points and the way to the target, optionally with the telescope’s camera image. The devices talk directly over Wi-Fi or a phone’s hotspot, without a server or internet.</dd>
+    </dl>
+
+    <h2 id="data">Data and privacy</h2>
+    <dl class="ref qa">
+      <dt id="data-stored">What happens to my data?</dt>
+      <dd>Camera images and motion data are processed on the device and never uploaded. The observing list, logbook, settings and your location are stored in the browser on the device; they leave it only in the encrypted sync copy, if you turn sync on, and the location also when you open one of the linked weather or satellite websites from the Tonight panel. The optional camera image of the live connection goes only directly to your other device. Details: <a href="/privacy/">Privacy</a>.</dd>
+      <dt id="sync">Can I use it on several devices?</dt>
+      <dd>Yes. <a href="/help/#sync">Sync</a> keeps the observing list, logbook and telescope settings the same on all your devices. It is end-to-end encrypted with a key from the sync code, which never reaches the server; the server only stores a locked copy.</dd>
+      <dt id="lose-data">Can I lose my logbook?</dt>
+      <dd>Clearing the browser’s website data deletes it from the device. Safari can also clear data of websites you haven’t opened for seven days; added to the home screen, Zenigo is exempt. Use sync, or back up now and then in Settings → General → <a href="/help/#backup">Backup and restore</a>.</dd>
+      <dt id="tracking">Is there tracking or analytics?</dt>
+      <dd>No. No cookies, no analytics, no advertising services.</dd>
+    </dl>
+
+    <h2 id="other">Compared with other ways</h2>
+    <dl class="ref qa">
+      <dt id="vs-starsense">How is it different from Celestron StarSense Explorer?</dt>
+      <dd>StarSense Explorer works the same way, recognising the stars with the phone camera, but its app’s pointing features are unlocked by a code that comes only with StarSense Explorer telescopes, which have a dock with a mirror for the phone (<a href="https://celestron.com/pages/starsense-explorer-technology" rel="noopener" target="_blank">Celestron</a>). Zenigo works on the telescope you already have, with any holder. More in the <a href="/compare/">comparison</a>.</dd>
+      <dt id="vs-encoders">Is it as good as encoders?</dt>
+      <dd>Encoders measure the mount’s axes and need a two-star alignment; Zenigo measures the sky itself. Both get a target into a low-power eyepiece. Encoders don’t need a view of the sky between alignments and don’t drift; Zenigo needs no hardware on the mount. See the <a href="/compare/">comparison</a>.</dd>
+      <dt id="vs-planetarium">Isn’t a planetarium app enough?</dt>
+      <dd>On its own, without encoders or a GoTo mount, a planetarium app shows the sky but doesn’t know where the telescope points, so it can only help with star hopping. Zenigo knows the telescope’s direction from the stars and gives the way from there.</dd>
+      <dt id="contact">Something doesn’t work or you have an idea?</dt>
+      <dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>. For problems, <a href="/help/#troubleshooting">Troubleshooting</a> in the help covers the common ones.</dd>
+    </dl>
+  </article>
+</main>
+
+<!--FOOTER-->
+</body>
+</html>

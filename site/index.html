@@ -3,16 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Zenigo – push-to for your telescope</title>
-<meta name="description" content="Zenigo turns your phone into a push-to system for a Dobsonian telescope: it recognises the stars in the camera image and shows how far to turn and tilt to reach your target. With eyepiece view, observing list and logbook. Free, in the browser, works offline.">
+<title>Zenigo – push-to for manual telescopes, with your phone</title>
+<meta name="description" content="Zenigo turns your phone into a push-to system for telescopes you move by hand: Dobsonians, alt-az refractors and Newtonians, travel scopes, binoculars. It recognises the stars in the camera image and shows how far to turn and tilt to reach your target. Free, in the browser, works offline.">
 <meta name="theme-color" content="#0c1124">
 <link rel="icon" href="/app/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
-<meta property="og:title" content="Zenigo – push-to for your telescope">
-<meta property="og:description" content="Your phone recognises the stars and shows your Dobson the way. Free, in the browser, works offline.">
+<meta property="og:title" content="Zenigo – push-to for manual telescopes, with your phone">
+<meta property="og:description" content="Your phone recognises the stars and shows your telescope the way. Free, in the browser, works offline.">
 <meta property="og:image" content="https://zenigo.app/img/phone-on-dobson-1600.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Zenigo", "url": "https://zenigo.app/",
+ "applicationCategory": "EducationalApplication", "operatingSystem": "Web browser (iOS, Android, Windows, macOS)",
+ "description": "Push-to for manual telescopes: the phone camera recognises the stars and Zenigo shows how far to turn and tilt to the target.",
+ "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "isAccessibleForFree": true,
+ "screenshot": "https://zenigo.app/img/screens/locate-780.webp", "author": {"@type": "Person", "name": "Christian Ranz"}}
+</script>
 <script>
   // Started from the home screen: go straight to the app
   if (navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches) location.replace("/app/");
@@ -27,7 +34,7 @@
   <div class="wrap hero">
     <div>
       <h1>Your phone shows your telescope the way.</h1>
-      <p class="lead">Mount the phone on the tube. Zenigo recognises the stars in the camera image and tells you how far to turn and tilt the Dobson until your target is in the eyepiece.</p>
+      <p class="lead">Mount the phone on the telescope. Zenigo recognises the stars in the camera image and tells you how far to turn and tilt until your target is in the eyepiece. For telescopes you move by hand: Dobsonians, refractors and Newtonians on alt-az mounts, travel scopes on a photo tripod, binoculars on a mount.</p>
       <div class="cta">
         <a class="open" href="/app/">Open Zenigo</a>
         <a class="open ghost" href="/getting-started/">Getting started</a>
@@ -72,6 +79,20 @@
         <figure><picture><source type="image/webp" srcset="/img/dobson-night-700.webp 700w, /img/dobson-night-1200.webp 1200w" sizes="(max-width: 760px) 100vw, 360px"><img src="/img/dobson-night-1200.jpg" width="1200" height="1600" loading="lazy" decoding="async" alt="An 8-inch Dobson telescope on a terrace at night, with the phone and Zenigo’s star map on a rail near the top of the tube."></picture><figcaption>Ready for the night: the <a href="/diy-accessories/">phone holder</a> sits in the finder shoe.</figcaption></figure>
       </div>
       <p class="more">Your first night, step by step: <a href="/getting-started/">Getting started</a>. Every button and setting explained: <a href="/help/">Help</a>.</p>
+    </div>
+  </section>
+
+  <section id="telescopes">
+    <div class="wrap">
+      <h2>Which telescopes</h2>
+      <p class="muted narrow">Anything you move by hand, with a place for the phone that moves with it. The directions are “turn” and “tilt”, the two axes of an alt-azimuth mount.</p>
+      <div class="fit">
+        <a href="/telescopes/#dobson"><b>Dobsonians</b><span>Turn on the base, tilt in the rocker box: exactly the two numbers Zenigo shows.</span></a>
+        <a href="/telescopes/#altaz"><b>Refractors and Newtonians on alt-az mounts</b><span>Manual heads, fork mounts, GoTo mounts with the clutches released.</span></a>
+        <a href="/telescopes/#travel"><b>Travel scopes and Maksutovs</b><span>On a pan-tilt or video head; the phone sits on the telescope, not the tripod.</span></a>
+        <a href="/telescopes/#binoculars"><b>Binoculars on a mount</b><span>On a tripod or parallelogram, with the phone on the same bracket.</span></a>
+      </div>
+      <p class="more">How to attach the phone to each, and what works on equatorial mounts: <a href="/telescopes/">Which telescopes work</a>. Compared with StarSense, encoders and GoTo: <a href="/compare/">Comparison</a>.</p>
     </div>
   </section>
 
@@ -145,6 +166,19 @@
         </div>
       </dl>
       <p class="more">With screenshots: <a href="/features/">Features</a>. Every button and setting explained: <a href="/help/">Help</a>.</p>
+    </div>
+  </section>
+
+  <section id="questions">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <dl class="features qa-short">
+        <div><dt>Does it need an internet connection?</dt><dd>No. Added to the home screen, the catalogue, the solver, the planning and the logbook all run on the phone. Only satellites and sync need a connection.</dd></div>
+        <div><dt>Can the phone look through the eyepiece?</dt><dd>No, it looks at the sky next to the tube: recognising the stars needs a field of at least about 10°. The offset to the telescope is set once with a bright star.</dd></div>
+        <div><dt>How accurate is it?</dt><dd>The camera’s direction is known to a fraction of a degree after a Locate; with the eyepiece point set well, the target lands in a low-power eyepiece.</dd></div>
+        <div><dt>Does it work from a town?</dt><dd>Usually. It needs about ten stars in the camera image, and the brighter stars show through light pollution. A night photo with the camera app sees far more.</dd></div>
+      </dl>
+      <p class="more">More answers: <a href="/faq/">FAQ</a>.</p>
     </div>
   </section>
 

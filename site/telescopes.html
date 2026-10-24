@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Which telescopes work with Zenigo – push-to for manual telescopes</title>
+<meta name="description" content="Zenigo works on telescopes you move by hand: Dobsonians, refractors and Newtonians on alt-az mounts, travel scopes and Maksutovs on a photo tripod, and binoculars on a mount. How to attach the phone to each, and where the limits are.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Which telescopes work with Zenigo">
+<meta property="og:description" content="Dobsonians, alt-az refractors and Newtonians, travel scopes on a photo tripod, binoculars on a mount: how to attach the phone and what to expect.">
+<meta property="og:image" content="https://zenigo.app/img/phone-on-dobson-1600.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <article class="doc full scopes">
+    <h1>Which telescopes work</h1>
+    <p class="intro">Zenigo needs two things: a telescope you move by hand, and a place on it where the phone can sit firmly with its camera looking at the sky. The directions it gives are “turn” and “tilt”, the two axes of an alt-azimuth mount, so that is where it fits best.</p>
+
+    <div class="fit">
+      <a href="#dobson"><b>Dobsonians</b><span>the ideal case</span></a>
+      <a href="#altaz"><b>Refractors and Newtonians on alt-az mounts</b><span>very good</span></a>
+      <a href="#travel"><b>Travel scopes and Maksutovs on a photo tripod</b><span>good, with a steady head</span></a>
+      <a href="#binoculars"><b>Binoculars on a mount</b><span>good for wide fields</span></a>
+      <a href="#equatorial"><b>Equatorial mounts</b><span>map and crosshair yes, turn/tilt numbers no</span></a>
+    </div>
+
+    <h2 id="needs">What every setup needs</h2>
+    <ul>
+      <li><b>The phone moves with the telescope</b> and doesn’t shift when you push. If the holder moves, the <a href="/help/#eyepiece">eyepiece point</a> no longer fits and the crosshair is off by as much as the holder moved.</li>
+      <li><b>The camera sees the sky directly</b>, roughly in the direction the telescope points. It needs a field of at least about 10° with about ten stars in it, which any phone’s main camera has. It can’t look through the eyepiece or the finder: their fields are too small. A 90° mirror or periscope in front of the camera works too, for example to let the phone lie flat.</li>
+      <li><b>Where the telescope points compared with the camera</b> is taught once: centre a bright star in the eyepiece, tap Locate, then Eyepiece point and that star on the screen. This stays valid until the holder moves, also on later nights.</li>
+      <li>No camera on the telescope? The <a href="/help/#top-edge">top edge of the phone</a> can be the pointer, using compass and motion sensors only. That is accurate to one or a few degrees: enough with a finder or a low-power eyepiece.</li>
+    </ul>
+
+    <h2 id="dobson">Dobsonians</h2>
+    <p>A Dobson turns on its base (azimuth) and tilts in its rocker box (altitude): exactly the two numbers Zenigo shows. There are no motors to fight and no alignment to do, and the large aperture makes many faint objects reachable. This is the setup Zenigo was built with.</p>
+    <ul>
+      <li><b>Attaching the phone:</b> most Dobsonians have a finder shoe near the top of the tube. A phone holder on a short rail in that shoe is quick to put on and always sits in the same place; the <a href="/diy-accessories/">DIY phone holder</a> is made for this. A bike or tripod clamp around the tube works too.</li>
+      <li><b>Tell Zenigo how low and high it points.</b> Many Dobsonians can’t point below 10–15° (rocker box, the ground board) or straight up (the tube hits the base). Enter that in Settings → Telescope, and Zenigo stops suggesting objects out of reach.</li>
+      <li><b>Near the zenith</b> an alt-az mount needs large turns for small steps on the sky. The Short route through your planned objects takes this into account.</li>
+    </ul>
+
+    <h2 id="altaz">Refractors and Newtonians on alt-az mounts</h2>
+    <p>The same two axes as a Dobson, on a tripod: manual alt-az mounts with slow-motion knobs or free-moving heads, fork mounts, and GoTo mounts moved by hand with the clutches released. Zenigo shows how far to turn and tilt; with slow-motion controls you just count down the degrees.</p>
+    <ul>
+      <li><b>Attaching the phone:</b> on the finder shoe, on top of the tube rings (many have a thread or a small rail), or with a clamp on the dovetail bar. It must not sit where the tube or the dew shield blocks the camera’s view.</li>
+      <li><b>Light mounts wobble.</b> Wait a second after a push before you tap Locate; Zenigo skips frames taken while the telescope still moves.</li>
+      <li><b>Small apertures:</b> enter the aperture in Settings → Telescope, so <b>My telescope</b> in Find target only suggests what a 70 or 80 mm refractor shows under a dark sky.</li>
+    </ul>
+
+    <h2 id="travel">Travel scopes and Maksutovs on a photo tripod</h2>
+    <p>A small refractor or Maksutov on a pan-tilt or ball head works like an alt-az mount, as long as the head is steady enough to stay where you leave it. Zenigo then saves the star hopping that a narrow-field Maksutov makes hard.</p>
+    <ul>
+      <li><b>Attaching the phone:</b> on the telescope, not on the tripod. Use the finder shoe, or a short side-by-side bar under the telescope with a phone clamp on its second thread, so the phone turns and tilts with the tube.</li>
+      <li><b>A ball head</b> moves in every direction at once and can roll the view. That doesn’t disturb Zenigo, which works from the stars, but turning and tilting step by step is easier with a pan-tilt head or a video head.</li>
+      <li><b>Maksutovs</b> have long focal lengths and narrow fields. Set the eyepiece point carefully with your widest eyepiece, and check it on a second star.</li>
+    </ul>
+
+    <h2 id="binoculars">Binoculars on a mount</h2>
+    <p>Big binoculars on a tripod or parallelogram mount are pushed by hand just like a small telescope, and their wide field forgives a small error.</p>
+    <ul>
+      <li><b>Attaching the phone:</b> on an L-bracket or a short bar together with the binoculars, so both move as one. On a parallelogram mount, fix the phone to the binocular holder, not to the arm.</li>
+      <li><b>The field on the map:</b> enter the binoculars as the finder (Settings → Telescope → Finder → another one, with their field of view, for example 6.5°). Their field then appears as a ring around the crosshair.</li>
+      <li>Set the eyepiece point by centring a bright star in the binoculars.</li>
+    </ul>
+
+    <h2 id="equatorial">Equatorial mounts</h2>
+    <p>On an equatorial mount the telescope moves along right ascension and declination, not azimuth and altitude. Zenigo locates just as well there, and the map, the crosshair, the arrow to the target and the planning work. The eyepiece view is oriented for an alt-az mount and won’t match the turning view of an equatorial one. The two numbers at the top, “turn” and “tilt”, don’t match the axes of the mount, though, so you follow the arrow instead of counting degrees. Setting the mount to equatorial in Settings → Telescope makes the <a href="/help/#short-route">Short route</a> through your planned objects follow its axes.</p>
+
+    <h2 id="not">What doesn’t work</h2>
+    <ul>
+      <li><b>Locating through the eyepiece or the finder</b> (a phone held to the eyepiece): their fields are too narrow to recognise the star pattern.</li>
+      <li><b>Telescopes without a place for the phone</b> that moves with the tube. A phone on the tripod leg, for example, doesn’t know where the tube points.</li>
+      <li><b>Controlling a GoTo mount.</b> Zenigo shows the way; it doesn’t send commands to a mount.</li>
+    </ul>
+
+    <p class="more">Next: <a href="/getting-started/">Getting started</a> walks you through the first night. How Zenigo compares with StarSense, encoder kits and GoTo: <a href="/compare/">Comparison</a>. Questions: <a href="/faq/">FAQ</a>.</p>
+  </article>
+</main>
+
+<!--FOOTER-->
+</body>
+</html>

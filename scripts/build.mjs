@@ -138,7 +138,7 @@ write('dist/diy-accessories/finder-adapter.jscad.js', read('src/finder-adapter.j
 write('dist/diy-accessories/mirror-holder/mirror-holder.jscad.js', read('src/mirror-holder.js'));
 const hidden = new Set(['diy-mirror-holder.html']);
 
-const pages = { 'index.html': 'dist/index.html', 'features.html': 'dist/features/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
+const pages = { 'index.html': 'dist/index.html', 'features.html': 'dist/features/index.html', 'telescopes.html': 'dist/telescopes/index.html', 'faq.html': 'dist/faq/index.html', 'compare.html': 'dist/compare/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
   'diy-accessories.html': 'dist/diy-accessories/index.html', 'diy-mirror-holder.html': 'dist/diy-accessories/mirror-holder/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');
@@ -149,12 +149,19 @@ const today = new Date().toISOString().slice(0, 10);
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
   + Object.entries(pages).filter(([src]) => !hidden.has(src)).map(([, dst]) => urlOf(dst)).filter(Boolean).map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n') + '\n</urlset>\n';
 write('dist/sitemap.xml', sitemap);
+// The FAQ page also as structured data (schema.org FAQPage), taken from its questions and answers
+const plain = h => h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+function faqLd(html) {
+  const qa = [...html.matchAll(/<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd>([\s\S]*?)<\/dd>/g)].map(([, q, a]) => ({ '@type': 'Question', name: plain(q), acceptedAnswer: { '@type': 'Answer', text: plain(a) } }));
+  return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa }).replace(/</g, '\\u003c')}</script>`;
+}
 for (const [src, dst] of Object.entries(pages)) {
   const url = hidden.has(src) ? null : urlOf(dst);
-  const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';   // the 404 page carries its own noindex
+  const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';
+  const ld = src === 'faq.html' ? faqLd(read('site/' + src)) : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
   const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replace(`<a href="${here}">`, `<a href="${here}" aria-current="page">`) : header;
-  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || ''));
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || ''));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 
