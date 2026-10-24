@@ -138,7 +138,7 @@ write('dist/diy-accessories/finder-adapter.jscad.js', read('src/finder-adapter.j
 write('dist/diy-accessories/mirror-holder/mirror-holder.jscad.js', read('src/mirror-holder.js'));
 const hidden = new Set(['diy-mirror-holder.html']);
 
-const pages = { 'index.html': 'dist/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
+const pages = { 'index.html': 'dist/index.html', 'features.html': 'dist/features/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
   'diy-accessories.html': 'dist/diy-accessories/index.html', 'diy-mirror-holder.html': 'dist/diy-accessories/mirror-holder/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');

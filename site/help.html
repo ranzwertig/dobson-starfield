@@ -69,6 +69,20 @@
     <p class="part" id="using">Using the app</p>
 
     <h2 id="screen">The screen</h2>
+    <div class="annot">
+      <img src="/img/screens/screen-780.webp" srcset="/img/screens/screen-390.webp 390w, /img/screens/screen-780.webp 780w" sizes="250px" width="390" height="844" alt="The main screen after a Locate, with numbered parts: directions, menu, crosshair, target, buttons, target pill, status and Locate." loading="lazy" decoding="async">
+      <ol class="keys">
+        <li><span><b>Directions:</b> how far to turn and tilt the telescope</span></li>
+        <li><span><b>Menu</b></span></li>
+        <li><span><b>Crosshair:</b> where the telescope points, with the finder and eyepiece rings</span></li>
+        <li><span><b>Target</b> (red ring), with the arrow from the crosshair</span></li>
+        <li><span><b>Buttons</b>, here with their labels</span></li>
+        <li><span><b>Target pill:</b> how far away it is, ✕ clears it</span></li>
+        <li><span><b>Status</b> and the source of the view</span></li>
+        <li><span><b>Locate</b></span></li>
+      </ol>
+    </div>
+    <p>The green circles are the stars the last Locate recognised; the dark shapes at the bottom are trees in the camera image.</p>
     <dl class="ref">
       <dt>Directions at the top</dt>
       <dd>How many degrees to <b>turn</b> the telescope left or right (azimuth) and to <b>tilt</b> it up or down (altitude) to reach the target. <b>Where the telescope points:</b> without a target the two boxes show the telescope’s own azimuth (with the compass direction) and altitude, whenever the map follows it (Align, compass or after a Locate), handy for directions like “at azimuth 45°, 30° high”. With a target, tap the boxes to switch between the way to it and where the telescope points; the app remembers the choice.</dd>
@@ -88,6 +102,7 @@
 
     <h2 id="buttons">Buttons</h2>
     <p>The round buttons on the right. A dimmed button can’t be used right now; tap it to see why.</p>
+    <div class="shots"><figure class="ph"><img src="/img/screens/quick-780.webp" srcset="/img/screens/quick-390.webp 390w, /img/screens/quick-780.webp 780w" sizes="230px" width="390" height="844" alt="Quick settings: eyepiece and eyepiece view, eyepiece point, compass correction, red light, solve a photo and camera." loading="lazy" decoding="async"><figcaption>Quick settings, the top button</figcaption></figure></div>
     <dl class="ref icons">
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg>Quick settings</dt>
       <dd>The settings you change at the telescope, from top to bottom:
@@ -214,6 +229,7 @@
     </ul>
 
     <h2 id="optics">Telrad rings and eyepiece view</h2>
+    <div class="shots"><figure class="ph"><img src="/img/screens/eyepiece-780.webp" srcset="/img/screens/eyepiece-390.webp 390w, /img/screens/eyepiece-780.webp 780w" sizes="230px" width="390" height="844" alt="M31 in the eyepiece: finder and eyepiece rings around the crosshair, the round eyepiece view at the bottom left with M32 and M110, and the target pill in green." loading="lazy" decoding="async"><figcaption>Close to the target: the finder ring (dashed), the eyepiece field around the crosshair, and the eyepiece view at the bottom left</figcaption></figure></div>
     <p>Enter your telescope and eyepieces once in <a href="#settings-telescope">Settings → Telescope → Telescope and eyepieces</a>: the focal length of the telescope, and for each eyepiece its focal length and apparent field (printed on it or in its specs, about 50° for a Plössl). The app works out the magnification and the true field, for example 25 mm in a 1200 mm telescope: 48× and 1.1°. Choose the eyepiece you are using in <b>Quick settings</b>.</p>
     <dl class="ref">
       <dt>Rings on the map</dt>
@@ -240,9 +256,10 @@
     <p class="part" id="planning">Planning</p>
 
     <h2 id="categories">Categories in Find target</h2>
+    <div class="shots"><figure class="ph"><img src="/img/screens/find-780.webp" srcset="/img/screens/find-390.webp 390w, /img/screens/find-780.webp 780w" sizes="230px" width="390" height="844" alt="Choose target with My telescope and Good now selected, and a list of objects with their altitude and night bar." loading="lazy" decoding="async"><figcaption>My telescope and Good now together</figcaption></figure></div>
     <p>The chips under the search field are categories. Tap one or more; they stay selected for next time, and typing narrows the list down further.</p>
     <dl class="ref">
-      <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and framed well by one of your eyepieces. Objects far larger than your widest field are left out, they are better in binoculars. Needs the aperture in <a href="#settings-telescope">Settings → Telescope</a>; the sky is assumed to be dark.</dd>
+      <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and not far larger than your widest eyepiece’s field: those are better in binoculars. Its details name the eyepiece that frames it best. Needs the aperture in <a href="#settings-telescope">Settings → Telescope</a>; the sky is assumed to be dark.</dd>
       <dt>In reach</dt><dd>Objects that come into <a href="#reach">your telescope’s reach</a> from your location at some time of night or year: they climb at least as high as its lowest altitude and don’t always stay above its highest. Without a set range, all objects that rise at your location at all. It doesn’t depend on the time; for what you can reach right now use Good now.</dd>
       <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°), within <a href="#reach">your telescope’s reach</a> and still high in an hour, the sky dark enough, and galaxies and nebulae not next to a bright Moon. With another <a href="#time">time</a> set, it reads “Good at …”.</dd>
       <dt>Popular</dt><dd>A curated list of about 60 showpieces for small and medium telescopes from mid-northern latitudes: the Moon and bright planets, the Pleiades, the Double Cluster, M13, the Ring, Dumbbell and Orion Nebulae, the Andromeda, Whirlpool and Sombrero Galaxies, the Needle Galaxy and more.</dd>
@@ -263,6 +280,7 @@
       <li>Stars: Wikipedia and <b>SIMBAD</b> (the professional star database)</li>
     </ul>
     <h3 id="solar-system">Moon and planets in detail</h3>
+    <div class="shots"><figure class="ph"><img src="/img/screens/jupiter-780.webp" srcset="/img/screens/jupiter-390.webp 390w, /img/screens/jupiter-780.webp 780w" sizes="230px" width="390" height="844" alt="Jupiter’s details: disc size in the eyepiece, the four big moons as in a Newtonian, and the shadow transits of the next 24 hours." loading="lazy" decoding="async"><figcaption>Jupiter: its moons as in the eyepiece, and what crosses the disc next</figcaption></figure></div>
     <p>The details of the Moon and the planets (and the target panel when one of them is your target) show more, calculated on the phone without internet:</p>
     <ul>
       <li><b>Moon:</b> the phase as a picture, how much is lit, its age, the next full and new Moon, the libration (which edge is tilted towards you, so you see a little further around it) and which well-known craters and mountains lie near the terminator right now, where shadows make them stand out.</li>
@@ -297,6 +315,7 @@
       <dt>Planned</dt><dd>You want to see it tonight. <b>Plan</b> in the details, or the list icon in Find target and in the Starred tab. A planned object shows the icon as a solid amber tile (“Planned”), not yet planned as an outline with a plus.</dd>
       <dt>Seen</dt><dd>In your <a href="#logbook">logbook</a>, logged with <b>Seen</b> in the details.</dd>
     </dl>
+    <div class="shots"><figure class="ph"><img src="/img/screens/list-780.webp" srcset="/img/screens/list-390.webp 390w, /img/screens/list-780.webp 780w" sizes="230px" width="390" height="844" alt="The observing list, Planned tab, in Short route order with a night bar for each object and the Next button." loading="lazy" decoding="async"><figcaption>Planned, in Short route order</figcaption></figure></div>
     <p>The <b>List</b> button opens the observing list with three tabs (it opens on the tab you used last); its number shows how many planned objects are still to do.</p>
     <dl class="ref">
       <dt>Planned</dt>
@@ -341,6 +360,7 @@
     <p>List and logbook are stored on your device. Clearing the website data in the browser deletes them, so export a backup now and then: Menu → Settings → General → <a href="#backup">Backup and restore</a>. To have them on your phone, tablet and computer at once, turn on <a href="#sync">sync between devices</a>.</p>
 
     <h2 id="tonight">Tonight</h2>
+    <div class="shots"><figure class="ph"><img src="/img/screens/tonight-780.webp" srcset="/img/screens/tonight-390.webp 390w, /img/screens/tonight-780.webp 780w" sizes="230px" width="390" height="844" alt="Tonight: sunset, dark from, dark until, sunrise, a timeline with the Moon, the Moon’s phase and the planets." loading="lazy" decoding="async"></figure></div>
     <p>The <b>Tonight</b> section of the menu starts with <b>Darkness, Moon and what’s up</b>, calculated on the phone for your location, also offline:</p>
     <ul>
       <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
@@ -376,6 +396,7 @@
       <li><i class="now"></i><span><b>Red mark:</b> now.</span></li>
     </ul>
     <p>In the example the object is well placed from evening until about midnight, then sinks low and sets in the early morning. The text above the bar says the same in words, for example “best 21:40, south · low after 00:30”. In the details and the target panel the bar sits in a <b>Tonight</b> box, with when the object is well placed and when it rises, culminates and sets during the night.</p>
+    <div class="shots"><figure class="ph"><img src="/img/screens/details-780.webp" srcset="/img/screens/details-390.webp 390w, /img/screens/details-780.webp 780w" sizes="230px" width="390" height="844" alt="Details of M57 with the larger night bar: the times when the green part starts and ends, an “out” mark when it leaves the telescope’s reach, and the legend." loading="lazy" decoding="async"><figcaption>In the details: start and end of the green part, and when the object leaves the telescope’s reach</figcaption></figure></div>
     <p><b>In the details and the target panel</b> the bar is larger: under it are the times when the green part starts and ends, and a small legend explains the colours. If you set <a href="#reach">how low and how high your telescope points</a>, dotted marks above the bar show when the object comes into reach (<b>in</b>) and when it leaves it (<b>out</b>), for example “in 22:40” when it sinks below your highest altitude. When it stays in reach the whole night, there are no marks.</p>
 
     <h2 id="time">Time: the sky later</h2>
@@ -390,7 +411,7 @@
     <p class="part" id="reference">Reference</p>
 
     <h2 id="settings">Settings</h2>
-    <p>Open them with Menu → <b>Settings</b> or Quick settings → <b>All settings</b>. They are grouped in three tabs; the app opens the tab you used last.</p>
+    <p>Open them with Menu → <b>Settings</b> or Quick settings → <b>All settings</b>. They are grouped in tabs: General, Telescope, Camera &amp; sensors, Sync (when the server offers it) and Live; the app opens the tab you used last.</p>
 
     <h3 id="settings-general">General</h3>
     <dl class="ref">
@@ -485,7 +506,7 @@
           <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
           <li>On the next device: Menu → Sync with other devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
           <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
-          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, eyepieces, Barlow, finder, eyepiece view orientation. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
+          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, lowest and highest altitude, eyepieces, Barlow, finder, the rings on the map, eyepiece view orientation and turn. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
           <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online.</li>
           <li><b>Changed on two devices before they synced:</b> different entries and settings are simply combined. A logbook entry edited on both keeps both edits, field by field (note on one, seeing on the other); only a field changed on both takes the later edit. Eyepieces added or removed on each device are combined too. Location (latitude, longitude, where it came from) always comes from one device, the one that changed it last. Deleted on one device and changed on the other: the later of the two counts.</li>
           <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
@@ -508,6 +529,7 @@
       <dd>Connects two devices directly, phone to tablet, phone to phone or tablet to tablet, for example the phone on the telescope and a tablet in your hand. There is no server and no internet involved: the devices exchange their connection details as two QR codes and then talk to each other over the local network.
         <ul>
           <li><b>What it needs:</b> both devices in the same Wi-Fi, or one in the other’s hotspot (it also works without internet, as long as the hotspot can be switched on). On iPhone and iPad the Personal Hotspot needs mobile data switched on. Two devices that are each online with their own SIM card can’t reach each other this way: put one into the other’s hotspot.</li>
+          <li class="shotli"><div class="shots"><figure class="ph"><img src="/img/screens/live-role-780.webp" srcset="/img/screens/live-role-390.webp 390w, /img/screens/live-role-780.webp 780w" sizes="230px" width="390" height="844" alt="Settings, Live tab, step 1 of 2: two cards, At the telescope and Follow, and a Next button." loading="lazy" decoding="async"><figcaption>Step 1: the role</figcaption></figure><figure class="tab"><img src="/img/screens/live-follow-1600.webp" srcset="/img/screens/live-follow-800.webp 800w, /img/screens/live-follow-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 680px" width="1180" height="820" alt="A tablet following the telescope with its camera image: crosshair, arrow to M31, directions and the pill Following the telescope with its camera button." loading="lazy" decoding="async"><figcaption>A tablet following, with the telescope’s camera image; the camera button in the pill switches back to the map</figcaption></figure></div></li>
           <li><b>Step 1, the role:</b> Menu → <b>Live connection</b> (or Settings → Live) asks what this device does. <b>At the telescope</b>: it sits on the telescope and shares where it points. <b>Follow</b>: it is in your hand and shows where the other device’s telescope points. Each device keeps its choice (at first, phones are at the telescope and tablets and computers follow). Then <b>Next</b>.</li>
           <li><b>Step 2, options and Connect:</b> only the options for that role: at the telescope <b>Send the camera image</b>, when following <b>Show the telescope’s camera image</b> (see below). Then <b>Connect</b>. The device at the telescope shows a code; the following device scans it and then shows its own code, which you hold in front of the first device’s camera (“1 of 2”, “2 of 2”). A second or two later both say “Connected”. Do this before the phone goes into its holder.</li>
           <li><b>Same role on both:</b> if the device at the telescope sees the first code of another device at the telescope, it offers <b>Follow it instead</b> and connects right away. If both are set to Follow, neither shows a code: change one to At the telescope. Once connected, <b>Change role</b> in Settings → Live switches the role; if both have the same role, the settings say so.</li>
@@ -516,7 +538,7 @@
           <li><b>While connected:</b> on the following device a pill says “Following the telescope” (on phones on the right above the buttons, on larger screens at the bottom right next to Locate); on the device on the telescope the pill “Live · another device follows” sits with the pills on the left, which can be pushed aside. Tap a pill for the settings; its ✕ ends the connection on both devices. The menu entry shows it too.</li>
           <li><b>Pausing:</b> as soon as you turn the following device’s map yourself (drag it, Show on map, …), it stops following. The telescope’s crosshair stays where the telescope points, with the directions and the arrow to the target from there. <b>Follow the telescope again</b> (with the pills on the left) turns the map back and follows again.</li>
           <li><b>Off while following:</b> camera, Locate, Continuous, Align, the eyepiece point, the setup assistant, night photo and photos from the gallery belong to the device on the telescope; on the following device they are greyed out (a tap says why).</li>
-          <li><b>Following:</b> the following device, as long as it doesn’t point by itself, turns its map to the other device’s telescope, shows the crosshair there and gives the directions to the target from it, also with sound. The label at the bottom left says “Live · following the telescope”. Once the device points by itself (camera, Align), its own pointing counts.</li>
+          <li><b>Following:</b> the following device, as long as it doesn’t point by itself, turns its map to the other device’s telescope, shows the crosshair there and gives the directions to the target from it, also with sound. The label at the bottom left says “Live · following the telescope”, or “Live · the telescope’s camera” while it shows the camera image. Once the device points by itself (camera, Align), its own pointing counts.</li>
           <li><b>Lost connection:</b> when a device is locked, goes out of Wi-Fi range or the app is closed, the connection ends and both say so; connect again with the codes. <b>Disconnect</b> ends it on both devices.</li>
           <li>The codes are valid for this one connection. The connection is encrypted, and only the device that has seen the code can connect.</li>
         </ul>
@@ -582,7 +604,7 @@
       <dt>How accurate is it?</dt><dd>After a locate the camera’s direction is known to a fraction of a degree. In practice the limit is how well the eyepiece point is set and whether the holder stays put. A low-power eyepiece with a field of about one degree is a good start.</dd>
       <dt>Can I use a webcam or another camera instead of the phone?</dt><dd>Yes, if the browser sees it as a camera: a USB webcam on a laptop or on an Android phone that supports USB cameras, or a DSLR or mirrorless camera through an HDMI capture stick. Mount it on the tube with its own lens and choose it in <a href="#camera">Settings → Camera &amp; sensors → Camera</a>. It needs a field of view of at least about 10°, so it can’t look through the telescope itself. A DSLR photo copied to the phone can also be solved with “Solve a photo from the gallery”.</dd>
       <dt>Does it work with other telescopes?</dt><dd>Yes, with any manually moved telescope where the phone can be mounted on the tube. The directions are given as azimuth and altitude, which suits Dobsonians and other alt-azimuth mounts best.</dd>
-      <dt>What happens to my data?</dt><dd>Camera images and sensor data stay on your phone and are never uploaded. Location, observing list and logbook stay on your phone too, unless you turn on <a href="#sync">sync between devices</a>: then they are stored end-to-end encrypted on our server, and only your devices can read them. Export a backup now and then (Settings → General → Backup and restore). Details in the <a href="/privacy/">privacy policy</a>.</dd>
+      <dt>What happens to my data?</dt><dd>Camera images and sensor data stay on your phone and are never uploaded; the optional camera image of the <a href="#live-camera">live connection</a> goes only directly to your other device. Location, observing list and logbook stay on your phone too, unless you turn on <a href="#sync">sync between devices</a>: then they are stored end-to-end encrypted on our server, and only your devices can read them. Export a backup now and then (Settings → General → Backup and restore). Details in the <a href="/privacy/">privacy policy</a>.</dd>
       <dt>Something doesn’t work or you have an idea?</dt><dd>Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>.</dd>
     </dl>
   </article>

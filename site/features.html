@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Features – Zenigo</title>
+<meta name="description" content="What Zenigo does at the telescope: plate solving from the phone camera, directions to the target, objects that suit your telescope, night planning, a tablet that follows the phone on the tube, encrypted sync.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Features – Zenigo">
+<meta property="og:description" content="Plate solving from the phone camera, push-to directions, targets for your telescope, night planning and a second device that follows the telescope.">
+<meta property="og:image" content="https://zenigo.app/img/screens/locate-780.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap feat-page">
+  <header class="feat-head">
+    <h1>Features</h1>
+    <p class="lead">A phone on the tube of a Dobson can tell where its camera points to a fraction of a degree, and from there where the telescope points, without encoders. Zenigo builds the rest around that: what to look at tonight, how to get there, and what you saw.</p>
+  </header>
+
+  <section class="feat" id="locate">
+    <div class="feat-text">
+      <p class="kicker">Plate solving</p>
+      <h2>The position comes from the stars</h2>
+      <p><b>Locate</b> averages about a second of camera frames, picks out the stars and matches their pattern against a catalogue of 5,000 stars. The result is accurate to a fraction of a degree and doesn’t care how far the compass is off next to a metal tube. Each green circle in the picture is a star it recognised.</p>
+      <ul>
+        <li>After the first solve, the gyroscope carries the position while you push. <b>Continuous</b> keeps checking it against the stars about twice a second; with the last position known, the match itself takes milliseconds.</li>
+        <li>The phone never sits exactly parallel to the tube. Centre a star in the eyepiece, tap Locate, then tap that star on the screen: from then on the crosshair marks where the telescope points, not the camera, until the holder moves.</li>
+        <li>For fainter stars than the video stream can show, take a <b>night photo</b> with the phone’s camera app. In night mode it can expose for several seconds, and Zenigo solves the photo just the same.</li>
+        <li>The camera can also look through a 90° mirror or periscope, or be a USB webcam on the tube. Without any camera, the top edge of the phone serves as a pointer.</li>
+      </ul>
+    </div>
+    <figure class="feat-fig"><img src="/img/screens/locate-780.webp" srcset="/img/screens/locate-390.webp 390w, /img/screens/locate-780.webp 780w" sizes="280px" width="390" height="844" alt="Zenigo on a phone: the camera image of Cassiopeia with recognised stars circled in green, the telescope’s crosshair, a red arrow to M31 and the directions 14° turn right, 9° tilt down." loading="lazy" decoding="async"></figure>
+  </section>
+
+  <section class="feat rev" id="directions">
+    <div class="feat-text">
+      <p class="kicker">Push-to</p>
+      <h2>Directions you can push by</h2>
+      <p>The two numbers at the top tell you how far to turn and tilt the telescope. A Dobson moves along exactly these two axes. They count down while you push, and the target pill turns green when the target is in the eyepiece.</p>
+      <ul>
+        <li>Rings around the crosshair show your finder and the true field of the eyepiece in use. They are calculated from the telescope and eyepieces you entered, Barlow lens included. Telrad rings are there too, if you use one.</li>
+        <li>The round <b>eyepiece view</b> shows the stars down to magnitude 9 around where the telescope points, with the target, or an arrow towards it. It is turned and mirrored the way your Newtonian or star diagonal shows them, so the pattern matches what you see.</li>
+        <li>Or don’t look at the screen at all: clicks tell you which way to turn, chirps which way to tilt, and a chord sounds when the target is in the field.</li>
+      </ul>
+    </div>
+    <figure class="feat-fig"><img src="/img/screens/eyepiece-780.webp" srcset="/img/screens/eyepiece-390.webp 390w, /img/screens/eyepiece-780.webp 780w" sizes="280px" width="390" height="844" alt="M31 in the eyepiece: 0.1° to go, the finder and eyepiece rings around the crosshair, and a round eyepiece view with M32 and M110." loading="lazy" decoding="async"></figure>
+  </section>
+
+  <section class="feat" id="targets">
+    <div class="feat-text">
+      <p class="kicker">Choosing targets</p>
+      <h2>Objects for your telescope, not for any telescope</h2>
+      <p>Zenigo knows your aperture, your eyepieces and how low and high your mount can point. Its categories use all of that.</p>
+      <ul>
+        <li><b>My telescope</b> keeps objects that are bright enough for your aperture and not far larger than the field of your widest eyepiece. For galaxies and nebulae it judges the surface brightness, which is what makes a large galaxy of magnitude 9 harder than a small one.</li>
+        <li><b>Good now</b> lists what is high enough and in reach of your mount right now, and leaves out galaxies and nebulae next to a bright Moon. <b>In reach</b> leaves out what never comes into your mount’s range from your site.</li>
+        <li>Messier, Caldwell and Herschel 400 can be combined with these. There are about 2,000 deep-sky objects in total, and stars down to magnitude 9 appear as you zoom in.</li>
+      </ul>
+    </div>
+    <figure class="feat-fig"><img src="/img/screens/find-780.webp" srcset="/img/screens/find-390.webp 390w, /img/screens/find-780.webp 780w" sizes="280px" width="390" height="844" alt="Choose target with the categories My telescope and Good now selected: the North America Nebula, NGC 7331, the Dragonfly Cluster and more, each with a bar for the night." loading="lazy" decoding="async"></figure>
+  </section>
+
+  <section class="feat rev" id="details">
+    <div class="feat-text">
+      <p class="kicker">Object details</p>
+      <h2>Is it worth it tonight, and with which eyepiece?</h2>
+      <p>The bar runs from sunset to sunrise. It is green while the object is high, the sky is dark and your mount can reach it. Marks show when it comes into reach or leaves it.</p>
+      <p>Below the bar, <b>Suits you?</b> says why the object fits your telescope or not. <b>Which eyepiece</b> picks one of yours and explains the choice. For a galaxy that means the exit pupil, for a globular cluster the magnification, for a planet what the air usually allows.</p>
+      <ul>
+        <li>The Moon’s details list the craters along the terminator tonight.</li>
+        <li>Jupiter’s show where its four big moons are, as you see them in the eyepiece, and when a moon or its shadow crosses the disc. Saturn’s show the tilt of its rings.</li>
+      </ul>
+    </div>
+    <div class="feat-fig two">
+      <figure><img src="/img/screens/details-780.webp" srcset="/img/screens/details-390.webp 390w, /img/screens/details-780.webp 780w" sizes="240px" width="390" height="844" alt="Details of M57: tonight’s bar with the well-placed time and when it leaves the telescope’s reach, why it suits the telescope, and the 9 mm eyepiece as the best one." loading="lazy" decoding="async"></figure>
+      <figure><img src="/img/screens/jupiter-780.webp" srcset="/img/screens/jupiter-390.webp 390w, /img/screens/jupiter-780.webp 780w" sizes="240px" width="390" height="844" alt="Jupiter’s details: its disc size in the eyepiece, the four big moons as seen in a Newtonian, and the shadow transits of the next 24 hours." loading="lazy" decoding="async"></figure>
+    </div>
+  </section>
+
+  <section class="feat" id="planning">
+    <div class="feat-text">
+      <p class="kicker">Planning</p>
+      <h2>Tonight, the plan and the logbook</h2>
+      <ul>
+        <li><b>Tonight</b> shows when it gets dark, how long it stays dark without the Moon, which planets are up and the best deep-sky objects of the night. <b>Coming up</b> lists eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon will disturb them.</li>
+        <li>The planned list puts first what sets first. With <b>Short route</b> it sorts the objects instead by the least turning for your mount, starting where the telescope points now; what gets low within the hour stays at the front. <b>Next</b> takes you to the next one that is well placed.</li>
+        <li>Mark an object <b>Seen</b> and the logbook fills in time, eyepiece, altitude and Moon. You add seeing, transparency and a note. The logbook exports to CSV.</li>
+        <li>Menu → Time shows the sky at any date and hour. On a tablet or computer, details, lists and settings open beside the map.</li>
+      </ul>
+    </div>
+    <div class="feat-fig two">
+      <figure><img src="/img/screens/list-780.webp" srcset="/img/screens/list-390.webp 390w, /img/screens/list-780.webp 780w" sizes="240px" width="390" height="844" alt="The observing list in Short route order: M57, M27, M15 and M2 with their altitude now and a night bar each, and a Next button." loading="lazy" decoding="async"></figure>
+      <figure><img src="/img/screens/tonight-780.webp" srcset="/img/screens/tonight-390.webp 390w, /img/screens/tonight-780.webp 780w" sizes="240px" width="390" height="844" alt="Tonight: sunset, astronomical darkness and sunrise, a timeline with the Moon, 7 h 20 min dark and moonless, the Moon’s phase and the planets." loading="lazy" decoding="async"></figure>
+    </div>
+  </section>
+
+  <section class="feat wide" id="live">
+    <div class="feat-text">
+      <p class="kicker">Live connection</p>
+      <h2>Phone on the tube, tablet in your hand</h2>
+      <p>A phone in its holder near the top of the tube is hard to read. Connect a second phone or tablet and it shows where the telescope points: the crosshair, the arrow and the directions. A target you choose on either device becomes the target on both. If you like, the tablet also shows the telescope’s camera image, with the stars and rings drawn on it.</p>
+      <p>The two devices pair by scanning each other’s QR code and then talk directly over your Wi-Fi or a phone’s hotspot. No server and no internet are involved, so it works at a dark site too, as long as one of the phones can open a hotspot.</p>
+    </div>
+    <div class="feat-pair">
+      <figure class="ph"><img src="/img/screens/live-scope-780.webp" srcset="/img/screens/live-scope-390.webp 390w, /img/screens/live-scope-780.webp 780w" sizes="(max-width: 760px) 32vw, 220px" width="390" height="844" alt="The phone on the telescope, located, with the pill “Live · another device follows”." loading="lazy" decoding="async"><figcaption>On the telescope</figcaption></figure>
+      <figure class="tab"><img src="/img/screens/live-follow-1600.webp" srcset="/img/screens/live-follow-800.webp 800w, /img/screens/live-follow-1600.webp 1600w" sizes="(max-width: 760px) 62vw, 720px" width="1180" height="820" alt="A tablet following the telescope: the telescope’s camera image with crosshair, arrow to M31 and the directions, and the pill “Following the telescope”." loading="lazy" decoding="async"><figcaption>In your hand, with the telescope’s camera image</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="feat rev" id="sync">
+    <div class="feat-text">
+      <p class="kicker">Your data</p>
+      <h2>Planned on the computer, ticked off at the telescope</h2>
+      <p>With sync turned on, the observing list, the logbook and the telescope settings are the same on all your devices. Everything is encrypted on the device with a key from the sync code, and the code never reaches the server. If the same logbook entry was changed on two devices before they synced, the edits are combined field by field; only a field changed on both keeps the later edit.</p>
+      <p>The settings that depend on how a phone sits on the telescope, such as the eyepiece point, stay on that phone. Without sync, nothing goes to a server. If you ever lose all your devices, the sync code is enough to get the data back, even without Zenigo: a short <a href="/help/#sync-recovery">Python script</a> decrypts it.</p>
+    </div>
+    <figure class="feat-fig"><img src="/img/screens/tablet-1600.webp" srcset="/img/screens/tablet-800.webp 800w, /img/screens/tablet-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 560px" width="1180" height="820" alt="Zenigo on a tablet: the sky map with M27 in the middle and its details panel beside it, with tonight’s bar and the eyepiece advice." loading="lazy" decoding="async"></figure>
+  </section>
+
+  <section class="feat" id="night">
+    <div class="feat-text">
+      <p class="kicker">At a dark site</p>
+      <h2>Red light, no signal needed</h2>
+      <ul>
+        <li><b>Red light</b> turns the whole app red, buttons and panels included, and keeps the map dark.</li>
+        <li>Added to the home screen, Zenigo needs no signal. The star catalogue, the solver, the planning and the logbook all run on the phone. Only satellites need a connection.</li>
+        <li>No account, no ads, no tracking.</li>
+      </ul>
+      <p class="more"><a class="open" href="/app/">Open Zenigo</a></p>
+      <p class="muted">Every button and setting is explained in the <a href="/help/">help</a>. For your first night, follow <a href="/getting-started/">Getting started</a>.</p>
+    </div>
+    <figure class="feat-fig"><img src="/img/screens/red-780.webp" srcset="/img/screens/red-390.webp 390w, /img/screens/red-780.webp 780w" sizes="280px" width="390" height="844" alt="Zenigo in red light: the located camera image, map and buttons all in dim red." loading="lazy" decoding="async"></figure>
+  </section>
+</main>
+
+<!--FOOTER-->
+</body>
+</html>
