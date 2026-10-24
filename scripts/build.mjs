@@ -160,7 +160,7 @@ for (const [src, dst] of Object.entries(pages)) {
   const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';
   const ld = src === 'faq.html' ? faqLd(read('site/' + src)) : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
-  const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replace(`<a href="${here}">`, `<a href="${here}" aria-current="page">`) : header;
+  const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replaceAll(`href="${here}">`, `href="${here}" aria-current="page">`) : header;
   write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || ''));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));

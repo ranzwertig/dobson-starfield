@@ -164,7 +164,6 @@ footer a:hover { color: var(--amber); }
   .docwrap { grid-template-columns: 1fr; gap: 0; }
   .toc { position: static; max-height: none; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 20px 0 0; }
   .toc .grp { grid-column: 1 / -1; }
-  .topnav > a:not(.open) { display: none; }
   .hero { grid-template-columns: 1fr; gap: 30px; padding-top: 16px; }
   .steps { grid-template-columns: 1fr; gap: 26px; }
   .steps li { padding: 0 0 0 58px; }
@@ -373,3 +372,26 @@ footer a:hover { color: var(--amber); }
 @media (max-width: 760px) { .sf-teaser { grid-template-columns: 1fr; gap: 22px; } .sf-teaser img { width: min(220px, 60vw); } }
 .sf-start .guide { max-width: 760px; }
 .sf-start h2 { margin-bottom: 26px; }
+
+/* site menu: the main pages as links on wide screens, all pages in the menu */
+.topnav { position: relative; }
+.sitemenu { position: relative; }
+.sitemenu summary { list-style: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 14px; border: 1px solid var(--line); border-radius: 99px; color: var(--star); font-weight: 500; user-select: none; }
+.sitemenu summary::-webkit-details-marker { display: none; }
+.sitemenu summary:hover, .sitemenu[open] summary { border-color: var(--mist); }
+.sitemenu summary:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.sitemenu svg { width: 20px; height: 20px; }
+.menupanel { position: absolute; right: 0; top: calc(100% + 10px); z-index: 20; display: grid; grid-template-columns: repeat(3, auto); gap: 18px 34px; padding: 20px 24px;
+  background: #0b1020; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+.menupanel div { display: grid; gap: 4px; align-content: start; }
+.menupanel p { margin: 0 0 4px; font: 600 12px/1.2 var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
+.menupanel a { color: var(--star); text-decoration: none; white-space: nowrap; padding: 3px 0; }
+.menupanel a:hover { color: var(--amber); }
+.menupanel a[aria-current="page"] { color: var(--amber); }
+@media (max-width: 1080px) { .topnav > a.prim { display: none; } }
+@media (max-width: 680px) {
+  .sitemenu summary span { display: none; }
+  .sitemenu summary { padding: 8px 10px; }
+  .menupanel { position: fixed; left: 12px; right: 12px; top: 74px; grid-template-columns: 1fr; gap: 16px; max-height: calc(100vh - 90px); overflow-y: auto; }
+  .menupanel a { padding: 6px 0; font-size: 18px; }
+}

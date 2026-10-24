@@ -1,12 +1,38 @@
 <header class="wrap top">
   <a class="brand" href="/"><img src="/app/logo.svg" alt=""><span>zeni<span>go</span></span></a>
   <nav class="topnav" aria-label="Main">
-    <a href="/features/">Features</a>
-    <a href="/star-finder/">Star finder</a>
-    <a href="/getting-started/">Getting started</a>
-    <a href="/help/">Help</a>
-    <a href="/faq/">FAQ</a>
-    <a href="/diy-accessories/">DIY accessories</a>
+    <a class="prim" href="/features/">Features</a>
+    <a class="prim" href="/star-finder/">Star finder</a>
+    <a class="prim" href="/getting-started/">Getting started</a>
+    <a class="prim" href="/help/">Help</a>
+    <details class="sitemenu">
+      <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></summary>
+      <div class="menupanel">
+        <div>
+          <p>Zenigo</p>
+          <a href="/features/">Features</a>
+          <a href="/star-finder/">Star finder</a>
+          <a href="/telescopes/">Which telescopes work</a>
+          <a href="/compare/">Compared with other ways</a>
+        </div>
+        <div>
+          <p>Using it</p>
+          <a href="/getting-started/">Getting started</a>
+          <a href="/help/">Help</a>
+          <a href="/faq/">Questions and answers</a>
+        </div>
+        <div>
+          <p>Build</p>
+          <a href="/diy-accessories/">Phone holder to 3D print</a>
+        </div>
+      </div>
+    </details>
     <a class="open" href="/app/">Open Zenigo</a>
   </nav>
+  <script>
+    // the menu closes with Esc, a tap outside it or when a link in it is followed
+    (() => { const m = document.currentScript.parentNode.querySelector(".sitemenu"); if (!m) return;
+      addEventListener("click", e => { if (m.open && !m.contains(e.target)) m.open = false; });
+      addEventListener("keydown", e => { if (e.key === "Escape" && m.open) { m.open = false; m.querySelector("summary").focus(); } }); })();
+  </script>
 </header>
