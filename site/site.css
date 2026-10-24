@@ -275,6 +275,7 @@ footer a:hover { color: var(--amber); }
 .feat-head { padding: 34px 0 10px; max-width: 760px; }
 .feat-head h1 { font-size: clamp(42px, 6vw, 64px); margin-bottom: 16px; }
 .feat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 56px; align-items: center; padding: 56px 0; }
+.feat.rev { grid-template-columns: auto minmax(0, 1fr); }
 .feat.rev .feat-text { order: 2; }
 .feat-text { max-width: 620px; }
 .feat-text h2 { font-size: clamp(28px, 3.2vw, 38px); margin-bottom: 18px; }
@@ -288,7 +289,8 @@ footer a:hover { color: var(--amber); }
 .feat-fig.two { display: flex; gap: 18px; }
 .feat-fig.two figure { margin: 0; }
 .feat-fig.two img { width: 240px; border-radius: 22px; }
-#sync .feat-fig > img { width: min(560px, 100%); border-radius: 14px; }
+#sync .feat-fig > img { width: min(560px, 46vw); border-radius: 14px; }
+@media (max-width: 960px) { #sync .feat-fig > img { width: 100%; } }
 .feat.wide { grid-template-columns: 1fr; gap: 28px; }
 .feat.wide .feat-text { max-width: 820px; }
 .feat-pair { display: flex; gap: 22px; align-items: flex-end; }
