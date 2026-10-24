@@ -501,6 +501,18 @@ const TESTS = {
   async live() {
     const A = await page(), B = await page({ w: 1280, h: 800, mobile: false, perms: ['camera'] });
     await ev(A, () => { cfg.liveRole = 'scope'; save(); }); await ev(B, () => { cfg.liveRole = 'follow'; save(); });
+    // the settings in steps: first the role, then its options and Connect (the telescope side shows the first code)
+    await ev(B, () => liveSettings()); await wait(B, 300);
+    ok(await ev(B, () => !$('liveStepRole').hidden && $('liveStepGo').hidden && $('liveCamBox').hidden && $('liveStatus').hidden && document.querySelector('.rolecard.on input').value === 'follow'), 'Live settings start with the role, with this device’s role chosen');
+    await ev(B, () => { document.querySelector('input[name=liveRole][value=scope]').click(); }); await wait(B, 100);
+    ok(await ev(B, () => cfg.liveRole === 'scope' && document.querySelector('.rolecard.on input').value === 'scope'), 'tapping a card chooses that role');
+    await ev(B, () => { document.querySelector('input[name=liveRole][value=follow]').click(); $('liveNext').click(); }); await wait(B, 100);
+    const st2 = await ev(B, () => ({ role: $('liveStepRole').hidden, go: !$('liveStepGo').hidden, name: $('liveRoleName').textContent, follow: $('liveCamFollow').offsetHeight > 0, scope: $('liveCamScope').offsetHeight > 0 }));
+    ok(st2.role && st2.go && st2.name === 'Follow' && st2.follow && !st2.scope, 'Next: step 2 with only the options of that role and Connect', st2);
+    const which = await ev(B, () => { const a = liveStart, b = liveJoin, r = []; liveStart = () => r.push('start'); liveJoin = () => r.push('join'); $('liveConnect').click(); cfg.liveRole = 'scope'; $('liveConnect').click(); cfg.liveRole = 'follow'; liveStart = a; liveJoin = b; return r.join(); });
+    ok(which === 'join,start', 'Connect: the follower scans, the telescope side shows the first code', which);
+    await ev(B, () => $('liveBackRole').click());
+    ok(await ev(B, () => !$('liveStepRole').hidden), 'Back returns to the role'); await ev(B, () => closeSheet('sheet', true));
     const code = await ev(A, () => liveStart({ noScan: true }));
     ok(/^zenigo-live:1:o[rd]:/.test(code || '') && code.length < 1200, 'device A shows a code (offer) small enough for a QR code', code && code.length);
     ok(await ev(A, () => !$('liveSheet').hidden && !$('liveQrBox').hidden), 'the code is shown as a QR code');
@@ -511,6 +523,7 @@ const TESTS = {
     await B.waitForFunction(() => live.state === 'connected' && !!live.peer, null, { timeout: 15000 }).catch(() => {});
     ok(await ev(A, () => live.state === 'connected') && await ev(B, () => live.state === 'connected'), 'both are connected (directly, no server)');
     ok(await ev(B, () => /Following/.test($('liveStatus').textContent)) && await ev(A, () => /This device is the telescope/.test($('liveStatus').textContent)), 'the settings say who is the telescope and who follows');
+    ok(await ev(B, () => $('liveStepRole').hidden && !$('liveOn').hidden && !$('liveCamBox').hidden && !$('liveStatus').hidden), 'connected: the overview with Disconnect, Change role and the camera image option');
     ok(await ev(B, () => !$('liveChip').hidden && $('liveChipTxt').textContent === 'Following the telescope' && $('liveChipL').hidden), 'following: the pill bottom right says “Following the telescope”');
     ok(await ev(A, () => $('liveChip').hidden && !$('liveChipL').hidden && /follows/.test($('liveChipLTxt').textContent)), 'the telescope side: its pill is with the pills on the left');
     ok(await ev(B, () => ['btnCam', 'btnSolve', 'btnSensor', 'btnAuto', 'btnTele', 'qNight', 'qGallery'].every(id => $(id).getAttribute('aria-disabled') === 'true')), 'following: camera, Locate, Align, Continuous, eyepiece point and photos are off');
@@ -536,6 +549,10 @@ const TESTS = {
     ok(await ev(B, () => !$('guide').classList.contains('idle') && /\d/.test($('azV').textContent)), 'B shows the directions from A’s telescope to the target');
     await ev(A, () => clearTarget()); await wait(B, 600);
     ok(await ev(B, () => !cfg.target), 'clearing it on A clears it on B');
+    // a telescope device that scans another telescope device's first code offers to follow it
+    const sw = await ev(A, async () => { const c = { kind: 'o', sdp: 'v=0' }, r = liveOtherCode(c, 'a'); return { r, btn: !!$('liveSwitch'), again: liveOtherCode(c, 'a'), mine: liveOtherCode({ kind: 'a', sdp: 'x' }, 'a') }; });
+    ok(sw.r && sw.btn && sw.again && !sw.mine, 'scanning another first code while at the telescope: “Follow it instead”', sw);
+    await ev(A, () => { $('liveScanMsg').textContent = ''; closeSheet('liveSheet', true); });
     // the same role on both: the settings say so
     await ev(B, () => { cfg.liveRole = 'scope'; save(); liveHello(); renderLive(); }); await wait(A, 500);
     ok(await ev(A, () => /Both devices are set to/.test($('liveStatus').textContent)), 'both on the telescope: a warning to switch one');

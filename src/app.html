@@ -661,8 +661,21 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 @media (min-width: 700px) { .livechip { right: calc(var(--fabs-x, 74px) + var(--solve-lbl, 0px)); bottom: calc(max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px)) + 14px); max-width: 40vw; } }
 .livechip svg { width: 18px; height: 18px; flex: none; }
 .livechip .chiplabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto !important; min-width: 0; }
-.liverole { display: grid; gap: 6px; }
-.livecam { margin-top: 10px; }
+.liverole { display: grid; gap: 8px; margin: 4px 0 10px; }
+.rolecard { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise); cursor: pointer; color: var(--fg); }
+.rolecard input { position: absolute; opacity: 0; pointer-events: none; }
+.rolecard svg { width: 30px; height: 30px; flex: none; color: var(--muted); margin-top: 2px; }
+.rolecard b { display: block; font-size: 16px; }
+.rolecard small { display: block; color: var(--muted); font-size: 14px; line-height: 1.35; margin-top: 2px; }
+.rolecard.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.rolecard.on svg { color: var(--accent); }
+.rolecard:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+#liveScanMsg .btn { display: block; margin-top: 8px; }
+.livestep { margin: 4px 0 6px; color: var(--fg); font-size: 15px; }
+.livestep span { display: inline-block; color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-right: 8px; }
+.livecam { margin-top: 2px; display: grid; gap: 8px; }
+.check[hidden] { display: none !important; }
+#liveStepGo .row, #liveStepRole .row, #liveOn { margin-top: 10px; }
 .livecam .check { align-items: flex-start; }
 .livecam .check input { margin-top: 2px; }
 #liveChipCam.on { color: var(--accent); }
@@ -1253,17 +1266,25 @@ a.btn { text-decoration: none; color: var(--fg); }
     </fieldset>
     <fieldset data-stab="live" id="liveBox">
       <legend>Live connection</legend>
-      <p class="note">Connect two devices directly, for example the phone on the telescope and a tablet in your hand: the other device shows where the telescope points, with the directions to the target, and a target chosen on one is the target on both. No server and no internet: both devices only have to be in the same Wi-Fi, or one in the other’s hotspot.</p>
+      <p class="note">Connect two devices directly, for example the phone on the telescope and a tablet in your hand: the other device shows where the telescope points, with the directions to the target, and a target chosen on one is the target on both. Directly over your Wi-Fi or hotspot: no server, no internet.</p>
       <p class="note" id="liveStatus"></p>
-      <div class="row" id="liveIdle"><button class="btn primary" id="liveStart">Show a code</button><button class="btn" id="liveJoin">Scan a code</button></div>
-      <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button></div>
-      <div class="liverole" role="radiogroup" aria-label="Role of this device">
-        <label class="check"><input type="radio" name="liveRole" value="scope"> <span><b>On the telescope</b>: shares where it points</span></label>
-        <label class="check"><input type="radio" name="liveRole" value="follow"> <span><b>Follows</b> the other device’s telescope: map, crosshair and directions</span></label>
+      <div id="liveStepRole">
+        <p class="livestep" id="liveStepRoleHd"><span>Step 1 of 2</span> What does this device do?</p>
+        <div class="liverole" role="radiogroup" aria-label="Role of this device">
+          <label class="rolecard"><input type="radio" name="liveRole" value="scope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l13-7 2 4-13 7z"/><path d="M7.5 17.5L6 22M9 16.5l3 5.5"/><path d="M19.5 6.5l1.5-1"/></svg><span><b>At the telescope</b><small>Sits on the telescope and shares where it points. Optionally its camera image too.</small></span></label>
+          <label class="rolecard"><input type="radio" name="liveRole" value="follow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="11" r="3.2"/><path d="M12 5.5v2.3M12 14.2v2.3M6.5 11h2.3M15.2 11h2.3"/></svg><span><b>Follow</b><small>In your hand: shows where the other device’s telescope points, with the directions to the target.</small></span></label>
+        </div>
+        <div class="row"><button class="btn primary" id="liveNext">Next</button></div>
       </div>
-      <div class="livecam"><label class="check" id="liveCamScope"><input type="checkbox" id="liveVideoOn"> <span><b>Send the camera image</b> while the camera runs, when the other device wants to see it. Uses more battery and Wi-Fi; following works without it.</span></label>
+      <p class="livestep" id="liveStepGoHd" hidden><span>Step 2 of 2</span> <b id="liveRoleName"></b></p>
+      <div class="livecam" id="liveCamBox" hidden><label class="check" id="liveCamScope"><input type="checkbox" id="liveVideoOn"> <span><b>Send the camera image</b> while the camera runs, when the other device wants to see it. Uses more battery and Wi-Fi; following works without it.</span></label>
       <label class="check" id="liveCamFollow"><input type="checkbox" id="liveShowCam"> <span><b>Show the telescope’s camera image</b> instead of the map, with the stars and crosshair on it, when the other device sends it</span></label></div>
-      <p class="note">How to connect: on one device tap <b>Show a code</b>, on the other <b>Scan a code</b> and scan it; then hold the code the second device shows in front of the first device’s camera. Do it before the phone goes into its holder. <a href="/help/#live" target="_blank" rel="noopener">Help</a></p>
+      <div id="liveStepGo" hidden>
+        <p class="note" id="liveGoNote"></p>
+        <div class="row"><button class="btn" id="liveBackRole">Back</button><button class="btn primary" id="liveConnect">Connect</button></div>
+      </div>
+      <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button><button class="btn" id="liveChangeRole">Change role</button></div>
+      <p class="note"><a href="/help/#live" target="_blank" rel="noopener">Help on the live connection</a></p>
     </fieldset>
     <fieldset data-stab="general" id="backup">
       <legend>Backup and restore</legend>
@@ -5014,7 +5035,7 @@ function liveNewPc() {
 function liveChannel(dc) {
   live.dc = dc;
   dc.onopen = () => {
-    live.state = "connected"; clearTimeout(live.waitT); liveScanStop();
+    live.state = "connected"; live.ui = null; clearTimeout(live.waitT); liveScanStop();
     liveHello(); liveWantSync();
     if (cfg.target) liveSendRaw({ t: "target", id: cfg.target });
     live.sent = null; clearInterval(live.timer); live.timer = setInterval(livePoseTick, 100);
@@ -5162,7 +5183,7 @@ function renderLive() {
   const clash = on && live.peerRole && live.peerRole === role;
   const showing = !!(typeof draw !== "undefined" && draw.rc);   // following with the telescope's camera image
   s.className = "note" + (on && !clash ? " on" : clash || live.state === "lost" || live.state === "fail" ? " err" : "");
-  s.textContent = clash ? (role === "scope" ? "Both devices are set to “On the telescope”. Switch one of them to “Follows”." : "Both devices are set to “Follows”. Switch the one on the telescope to “On the telescope”.")
+  s.textContent = clash ? (role === "scope" ? "Both devices are set to “At the telescope”. Change the role of one of them to “Follow”." : "Both devices are set to “Follow”. Change the role of the one on the telescope to “At the telescope”.")
     : on && role === "scope" ? "This device is the telescope. The other device follows it." + (teleVec() ? "" : " This device doesn’t point anywhere yet: start the camera or Align.")
       + (live.sTrack ? " Its camera image is being sent." : cfg.liveVideo && live.peerRole === "follow" && !live.peerVid ? " The other device can’t show the camera image: it needs a newer Zenigo." : "")
     : on ? "Following the telescope of the other device" + (live.paused && liveVec() ? ": the map is paused, the crosshair and directions still come from it." : liveVec() ? (showing ? ", with its camera image." : ".") : ": it doesn’t point anywhere yet.")
@@ -5170,8 +5191,21 @@ function renderLive() {
     : live.state === "offer" ? "Waiting for the other device…" : live.state === "answer" ? "Show this device’s code to the other device…"
     : live.state === "lost" ? "The connection was lost. Connect again with the codes."
     : live.state === "fail" ? "No connection. Are both devices in the same Wi-Fi, or one in the other’s hotspot?" : "Not connected.";
-  $("liveIdle").hidden = on; $("liveOn").hidden = !on;
-  document.querySelectorAll('input[name="liveRole"]').forEach(r => { r.checked = r.value === role; });
+  s.hidden = !on && !/^(offer|answer|lost|fail)$/.test(live.state);
+  // the steps: 1. what this device does, 2. its options and Connect; connected: the overview (and the role on request)
+  const step = on ? (live.ui === "role" ? "role" : "on") : live.ui === "go" ? "go" : "role";
+  $("liveStepRole").hidden = step !== "role";
+  $("liveStepRoleHd").innerHTML = on ? "Role of this device" : "<span>Step 1 of 2</span> What does this device do?";
+  $("liveNext").textContent = on ? "Done" : "Next";
+  $("liveStepGoHd").hidden = $("liveStepGo").hidden = step !== "go";
+  $("liveRoleName").textContent = role === "scope" ? "At the telescope" : "Follow";
+  $("liveCamBox").hidden = step === "role";
+  $("liveGoNote").innerHTML = (role === "scope"
+    ? "Tap <b>Connect</b>: this device shows a code. On the other device choose <b>Follow</b>, tap <b>Connect</b> and scan the code; then hold the code it shows in front of this device’s camera. Best before the phone goes into its holder."
+    : "On the device at the telescope choose <b>At the telescope</b> and tap <b>Connect</b>: it shows a code. Then tap <b>Connect</b> here, scan it, and hold the code this device shows in front of its camera.")
+    + " Both devices have to be in the same Wi-Fi, or one in the other’s hotspot; no internet needed.";
+  $("liveOn").hidden = step !== "on";
+  document.querySelectorAll('input[name="liveRole"]').forEach(r => { r.checked = r.value === role; r.closest(".rolecard").classList.toggle("on", r.checked); });
   // the pills: following, bottom right; the telescope's side, with the pills on the left (which can be pushed aside);
   // "follow again" with them on the left while the map is paused
   const follow = on && role === "follow", scope = on && role === "scope";
@@ -5213,10 +5247,27 @@ async function liveScanStart(want, onCode) {
     let txt = null; try { txt = await read(); } catch (e) {}
     const c = txt ? await liveDecode(txt) : null;
     if (c && c.kind === want) { onCode(c); return; }
-    if (txt) $("liveScanMsg").textContent = c ? "That is the wrong code: scan the code the other device shows now." : "That is not a Zenigo live code.";
+    if (c && liveOtherCode(c, want)) {}
+    else if (txt) $("liveScanMsg").textContent = c ? "That is the wrong code: scan the code the other device shows now." : "That is not a Zenigo live code.";
     sc.t = setTimeout(tick, 180);
   };
   tick(); return true;
+}
+// The device at the telescope shows the first code, the following one scans it. If the telescope side scans a first
+// code instead, the other device is at the telescope too: offer to follow, and use the code just scanned.
+function liveOtherCode(c, want) {
+  if (want !== "a" || c.kind !== "o") return false;
+  if (live.otherSeen === c.sdp) return true;
+  live.otherSeen = c.sdp;
+  const m = $("liveScanMsg");
+  m.innerHTML = "The other device is set to “At the telescope” too. <button class=\"btn primary\" id=\"liveSwitch\">Follow it instead</button>";
+  $("liveSwitch").onclick = () => liveFollowInstead(c);
+  return true;
+}
+async function liveFollowInstead(c) {
+  liveStop(true); cfg.liveRole = "follow"; save(); renderLive();
+  liveSheet("Connect", "<b>2 of 2</b> · Hold this device’s code in front of the other device’s camera.");
+  return liveAccept(c, true);
 }
 function liveScanStop() {
   if (!live || !live.scan) return;
@@ -5227,10 +5278,10 @@ function liveSheet(title, step) {
   $("liveTitleTxt").textContent = title; $("liveStep").innerHTML = step; $("liveScanMsg").textContent = "";
   $("liveQrBox").hidden = true; $("liveScanBox").hidden = true; openSheet("liveSheet");
 }
-// Device A: shows its code (offer), then reads the other device's answer with the camera
+// The device at the telescope: shows its code (offer), then reads the other device's answer with the camera
 async function liveStart(opts = {}) {
-  liveStop(true);
-  liveSheet("Show a code", "1. On the other device: Settings › Live › <b>Scan a code</b>, and scan this code.<br>2. Then hold the code it shows in front of this device’s camera.");
+  liveStop(true); live.otherSeen = null;
+  liveSheet("Connect", "<b>1 of 2</b> · On the other device: Settings › Live › <b>Follow</b> › <b>Connect</b>, and scan this code.<br><b>2 of 2</b> · Then hold the code it shows in front of this device’s camera.");
   if (!opts.noScan && !(await liveScanStart("a", c => liveAnswer(c)))) { closeSheet("liveSheet"); return null; }
   const pc = liveNewPc(); live.pc = pc; live.role = "A"; live.state = "offer"; renderLive();
   liveChannel(pc.createDataChannel("zenigo", { ordered: true }));
@@ -5246,10 +5297,10 @@ async function liveAnswer(c) {
   try { await live.pc.setRemoteDescription({ type: "answer", sdp: c.sdp }); } catch (e) { live.state = "fail"; renderLive(); hint("That code doesn’t fit this connection. Start again.", 5000); return; }
   liveWaitConnected();
 }
-// Device B: scans the other device's code, then shows its answer
+// The following device: scans the code of the device at the telescope, then shows its answer
 async function liveJoin(code) {
   liveStop(true);
-  liveSheet("Scan a code", "1. Scan the code the other device shows (Settings › Live › Show a code).<br>2. Then hold this device’s code in front of the other device’s camera.");
+  liveSheet("Connect", "<b>1 of 2</b> · Scan the code the device at the telescope shows (Settings › Live › <b>At the telescope</b> › <b>Connect</b>).<br><b>2 of 2</b> · Then hold this device’s code in front of its camera.");
   if (code) return liveAccept(await liveDecode(code), true);
   if (!(await liveScanStart("o", c => liveAccept(c)))) { closeSheet("liveSheet"); return null; }
   $("liveScanMsg").textContent = "Hold the other device’s code inside the frame.";
@@ -5266,7 +5317,7 @@ async function liveAccept(c, noScan) {
   if (live.scan) clearTimeout(live.scan.t);
   const answer = await liveEncode("a", pc.localDescription.sdp); liveShowQr(answer);
   $("liveScanBox").hidden = true;
-  $("liveStep").innerHTML = "Now hold this code in front of the other device’s camera.";
+  $("liveStep").innerHTML = "<b>2 of 2</b> · Now hold this code in front of the other device’s camera.";
   $("liveScanMsg").textContent = "";
   liveWaitConnected();
   return answer;
@@ -5275,11 +5326,13 @@ function liveWaitConnected() {
   clearTimeout(live.waitT);
   live.waitT = setTimeout(() => { if (live.state !== "connected") { liveStop(true); live.state = "fail"; renderLive(); $("liveScanMsg").textContent = "No connection. Both devices have to be in the same Wi-Fi, or one in the other’s hotspot."; hint("No live connection: are both devices in the same Wi-Fi, or one in the other’s hotspot?", 8000); } }, 45000);
 }
-function liveSettings() { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("live"); }
-$("liveStart").onclick = () => liveStart();
-$("liveJoin").onclick = () => liveJoin();
+function liveSettings(ui = null) { if (live.state !== "connected") live.ui = ui; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("live"); renderLive(); }
+$("liveNext").onclick = () => { live.ui = live.state === "connected" ? null : "go"; renderLive(); };
+$("liveBackRole").onclick = () => { live.ui = "role"; renderLive(); };
+$("liveChangeRole").onclick = () => { live.ui = "role"; renderLive(); };
+$("liveConnect").onclick = () => liveRole() === "scope" ? liveStart() : liveJoin();
 $("liveEnd").onclick = () => { liveStop(); hint("Live connection ended.", 2500); };
-$("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings(); };
+$("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings("go"); };
 document.querySelectorAll('input[name="liveRole"]').forEach(r => r.onchange = () => {
   cfg.liveRole = r.value; save(); live.sent = null; live.paused = false; liveHello(); liveWantSync(); liveVideoSync(); lastSig = []; updateGuide(); renderLive();
 });
