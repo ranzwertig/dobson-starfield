@@ -140,6 +140,10 @@ async function located(dev, id, dAz, dAlt, opts = {}) {
 }
 const plan = (p, ids, extra) => ev(p, ([ids, extra]) => { obs.list = ids.filter(id => targetById(id)).map((id, i) => ({ id, name: targetById(id).name, added: Date.now() - 864e5 - (ids.length - i) * 6e4 })); Object.assign(cfg, extra || {}); saveObs(); save(); }, [ids, extra]);
 
+const noScope = p => ev(p, () => {
+  cfg.optics = JSON.parse(JSON.stringify(OPT_DEF)); cfg.optics.ring = false; cfg.fabLabels = false; cfg.conNames = true;
+  setShow(withExtras(PRESETS.eye.show)); clearTarget(); save(); syncSettings(); updateGuide(); lastSig = [];
+});
 const SHOTS = {
   // Help: the screen, with numbered parts
   async screen() {
@@ -235,6 +239,32 @@ const SHOTS = {
     await snap(B, 'live-follow', [1600, 800]);
     await snap(A, 'live-scope', [780, 390]);
     await A.context().close(); await B.context().close();
+  },
+  // Star finder (no telescope): the camera image named after a Locate, the naked-eye map, a star's details
+  // (the telescope settings as after installing, no rings, the naked-eye filter, no target)
+  async sfcamera() {
+    const p = await page(PHONE, { cam: true });
+    const h = await ev(p, () => { const t = skyNow().t, a = horiz(TARGETS.find(x => x.name === 'Deneb').vec(t), t), b = horiz(TARGETS.find(x => x.name === 'Altair').vec(t), t); return { az: (a.az + b.az) / 2, alt: (a.alt + b.alt) / 2 }; });
+    await aim(p, h.az, h.alt);
+    const r = await locate(p); if (!r.ok) console.log('  locate failed: ' + r.status);
+    await noScope(p);
+    await snap(p, 'sf-camera', [780, 390]);
+    await p.context().close();
+  },
+  async sfmap() {
+    const p = await page();
+    await noScope(p);
+    await ev(p, () => { st.mapView = { az: 225, alt: 50, fov: 100 }; st.sol = mapSol(); lastSig = []; });
+    await snap(p, 'sf-map', [780, 390]);
+    await p.context().close();
+  },
+  async sfstar() {
+    const p = await page();
+    await noScope(p);
+    await ev(p, () => showInfo(TARGETS.find(x => x.name === 'Vega')));
+    await wait(p, 600);
+    await snap(p, 'sf-star', [780, 390]);
+    await p.context().close();
   },
   // planning on a tablet: map with the details panel at the side
   async tablet() {

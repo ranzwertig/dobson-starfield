@@ -367,3 +367,9 @@ footer a:hover { color: var(--amber); }
   .cmp td::before { content: attr(data-label); display: block; font: 600 12px/1.3 var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--mist); margin-bottom: 2px; }
 }
 .qa-short dd { margin-left: 0; }
+.sf-teaser { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 40px; align-items: center; }
+.sf-teaser figure { margin: 0; }
+.sf-teaser img { display: block; width: 220px; height: auto; border-radius: 22px; border: 1px solid var(--line); }
+@media (max-width: 760px) { .sf-teaser { grid-template-columns: 1fr; gap: 22px; } .sf-teaser img { width: min(220px, 60vw); } }
+.sf-start .guide { max-width: 760px; }
+.sf-start h2 { margin-bottom: 26px; }
