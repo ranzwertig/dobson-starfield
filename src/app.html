@@ -713,7 +713,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="app">
   <main class="stage" id="stage">
-    <video id="video" playsinline muted></video>
+    <video id="video" playsinline muted autoplay></video>
     <canvas id="view"></canvas>
 
     <div class="hud idle" id="guide">
@@ -1613,19 +1613,15 @@ async function startCamera() {
   }
   if (await cameraBlocked()) { showPermissionHelp("camera"); return; }
   try {
-    const size = { width: { ideal: 1920 }, height: { ideal: 1080 } };
-    let stream;
-    if (cfg.camId) {
-      try { stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: cfg.camId }, ...size } }); }
-      catch (e) { if (e && (e.name === "OverconstrainedError" || e.name === "NotFoundError")) hint("The selected camera is not connected. Using the back camera.", 5000); else throw e; }
-    }
-    if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, ...size } });
+    const stream = await openCamStream();
     st.stream = stream; st.track = stream.getVideoTracks()[0];
     // A camera without facing mode is an external one (USB webcam, capture device): the phone's motion sensors don't apply to it
     st.extCam = !st.track.getSettings().facingMode && !!cfg.camId;
     if (st.extCam && st.sensor) setSensor(false);
     listCameras();
-    video.srcObject = stream; await video.play();
+    video.srcObject = stream;
+    // play() can be interrupted (AbortError, seen on iPad) although the stream is fine: try once more, then rely on autoplay
+    try { await video.play(); } catch (e) { if (e && e.name === "AbortError") { await new Promise(r => setTimeout(r, 250)); try { await video.play(); } catch (x) {} } else throw e; }
     st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; }
     $("btnCam").classList.add("on");
@@ -1638,9 +1634,29 @@ async function startCamera() {
     if (name === "NotAllowedError" && isSecureContext) showPermissionHelp("camera");
     else if (name === "NotAllowedError" || name === "SecurityError") hint("No camera access on this page: it has to be opened over HTTPS. You can still solve a sky photo from the menu.", 9000);
     else if (name === "NotFoundError" || name === "OverconstrainedError") hint("No camera found. Check that a camera is connected, or solve a sky photo from the menu.", 7000);
-    else if (name === "NotReadableError") hint("The camera is in use by another app. Close it and try again.", 7000);
-    else hint("Could not start the camera (" + (name || e) + ").", 9000);
+    else if (name === "NotReadableError" || name === "AbortError") hint("The camera could not be started (" + name + "). It may be in use: close other apps or browser tabs that use the camera" + (platform() === "ios" ? ", leave Split View or Slide Over, and make sure Zenigo isn’t open both in Safari and from the Home Screen" : "") + ". Then try again; if it stays blocked, close Zenigo completely and open it again.", 12000);
+    else hint("Could not start the camera (" + (name || e) + (e && e.message ? ": " + e.message : "") + ").", 9000);
   }
+}
+// The camera stream: the chosen camera, else the back camera; if the browser refuses (AbortError, NotReadableError:
+// busy, or a size it can't deliver), simpler requests follow. Other streams of this page (code scanners) are closed first.
+async function openCamStream() {
+  if (typeof stopScan === "function") stopScan();
+  if (typeof liveScanStop === "function") liveScanStop();
+  const size = { width: { ideal: 1920 }, height: { ideal: 1080 } }, tries = [];
+  if (cfg.camId) tries.push({ deviceId: { exact: cfg.camId }, ...size });
+  tries.push({ facingMode: { ideal: "environment" }, ...size }, { facingMode: { ideal: "environment" } }, true);
+  let last = null;
+  for (const video of tries) {
+    try { return await navigator.mediaDevices.getUserMedia({ audio: false, video }); }
+    catch (e) {
+      last = e; const n = e && e.name;
+      if (n === "NotAllowedError" || n === "SecurityError") throw e;
+      if (video.deviceId && (n === "OverconstrainedError" || n === "NotFoundError")) hint("The selected camera is not connected. Using the back camera.", 5000);
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  throw last;
 }
 function stopCamera() {
   st.stream?.getTracks().forEach(t => t.stop()); st.stream = null; st.track = null; video.srcObject = null;

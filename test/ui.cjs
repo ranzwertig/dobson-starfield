@@ -546,6 +546,20 @@ const TESTS = {
     await done(A); await done(B);
   },
 
+  // the camera starts even when the browser refuses the first request (AbortError, as seen on an iPad)
+  async camretry() {
+    const p = await page({ perms: ['camera'] });
+    const r = await ev(p, async () => {
+      const real = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices); let n = 0, asked = [];
+      navigator.mediaDevices.getUserMedia = c => { asked.push(JSON.stringify(c.video)); if (n++ < 2) return Promise.reject(Object.assign(new Error('Starting videoinput failed'), { name: 'AbortError' })); return real(c); };
+      cfg.camId = null; await startCamera(); await new Promise(r => setTimeout(r, 800));
+      const ok = !!st.stream && st.source === 'video'; stopCamera(); navigator.mediaDevices.getUserMedia = real;
+      return { ok, n, asked };
+    });
+    ok(r.ok && r.n === 3, 'after two refused requests the third, simpler one starts the camera', r);
+    await done(p);
+  },
+
   async categories() {
     const p = await page();
     await ev(p, () => { setOptics({ scope: 1200, ap: 203 }); cfg.searchCats = []; }); await p.waitForFunction(() => LISTS.ok && NGC.length > 1000, null, { timeout: 10000 });

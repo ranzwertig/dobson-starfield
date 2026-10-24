@@ -545,6 +545,8 @@
 
     <h2 id="troubleshooting">Troubleshooting</h2>
     <dl class="ref trouble">
+      <dt id="camera-busy">The camera doesn’t start (“AbortError”, “NotReadableError”)</dt>
+      <dd>The browser couldn’t open the camera, usually because something else has it. Zenigo already tries again with simpler settings. If it still fails: close other apps and browser tabs that use the camera; on an iPad leave Split View and Slide Over (iPadOS doesn’t give the camera to a browser there); make sure Zenigo isn’t open twice, in Safari and from the Home Screen; then close Zenigo completely and open it again. If you chose a camera in Settings → Camera &amp; sensors, try “Back camera (automatic)”. Different from a blocked camera, which is described under <a href="#permissions">Camera and sensor access</a>.</dd>
       <dt>“Only a few stars detected”</dt>
       <dd>It isn’t dark enough, the area is too empty or the camera exposes too briefly. Aim at a part of the sky with brighter stars, raise <b>Frames to stack</b> and <b>Sensitivity</b>, and if your phone offers it, a longer exposure or higher ISO in <a href="#settings-capture">Settings → Camera &amp; sensors → Capture</a>. Still too dark? Take a <a href="#night-photo">night photo</a> instead: the camera app exposes for seconds. To see why, switch on <a href="#diagnostics">Diagnostics</a> (Settings → Camera &amp; sensors → Capture) and tap the status after a Locate. Make sure the camera is focused and the lens is clean and not fogged up.</dd>
       <dt>“Field of view not found” or “No match”</dt>
