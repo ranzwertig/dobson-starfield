@@ -662,6 +662,10 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .livechip svg { width: 18px; height: 18px; flex: none; }
 .livechip .chiplabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto !important; min-width: 0; }
 .liverole { display: grid; gap: 6px; }
+.livecam { margin-top: 10px; }
+.livecam .check { align-items: flex-start; }
+.livecam .check input { margin-top: 2px; }
+#liveChipCam.on { color: var(--accent); }
 /* a pill without ✕ at its end: room on the right like on the left */
 #liveFollowChip { padding-right: 12px; }
 .qrbox { justify-self: center; background: #fff; padding: 14px; border-radius: 14px; line-height: 0; }
@@ -714,6 +718,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <div class="app">
   <main class="stage" id="stage">
     <video id="video" playsinline muted autoplay></video>
+    <video id="liveCamIn" playsinline muted autoplay></video>
     <canvas id="view"></canvas>
 
     <div class="hud idle" id="guide">
@@ -803,7 +808,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
 
-    <div class="calchip livechip" id="liveChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="calchip livechip" id="liveChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipCam" aria-label="Show the telescope’s camera image" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.5-2h7.6l1.5 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="iconbtn" id="liveChipOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="fabs" id="fabs">
       <button class="fab" id="fabQuick" aria-label="Quick settings"><small>Quick settings</small>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg></button>
@@ -1256,6 +1261,8 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="radio" name="liveRole" value="scope"> <span><b>On the telescope</b>: shares where it points</span></label>
         <label class="check"><input type="radio" name="liveRole" value="follow"> <span><b>Follows</b> the other device’s telescope: map, crosshair and directions</span></label>
       </div>
+      <div class="livecam"><label class="check" id="liveCamScope"><input type="checkbox" id="liveVideoOn"> <span><b>Send the camera image</b> while the camera runs, when the other device wants to see it. Uses more battery and Wi-Fi; following works without it.</span></label>
+      <label class="check" id="liveCamFollow"><input type="checkbox" id="liveShowCam"> <span><b>Show the telescope’s camera image</b> instead of the map, with the stars and crosshair on it, when the other device sends it</span></label></div>
       <p class="note">How to connect: on one device tap <b>Show a code</b>, on the other <b>Scan a code</b> and scan it; then hold the code the second device shows in front of the first device’s camera. Do it before the phone goes into its holder. <a href="/help/#live" target="_blank" rel="noopener">Help</a></p>
     </fieldset>
     <fieldset data-stab="general" id="backup">
@@ -1712,10 +1719,10 @@ const mirrored = () => !!cfg.mirror;
 // Expected camera axes then: x = +x, down = -z, view = +y of the phone. A Locate refines it.
 const TOP_MIRROR_K = [[1, 0, 0], [0, 0, 1], [0, -1, 0]];
 const flipV = () => mirrored() && topMode();
-function drawCam(c, src, x, y, w, h) {   // draw a camera frame, flipped back if it comes through a mirror
-  if (!mirrored()) { c.drawImage(src, x, y, w, h); return; }
+function drawCam(c, src, x, y, w, h, mir = mirrored(), fv = flipV()) {   // draw a camera frame, flipped back if it comes through a mirror
+  if (!mir) { c.drawImage(src, x, y, w, h); return; }
   c.save();
-  if (flipV()) { c.translate(x, y + h); c.scale(1, -1); } else { c.translate(x + w, y); c.scale(-1, 1); }
+  if (fv) { c.translate(x, y + h); c.scale(1, -1); } else { c.translate(x + w, y); c.scale(-1, 1); }
   c.drawImage(src, 0, 0, w, h); c.restore();
 }
 function setMirror(on, quiet) {
@@ -2109,6 +2116,7 @@ const topMode = () => cfg.pointer === "top";
 function scrTurn() { return topMode() || mirrored() ? 0 : ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) * D2R; }
 function turnTele(t, th) { const x = +t.x || 0, y = +t.y || 0, c = Math.cos(th), s = Math.sin(th); return { x: c * x + s * y, y: -s * x + c * y }; }
 function curTele() {
+  if (st.solMode === "remote" && live && live.view) return live.view.tele;   // the other device's camera: its eyepiece point
   if (topMode()) return cfg.teleTop || { x: 0, y: 0 };
   const t = cfg.tele || { x: 0, y: 0 }, th = scrTurn(); return th ? turnTele(t, th) : t;
 }
@@ -2918,7 +2926,7 @@ function mapSolCompute(M, W, H, mv) {
 }
 // A solved photo without Align: drag and pinch move the sky around it like on the map (the photo stays in place on the sky)
 const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
-function mapGestures() { return (st.source === "map" && st.solMode !== "track") || photoSky(); }
+function mapGestures() { return (st.source === "map" && st.solMode !== "track" && st.solMode !== "remote") || photoSky(); }
 // The first move makes the view a plain projection like the map (the photo's lens distortion is corrected by the mesh)
 // and levels it: up on the screen is the zenith, so the horizon is horizontal and the photo is turned instead.
 function photoViewPlain() {
@@ -3000,7 +3008,7 @@ function drawHorizon(c, sol, dpr, t, col) {
 function updateTag() {
   const m = st.source === "photo" ? "Photo" + (st.photoName ? ": " + st.photoName : "") : st.source === "video" ? "Live camera" : "Sky map";
   const how = st.solMode === "compass" ? (topMode() ? " · top edge · compass" : " · compass") : st.solMode === "track" ? " · motion sensor" : st.source === "map" ? (st.sensor ? " · aligning" : " · free") : "";
-  const txt = liveVec() ? "Live · following the telescope" : m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
+  const txt = st.solMode === "remote" ? "Live · the telescope’s camera" : liveVec() ? "Live · following the telescope" : m + how; if ($("srcTag").textContent !== txt) $("srcTag").textContent = txt;
   syncPin();
   if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
@@ -3199,19 +3207,24 @@ function draw() {
   const tUi = performance.now(); if (tUi - (draw.ui || 0) > 150) { draw.ui = tUi; updateAvailability(); draw.tag = true; }
   const W = view.width, H = view.height, dpr = W / Math.max(1, view.clientWidth);
   let src = null, sw = 0, sh = 0;
-  const liveVideo = st.source === "video" && st.stream && video.videoWidth;
-  if (liveVideo) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
+  const rc = liveCamView();   // following with the telescope's camera image: drawn like this device's own camera
+  if (!!rc !== !!draw.rc) { zoom.z = 1; zoom.x = 0; zoom.y = 0; draw.tag = true; if (!rc && st.solMode === "remote") st.sol = null; setTimeout(renderLive); }
+  draw.rc = rc;
+  const liveVideo = !!rc || (st.source === "video" && st.stream && video.videoWidth);
+  if (rc) { src = rc.v; sw = rc.vw; sh = rc.vh; }
+  else if (liveVideo) { src = video; sw = video.videoWidth; sh = video.videoHeight; }
   else if (st.frame) { src = st.frame.canvas; sw = src.width; sh = src.height; }
   // With sensor and a moved phone a frozen image no longer fits: show only the star map then
   const showImg = src && (liveVideo || !st.moved);
   skyNow();
-  if (st.source === "map" && (!st.sensor || !st.sol)) { st.sol = mapSol(); st.solMode = "map"; st.moved = true; }
+  if (rc) { st.sol = rc.sol; st.solMode = "remote"; }
+  else if (st.source === "map" && (!st.sensor || !st.sol || st.solMode === "remote")) { st.sol = mapSol(); st.solMode = "map"; st.moved = true; }
   if (draw.tag) { draw.tag = false; updateTag(); }
   const sig = frameSig(W, H);
   if (!liveVideo && sig.length === lastSig.length && sig.every((v, i) => v === lastSig[i])) return;
   lastSig = sig;
   vctx.setTransform(1, 0, 0, 1, 0, 0); vctx.fillStyle = "#000"; vctx.fillRect(0, 0, W, H);
-  const ref = st.sol || st.frame || (src ? { w: sw, h: sh } : null);
+  const ref = rc ? rc.sol || { w: sw, h: sh } : st.sol || st.frame || (src ? { w: sw, h: sh } : null);
   if (ref) {
     const bw = src ? sw : ref.w, bh = src ? sh : ref.h;
     const sc0 = (cfg.fill ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;
@@ -3224,7 +3237,8 @@ function draw() {
       ox += (ref.w / 2 - tp.x) * fsc; oy += (ref.h / 2 - tp.y) * fsc;
     }
     fit = { sc: fsc, ox, oy, w: ref.w, h: ref.h, dpr };
-    if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
+    if (showImg && rc) drawCam(vctx, src, ox, oy, dw, dh, rc.view.mir, rc.view.fv);
+    else if (showImg && src === video) drawCam(vctx, src, ox, oy, dw, dh);
     else if (showImg && st.photoSol && st.source === "photo" && st.sol && st.photoMoved) drawPhotoInView(src, sw, sh);
     else if (showImg) vctx.drawImage(src, ox, oy, dw, dh);
     if (st.pin && st.source === "map" && st.sol) drawPhotoInView(st.pin.src, st.pin.sw, st.pin.sh, st.pin.sol);
@@ -3394,7 +3408,7 @@ function label(c, txt, x, y, at) {   // only draw a label if it doesn't cover an
   placed.push(r); c.fillText(txt, x, y); if (at) labelHits.push({ r, at }); return true;
 }
 // Star dots subtle over the real image, bold on the plain map
-function showImgAlpha() { const liveVideo = st.source === "video" && st.stream; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
+function showImgAlpha() { const liveVideo = (st.source === "video" && st.stream) || st.solMode === "remote"; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
 function drawOverlay(dpr) {
   const c = vctx, sol = st.sol, sk = skyNow();
   const col = n => sk.col[n];
@@ -4935,10 +4949,21 @@ if (/[#&]join=/.test(location.hash)) {
 //   hello  {t, proto, role}             after connecting and when the role changes ("scope" or "follow")
 //   pose   {t, v: [x,y,z] | null}      where this device's telescope points (sky direction), while it knows it
 //   target {t, id | null}              a target was chosen or cleared
+// Optional, the telescope device's camera image as video over the same connection (off unless turned on on both sides):
+//   hello  … cam: 1                    this version can show the other device's camera image
+//   cam    {t, on}                     the telescope side can send its camera image (setting on, camera running)
+//   want   {t, cam}                    the following side wants to see it (shows it instead of the map)
+//   sdp    {t, d: {type, sdp}}         the connection renegotiated for the video; only the telescope side offers
+//   view   {t, sol | null, tele, mir, fv}  how the camera image lies on the sky (its solution, eyepiece point,
+//                                      mirroring): sent with every new solution and once a second while sending
+// The video reuses the camera stream this device already runs for locating, scaled down to about 540 lines at 15
+// frames a second; while the other side shows the map, no frames are sent.
 // Unknown messages are ignored (newer versions can add some). Everything else in the app stays as it is: the
 // receiving side only uses the pointing in pointVec() (directions, readout, sound) and turns its free map to it.
 const LIVE_PROTO = 1, LIVE_PREFIX = "zenigo-live:1:";
 var live = { pc: null, dc: null, state: "off", role: null, peerRole: null, remote: null, remoteAt: 0, sent: null, sentAt: 0, applying: false, timer: 0, waitT: 0, scan: null, guideAt: 0 };
+const LIVE_VIDEO_RESET = { peerVid: false, peerCam: false, peerWants: false, camSent: null, wantSent: null, sender: null, sTrack: null, vSol: undefined, vAt: 0, view: null, sdpQ: null };
+Object.assign(live, LIVE_VIDEO_RESET);
 // Roles: one device is on the telescope and shares where it points, the other follows it. Set per device; a guess
 // at first: phones go on the telescope, tablets and computers follow.
 function liveRole() {
@@ -4949,7 +4974,7 @@ function liveRole() {
 function liveVec() {
   if (!live || live.state !== "connected" || !live.remote || liveRole() !== "follow") return null;
   if (Date.now() - live.remoteAt > 6000) return null;   // nothing heard for a while: not current any more
-  if (st.sol && st.solMode !== "map") return null;      // this device has its own pointing
+  if (st.sol && st.solMode !== "map" && st.solMode !== "remote") return null;   // this device has its own pointing
   return live.remote;
 }
 // connection details as text for a QR code: the SDP, candidates over UDP only, compressed
@@ -4982,13 +5007,15 @@ function liveNewPc() {
     if (pc !== live.pc) return;
     if (s === "failed" || s === "closed" || (s === "disconnected" && live.state === "connected")) liveLost();
   };
+  pc.onnegotiationneeded = () => liveNegotiate(pc);
+  pc.ontrack = e => { if (pc !== live.pc) return; const v = $("liveCamIn"); v.srcObject = e.streams[0] || new MediaStream([e.track]); v.play().catch(() => {}); };
   return pc;
 }
 function liveChannel(dc) {
   live.dc = dc;
   dc.onopen = () => {
     live.state = "connected"; clearTimeout(live.waitT); liveScanStop();
-    liveHello();
+    liveHello(); liveWantSync();
     if (cfg.target) liveSendRaw({ t: "target", id: cfg.target });
     live.sent = null; clearInterval(live.timer); live.timer = setInterval(livePoseTick, 100);
     closeSheet("liveSheet"); renderLive(); hint("Live connection ready.", 3000);
@@ -4997,10 +5024,11 @@ function liveChannel(dc) {
   dc.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } liveReceive(m); };
 }
 // no names: the devices are simply "this device" and "the other device"
-function liveHello() { liveSendRaw({ t: "hello", proto: LIVE_PROTO, role: liveRole() }); }
+function liveHello() { liveSendRaw({ t: "hello", proto: LIVE_PROTO, role: liveRole(), cam: 1 }); }
 function liveSendRaw(m) { try { if (live.dc && live.dc.readyState === "open") live.dc.send(JSON.stringify(m)); } catch (e) {} }
 // this device's pointing, ten times a second at most, and only when it moved (or every 2 s, so the other side knows it is current)
 function livePoseTick() {
+  liveVideoSync(); liveViewTick();
   const v = liveRole() === "scope" ? teleVec() : null, now = Date.now();
   if (!v) { if (live.sent) { live.sent = null; liveSendRaw({ t: "pose", v: null }); } return; }
   const moved = !live.sent || v[0] * live.sent[0] + v[1] * live.sent[1] + v[2] * live.sent[2] < Math.cos(0.01 * D2R);
@@ -5008,7 +5036,11 @@ function livePoseTick() {
   live.sent = v; live.sentAt = now; liveSendRaw({ t: "pose", v: v.map(x => +x.toFixed(6)) });
 }
 function liveReceive(m) {
-  if (m.t === "hello") { live.peerRole = m.role === "scope" || m.role === "follow" ? m.role : null; renderLive(); return; }
+  if (m.t === "hello") { live.peerRole = m.role === "scope" || m.role === "follow" ? m.role : null; live.peerVid = m.cam === 1; liveVideoSync(); renderLive(); return; }
+  if (m.t === "cam") { live.peerCam = !!m.on; if (!live.peerCam) live.view = null; renderLive(); return; }
+  if (m.t === "want") { live.peerWants = !!m.cam; liveVideoSync(); renderLive(); return; }
+  if (m.t === "sdp") { liveSdp(m.d); return; }
+  if (m.t === "view") { liveView(m); return; }
   if (m.t === "bye") { liveStop(true); hint("The other device ended the live connection.", 4000); return; }
   if (m.t === "pose") {
     const had = !!liveVec();
@@ -5028,6 +5060,81 @@ function liveReceive(m) {
     } finally { live.applying = false; }
   }
 }
+// The camera image (optional). On the telescope: sent while the setting is on, the camera runs and the other side
+// wants it; the track is added once (one renegotiation), after that only switched on and off (replaceTrack).
+function liveCamOffer() { return liveRole() === "scope" && !!cfg.liveVideo && st.source === "video" && !!st.track && st.track.readyState === "live"; }
+function liveVideoSync() {
+  if (!live || live.state !== "connected" || !live.pc) return;
+  const can = liveCamOffer() && live.peerRole === "follow" && live.peerVid;
+  if (can !== live.camSent) { live.camSent = can; liveSendRaw({ t: "cam", on: can }); live.vSol = undefined; }
+  const track = can && live.peerWants ? st.track : null;
+  if (!live.sender) {
+    if (track) { live.sTrack = track; try { live.sender = live.pc.addTrack(track, st.stream); } catch (e) { live.sTrack = null; } renderLive(); }   // negotiationneeded follows
+    return;
+  }
+  if (live.sTrack !== track) { live.sTrack = track; live.sender.replaceTrack(track).then(liveVideoParams).catch(() => {}); live.vSol = undefined; renderLive(); }
+}
+// about 540 lines, 15 frames a second, at most 1.5 Mbit/s: enough to see the stars, light on the phone and the Wi-Fi
+async function liveVideoParams() {
+  const s = live.sender, t = s && s.track; if (!t) return;
+  try {
+    const p = s.getParameters(); if (!p.encodings || !p.encodings.length) return;
+    const ts = t.getSettings(), short = Math.min(ts.width || 1080, ts.height || 1080);
+    Object.assign(p.encodings[0], { scaleResolutionDownBy: Math.max(1, short / 540), maxBitrate: 1500000, maxFramerate: 15 });
+    await s.setParameters(p);
+  } catch (e) {}
+}
+// how the image lies on the sky, with each new solution and at least once a second while the video runs
+function liveViewTick() {
+  if (!live.sTrack) return;
+  const sol = st.source === "video" && st.sol && st.solMode !== "map" ? st.sol : null, now = Date.now();
+  if (sol === live.vSol && now - live.vAt < 1000) return;
+  live.vSol = sol; live.vAt = now;
+  const r = x => +(+x).toFixed(7);
+  liveSendRaw({ t: "view", tele: { x: +curTele().x || 0, y: +curTele().y || 0 }, mir: mirrored(), fv: flipV(),
+    sol: sol && { R: sol.R.map(row => row.map(r)), f: sol.f, k1: sol.k1 || 0, poly: sol.poly || null, w: sol.w, h: sol.h, cx: sol.cx, cy: sol.cy, fov: sol.fov, fovV: sol.fovV, approx: !!sol.approx } });
+}
+// renegotiation for the video, over the data channel: the telescope side offers, the following side answers
+async function liveNegotiate(pc) {
+  if (pc !== live.pc || live.state !== "connected" || liveRole() !== "scope" || pc.signalingState !== "stable") return;
+  try { await pc.setLocalDescription(await pc.createOffer()); liveSendRaw({ t: "sdp", d: { type: "offer", sdp: pc.localDescription.sdp } }); } catch (e) {}
+}
+function liveSdp(d) {
+  const pc = live.pc;
+  if (!pc || !d || (d.type !== "offer" && d.type !== "answer") || typeof d.sdp !== "string") return;
+  live.sdpQ = (live.sdpQ || Promise.resolve()).then(async () => {
+    if (pc !== live.pc) return;
+    if (d.type === "offer") {
+      if (pc.signalingState !== "stable") await pc.setLocalDescription({ type: "rollback" });
+      await pc.setRemoteDescription(d); await pc.setLocalDescription(await pc.createAnswer());
+      liveSendRaw({ t: "sdp", d: { type: "answer", sdp: pc.localDescription.sdp } });
+    } else if (pc.signalingState === "have-local-offer") { await pc.setRemoteDescription(d); await liveVideoParams(); }
+  }).catch(() => {});
+}
+// Following: what the telescope's camera image shows of the sky
+function liveView(m) {
+  const s = m.sol, fin = x => Number.isFinite(x);
+  const okSol = s && Array.isArray(s.R) && s.R.length === 3 && s.R.every(r => Array.isArray(r) && r.length === 3 && r.every(fin)) && [s.f, s.w, s.h, s.cx, s.cy].every(fin) && s.f > 0 && s.w > 0 && s.h > 0;
+  const sol = okSol ? { R: s.R, f: s.f, k1: fin(s.k1) ? s.k1 : 0, poly: Array.isArray(s.poly) ? s.poly : null, w: s.w, h: s.h, cx: s.cx, cy: s.cy,
+    fov: fin(s.fov) ? s.fov : 2 * Math.atan(s.w / 2 / s.f) * R2D, fovV: fin(s.fovV) ? s.fovV : 2 * Math.atan(s.h / 2 / s.f) * R2D, approx: !!s.approx, matches: [], rms: 0, nMatch: 0, remote: true } : null;
+  const t = m.tele && fin(m.tele.x) && fin(m.tele.y) ? { x: m.tele.x, y: m.tele.y } : { x: 0, y: 0 };
+  live.view = { sol, tele: t, mir: !!m.mir, fv: !!m.fv, at: Date.now() };
+  if (st.solMode === "remote") { const now = performance.now(); if (now - live.guideAt > 90) { live.guideAt = now; setTimeout(updateGuide); } }
+}
+// shown instead of the map while following, when wanted and the image arrives (with a fresh "view")
+function liveCamView() {
+  if (!live || !live.peerCam || live.paused || !cfg.liveShowCam || !liveFollowing()) return null;
+  const v = $("liveCamIn"), vw = v.videoWidth, vh = v.videoHeight;
+  if (!vw || !vh || !live.view || Date.now() - live.view.at > 4000) return null;
+  let sol = live.view.sol;
+  // the solution belongs to an image of the same shape; if the shape differs (turned on the way), the image without overlay
+  if (sol && Math.abs(vw / vh - sol.w / sol.h) > 0.05 * sol.w / sol.h) sol = null;
+  return { v, vw, vh, sol, view: live.view };
+}
+function liveWantSync() {
+  const want = liveRole() === "follow" && !!cfg.liveShowCam;
+  if (live.state === "connected" && want !== live.wantSent) { live.wantSent = want; liveSendRaw({ t: "want", cam: want }); }
+}
 function liveTurnMap(v) { const h = horiz(v, skyNow().t); st.mapView.az = h.az; st.mapView.alt = Math.max(-90, Math.min(90, h.alt)); lastSig = []; }
 // Turning the map by hand (dragging, Show on map, …) pauses following; "Follow the telescope again" resumes it
 function livePause() { if (liveVec() && !live.paused) { live.paused = true; renderLive(); } }
@@ -5045,17 +5152,21 @@ function liveStop(quiet) {
   try { if (live.dc) live.dc.close(); } catch (e) {}
   try { if (live.pc) live.pc.close(); } catch (e) {}
   const was = !!liveVec();
-  Object.assign(live, { pc: null, dc: null, state: "off", role: null, remote: null, sent: null, peerRole: null, paused: false });
+  Object.assign(live, { pc: null, dc: null, state: "off", role: null, remote: null, sent: null, peerRole: null, paused: false }, LIVE_VIDEO_RESET);
+  const cin = $("liveCamIn"); if (cin.srcObject) cin.srcObject = null;
   if (was) { lastSig = []; updateGuide(); }
   renderLive();
 }
 function renderLive() {
   const s = $("liveStatus"), on = live.state === "connected", role = liveRole();
   const clash = on && live.peerRole && live.peerRole === role;
+  const showing = !!(typeof draw !== "undefined" && draw.rc);   // following with the telescope's camera image
   s.className = "note" + (on && !clash ? " on" : clash || live.state === "lost" || live.state === "fail" ? " err" : "");
   s.textContent = clash ? (role === "scope" ? "Both devices are set to “On the telescope”. Switch one of them to “Follows”." : "Both devices are set to “Follows”. Switch the one on the telescope to “On the telescope”.")
     : on && role === "scope" ? "This device is the telescope. The other device follows it." + (teleVec() ? "" : " This device doesn’t point anywhere yet: start the camera or Align.")
-    : on ? "Following the telescope of the other device" + (live.paused && liveVec() ? ": the map is paused, the crosshair and directions still come from it." : liveVec() ? "." : ": it doesn’t point anywhere yet.")
+      + (live.sTrack ? " Its camera image is being sent." : cfg.liveVideo && live.peerRole === "follow" && !live.peerVid ? " The other device can’t show the camera image: it needs a newer Zenigo." : "")
+    : on ? "Following the telescope of the other device" + (live.paused && liveVec() ? ": the map is paused, the crosshair and directions still come from it." : liveVec() ? (showing ? ", with its camera image." : ".") : ": it doesn’t point anywhere yet.")
+      + (cfg.liveShowCam && !live.peerCam ? " Its camera image isn’t coming: on the other device turn on “Send the camera image” and start its camera." : "")
     : live.state === "offer" ? "Waiting for the other device…" : live.state === "answer" ? "Show this device’s code to the other device…"
     : live.state === "lost" ? "The connection was lost. Connect again with the codes."
     : live.state === "fail" ? "No connection. Are both devices in the same Wi-Fi, or one in the other’s hotspot?" : "Not connected.";
@@ -5069,6 +5180,12 @@ function renderLive() {
   if (scope) $("liveChipLTxt").textContent = "Live · another device follows";
   $("liveChip").classList.toggle("warn", !!clash); $("liveChipL").classList.toggle("warn", !!clash);
   $("liveFollowChip").hidden = !(follow && live.paused && live.remote);
+  // the camera image: the setting for this device's role, and the camera button in the pill while the other device sends
+  $("liveVideoOn").checked = !!cfg.liveVideo; $("liveShowCam").checked = !!cfg.liveShowCam;
+  $("liveCamScope").hidden = role !== "scope"; $("liveCamFollow").hidden = role !== "follow";
+  const cb = $("liveChipCam");
+  cb.hidden = !(follow && live.peerCam); cb.classList.toggle("on", showing); cb.setAttribute("aria-pressed", String(!!cfg.liveShowCam));
+  cb.setAttribute("aria-label", cfg.liveShowCam ? "Show the map instead of the camera image" : "Show the telescope’s camera image");
   $("liveState").textContent = on ? (role === "scope" ? "telescope, followed" : "following") : "";
   if (follow) liveFollowerOnly();
   updateTag();
@@ -5164,8 +5281,12 @@ $("liveJoin").onclick = () => liveJoin();
 $("liveEnd").onclick = () => { liveStop(); hint("Live connection ended.", 2500); };
 $("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings(); };
 document.querySelectorAll('input[name="liveRole"]').forEach(r => r.onchange = () => {
-  cfg.liveRole = r.value; save(); live.sent = null; live.paused = false; liveHello(); lastSig = []; updateGuide(); renderLive();
+  cfg.liveRole = r.value; save(); live.sent = null; live.paused = false; liveHello(); liveWantSync(); liveVideoSync(); lastSig = []; updateGuide(); renderLive();
 });
+$("liveVideoOn").onchange = e => { cfg.liveVideo = e.target.checked; save(); liveVideoSync(); renderLive(); };
+function liveSetShowCam(on) { cfg.liveShowCam = !!on; save(); if (on && live.paused) liveResume(); liveWantSync(); lastSig = []; renderLive(); }
+$("liveShowCam").onchange = e => liveSetShowCam(e.target.checked);
+$("liveChipCam").onclick = () => liveSetShowCam(!cfg.liveShowCam);
 $("btnLive").onclick = () => { closeSheet("menu"); liveSettings(); };
 $("liveChipLTxt").onclick = () => liveSettings();
 $("liveChipLOff").onclick = () => $("liveChipOff").click();

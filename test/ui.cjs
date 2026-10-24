@@ -546,6 +546,53 @@ const TESTS = {
     await done(A); await done(B);
   },
 
+  // live connection with the telescope's camera image: video over the same connection, overlay from the sent solution
+  async livecam() {
+    const A = await page({ perms: ['camera'] }), B = await page({ w: 1280, h: 800, mobile: false, perms: ['camera'] });
+    await ev(A, () => { cfg.liveRole = 'scope'; cfg.liveVideo = false; save(); }); await ev(B, () => { cfg.liveRole = 'follow'; cfg.liveShowCam = true; save(); });
+    const code = await ev(A, () => liveStart({ noScan: true }));
+    const ans = await ev(B, c => liveJoin(c), code);
+    await ev(A, async a => liveAnswer(await liveDecode(a)), ans);
+    await A.waitForFunction(() => live.state === 'connected', null, { timeout: 15000 }).catch(() => {});
+    await B.waitForFunction(() => live.state === 'connected' && live.peerVid, null, { timeout: 15000 }).catch(() => {});
+    ok(await ev(A, () => live.peerVid && live.peerWants), 'the telescope side knows the other device can show and wants the camera image');
+    // the camera runs on A, the setting is still off: nothing is sent
+    await ev(A, async () => { await startCamera(); await new Promise(r => setTimeout(r, 600)); const vw = video.videoWidth, vh = video.videoHeight;
+      st.sol = Object.assign({}, mapSol(), { w: vw, h: vh, cx: vw / 2, cy: vh / 2, f: vw * 1.2, approx: false }); st.solMode = 'solve'; st.solAt = Date.now(); cfg.tele = { x: 0.05, y: -0.03 }; });
+    await wait(A, 600);
+    ok(await ev(A, () => !!st.stream && !live.sender) && await ev(B, () => !live.peerCam && $('liveChipCam').hidden && st.solMode !== 'remote'), 'with “Send the camera image” off, no video goes out');
+    ok(await ev(B, () => /isn’t coming/.test($('liveStatus').textContent)), 'the following side says why the image isn’t coming');
+    // on: one renegotiation over the data channel, then the image and the overlay on B
+    await ev(A, () => { $('liveVideoOn').click(); });
+    await B.waitForFunction(() => st.solMode === 'remote' && !!st.sol, null, { timeout: 15000 }).catch(() => {}); await wait(B, 300);
+    const r = await ev(B, () => { const v = $('liveCamIn'); return { vw: v.videoWidth, mode: st.solMode, tag: $('srcTag').textContent, chip: !$('liveChipCam').hidden && $('liveChipCam').classList.contains('on'), tv: teleVec(), tele: curTele() }; });
+    ok(r.vw > 0 && r.mode === 'remote', 'the following side gets the camera image and shows it instead of the map', r.vw + ' ' + r.mode);
+    ok(/camera/.test(r.tag) && r.chip, 'it says so, and the camera button in the pill is on', r.tag);
+    const at = await ev(A, () => teleVec());
+    const sep = r.tv && at ? await ev(B, ([a, b]) => Solver.angDeg(a, b), [r.tv, at]) : null;
+    ok(sep != null && sep < 0.05, 'its crosshair is where the telescope’s camera has it (same solution, same eyepiece point)', { sep, tele: r.tele });
+    const enc = await ev(A, () => { const p = live.sender.getParameters(); return p.encodings && p.encodings[0]; });
+    ok(enc && enc.maxFramerate === 15 && enc.maxBitrate === 1500000, 'the video is limited (15 frames a second, 1.5 Mbit/s, about 540 lines)', enc);
+    ok(await ev(A, () => /camera image is being sent/.test($('liveStatus').textContent)), 'the telescope side says it sends the image');
+    // the map again: no frames are sent; back to the camera without a new negotiation
+    await ev(B, () => $('liveChipCam').click()); await wait(A, 700);
+    ok(await ev(B, () => st.solMode === 'map' && !cfg.liveShowCam) && await ev(A, () => !!live.sender && !live.sender.track), 'the map again: the telescope side stops sending frames');
+    await ev(B, () => $('liveChipCam').click());
+    await B.waitForFunction(() => st.solMode === 'remote', null, { timeout: 8000 }).catch(() => {});
+    ok(await ev(B, () => st.solMode === 'remote') && await ev(A, () => !!live.sender.track), 'and the camera image again');
+    // Show on map pauses it like the map; "follow again" brings the image back
+    await ev(B, () => showOnMap(targetById('M13'))); await wait(B, 300);
+    ok(await ev(B, () => live.paused && st.solMode === 'map' && !$('liveFollowChip').hidden), 'Show on map switches to the map and pauses following');
+    await ev(B, () => $('liveFollowTxt').click()); await wait(B, 400);
+    ok(await ev(B, () => !live.paused && st.solMode === 'remote'), '“Follow the telescope again” returns to the camera image');
+    // the camera stops on A: B goes back to the map
+    await ev(A, () => stopCamera()); await wait(B, 800);
+    ok(await ev(B, () => st.solMode === 'map' && !live.peerCam && $('liveChipCam').hidden), 'the telescope’s camera stops: the map again');
+    await ev(A, () => liveStop()); await wait(B, 600);
+    ok(await ev(B, () => live.state !== 'connected' && !$('liveCamIn').srcObject), 'disconnecting ends the video too');
+    await done(A); await done(B);
+  },
+
   // the camera starts even when the browser refuses the first request (AbortError, as seen on an iPad)
   async camretry() {
     const p = await page({ perms: ['camera'] });
