@@ -1,38 +1,41 @@
-<header class="wrap top">
-  <a class="brand" href="/"><img src="/app/logo.svg" alt=""><span>zeni<span>go</span></span></a>
-  <nav class="topnav" aria-label="Main">
-    <a class="prim" href="/features/">Features</a>
-    <a class="prim" href="/star-finder/">Star finder</a>
-    <a class="prim" href="/getting-started/">Getting started</a>
-    <a class="prim" href="/help/">Help</a>
-    <details class="sitemenu">
-      <summary aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></summary>
-      <div class="menupanel">
-        <div>
-          <p>Zenigo</p>
-          <a href="/features/">Features</a>
-          <a href="/star-finder/">Star finder</a>
-          <a href="/telescopes/">Which telescopes work</a>
-          <a href="/compare/">Compared with other ways</a>
-        </div>
-        <div>
-          <p>Using it</p>
-          <a href="/getting-started/">Getting started</a>
-          <a href="/help/">Help</a>
-          <a href="/faq/">Questions and answers</a>
-        </div>
-        <div>
-          <p>Build</p>
-          <a href="/diy-accessories/">Phone holder to 3D print</a>
-        </div>
-      </div>
-    </details>
-    <a class="open" href="/app/">Open Zenigo</a>
-  </nav>
+<header class="sitehead" id="sitehead">
+  <div class="wrap top">
+    <a class="brand" href="/"><img src="/app/logo.svg" alt=""><span>zeni<span>go</span></span></a>
+    <nav class="topnav" aria-label="Main">
+      <a class="prim" href="/features/">Features</a>
+      <a class="prim" href="/getting-started/">Getting started</a>
+      <a class="prim" href="/help/">Help</a>
+      <a class="open" href="/app/">Open Zenigo</a>
+      <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sitemenu"><svg class="i-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </nav>
+  </div>
+  <div class="sitemenu" id="sitemenu" hidden>
+    <div class="wrap menugrid">
+      <div><p>Zenigo</p><a href="/features/">Features</a><a href="/star-finder/">Star finder</a><a href="/telescopes/">Which telescopes work</a><a href="/compare/">Compared with other ways</a></div>
+      <div><p>Using it</p><a href="/getting-started/">Getting started</a><a href="/help/">Help</a><a href="/faq/">Questions and answers</a></div>
+      <div><p>Build</p><a href="/diy-accessories/">Phone holder to 3D print</a></div>
+      <div class="menumeta"><a href="/imprint/">Imprint</a><a href="/privacy/">Privacy</a><a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a></div>
+    </div>
+  </div>
+  <div class="menuback" hidden></div>
   <script>
-    // the menu closes with Esc, a tap outside it or when a link in it is followed
-    (() => { const m = document.currentScript.parentNode.querySelector(".sitemenu"); if (!m) return;
-      addEventListener("click", e => { if (m.open && !m.contains(e.target)) m.open = false; });
-      addEventListener("keydown", e => { if (e.key === "Escape" && m.open) { m.open = false; m.querySelector("summary").focus(); } }); })();
+    // The menu: under the header on wide screens, the whole screen on phones. The header stays in view while it is
+    // open (fixed at the top); Esc, ✕, a tap on the darkened page or a link close it.
+    (() => {
+      const h = document.currentScript.closest(".sitehead"), b = h.querySelector(".burger"), m = h.querySelector(".sitemenu"), bg = h.querySelector(".menuback");
+      let y = 0;
+      const set = on => {
+        const ht = h.offsetHeight, bs = document.body.style;
+        if (on) { y = scrollY; Object.assign(bs, { position: "fixed", top: -y + "px", left: "0", right: "0", paddingTop: ht + "px" }); }
+        else { Object.assign(bs, { position: "", top: "", left: "", right: "", paddingTop: "" }); }
+        document.documentElement.classList.toggle("menu-open", on); document.documentElement.style.setProperty("--head-h", ht + "px");
+        if (!on) scrollTo(0, y);
+        m.hidden = bg.hidden = !on; b.setAttribute("aria-expanded", String(on)); b.setAttribute("aria-label", on ? "Close the menu" : "Menu");
+      };
+      b.onclick = () => set(m.hidden);
+      bg.onclick = () => set(false);
+      m.addEventListener("click", e => { if (e.target.closest("a")) set(false); });
+      addEventListener("keydown", e => { if (e.key === "Escape" && !m.hidden) { set(false); b.focus({ preventScroll: true }); } });
+    })();
   </script>
 </header>
