@@ -42,7 +42,7 @@ function syncApi(req, res, p) {
 // ---------- static server for dist/ ----------
 const DIST = path.join(__dirname, '..', 'dist');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml',
-  '.png': 'image/png', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.bin': 'application/octet-stream', '.txt': 'text/plain' };
+  '.png': 'image/png', '.webp': 'image/webp', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.bin': 'application/octet-stream', '.txt': 'text/plain' };
 function serve() {
   const srv = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -368,6 +368,7 @@ const TESTS = {
   // Milky Way and satellites: extras, off by default, outside the presets
   async milkyway() {
     const p = await page({ w: 1000, h: 700, mobile: false });
+    await ev(p, () => { cfg.figures = false; lastSig = []; });   // measures the band's light: no figures on top
     ok(await ev(p, () => !cfg.show.mw && !cfg.show.sats), 'Milky Way and satellites are off by default');
     const fill = () => ev(p, async () => { const t = skyNow().t, h = horiz(Solver.radec2v(308, 41), t); st.mapView = { az: h.az, alt: h.alt, fov: 60 }; cfg.show.stars = false; st.filterVer++; lastSig = [];
       await new Promise(r => setTimeout(r, 500)); const v = $('view'), q = Solver.skyToPix(st.sol, Solver.radec2v(308, 41)), [x, y] = P(q.x, q.y); return v.getContext('2d').getImageData(x | 0, (y | 0) + 25, 1, 1).data[2]; });
@@ -722,6 +723,23 @@ const TESTS = {
   },
 
   // names on the map can be tapped: they open the object they belong to
+  // constellation figures: on at first, pinned to their anchor stars, off stays off
+  async figures() {
+    const p = await page({ w: 1000, h: 700, mobile: false });
+    await ev(p, () => { st.mapView = { az: 150, alt: 40, fov: 90 }; st.sol = mapSol(); lastSig = []; });
+    await p.waitForFunction(() => FIG.list && FIG.drawn > 0, null, { timeout: 10000 }).catch(() => {});
+    const r = await ev(p, () => ({ on: figOn(), n: FIG.list && FIG.list.length, drawn: FIG.drawn, opt: $('optFigures').checked,
+      err: FIG.list ? Math.max(...FIG.list.flatMap(f => f.a.map(([x, y, ra, dec]) => Solver.angDeg(f.sky(x, y), Solver.radec2v(ra, dec))))) : null }));
+    ok(r.on && r.opt && r.n >= 80, 'constellation figures are on at first', r);
+    ok(r.drawn > 3, 'the figures in view are drawn', r.drawn);
+    ok(r.err != null && r.err < 0.001, 'each figure sits on its three anchor stars', r.err);
+    await ev(p, () => { $('optFigures').click(); }); await wait(p, 300);
+    ok(await ev(p, () => cfg.figures === false && FIG.drawn === 0), 'switched off: no figures');
+    await p.reload(); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
+    ok(await ev(p, () => !figOn() && (syncSettings(), !$('optFigures').checked) && (syncQuick(), !$('qFigures').checked)), 'and they stay off after a restart');
+    await done(p);
+  },
+
   async labels() {
     const p = await page({ w: 1000, h: 700, mobile: false });
     await wait(p, 600);

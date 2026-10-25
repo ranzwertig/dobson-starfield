@@ -8,7 +8,7 @@
 //                plus service worker, manifest and icons
 //   /fonts/      self-hosted fonts (no requests to third parties)
 //   npm run build
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
@@ -111,9 +111,12 @@ write('dist/app/' + fJsqr, jsqr);
 // for getting synced data back without the app (help: #sync-recovery)
 write('dist/help/sync-recover.py', read('scripts/sync-recover.py'));
 // service worker for offline use; the version changes with the page (which names the scripts by their content)
-const version = createHash('sha256').update(html).digest('hex').slice(0, 12);
+// the constellation figures (public/app/figures, see scripts/figures.mjs) are precached too; they count for the version
+const figFiles = existsSync(new URL('public/app/figures/', root)) ? readdirSync(new URL('public/app/figures/', root)).filter(f => /\.(webp|json)$/.test(f)).sort() : [];
+const figSum = figFiles.map(f => f + ':' + statSync(new URL('public/app/figures/' + f, root)).size).join('|');
+const version = createHash('sha256').update(html + figSum).digest('hex').slice(0, 12);
 write('dist/app/sw.js', read('src/sw.js').replace('__VERSION__', version).replace('/*__FONTS__*/', fontFiles.map(f => `'${f}'`).join(', '))
-  .replace('/*__JS__*/', Object.keys(jsFiles).map(f => `'${f}'`).join(', ')));
+  .replace('/*__JS__*/', Object.keys(jsFiles).map(f => `'${f}'`).join(', ')).replace('/*__FIGURES__*/', figFiles.map(f => `'figures/${f}'`).join(', ')));
 // the old service worker at the root retires itself (see the file)
 write('dist/sw.js', read('src/sw-root.js'));
 

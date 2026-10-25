@@ -1183,6 +1183,10 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="switch"><input type="checkbox" id="qConNames" aria-label="Constellation names"><i></i></label>
       </div>
       <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
+        <div class="qlabel">Constellation figures</div>
+        <label class="switch"><input type="checkbox" id="qFigures" aria-label="Constellation figures"><i></i></label>
+      </div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
         <div class="qlabel">Star names</div>
         <label class="switch"><input type="checkbox" id="qStarNames" aria-label="Star names"><i></i></label>
       </div>
@@ -1238,6 +1242,7 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label class="check"><input type="checkbox" id="optRed"> Red light (preserves dark adaptation)</label>
         <label class="check"><input type="checkbox" id="optConLines"> Constellation lines</label>
         <label class="check"><input type="checkbox" id="optConNames"> Constellation names</label>
+        <label class="check"><input type="checkbox" id="optFigures"> Constellation figures (drawings by Johan Meuris)</label>
         <label class="check"><input type="checkbox" id="optStarNames"> Star names</label>
         <label class="check"><input type="checkbox" id="optObjLabels"> Names of other objects (Messier and NGC, planets, satellites)</label>
         <label class="check"><input type="checkbox" id="optListMarks"> Marks for planned, starred and seen objects</label>
@@ -3034,6 +3039,135 @@ function updateTag() {
   if (st.tOff && (updateTag.min !== Math.floor(Date.now() / 60000))) { updateTag.min = Math.floor(Date.now() / 60000); syncTime(); }
 }
 
+/* ---------------- Constellation figures ---------------- */
+// Drawings of the constellations by Johan Meuris (from Stellarium, Free Art License 1.3; see figures/LICENSE.txt), each
+// pinned to the sky by three anchor stars: image pixel -> tangent plane (the affine map through the anchors) -> sky.
+// Light lines on black, so they are added onto the map (black adds nothing), faint, under the stars, fading out when
+// zoomed in. Shown unless switched off (cfg.figures); loaded when first needed, cached by the service worker.
+const FIG = { list: null, loading: false, gl: null, glTried: false };
+const figOn = () => cfg.figures !== false;
+function figLoad() {
+  if (FIG.list || FIG.loading) return; FIG.loading = true;
+  fetch("figures/figures.json").then(r => r.ok ? r.json() : null).then(l => { FIG.list = (l || []).map(figPrep); FIG.key = null; lastSig = []; })
+    .catch(() => {}).finally(() => { FIG.loading = false; });
+}
+function figPrep(f) {
+  const vs = f.a.map(([, , ra, dec]) => Solver.radec2v(ra, dec)), n = v => { const m = Math.hypot(v[0], v[1], v[2]); return [v[0] / m, v[1] / m, v[2] / m]; };
+  const c = n(vs.reduce((s, v) => [s[0] + v[0], s[1] + v[1], s[2] + v[2]], [0, 0, 0]));
+  const e1 = Math.hypot(c[0], c[1]) > 1e-6 ? n([-c[1], c[0], 0]) : [1, 0, 0], e2 = [c[1] * e1[2] - c[2] * e1[1], c[2] * e1[0] - c[0] * e1[2], c[0] * e1[1] - c[1] * e1[0]];
+  const dt = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], uv = vs.map(v => { const k = dt(v, c); return [dt(v, e1) / k, dt(v, e2) / k]; });
+  // [u, w] = M · [x, y, 1] through the three anchors (Cramer's rule)
+  const X = f.a.map(([x, y]) => [x, y, 1]);
+  const d3 = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = d3(X), sv = b => [0, 1, 2].map(j => d3(X.map((r, i) => r.map((x, k) => k === j ? b[i] : x))) / D);
+  const mu = sv(uv.map(p => p[0])), mw = sv(uv.map(p => p[1]));
+  const sky = (x, y) => { const u = mu[0] * x + mu[1] * y + mu[2], w = mw[0] * x + mw[1] * y + mw[2]; return n([c[0] + u * e1[0] + w * e2[0], c[1] + u * e1[1] + w * e2[1], c[2] + u * e1[2] + w * e2[2]]); };
+  const r = Math.max(...[[0, 0], [f.w, 0], [0, f.h], [f.w, f.h]].map(([x, y]) => Math.acos(Math.min(1, dt(sky(x, y), c)))));
+  return Object.assign(f, { c, r, sky, grid: null, img: null });
+}
+function figImage(f) {
+  if (!f.img) { f.img = new Image(); f.img.decoding = "async"; f.img.onload = () => { f.ok = true; FIG.loaded = (FIG.loaded | 0) + 1; lastSig = []; }; f.img.src = "figures/" + f.file; }
+  return f.ok ? f.img : null;
+}
+function drawFigures(dpr) {
+  FIG.drawn = 0;
+  if (!figOn() || !st.sol) return;
+  figLoad(); if (!FIG.list) return;
+  const sol = st.sol, W = view.width, H = view.height, fpx = fit.sc * sol.f;
+  const fov = 2 * Math.atan(Math.min(W, H) / 2 / fpx) * R2D, fade = Math.max(0, Math.min(1, (fov - 12) / 22));   // gone below ~12° across
+  if (fade <= 0) return;
+  const alpha = 0.34 * fade * (showImgAlpha() < 1 ? 0.55 : 1);
+  // drawn once per view into a layer that is reused while the view stays (the live camera redraws every frame)
+  const q = v => Math.round(v * 2) / 2, key = [W, H, q(fit.ox), q(fit.oy), fit.sc.toFixed(5), sol.f, alpha.toFixed(3), FIG.loaded | 0, ...sol.R.flat().map(v => v.toFixed(5))].join("|");
+  if (!FIG.layer) { FIG.layer = document.createElement("canvas"); FIG.lctx = FIG.layer.getContext("2d"); }
+  if (FIG.key === key) { FIG.drawn = FIG.lastN; if (FIG.lastN) figPut(); return; }
+  FIG.key = key; FIG.lastN = 0;
+  if (FIG.layer.width !== W || FIG.layer.height !== H) { FIG.layer.width = W; FIG.layer.height = H; }
+  FIG.lctx.clearRect(0, 0, W, H);
+  const vc = Solver.pixToSky(sol, (viewCx() - fit.ox) / fit.sc, (H / 2 - fit.oy) / fit.sc), vr = Math.atan(Math.hypot(W, H) / 2 / fpx);
+  const N = 12, items = [];
+  for (const f of FIG.list) {
+    if (Math.acos(Math.max(-1, Math.min(1, f.c[0] * vc[0] + f.c[1] * vc[1] + f.c[2] * vc[2]))) > vr + f.r) continue;
+    const im = figImage(f); if (!im) continue;
+    if (!f.grid) { f.grid = []; for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) f.grid.push([i * f.w / N, j * f.h / N, f.sky(i * f.w / N, j * f.h / N)]); }
+    const pts = f.grid.map(([x, y, v]) => { const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.1) return null; const [u, w] = P(p.x, p.y); return [x, y, u, w]; });
+    items.push({ f, im, pts });
+  }
+  if (!items.length) return;
+  FIG.drawn = FIG.lastN = items.length;
+  if (figDrawGL(items, N, alpha)) { figPut(); return; }
+  // 2D fallback: the same grid, triangle by triangle
+  const c = FIG.lctx; c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = alpha;
+  for (const { im, pts } of items) {
+    const tri = (a, b, d) => {
+      if (!a || !b || !d) return;
+      const [x0, y0, u0, v0] = a, [x1, y1, u1, v1] = b, [x2, y2, u2, v2] = d;
+      const den = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0); if (!den) return;
+      const A = ((u1 - u0) * (y2 - y0) - (u2 - u0) * (y1 - y0)) / den, B = ((v1 - v0) * (y2 - y0) - (v2 - v0) * (y1 - y0)) / den;
+      const C = ((u2 - u0) * (x1 - x0) - (u1 - u0) * (x2 - x0)) / den, D = ((v2 - v0) * (x1 - x0) - (v1 - v0) * (x2 - x0)) / den;
+      c.save(); c.beginPath(); c.moveTo(u0, v0); c.lineTo(u1, v1); c.lineTo(u2, v2); c.closePath(); c.clip();
+      c.setTransform(A, B, C, D, u0 - A * x0 - C * y0, v0 - B * x0 - D * y0); c.drawImage(im, 0, 0); c.restore();
+    };
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const k = j * (N + 1) + i; tri(pts[k], pts[k + 1], pts[k + N + 1]); tri(pts[k + 1], pts[k + N + 2], pts[k + N + 1]); }
+  }
+  c.restore(); figPut();
+}
+// the layer onto the map: added, so its black adds nothing
+function figPut() { vctx.save(); vctx.setTransform(1, 0, 0, 1, 0, 0); vctx.globalCompositeOperation = "lighter"; vctx.drawImage(FIG.layer, 0, 0); vctx.restore(); }
+// WebGL: all visible figures in one offscreen pass (seamless), added onto the map in one go
+function figDrawGL(items, N, alpha) {
+  if (!FIG.glTried) {
+    FIG.glTried = true;
+    try {
+      const cv = document.createElement("canvas"), gl = cv.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false });
+      if (gl) {
+        const sh = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+        const prog = gl.createProgram();
+        gl.attachShader(prog, sh(gl.VERTEX_SHADER, "attribute vec2 p; attribute vec2 t; varying vec2 v; void main() { v = t; gl_Position = vec4(p, 0.0, 1.0); }"));
+        gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, "precision mediump float; varying vec2 v; uniform sampler2D s; uniform float a; void main() { vec3 c = texture2D(s, v).rgb * a; gl_FragColor = vec4(c, max(max(c.r, c.g), c.b)); }"));
+        gl.linkProgram(prog);
+        if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+          FIG.gl = { cv, gl, prog, pb: gl.createBuffer(), tb: gl.createBuffer(), ib: gl.createBuffer(), aP: gl.getAttribLocation(prog, "p"), aT: gl.getAttribLocation(prog, "t"), uA: gl.getUniformLocation(prog, "a") };
+          cv.addEventListener("webglcontextlost", e => { e.preventDefault(); FIG.gl = null; });
+        }
+      }
+    } catch (e) { FIG.gl = null; }
+  }
+  const g = FIG.gl; if (!g) return false;
+  const { gl, cv } = g, W = view.width, H = view.height;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(g.prog); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.uniform1f(g.uA, alpha);
+  if (!g.tc) {   // texture coordinates of the grid: the same for every figure
+    const tc = new Float32Array((N + 1) * (N + 1) * 2);
+    for (let j = 0, k = 0; j <= N; j++) for (let i = 0; i <= N; i++, k++) { tc[2 * k] = i / N; tc[2 * k + 1] = j / N; }
+    g.tc = tc; gl.bindBuffer(gl.ARRAY_BUFFER, g.tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
+  }
+  for (const { f, im, pts } of items) {
+    if (!f.tex) {
+      f.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, f.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(k => gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    }
+    const pos = new Float32Array(pts.length * 2), idx = [];
+    pts.forEach((p, k) => { if (p) { pos[2 * k] = p[2] / W * 2 - 1; pos[2 * k + 1] = 1 - p[3] / H * 2; } });
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1;
+      if (pts[a] && pts[b] && pts[c]) idx.push(a, b, c);
+      if (pts[b] && pts[d] && pts[c]) idx.push(b, d, c);
+    }
+    if (!idx.length) continue;
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.pb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(g.aP); gl.vertexAttribPointer(g.aP, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.tb); gl.enableVertexAttribArray(g.aT); gl.vertexAttribPointer(g.aT, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, g.ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.DYNAMIC_DRAW);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, f.tex);
+    gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+  }
+  FIG.lctx.drawImage(cv, 0, 0);
+  return true;
+}
+
 /* ---------------- A solved photo pinned to the sky ---------------- */
 // After a photo, Align switches to the map that follows the phone; the photo stays drawn on its stars there
 function pinPhoto() {
@@ -3444,6 +3578,7 @@ function drawOverlay(dpr) {
   c.globalAlpha = live && Date.now() - st.solAt > 6000 ? 0.4 : 1;
   const W = view.width, H = view.height;
   const inView = p => { if (!p) return false; const [x, y] = P(p.x, p.y); return x > -40 * dpr && y > -40 * dpr && x < W + 40 * dpr && y < H + 40 * dpr; };
+  drawFigures(dpr);
   // Star map: catalog stars as dots, size by brightness, more names when zoomed in
   // What is on the screen: a cone around the sky at the middle of the screen. That is not always the camera's axis: with an
   // eyepiece point off the axis the view is shifted to keep the telescope in the middle, so the camera's axis can be far
@@ -6024,7 +6159,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels; $("optInfoHints").checked = cfg.infoHints !== false;
-  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
+  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optFigures").checked = figOn(); $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
@@ -6408,7 +6543,7 @@ function syncQuick() {
   if (document.activeElement !== $("qLon")) $("qLon").value = cfg.lon;
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
   $("qLocTxt").textContent = Math.abs(la).toFixed(2) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(2) + "° " + (lo >= 0 ? "E" : "W");
-  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qReadout").checked = !!cfg.readout; $("qMirror").checked = !!cfg.mirror;
+  $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qFigures").checked = figOn(); $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qReadout").checked = !!cfg.readout; $("qMirror").checked = !!cfg.mirror;
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
   $("qTeleReset").disabled = off < 0.01;
@@ -6828,7 +6963,7 @@ $("qLocEdit").onclick = () => { const f = $("qLocFields"), open = f.hidden; f.hi
 $("qRed").onchange = () => { cfg.red = $("qRed").checked; save(); syncSettings(); };
 $("qLabels").onchange = () => { cfg.fabLabels = $("qLabels").checked; save(); syncSettings(); };
 // what the map labels and marks: in the settings (Display) and the quick settings
-[["optObjLabels", "objLabels"], ["optConNames", "conNames"], ["optListMarks", "listMarks"], ["optConLines", "conLines"], ["optStarNames", "starNames"],
+[["optObjLabels", "objLabels"], ["optConNames", "conNames"], ["optListMarks", "listMarks"], ["optConLines", "conLines"], ["optStarNames", "starNames"], ["optFigures", "figures"], ["qFigures", "figures"],
  ["qObjLabels", "objLabels"], ["qConNames", "conNames"], ["qListMarks", "listMarks"], ["qConLines", "conLines"], ["qStarNames", "starNames"],
  ["optReadout", "readout"], ["qReadout", "readout"]].forEach(([id, k]) =>
   $(id).onchange = () => { cfg[k] = $(id).checked; save(); st.filterVer++; syncSettings(); syncQuick(); if (k === "readout") renderReadout(); });

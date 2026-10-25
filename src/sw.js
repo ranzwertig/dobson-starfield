@@ -4,7 +4,7 @@
 const VERSION = '__VERSION__';
 const PREFIX = 'zenigo-app-';
 const CACHE = PREFIX + VERSION;
-const CORE = ['./', 'manifest.webmanifest', 'logo.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'deep-stars.bin', 'dso.json', 'milkyway.json', 'lists.json', /*__JS__*/, /*__FONTS__*/];
+const CORE = ['./', 'manifest.webmanifest', 'logo.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'deep-stars.bin', 'dso.json', 'milkyway.json', 'lists.json', /*__JS__*/, /*__FONTS__*/, /*__FIGURES__*/];
 
 self.addEventListener('install', e => {
   // bypass the HTTP cache so the new version really gets the new files
