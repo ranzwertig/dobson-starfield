@@ -902,6 +902,49 @@ const TESTS = {
     await done(A); await done(B);
   },
 
+  // Zenigo Pro page: without a configuration "Checkout unavailable"; with one (Paddle.js replaced by a stand-in) the price
+  // as Paddle formats it, the overlay checkout for the configured price and the redirect to the welcome page
+  async pro() {
+    const open = async (cfg, w = 390) => {
+      const ctx = await browser.newContext({ viewport: { width: w, height: 844 }, isMobile: w < 600, hasTouch: w < 600 });
+      const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e))); p.paddle = [];
+      p.on('request', r => { if (r.url().includes('paddle.com')) p.paddle.push(r.url()); });
+      if (cfg) await p.route('**/api/pro/config', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cfg) }));
+      await p.route('https://cdn.paddle.com/**', r => r.fulfill({ contentType: 'text/javascript', body: `window.__pd = { calls: [] };
+        window.Paddle = { Environment: { set: e => __pd.calls.push(['env', e]) },
+          Initialize: o => { __pd.calls.push(['init', o.token]); __pd.cb = o.eventCallback; },
+          PricePreview: r => { __pd.calls.push(['preview', r]); return Promise.resolve({ data: { currencyCode: 'EUR', details: { lineItems: [{ formattedTotals: { subtotal: '€16.80', tax: '€3.19', total: '€19.99' } }] } } }); },
+          Checkout: { open: o => { __pd.calls.push(['open', o]); setTimeout(() => __pd.cb({ name: 'checkout.completed', data: { transaction_id: 'txn_01test' } }), 50); } } };` }));
+      await p.goto(base + '/pro/'); await wait(p, 600);
+      return p;
+    };
+    const p = await open(null);
+    ok(await p.isVisible('#proBuy') && await p.isDisabled('#proBuy'), 'the page renders with its Buy button, disabled without a configuration');
+    ok(/Checkout unavailable/.test(await p.textContent('#proState')) && await p.isVisible('#proState'), 'the config endpoint fails: “Checkout unavailable”');
+    ok(p.paddle.length === 0, 'and nothing is loaded from Paddle', p.paddle);
+    ok(await ev(p, () => document.querySelectorAll('.profeat dt').length >= 6 && document.querySelectorAll('.profeat .ptag.soon').length >= 1 && /Labelling your night photos/.test(document.querySelector('.freelist').textContent)), 'features from pro.json, planned ones marked coming, night photos listed as free');
+    ok(await ev(p, () => [...document.querySelectorAll('.buybox, #proBuy')].every(e => /12-month licence, paid once, no automatic renewal/.test(e.textContent)) && !!document.querySelector('.buybox a[href="/licence/"]') && !!document.querySelector('.buybox a[href="#refunds"]')), 'the terms beside the price and on the button; licence and refunds linked');
+    ok(await ev(p, () => document.documentElement.scrollWidth <= innerWidth), 'no sideways scrolling on a phone');
+    await done(p);
+    const q = await open({ environment: 'sandbox', clientToken: 'test_abc', priceId: 'pri_test', country: 'DE' }, 1280);
+    const calls = await ev(q, () => __pd.calls);
+    ok(calls.some(c => c[0] === 'env' && c[1] === 'sandbox') && calls.some(c => c[0] === 'init' && c[1] === 'test_abc'), 'sandbox environment and the client token from the configuration');
+    const pv = calls.find(c => c[0] === 'preview');
+    ok(pv && pv[1].items[0].priceId === 'pri_test' && pv[1].address && pv[1].address.countryCode === 'DE', 'the price preview for that price and the visitor’s country', pv);
+    ok(await q.textContent('#proPrice') === '€19.99' && await q.isVisible('#proSandbox') && await q.isEnabled('#proBuy'), 'Paddle’s formatted total is shown as it is; sandbox note; button enabled');
+    await q.click('#proBuy'); await q.waitForURL(/\/pro\/welcome\//, { timeout: 5000 }).catch(() => {});
+    ok(/\/pro\/welcome\/\?txn=txn_01test$/.test(q.url()), 'checkout completed: on to the welcome page with the transaction ID', q.url());
+    ok(await q.isVisible('#txnRow') && await q.textContent('#txn') === 'txn_01test', 'the welcome page shows the order reference');
+    await done(q);
+    const r = await open({ environment: 'production', clientToken: 'live_abc', priceId: 'pri_live' });
+    const c2 = await ev(r, () => __pd.calls);
+    ok(!c2.some(c => c[0] === 'env') && !('address' in c2.find(c => c[0] === 'preview')[1]) && await r.isHidden('#proSandbox'), 'production: no sandbox switch; no country → none passed to Paddle');
+    await r.click('#proBuy');
+    const o = (await ev(r, () => __pd.calls)).find(c => c[0] === 'open');
+    ok(o && o[1].settings.displayMode === 'overlay' && o[1].settings.variant === 'one-page' && o[1].items[0].priceId === 'pri_live' && o[1].items[0].quantity === 1, 'Buy opens the one-page overlay for that price', o);
+    await done(r);
+  },
+
   // offline: the service worker keeps page and scripts
   async offline() {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));

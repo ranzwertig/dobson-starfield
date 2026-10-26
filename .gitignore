@@ -3,6 +3,7 @@ __pycache__/
 *.tgz
 /package/
 .wrangler/
+.dev.vars
 
 # wird von npm run build erzeugt
 /dist/

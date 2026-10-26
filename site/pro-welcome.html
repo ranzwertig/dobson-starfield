@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thank you – Zenigo Pro</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <article class="doc pro">
+    <h1>Thank you</h1>
+    <p class="intro">You have bought Zenigo Pro for 12 months. Paddle has sent the receipt to your email address.</p>
+    <!-- The next step fills in the licence key for this order (webhook → signed key with its end date) and a link that
+         enters it in the app. Until then the page shows the order reference that the checkout passed in ?txn=. -->
+    <div class="buybox">
+      <p class="fine" id="txnRow" hidden>Order reference: <code id="txn"></code></p>
+      <p>Your licence key will appear on this page, with a button that enters it in Zenigo. Keep the order reference above (it is also on the receipt) in case you need help.</p>
+      <p class="cta"><a class="open" href="/app/">Open Zenigo</a> <a class="open ghost" href="/pro/">Back to Zenigo Pro</a></p>
+    </div>
+    <p class="muted">Questions or a problem with the order? Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>, or see <a href="https://paddle.net" rel="noopener" target="_blank">paddle.net</a> for the payment and refunds.</p>
+  </article>
+</main>
+
+<!--FOOTER-->
+<script>
+  (() => {
+    const id = new URLSearchParams(location.search).get("txn");
+    if (id && /^txn_[a-z0-9]+$/i.test(id)) { document.getElementById("txn").textContent = id; document.getElementById("txnRow").hidden = false; }
+  })();
+</script>
+</body>
+</html>

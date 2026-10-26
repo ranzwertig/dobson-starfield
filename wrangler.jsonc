@@ -20,6 +20,17 @@
   "ratelimits": [
     { "name": "SYNC_LIMIT", "namespace_id": "1001", "simple": { "limit": 60, "period": 60 } }
   ],
+  // Zenigo Pro page (/pro/, worker/pro.js): Paddle environment, client-side token and the price of "Zenigo Pro –
+  // 12-month licence". All three are public (the page sends them to the browser), so they live here and not as secrets.
+  // Sandbox values; for live set PADDLE_ENV "production", the live_… token and the live price ID.
+  // Without PADDLE_ENV the page shows "Checkout unavailable" (no default, so the site never uses the wrong account).
+  // Locally, .dev.vars overrides them (see .dev.vars.example). The Paddle API key and webhook secret, needed later for
+  // licence keys, go in with `npx wrangler secret put PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET`, never in this file.
+  "vars": {
+    "PADDLE_ENV": "sandbox",
+    "PADDLE_CLIENT_TOKEN": "test_286c8d85575e79e87f6f084c045",
+    "PADDLE_PRICE_ID": "pri_01m5w5v6s354efkqesfcebsr41"
+  },
   // Sync: D1 database in the EU (created with npx wrangler d1 create zenigo-sync --jurisdiction eu).
   // Without it the app hides sync (the API answers 503). The table is created on first use.
   "d1_databases": [

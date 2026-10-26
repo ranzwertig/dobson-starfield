@@ -1,0 +1,27 @@
+{
+  "_comment": "Zenigo Pro as shown on /pro/ (scripts/build.mjs puts it into site/pro.html). Edit here. The price itself comes from Paddle; structuredData is only the base price for search engines (schema.org Offer on the home page) and must match the Paddle base price.",
+  "name": "Zenigo Pro",
+  "tagline": "Zenigo is free, and everything you need to find objects with your telescope stays free. Pro adds more for planning, for observing with a second device and for using Zenigo on all your devices.",
+  "terms": "12-month licence, paid once, no automatic renewal",
+  "features": [
+    { "title": "Sync between devices", "text": "Your observing list, logbook and telescope settings on your phone, tablet and computer, end-to-end encrypted.", "href": "/features/#sync" },
+    { "title": "Live connection", "text": "A second phone or tablet follows the telescope: where it points, the way to the target and, if you like, the telescope’s camera image. Only the device on the telescope needs Pro; anyone can follow it.", "href": "/features/#live" },
+    { "title": "Coming up", "text": "Eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon will disturb them.", "href": "/help/#coming-up" },
+    { "title": "Satellites", "text": "The ISS and bright satellites on the map, and their next visible passes.", "href": "/help/#satellites" },
+    { "title": "Eyepiece view and best eyepiece", "text": "The target as it looks in your eyepiece, and which of your eyepieces suits each object, with the reason.", "href": "/help/#optics" },
+    { "title": "Short route", "text": "Your planned objects in the order with the least turning for your mount, starting where the telescope points now.", "href": "/help/#short-route" },
+    { "title": "Extended catalogue", "text": "About 13,000 galaxies, nebulae and clusters of the NGC and IC catalogues, and fainter stars.", "coming": true },
+    { "title": "Observing programmes", "text": "Lists such as the Messier and Caldwell objects, with your progress.", "coming": true },
+    { "title": "Logbook statistics", "text": "What you have seen, by night, object type and telescope, and more export formats.", "coming": true }
+  ],
+  "freeFeatures": [
+    "Locate and push-to: the crosshair, the arrow, how far to turn and tilt, Continuous and Align",
+    "The star finder, with or without the camera",
+    "The catalogue with search and the “My telescope” filter",
+    "Tonight, the observing list and the logbook, with CSV export",
+    "Labelling your night photos, and saving or sharing them",
+    "Following a Pro device over the live connection",
+    "Red light, the Sun warning, backup and restore"
+  ],
+  "structuredData": { "price": "19.99", "currency": "EUR" }
+}

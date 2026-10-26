@@ -15,7 +15,7 @@
 <main class="wrap">
   <article class="legal">
     <h1>Privacy policy</h1>
-    <p class="stamp">Last updated: 23 October 2026</p>
+    <p class="stamp">Last updated: 26 October 2026</p>
 
     <p>Zenigo is built so that your data stays on your device. The app works entirely in your browser: camera images, your location and motion sensor data are processed locally and are never sent to us or to anyone else (the optional live connection sends the camera image, if you turn that on, only directly to your own second device in the same network). This policy explains the little data that is processed anyway.</p>
 
@@ -66,8 +66,17 @@
       <li><b>Your rights:</b> you can delete the synced copy yourself at any time. Without your sync code we cannot tell which encrypted copy is yours, so we cannot give access to it or delete it on request (Art. 11 GDPR).</li>
     </ul>
 
+    <h2 id="purchases">Buying Zenigo Pro</h2>
+    <p>Zenigo Pro is sold by Paddle.com Market Ltd, Judd House, 18–29 Mora Street, London EC1V 8BT, United Kingdom, as merchant of record. When you buy Pro, you enter your name, email address, country and payment details in Paddle’s checkout. Paddle processes them as an independent controller, to carry out the purchase, issue the invoice and meet its tax obligations. Its <a href="https://www.paddle.com/legal/privacy" rel="noopener" target="_blank">privacy policy</a> applies.</p>
+    <ul>
+      <li><b>The Pro page:</b> <a href="/pro/">zenigo.app/pro</a> loads Paddle’s script (Paddle.js) from Paddle’s servers to show the price for your country and open the checkout. Your browser then connects to Paddle, which receives your IP address and browser details and may set cookies for the checkout and fraud prevention. No other page of Zenigo, and not the app, loads anything from Paddle. To show the right price, our server tells the page the country Cloudflare derives from your IP address; it is not stored.</li>
+      <li><b>What we receive:</b> after the purchase, Paddle notifies our server of it. We receive the order number, the product, the date and the country, for our accounting. We do not store your email address or payment details. Our server uses the order number to create a licence key and keeps the order number and the key’s identifier, so that a key can be deactivated after a refund or blocked if it is published. Legal basis: Art. 6(1)(b) GDPR (performance of the contract) and, for the accounting records, Art. 6(1)(c) GDPR. Retention: for as long as the licence exists, and beyond that for the statutory retention periods of up to 10 years.</li>
+      <li><b>The licence key on your devices:</b> it contains the order number, the purchase date, the end of the licence period and a digital signature, but no name or email address. Zenigo checks the signature and the end date on your device, without contacting a server. The key is stored in your browser on the device, in your backup files and, if you use sync, in your end-to-end encrypted sync copy.</li>
+      <li><b>Sync with Pro:</b> when your device syncs, it also sends the licence key, so that our server can check that Pro is active. The key is checked and not stored with your sync data. When the licence period ends, the server stops accepting syncs for this key and deletes the encrypted copy after 90 days unless the licence is renewed.</li>
+    </ul>
+
     <h2>No cookies, no tracking</h2>
-    <p>Zenigo sets no cookies, uses no analytics or advertising services and has no social media plugins. Fonts are delivered from our own server, not from third-party providers.</p>
+    <p>Zenigo sets no cookies, uses no analytics or advertising services and has no social media plugins. Fonts are delivered from our own server, not from third-party providers. The only exception is Paddle’s checkout on the Pro page, described under <a href="#purchases">Buying Zenigo Pro</a>.</p>
 
     <h2>Links to other websites</h2>
     <p>The object details in the app link to external sources (SEDS Messier Database, In-The-Sky.org, NASA, SIMBAD and Wikipedia), and the menu links to location-based services (meteoblue for seeing and clouds, lightpollutionmap.info for light pollution, Heavens-Above for satellite passes). These links contain the coordinates of your location, rounded to about 100 m, so the provider can show the information for it. These sites are only contacted when you tap a link. From then on, the privacy policy of the respective provider applies.</p>

@@ -139,10 +139,11 @@ const pageScripts = { 'diy-accessories.html': tags([fJscad, fAdapter, fCfg]), 'd
 // the designs under stable names, to open in the JSCAD web app
 write('dist/diy-accessories/finder-adapter.jscad.js', read('src/finder-adapter.js'));
 write('dist/diy-accessories/mirror-holder/mirror-holder.jscad.js', read('src/mirror-holder.js'));
-const hidden = new Set(['diy-mirror-holder.html']);
+const hidden = new Set(['diy-mirror-holder.html', 'pro-welcome.html']);
 
 const pages = { 'index.html': 'dist/index.html', 'features.html': 'dist/features/index.html', 'star-finder.html': 'dist/star-finder/index.html', 'telescopes.html': 'dist/telescopes/index.html', 'faq.html': 'dist/faq/index.html', 'compare.html': 'dist/compare/index.html', 'getting-started.html': 'dist/getting-started/index.html', 'help.html': 'dist/help/index.html',
   'diy-accessories.html': 'dist/diy-accessories/index.html', 'diy-mirror-holder.html': 'dist/diy-accessories/mirror-holder/index.html',
+  'pro.html': 'dist/pro/index.html', 'pro-welcome.html': 'dist/pro/welcome/index.html', 'licence.html': 'dist/licence/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
 const header = read('site/_header.html'), footer = read('site/_footer.html');
 // Search engines: canonical address per page and a sitemap (the app itself at /app/ is excluded in robots.txt)
@@ -158,14 +159,23 @@ function faqLd(html) {
   const qa = [...html.matchAll(/<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd>([\s\S]*?)<\/dd>/g)].map(([, q, a]) => ({ '@type': 'Question', name: plain(q), acceptedAnswer: { '@type': 'Answer', text: plain(a) } }));
   return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa }).replace(/</g, '\\u003c')}</script>`;
 }
+// Zenigo Pro: what it includes and what stays free, from site/pro.json (one place to edit), into site/pro.html; the
+// home page's structured data gets the Pro offer from the same file. The price shown on the page comes from Paddle.
+const PRO = JSON.parse(read('site/pro.json'));
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const proHtml = html => html.replaceAll('<!--PRO-NAME-->', esc(PRO.name)).replaceAll('<!--PRO-TAGLINE-->', esc(PRO.tagline)).replaceAll('<!--PRO-TERMS-->', esc(PRO.terms))
+  .replace('<!--PRO-FEATURES-->', PRO.features.map(f => `      <dt${f.coming ? ' class="coming"' : ''}>${f.href ? `<a href="${esc(f.href)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`).join('\n'))
+  .replace('<!--PRO-FREE-->', PRO.freeFeatures.map(f => `      <li>${esc(f)}</li>`).join('\n'));
+const proLd = JSON.stringify([{ '@type': 'Offer', name: 'Zenigo', price: '0', priceCurrency: 'EUR' },
+  { '@type': 'Offer', name: PRO.name + ' – ' + PRO.terms, price: PRO.structuredData.price, priceCurrency: PRO.structuredData.currency, url: SITE + '/pro/' }]);
 for (const [src, dst] of Object.entries(pages)) {
   const url = hidden.has(src) ? null : urlOf(dst);
   const seo = url ? `<link rel="canonical" href="${url}"><meta property="og:url" content="${url}">` : '';
   const ld = src === 'faq.html' ? faqLd(read('site/' + src)) : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
   const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replaceAll(`href="${here}">`, `href="${here}" aria-current="page">`) : header;
-  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || ''));
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || '').replace(/<!--PRO-[A-Z]+-->/g, m => proHtml(m)).replace('"offers": "<!--OFFERS-->"', () => '"offers": ' + proLd));
 }
-for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html')) cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
+for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html') && f !== 'pro.json') cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 
 console.log(`sitemap: ${Object.keys(pages).filter(p => !hidden.has(p) && p !== '404.html').length} pages; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);

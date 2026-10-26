@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenigo Pro – 12-month licence</title>
+<meta name="description" content="Zenigo is free. Zenigo Pro adds sync between devices, the live connection with a second device, Coming up, satellites, the eyepiece view and the short route: a 12-month licence, paid once, no automatic renewal.">
+<meta name="theme-color" content="#0c1124">
+<link rel="icon" href="/app/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
+<meta property="og:title" content="Zenigo Pro">
+<meta property="og:description" content="Sync, live connection, Coming up, satellites, eyepiece view and short route. 12-month licence, paid once, no automatic renewal.">
+<meta property="og:image" content="https://zenigo.app/img/screens/live-follow-1600.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!--FONTS-->
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<!--HEADER-->
+
+<main class="wrap">
+  <article class="doc pro">
+    <h1><!--PRO-NAME--></h1>
+    <p class="intro"><!--PRO-TAGLINE--></p>
+
+    <section class="buybox" id="buy" aria-labelledby="buyTitle">
+      <h2 id="buyTitle" class="sr">Buy Zenigo Pro</h2>
+      <p class="sandbox" id="proSandbox" hidden>Sandbox: test payments only, no real money is charged.</p>
+      <div class="pricerow">
+        <span class="price" id="proPrice" aria-live="polite">…</span>
+        <span class="terms"><!--PRO-TERMS--></span>
+      </div>
+      <p class="taxnote" id="proTax">Price for your country, including VAT or sales tax where it applies.</p>
+      <button class="open buy" id="proBuy" type="button" disabled>
+        <span>Buy Pro</span>
+        <small><!--PRO-TERMS--></small>
+      </button>
+      <p class="unavail" id="proState" role="status" hidden></p>
+      <p class="fine">By buying you agree to the <a href="/licence/">licence agreement</a>. Zenigo Pro is sold by Paddle as merchant of record: Paddle takes the payment, sends the receipt and handles VAT under its <a href="https://www.paddle.com/legal/buyer-terms" rel="noopener" target="_blank">buyer terms</a>. <a href="#refunds">Refunds</a> · <a href="/privacy/#purchases">Privacy</a></p>
+    </section>
+
+    <h2 id="includes">What Pro adds</h2>
+    <dl class="ref profeat">
+<!--PRO-FEATURES-->
+    </dl>
+    <p class="muted">Features marked “coming” are planned and not part of what you buy today. If they arrive during your 12 months, they are included.</p>
+
+    <h2 id="after">After 12 months</h2>
+    <p>The licence ends after 12 months and nothing is charged again. The Pro features stop; the free features and all your data on your devices stay, including the logbook. Zenigo reminds you 30 days before the end. If you want to keep Pro, buy it again: bought before the end, the new 12 months start when the current ones end, so you lose no days.</p>
+
+    <h2 id="free">What stays free</h2>
+    <ul class="check freelist">
+<!--PRO-FREE-->
+    </ul>
+
+    <h2 id="refunds">Refunds</h2>
+    <p>If Pro isn’t for you, you get your money back within 30 days of buying, without giving a reason. Ask Paddle at <a href="https://paddle.net" rel="noopener" target="_blank">paddle.net</a> (or reply to the receipt email), or write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>. The licence then ends. Your statutory rights are not affected.</p>
+
+    <h2 id="questions">Questions</h2>
+    <dl class="ref qa">
+      <dt>Is it a subscription?</dt>
+      <dd>No. You pay once for 12 months. There is nothing to cancel, and nothing is charged again unless you buy again.</dd>
+      <dt>On how many devices can I use it?</dt>
+      <dd>On all devices you use yourself. For the live connection, only the device on the telescope needs Pro; others can follow it, also at a public observing night.</dd>
+      <dt>Do I need an account?</dt>
+      <dd>No. You get a licence key that Zenigo checks on the device. Zenigo stores no email address; Paddle needs one for the receipt.</dd>
+    </dl>
+  </article>
+</main>
+
+<!--FOOTER-->
+<script>
+  // Zenigo Pro checkout. The Worker (/api/pro/config) says which Paddle account and price to use; without it the page
+  // shows "Checkout unavailable" and loads nothing from Paddle. Prices are shown exactly as Paddle formats them.
+  (() => {
+    const $ = id => document.getElementById(id);
+    const buy = $("proBuy"), price = $("proPrice"), state = $("proState");
+    let cfg = null;
+    const unavailable = why => {
+      if (why) console.warn("Zenigo Pro checkout:", why);
+      buy.disabled = true; price.textContent = "—"; $("proTax").hidden = true;
+      state.textContent = "Checkout unavailable at the moment. Please try again later, or write to zenigo@christianranz.com.";
+      state.hidden = false; document.documentElement.dataset.checkout = "off";
+    };
+    const loadPaddle = () => new Promise((ok, fail) => {
+      if (window.Paddle) return ok();
+      const s = document.createElement("script");
+      s.src = "https://cdn.paddle.com/paddle/v2/paddle.js"; s.onload = () => window.Paddle ? ok() : fail(new Error("Paddle.js missing")); s.onerror = () => fail(new Error("Paddle.js did not load"));
+      document.head.appendChild(s);
+    });
+    const item = () => ({ priceId: cfg.priceId, quantity: 1 });
+    function onEvent(e) {
+      if (e && e.name === "checkout.completed") {
+        const id = e.data && e.data.transaction_id;
+        location.assign("/pro/welcome/" + (id ? "?txn=" + encodeURIComponent(id) : ""));
+      }
+    }
+    buy.addEventListener("click", () => {
+      if (!cfg || !window.Paddle) return;
+      Paddle.Checkout.open({ items: [item()], settings: { displayMode: "overlay", variant: "one-page", theme: "dark", locale: "en" } });
+    });
+    (async () => {
+      try {
+        const r = await fetch("/api/pro/config", { cache: "no-store" });
+        const j = r.ok ? await r.json() : null;
+        if (!j || (j.environment !== "sandbox" && j.environment !== "production") || !j.clientToken || !j.priceId) return unavailable(j && j.error || "no configuration (" + r.status + ")");
+        cfg = j;
+      } catch (e) { return unavailable(e.message); }
+      try { await loadPaddle(); } catch (e) { return unavailable(e.message); }
+      if (cfg.environment === "sandbox") { Paddle.Environment.set("sandbox"); $("proSandbox").hidden = false; }
+      Paddle.Initialize({ token: cfg.clientToken, eventCallback: onEvent });
+      buy.disabled = false; document.documentElement.dataset.checkout = "on";
+      try {
+        // the visitor's country from Cloudflare; without one Paddle works it out from the IP address
+        const req = { items: [item()] };
+        if (cfg.country) req.address = { countryCode: cfg.country };
+        const res = await Paddle.PricePreview(req);
+        price.textContent = res.data.details.lineItems[0].formattedTotals.total;
+      } catch (e) {
+        console.warn("Zenigo Pro price:", e);
+        price.textContent = ""; $("proTax").textContent = "The price for your country is shown in the checkout.";
+      }
+    })();
+  })();
+</script>
+</body>
+</html>

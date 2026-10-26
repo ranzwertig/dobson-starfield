@@ -9,6 +9,7 @@
     "test": "npm run catalog && node test/synthetic.cjs 21 2",
     "test:photo": "node test/photo.cjs",
     "test:sync": "node test/sync.cjs",
+    "test:pro": "node test/pro-config.mjs",
     "test:ui": "node scripts/build.mjs && node test/ui.cjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"

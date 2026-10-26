@@ -397,3 +397,33 @@ footer a:hover { color: var(--amber); }
   .menugrid { grid-template-columns: 1fr; gap: 26px; padding-top: 14px; }
   .menugrid a { font-size: 24px; padding: 6px 0; }
 }
+
+/* Zenigo Pro: the buy box on /pro/ and the small “Pro” and “coming” tags on the features and help pages */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ptag { display: inline-block; padding: 1px 8px; border-radius: 99px; font: 600 12px/1.5 var(--ui); letter-spacing: .08em; text-transform: uppercase; vertical-align: .18em; white-space: nowrap; }
+.ptag.pro { color: #1b1206; background: var(--amber); text-decoration: none; }
+.ptag.pro:hover { background: #f6b964; }
+.ptag.soon { color: var(--mist); border: 1px solid var(--line); }
+h2 .ptag, h3 .ptag, dt .ptag, .kicker .ptag { margin-left: 8px; }
+.profeat + .muted { margin-top: 18px; }
+.buybox { border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; margin: 0 0 8px; background: linear-gradient(160deg, rgba(240, 168, 69, .08), rgba(12, 17, 36, .6) 60%); }
+.buybox .sandbox { margin: 0 0 12px; color: var(--coral); font-size: 15px; }
+.pricerow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.price { font: 500 clamp(34px, 5vw, 44px)/1.1 var(--num); color: var(--star); font-variant-numeric: tabular-nums; min-width: 2ch; }
+.terms { color: var(--star); font-weight: 600; font-size: 18px; }
+.buybox .taxnote { color: var(--mist); font-size: 15px; margin: 4px 0 18px; }
+.open.buy { border: 0; cursor: pointer; font-family: var(--ui); font-size: 19px; flex-direction: column; align-items: flex-start; gap: 0; padding: 10px 26px 11px; border-radius: 16px; line-height: 1.2; }
+.open.buy small { font-size: 14px; font-weight: 500; opacity: .85; }
+.open.buy:disabled { opacity: .45; cursor: default; background: var(--amber); }
+.buybox .unavail { color: var(--coral); margin: 14px 0 0; }
+.buybox .fine { color: var(--mist); font-size: 15px; margin: 16px 0 0; }
+.buybox .fine a { color: var(--mist); }
+.buybox .cta { margin: 18px 0 0; }
+.buybox code { font: 500 15px var(--num); color: var(--star); }
+.profeat dt.coming, .profeat dt.coming a { color: var(--mist); }
+.profeat dt a { color: var(--star); text-decoration-color: var(--line); }
+.profeat dt a:hover { color: var(--amber); }
+.freelist li { color: #ccd3de; }
+@media (max-width: 520px) { .buybox { padding: 18px 16px; } .open.buy { width: 100%; } }
+.freelist li::before { content: "✓"; border: 0; width: auto; height: auto; top: 0; left: 2px; color: var(--amber); font-weight: 700; }
+.buybox .fine:first-child { margin-top: 0; }
