@@ -1258,7 +1258,6 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="phrows">
       <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 15.5h17M7 18h6"/></svg></span><span>Caption<small>title, date and time, field of view</small></span><span class="switch"><input type="checkbox" id="phCap" aria-label="Caption"><i></i></span></label>
       <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span>Place in the caption<small id="phPlaceNote">off: where you were stays private</small></span><span class="switch"><input type="checkbox" id="phPlace" aria-label="Place in the caption"><i></i></span></label>
-      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#f0a845" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><span>“zenigo.app” in the corner<small>small, in the caption</small></span><span class="switch"><input type="checkbox" id="phMark" aria-label="zenigo.app in the corner"><i></i></span></label>
     </div>
     <div class="qlabel">Size</div>
     <div class="seg3" id="phSize" role="group" aria-label="Size">
@@ -1641,7 +1640,7 @@ const st = {
 // taken (EXIF), the time shown before it was opened, and the labelled objects (cached)
 const ph = { on: false, bmp: null, name: "", ex: null, when: null, exact: false, loc: null, timeSet: false, tOffBefore: 0, ver: 0, objs: null, hl: null, tab: "deep", all: false };
 // what the labels on a photo show (the layers), how many, and how a copy is saved
-const PH_DEF = { style: "labelled", lines: true, names: true, figures: false, stars: true, deep: true, planets: true, grid: false, marks: false, level: 2, caption: true, place: false, mark: true, size: "large" };
+const PH_DEF = { style: "labelled", lines: true, names: true, figures: false, stars: true, deep: true, planets: true, grid: false, marks: false, level: 2, caption: true, place: false, size: "large" };
 cfg.photo = Object.assign({ ...PH_DEF }, cfg.photo || {});
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
 
@@ -3617,7 +3616,7 @@ function phGrid() {
 function photoDraw(c, map, u, O, sol, box, opt = {}) {
   const L = cfg.photo, lv = L.level, font = skyNow().col["--font-ui"] || "sans-serif", mono = "IBM Plex Mono, ui-monospace, monospace";
   const k = Math.hypot(...map(1, 0).map((v, i) => v - map(0, 0)[i]));   // canvas pixels per photo pixel
-  const pl = [], hits = opt.hits;
+  const pl = (opt.avoid || []).slice(), hits = opt.hits;   // placed labels (and areas to keep free)
   c.save(); c.lineJoin = "round"; c.lineCap = "round"; c.textBaseline = "middle";
   c.beginPath(); c.rect(box[0], box[1], box[2] - box[0], box[3] - box[1]); c.clip();   // nothing beside the photo
   if (L.figures) photoFigures(c, map, sol);
@@ -3751,18 +3750,25 @@ async function photoRender(size, preview) {
   c.fillStyle = "#07090c"; c.fillRect(0, 0, w, h + capH);
   c.imageSmoothingQuality = "high"; c.drawImage(bmp, 0, 0, w, h);
   const kx = w / sol.w, ky = h / sol.h;
-  photoDraw(c, (x, y) => [x * kx, y * ky], u, O, sol, [0, 0, w, h], { hl: false });
+  const font = skyNow().col["--font-ui"] || "sans-serif", logo = await phLogo(), pad = 16 * u;
+  c.font = `500 ${12 * u}px ${font}`;
+  const pw = c.measureText("zenigo.app").width + 20 * u + 7 * u + 18 * u, ph2 = 30 * u, px = w - pad - pw, py = h - pad - ph2;   // the pill without a caption
+  photoDraw(c, (x, y) => [x * kx, y * ky], u, O, sol, [0, 0, w, h], { hl: false, avoid: capH ? [] : [[px - 4 * u, py - 4 * u, w, h]] });
+  // the Zenigo logo and "zenigo.app", always: in the caption, or without one in a small dark pill in the corner
+  const mark = (right, cy) => {
+    c.font = `500 ${12 * u}px ${font}`; c.textBaseline = "middle"; c.textAlign = "right"; c.fillStyle = "#a9b4c0"; c.fillText("zenigo.app", right, cy);
+    const tw = c.measureText("zenigo.app").width, ls = 20 * u, lx = right - tw - 7 * u - ls;
+    if (logo) c.drawImage(logo, lx, cy - ls / 2, ls, ls);
+    c.textAlign = "left"; return lx;
+  };
+  if (!capH) {
+    c.fillStyle = "rgba(7,9,12,.72)"; c.beginPath(); c.roundRect ? c.roundRect(px, py, pw, ph2, ph2 / 2) : c.rect(px, py, pw, ph2); c.fill();
+    mark(w - pad - 9 * u, py + ph2 / 2);
+  }
   if (capH) {
-    const font = skyNow().col["--font-ui"] || "sans-serif", mono = "IBM Plex Mono, ui-monospace, monospace", pad = 16 * u;
+    const mono = "IBM Plex Mono, ui-monospace, monospace";
     c.fillStyle = "#07090c"; c.fillRect(0, h, w, capH); c.fillStyle = "#1d232b"; c.fillRect(0, h, w, Math.max(1, u));
-    let right = w - pad;
-    if (L.mark) {   // on the title's line, so the facts below can use the whole width
-      c.font = `500 ${12 * u}px ${font}`; c.textBaseline = "middle"; c.textAlign = "right"; c.fillStyle = "#8f9aa6"; c.fillText("zenigo.app", right, h + capH * 0.36);
-      const tw = c.measureText("zenigo.app").width, cx = right - tw - 13 * u, cy = h + capH * 0.36;
-      c.strokeStyle = "#f0a845"; c.lineWidth = 1.6 * u; c.lineCap = "round"; c.beginPath(); c.arc(cx, cy, 5.5 * u, 0, 7);
-      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(cx + a * 7 * u, cy + b * 7 * u); c.lineTo(cx + a * 9.5 * u, cy + b * 9.5 * u); }); c.stroke();
-      right = cx - 16 * u;
-    }
+    const right = mark(w - pad, h + capH * 0.36) - 16 * u;   // on the title's line, so the facts below can use the whole width
     const fit = (t, max) => { if (c.measureText(t).width <= max) return t; while (t.length > 1 && c.measureText(t + "…").width > max) t = t.slice(0, -1); return t + "…"; };
     c.textAlign = "left"; c.textBaseline = "middle";
     c.font = `600 ${16 * u}px ${font}`; c.fillStyle = "#eef1f4"; c.fillText(fit(O.title, right - pad), pad, h + capH * 0.36);
@@ -3770,6 +3776,11 @@ async function photoRender(size, preview) {
     c.font = `${10.5 * u}px ${mono}`; c.fillStyle = "#8f9aa6"; c.fillText(fit(facts, w - 2 * pad), pad, h + capH * 0.7);
   }
   return cv;
+}
+// the Zenigo logo for the copy (loaded once; the copy is made without it if it can't be loaded)
+let phLogoP = null;
+function phLogo() {
+  return phLogoP || (phLogoP = new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => { phLogoP = null; res(null); }; im.src = "logo.svg"; }));
 }
 // the figure drawings needed for the copy, loaded before it is drawn (on the screen they appear as they arrive)
 async function phFiguresReady(sol) {
@@ -3930,10 +3941,9 @@ $("phLogAll").onclick = () => {
 // Save and share
 function syncPhShare() {
   const L = cfg.photo;
-  $("phCap").checked = !!L.caption; $("phPlace").checked = !!L.place && !!ph.loc; $("phMark").checked = !!L.mark;
+  $("phCap").checked = !!L.caption; $("phPlace").checked = !!L.place && !!ph.loc;
   $("phPlace").disabled = !L.caption || !ph.loc;
   $("phPlaceNote").textContent = !ph.loc ? "the photo doesn’t say where it was taken" : L.place ? phPlace(ph.loc) + ", rounded" : "off: where you were stays private";
-  $("phMark").disabled = !L.caption;
   document.querySelectorAll("[data-phsize]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.phsize === L.size)));
   if (ph.bmp) document.querySelectorAll("[data-phsize]").forEach(b => { const s = phOutSize(b.dataset.phsize); b.querySelector("small").textContent = s[0] + "×" + s[1]; });
   const canShare = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [new File([new Blob([""], { type: "image/jpeg" })], "x.jpg", { type: "image/jpeg" })] }));
@@ -3948,7 +3958,6 @@ async function phPreview() {
 $("phShare").onclick = () => { syncPhShare(); openSheet("phShareSheet"); };
 $("phCap").onchange = () => { cfg.photo.caption = $("phCap").checked; save(); syncPhShare(); };
 $("phPlace").onchange = () => { cfg.photo.place = $("phPlace").checked; save(); syncPhShare(); };
-$("phMark").onchange = () => { cfg.photo.mark = $("phMark").checked; save(); syncPhShare(); };
 document.querySelectorAll("[data-phsize]").forEach(b => b.onclick = () => { cfg.photo.size = b.dataset.phsize; save(); syncPhShare(); });
 async function phBusy(btn, job) {
   if (btn.dataset.busy) return; btn.dataset.busy = "1"; const t = btn.textContent; btn.textContent = "Preparing …";
