@@ -31,6 +31,21 @@
     "PADDLE_CLIENT_TOKEN": "test_286c8d85575e79e87f6f084c045",
     "PADDLE_PRICE_ID": "pri_01m5w5v6s354efkqesfcebsr41"
   },
+  // Preview builds of branches other than main (Workers Builds runs `npx wrangler preview`, which needs this block):
+  // Paddle sandbox, the same sync database (only encrypted copies) and a separate rate-limit namespace.
+  "previews": {
+    "vars": {
+      "PADDLE_ENV": "sandbox",
+      "PADDLE_CLIENT_TOKEN": "test_286c8d85575e79e87f6f084c045",
+      "PADDLE_PRICE_ID": "pri_01m5w5v6s354efkqesfcebsr41"
+    },
+    "d1_databases": [
+      { "binding": "SYNC_DB", "database_name": "zenigo-sync", "database_id": "a7df21e9-3e67-4ee0-84a8-8bc8930d0198" }
+    ],
+    "ratelimits": [
+      { "name": "SYNC_LIMIT", "namespace_id": "1002", "simple": { "limit": 60, "period": 60 } }
+    ]
+  },
   // Sync: D1 database in the EU (created with npx wrangler d1 create zenigo-sync --jurisdiction eu).
   // Without it the app hides sync (the API answers 503). The table is created on first use.
   "d1_databases": [
