@@ -3,3 +3,9 @@
 PADDLE_ENV=sandbox
 PADDLE_CLIENT_TOKEN=test_...
 PADDLE_PRICE_ID=pri_...
+SYNC_NEEDS_PRO=true
+# Secrets for licence keys (worker/licence.js); locally any values work, e.g. a key pair made with
+#   node -e 'crypto.subtle.generateKey({name:"ECDSA",namedCurve:"P-256"},true,["sign"]).then(k=>crypto.subtle.exportKey("jwk",k.privateKey)).then(j=>console.log(JSON.stringify(j)))'
+# (licences signed with it are only accepted by an app built with its public key)
+PADDLE_WEBHOOK_SECRET=pdl_ntfset_...
+PRO_SIGNING_KEY={"kty":"EC","crv":"P-256","x":"...","y":"...","d":"..."}

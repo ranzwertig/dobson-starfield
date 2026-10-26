@@ -32,6 +32,7 @@
         <span class="terms"><!--PRO-TERMS--></span>
       </div>
       <p class="taxnote" id="proTax">Price for your country, including VAT or sales tax where it applies.</p>
+      <p class="current" id="proHave" hidden></p>
       <button class="open buy" id="proBuy" type="button" disabled>
         <span>Buy Pro</span>
         <small><!--PRO-TERMS--></small>
@@ -90,6 +91,20 @@
       document.head.appendChild(s);
     });
     const item = () => ({ priceId: cfg.priceId, quantity: 1 });
+    // Pro already in this browser (Zenigo keeps its keys here too): buying now renews, and the Worker starts the new
+    // 12 months when the current licence ends. Only read here; the app checks the signatures.
+    const mine = (() => {
+      try {
+        const now = Date.now();
+        return (JSON.parse(localStorage.getItem("zenigo-pro") || "[]") || []).map(k => { try { const b = k.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(atob(b + "===".slice((b.length + 3) % 4))); } catch (e) { return null; } })
+          .filter(p => p && p.id && Date.parse(p.e) > now).sort((a, b) => Date.parse(b.e) - Date.parse(a.e))[0] || null;
+      } catch (e) { return null; }
+    })();
+    if (mine) {
+      const h = $("proHave"); h.hidden = false;
+      h.textContent = "You have Zenigo Pro until " + new Date(mine.e).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) + ". Buying now adds 12 months after that.";
+      buy.querySelector("span").textContent = "Renew Pro";
+    }
     function onEvent(e) {
       if (e && e.name === "checkout.completed") {
         const id = e.data && e.data.transaction_id;
@@ -98,7 +113,7 @@
     }
     buy.addEventListener("click", () => {
       if (!cfg || !window.Paddle) return;
-      Paddle.Checkout.open({ items: [item()], settings: { displayMode: "overlay", variant: "one-page", theme: "dark", locale: "en" } });
+      Paddle.Checkout.open({ items: [item()], ...(mine ? { customData: { renew: mine.id } } : {}), settings: { displayMode: "overlay", variant: "one-page", theme: "dark", locale: "en" } });
     });
     (async () => {
       try {

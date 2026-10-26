@@ -61,12 +61,18 @@ const results = []; let current = '';
 const ok = (cond, what, info) => { results.push({ test: current, what, pass: !!cond, info }); if (!cond) console.log('    ✗ ' + what + (info !== undefined ? ' — ' + JSON.stringify(info) : '')); };
 const NIGHT = new Date('2026-10-20T22:30:00+02:00');   // a fixed night in Germany: M13, M31, M45 up, Jupiter rising later
 let browser, base;
-async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init } = {}) {
+// Zenigo Pro: the build for these tests (PRO_TEST_KEY=1) also accepts keys signed with test/fixtures/pro-test-key.json.
+// Every page gets a running licence unless { pro: false }; the "pro" test makes its own.
+const ZLicence = require('../src/licence.js'), PRO_TEST = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'pro-test-key.json'), 'utf8'));
+const proKey = (s, e, extra = {}) => ZLicence.sign({ v: 1, id: 'test' + Math.random().toString(36).slice(2, 8), o: 'txn_01test', p: s.slice(0, 10), s, e, ...extra }, PRO_TEST.priv);
+let PRO_KEY = null;
+async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init, pro = true } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 2,
     timezoneId: 'Europe/Berlin', acceptDownloads: true, permissions: perms });
   const p = await ctx.newPage(); p.errors = [];
   p.on('pageerror', e => p.errors.push(String(e)));
   if (time) await p.clock.install({ time });
+  if (pro) await p.addInitScript(k => { try { if (!localStorage.getItem('zenigo-pro')) localStorage.setItem('zenigo-pro', JSON.stringify([k])); } catch (e) {} }, PRO_KEY);
   if (init) await p.addInitScript(init);
   await p.goto(base + '/app/'); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
   await p.evaluate(() => hint(null));
@@ -902,12 +908,65 @@ const TESTS = {
     await done(A); await done(B);
   },
 
+  // Zenigo Pro in the app: without a licence the Pro features ask for it, a pasted key turns them on, a renewal that
+  // starts later counts on, the end turns them off again, forged and sandbox-on-zenigo.app keys are refused
+  async proapp() {
+    const p = await page({ pro: false });
+    ok(await ev(p, () => pro.checked && !pro.on && $('proMenuState').textContent === ''), 'no licence: Pro is off');
+    await ev(p, () => setShow({ ...cfg.show, sats: true })); await wait(p, 300);
+    ok(await ev(p, () => !cfg.show.sats && !$('proSheet').hidden && /Satellites/.test($('proWhy').textContent)), 'satellites: the Pro sheet says why, the filter stays off');
+    await ev(p, () => closeSheet('proSheet'));
+    await ev(p, () => { $('qView').checked = true; $('qView').onchange(); }); await wait(p, 300);
+    ok(await ev(p, () => !cfg.optics.view && !$('qView').checked && !$('proSheet').hidden), 'eyepiece view: asks for Pro, stays off');
+    await ev(p, () => closeSheet('proSheet'));
+    ok(await ev(p, () => { cfg.optics.view = true; return $('epView').hidden; }), 'an eyepiece view switched on before is not drawn without Pro');
+    await ev(p, () => { cfg.optics.view = false; });
+    ok(await ev(p, async () => { const r = await liveStart({ noScan: true }); const s = !$('proSheet').hidden; closeSheet('proSheet'); return r === null && s && live.state !== 'offer'; }), 'live connection from the telescope: asks for Pro');
+    await ev(p, () => { syncRt.avail = true; renderSync(); $('syncSetup').onclick(); }); await wait(p, 300);
+    ok(await ev(p, () => !syncS.code && !$('proSheet').hidden), 'sync: setting it up asks for Pro');
+    await ev(p, () => closeSheet('proSheet'));
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 300);
+    ok(await ev(p, () => /part of Zenigo Pro/.test($('tonightBody').textContent) && !/Calculating/.test($('tonightBody').textContent)), 'Tonight: Coming up says it is part of Pro');
+    await ev(p, () => closeSheet('tonightSheet'));
+    await ev(p, () => { obs.list = ['M13', 'M57', 'M27', 'M31'].map(id => ({ id, name: id, added: 1 })); cfg.listOrder = 'route'; saveObs(); openSheet('listSheet'); renderList(); }); await wait(p, 300);
+    ok(await ev(p, () => !!document.querySelector('[data-lorder="route"] .protag') && document.querySelector('[data-lorder="time"]').classList.contains('on')), 'list: Short route marked Pro, the list stays by time');
+    await ev(p, () => closeSheet('listSheet'));
+    // keys: forged, then a running one pasted in the sheet
+    const k = await proKey('2026-09-01T00:00:00.000Z', '2027-09-01T00:00:00.000Z', { sb: 1 });
+    const forged = k.replace(/\.[\w-]{6}/, '.AAAAAA');
+    await ev(p, () => proNeed('')); await p.tap('#proEnter'); await p.fill('#proKeyIn', forged); await p.tap('#proKeyAdd'); await wait(p, 300);
+    ok(await ev(p, () => !pro.on && /not a Zenigo Pro licence key/.test($('proKeyMsg').textContent)), 'a changed key is refused');
+    await p.fill('#proKeyIn', k.slice(0, 40) + '\n' + k.slice(40)); await p.tap('#proKeyAdd'); await wait(p, 300);
+    ok(await ev(p, () => pro.on && /active until/i.test($('proKeyMsg').textContent) && /until/.test($('proMenuState').textContent)), 'a pasted key (with a line break) turns Pro on', await ev(p, () => $('proKeyMsg').textContent));
+    ok(await ev(p, () => satsOn !== undefined && (setShow({ ...cfg.show, sats: true }), cfg.show.sats)), 'satellites can be switched on now');
+    // a renewal bought before the end: starts later, and Pro runs until its end
+    const r2 = await proKey('2027-09-01T00:00:00.000Z', '2028-09-01T00:00:00.000Z', { sb: 1 });
+    await ev(p, k => proAdd(k), r2);
+    ok(await ev(p, () => pro.on && new Date(pro.until).getUTCFullYear() === 2028 && $('proKeys').children.length === 2 && /starts later/.test($('proKeys').textContent)), 'a renewal that starts later extends Pro to its end');
+    // 30 days before the end: a reminder
+    await p.clock.setSystemTime(new Date('2028-08-15T20:00:00Z')); await ev(p, () => { cfg.proRemindAt = 0; return proCheck().then(proRemind); });
+    ok(await ev(p, () => /Zenigo Pro ends in 17 days/.test($('hint').textContent)), 'a reminder 30 days before the end', await ev(p, () => $('hint').textContent));
+    // the end: Pro goes off, data stays, the app says so once
+    await p.clock.setSystemTime(new Date('2028-09-02T20:00:00Z')); await ev(p, () => proCheck());
+    ok(await ev(p, () => !pro.on && !satsOn() && /has ended/.test($('hint').textContent) && $('proMenuState').textContent === 'ended'), 'after the end: Pro is off and the app says so');
+    // a link with a key (#pro=…) adds it; a sandbox key is refused on zenigo.app
+    const k3 = await proKey('2028-08-01T00:00:00.000Z', '2029-08-01T00:00:00.000Z', { sb: 1 });
+    await p.goto(base + '/app/#pro=' + encodeURIComponent(k3)); await p.waitForFunction(() => typeof pro !== 'undefined' && pro.on, null, { timeout: 8000 }).catch(() => {});
+    ok(await ev(p, () => pro.on && !/pro=/.test(location.hash)), 'a #pro= link adds the key and leaves the address', await ev(p, () => [typeof pro !== 'undefined' && pro, location.hash.slice(0, 20), Date()]));
+    ok(await ev(p, async () => { const h = location.hostname; return h !== 'zenigo.app'; }) && await ev(p, async k => { const p0 = await ZLicence.verify(k); return !!(p0 && p0.sb); }, k3), 'test keys are sandbox keys (refused on zenigo.app itself)');
+    await done(p);
+  },
+
   // Zenigo Pro page: without a configuration "Checkout unavailable"; with one (Paddle.js replaced by a stand-in) the price
   // as Paddle formats it, the overlay checkout for the configured price and the redirect to the welcome page
   async pro() {
-    const open = async (cfg, w = 390) => {
+    const open = async (cfg, w = 390, stored) => {
       const ctx = await browser.newContext({ viewport: { width: w, height: 844 }, isMobile: w < 600, hasTouch: w < 600 });
       const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e))); p.paddle = [];
+      if (stored) await p.addInitScript(k => localStorage.setItem('zenigo-pro', JSON.stringify([k])), stored);
+      let asked = 0;
+      await p.route('**/api/pro/licence*', r => ++asked < 2 ? r.fulfill({ status: 404, contentType: 'application/json', body: '{"status":"pending"}' })
+        : r.fulfill({ contentType: 'application/json', body: JSON.stringify({ status: 'active', licence: 'ZP1.eyJ2IjoxfQ.c2ln', starts: '2026-10-26T20:00:00.000Z', ends: '2027-10-26T20:00:00.000Z' }) }));
       p.on('request', r => { if (r.url().includes('paddle.com')) p.paddle.push(r.url()); });
       if (cfg) await p.route('**/api/pro/config', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cfg) }));
       await p.route('https://cdn.paddle.com/**', r => r.fulfill({ contentType: 'text/javascript', body: `window.__pd = { calls: [] };
@@ -935,13 +994,18 @@ const TESTS = {
     await q.click('#proBuy'); await q.waitForURL(/\/pro\/welcome\//, { timeout: 5000 }).catch(() => {});
     ok(/\/pro\/welcome\/\?txn=txn_01test$/.test(q.url()), 'checkout completed: on to the welcome page with the transaction ID', q.url());
     ok(await q.isVisible('#txnRow') && await q.textContent('#txn') === 'txn_01test', 'the welcome page shows the order reference');
+    await q.waitForSelector('#keyReady', { state: 'visible', timeout: 8000 }).catch(() => {});
+    ok(await ev(q, () => JSON.parse(localStorage.getItem('zenigo-pro') || '[]').includes('ZP1.eyJ2IjoxfQ.c2ln') && /#pro=ZP1/.test(document.getElementById('keyOpen').href) && /until 26 October 2027/.test(document.getElementById('keyState').textContent)),
+      'the welcome page waits for the key, keeps it for the app, links it into the app', await ev(q, () => document.getElementById('keyState').textContent));
     await done(q);
-    const r = await open({ environment: 'production', clientToken: 'live_abc', priceId: 'pri_live' });
+    const r = await open({ environment: 'production', clientToken: 'live_abc', priceId: 'pri_live' }, 390, PRO_KEY);
     const c2 = await ev(r, () => __pd.calls);
     ok(!c2.some(c => c[0] === 'env') && !('address' in c2.find(c => c[0] === 'preview')[1]) && await r.isHidden('#proSandbox'), 'production: no sandbox switch; no country → none passed to Paddle');
     await r.click('#proBuy');
     const o = (await ev(r, () => __pd.calls)).find(c => c[0] === 'open');
     ok(o && o[1].settings.displayMode === 'overlay' && o[1].settings.variant === 'one-page' && o[1].items[0].priceId === 'pri_live' && o[1].items[0].quantity === 1, 'Buy opens the one-page overlay for that price', o);
+    const mineId = (await ZLicence.verify(PRO_KEY, [PRO_TEST.pub])).id;
+    ok(o && o[1].customData && o[1].customData.renew === mineId && /until 31 December 2027/.test(await r.textContent('#proHave')) && /Renew/.test(await r.textContent('#proBuy')), 'Pro already in this browser: shown, and the purchase renews it', o && o[1].customData);
     await done(r);
   },
 
@@ -963,6 +1027,7 @@ const TESTS = {
 (async () => {
   const only = process.argv.slice(2);
   const srv = await serve(); base = 'http://localhost:' + srv.address().port;
+  PRO_KEY = await proKey('2026-01-01T00:00:00.000Z', '2027-12-31T00:00:00.000Z');
   browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
   for (const [name, fn] of Object.entries(TESTS)) {
     if (only.length && !only.includes(name)) continue;

@@ -1,7 +1,8 @@
 // Screenshots of the app for the website (help and features pages).
 //   npm run build && node scripts/screenshots.cjs [name …]
 // Serves dist/, drives the app with Playwright on a fixed night, and writes WebP files to public/img/screens/
-// (committed; the build copies them to /img/screens/). The live camera is a synthetic image of the real sky drawn
+// (committed; the build copies them to /img/screens/). The app shows its Pro features with a test licence, so build with
+// PRO_TEST_KEY=1 first (as the UI tests do): PRO_TEST_KEY=1 npm run build && node scripts/screenshots.cjs. The live camera is a synthetic image of the real sky drawn
 // from the star catalogue, so Locate solves it for real. Needs Playwright (see test/ui.cjs) and Python 3 with Pillow.
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path'), { execFileSync } = require('node:child_process');
 let chromium;
@@ -74,6 +75,7 @@ async function page(dev = PHONE, { time = NIGHT, cam = false } = {}) {
     timezoneId: 'Europe/Berlin', locale: 'en-GB', permissions: cam ? ['camera'] : [] });
   const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
   await p.clock.install({ time });
+  await p.addInitScript(k => { try { if (!localStorage.getItem('zenigo-pro')) localStorage.setItem('zenigo-pro', JSON.stringify([k])); } catch (e) {} }, PRO_KEY);
   if (cam) await p.addInitScript(fakeCamera);
   await p.goto(base + '/app/');
   await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 20000 });
@@ -291,7 +293,11 @@ const SHOTS = {
   },
 };
 
+// a Zenigo Pro licence signed with the test key (accepted only by a build with PRO_TEST_KEY=1)
+let PRO_KEY = null;
 (async () => {
+  const ZLicence = require('../src/licence.js'), T = JSON.parse(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'pro-test-key.json'), 'utf8'));
+  PRO_KEY = await ZLicence.sign({ v: 1, id: 'screens', o: 'txn_screens', p: '2026-01-01', s: '2026-01-01T00:00:00.000Z', e: '2030-01-01T00:00:00.000Z' }, T.priv);
   const only = process.argv.slice(2);
   fs.mkdirSync(OUT, { recursive: true });
   const srv = await serve(); base = 'http://localhost:' + srv.address().port;

@@ -17,12 +17,14 @@
   <article class="doc pro">
     <h1>Thank you</h1>
     <p class="intro">You have bought Zenigo Pro for 12 months. Paddle has sent the receipt to your email address.</p>
-    <!-- The next step fills in the licence key for this order (webhook → signed key with its end date) and a link that
-         enters it in the app. Until then the page shows the order reference that the checkout passed in ?txn=. -->
-    <div class="buybox">
+    <div class="buybox" id="keyBox">
       <p class="fine" id="txnRow" hidden>Order reference: <code id="txn"></code></p>
-      <p>Your licence key will appear on this page, with a button that enters it in Zenigo. Keep the order reference above (it is also on the receipt) in case you need help.</p>
-      <p class="cta"><a class="open" href="/app/">Open Zenigo</a> <a class="open ghost" href="/pro/">Back to Zenigo Pro</a></p>
+      <p id="keyState" role="status">Your licence key is being prepared …</p>
+      <div id="keyReady" hidden>
+        <p class="keyline"><code id="keyText"></code></p>
+        <p class="cta"><a class="open" id="keyOpen" href="/app/">Open Zenigo with Pro</a> <button class="open ghost" id="keyCopy" type="button">Copy the key</button></p>
+        <p class="fine">In this browser Zenigo already has the key. On another device, or in Zenigo from the Home Screen on an iPhone or iPad, open Menu › Zenigo Pro › Enter licence key and paste it. Keep the key: you can enter it on all your devices.</p>
+      </div>
     </div>
     <p class="muted">Questions or a problem with the order? Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>, or see <a href="https://paddle.net" rel="noopener" target="_blank">paddle.net</a> for the payment and refunds.</p>
   </article>
@@ -30,9 +32,31 @@
 
 <!--FOOTER-->
 <script>
+  // The licence key for this order: made by the Worker when Paddle reports the payment (usually within seconds), so
+  // ask again until it is there. It is stored where Zenigo looks for it in this browser (localStorage "zenigo-pro").
   (() => {
-    const id = new URLSearchParams(location.search).get("txn");
-    if (id && /^txn_[a-z0-9]+$/i.test(id)) { document.getElementById("txn").textContent = id; document.getElementById("txnRow").hidden = false; }
+    const $ = id => document.getElementById(id), id = new URLSearchParams(location.search).get("txn"), state = $("keyState");
+    if (!id || !/^txn_[a-z0-9]+$/i.test(id)) { state.textContent = "This page shows the licence key after buying Zenigo Pro. If you bought it and see this, write to zenigo@christianranz.com."; return; }
+    $("txn").textContent = id; $("txnRow").hidden = false;
+    const store = key => { try { const a = JSON.parse(localStorage.getItem("zenigo-pro") || "[]"); if (!a.includes(key)) a.push(key); localStorage.setItem("zenigo-pro", JSON.stringify(a)); } catch (e) {} };
+    const day = iso => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    let tries = 0;
+    async function ask() {
+      tries++;
+      let r = null, j = null;
+      try { r = await fetch("/api/pro/licence?txn=" + encodeURIComponent(id), { cache: "no-store" }); j = await r.json(); } catch (e) {}
+      if (r && r.ok && j && j.licence) {
+        store(j.licence);
+        state.textContent = Date.parse(j.starts) > Date.now() + 864e5 ? "Your new year of Zenigo Pro runs from " + day(j.starts) + " to " + day(j.ends) + ", right after your current licence." : "Zenigo Pro is yours until " + day(j.ends) + ".";
+        $("keyText").textContent = j.licence; $("keyOpen").href = "/app/#pro=" + encodeURIComponent(j.licence); $("keyReady").hidden = false;
+        $("keyCopy").onclick = async () => { try { await navigator.clipboard.writeText(j.licence); $("keyCopy").textContent = "Copied"; } catch (e) { getSelection().selectAllChildren($("keyText")); } };
+        return;
+      }
+      if (r && r.status === 410) { state.textContent = "This order was refunded, so its licence has ended."; return; }
+      if (tries < 30) { setTimeout(ask, tries < 10 ? 2000 : 6000); return; }
+      state.textContent = "The licence key is taking longer than usual. Reload this page in a few minutes, or write to zenigo@christianranz.com with the order reference.";
+    }
+    ask();
   })();
 </script>
 </body>

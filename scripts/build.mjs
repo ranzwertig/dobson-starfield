@@ -57,7 +57,15 @@ const core = ('/* Star catalogue: d3-celestial data (c) Olaf Frohn, BSD-3-Clause
 const qrDir = path.dirname(require.resolve('qrcode-generator'));
 const qrPkg = JSON.parse(readFileSync(path.join(qrDir, '..', 'package.json'), 'utf8'));
 const syncJs = `/*! qrcode-generator ${qrPkg.version} (c) Kazuhiko Arase, MIT License, https://github.com/kazuhikoarase/qrcode-generator */\n`
-  + readFileSync(path.join(qrDir, 'qrcode.js'), 'utf8').replace(/^\(function \(factory\) \{[\s\S]*$/m, '') + '\n' + read('src/sync.js').replace('if (typeof module !== "undefined") module.exports = ZSync;', '');
+  + readFileSync(path.join(qrDir, 'qrcode.js'), 'utf8').replace(/^\(function \(factory\) \{[\s\S]*$/m, '') + '\n' + read('src/sync.js').replace('if (typeof module !== "undefined") module.exports = ZSync;', '')
+  + '\n' + licenceJs();
+// Zenigo Pro licence check (src/licence.js), in the same script. The UI tests build with PRO_TEST_KEY=1, which adds the
+// public key of test/fixtures/pro-test-key.json so they can make licences; deploys never set it.
+function licenceJs() {
+  let js = read('src/licence.js').replace("if (typeof module !== 'undefined') module.exports = ZLicence;", '');
+  if (process.env.PRO_TEST_KEY === '1') js = js.replace('/*__PRO_TEST_KEY__*/', JSON.stringify(JSON.parse(read('test/fixtures/pro-test-key.json')).pub) + ',');
+  return js;
+}
 // QR code reader for browsers without BarcodeDetector (Safari): jsQR (Apache-2.0), loaded only when a code is scanned
 // and not kept for offline use (joining a sync group needs the network anyway)
 const jsqrSrc = readFileSync(require.resolve('jsqr'), 'utf8');

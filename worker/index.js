@@ -2,10 +2,14 @@
 //   /api/tle      current orbital elements (TLE) of the space stations and about 150 bright satellites, from CelesTrak.
 //   /api/sync/v1  sync between devices: stores end-to-end encrypted copies (worker/sync.js).
 //   /api/pro/config  what the Zenigo Pro page needs for Paddle: environment, client token, price, country (worker/pro.js).
+//   /api/pro/webhook, /api/pro/licence  licence keys from Paddle's purchase notifications (worker/licence.js).
+// With SYNC_NEEDS_PRO = "true", reading and writing a sync group needs a running Pro licence (header X-Zenigo-Licence);
+// deleting a group never does.
 // The app only contacts its own server; the Worker fetches CelesTrak at most twice a day for everyone
 // and keeps the last good copy for when CelesTrak can't be reached.
 import { handleSync } from './sync.js';
 import { proConfig } from './pro.js';
+import { handleWebhook, handleLicence, licenceActive } from './licence.js';
 
 const GROUPS = ['stations', 'visual'];
 const FRESH = 12 * 3600e3;           // fetch new data twice a day
@@ -57,10 +61,20 @@ export default {
       }
     }
     if (url.pathname === '/api/sync/v1' || url.pathname.startsWith('/api/sync/v1/')) {
-      try { return await handleSync(req, env, url); }
+      try {
+        if (env.SYNC_NEEDS_PRO === 'true' && url.pathname.length > '/api/sync/v1/'.length && req.method !== 'DELETE') {
+          const key = req.headers.get('X-Zenigo-Licence') || '';
+          if (!env.PRO_SIGNING_KEY || !(await licenceActive(env, key))) return new Response(JSON.stringify({ error: 'pro', message: 'Sync needs Zenigo Pro.' }), { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+        }
+        return await handleSync(req, env, url);
+      }
       catch (e) { return new Response(JSON.stringify({ error: 'server error' }), { status: 500, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
     }
     if (url.pathname === '/api/pro/config' && req.method === 'GET') return proConfig(req, env);
+    if (url.pathname === '/api/pro/webhook' || url.pathname === '/api/pro/licence') {
+      try { return url.pathname === '/api/pro/webhook' ? await handleWebhook(req, env) : await handleLicence(req, env, url); }
+      catch (e) { return new Response(JSON.stringify({ error: 'server error' }), { status: 500, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
+    }
     return env.ASSETS.fetch(req);
   },
 };

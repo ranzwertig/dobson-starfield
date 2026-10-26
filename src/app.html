@@ -608,6 +608,16 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .menu-item svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
 .menu-item span { flex: 1; }
 .menu-item em { font-style: normal; color: var(--muted); font-size: 13px; }
+/* Zenigo Pro: its sheet and the small tag on Pro features */
+.prowhy { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--raise); font-size: 15px; }
+.prostatus { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
+.prostatus.on { color: var(--accent); }
+.prokeybox { display: grid; gap: 8px; margin: 10px 0; }
+.prokeybox textarea { width: 100%; font: 13px/1.35 var(--font-num); word-break: break-all; }
+.prokeys { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.prokeys li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--raise); font-size: 14px; }
+.prokeys small { color: var(--muted); }
+i.protag { font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--accent); border-radius: 99px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .row label { flex: 1 1 120px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
 .row input[type=number], .row input[type=text], .row select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; color: var(--fg); font-family: var(--font-num); font-size: 15px; width: 100%; box-sizing: border-box; }
@@ -954,6 +964,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
       <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices</span><em id="syncState"></em></button>
       <button class="menu-item" id="btnLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><span>Live connection</span><em id="liveState"></em></button>
+      <button class="menu-item" id="btnPro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span>Zenigo Pro</span><em id="proMenuState"></em></button>
     </div>
     <div class="label">Tonight <span class="lbl-sub" id="wxLoc"></span></div>
     <div class="menu-list">
@@ -1114,6 +1125,23 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="confirmTitle"><span id="confirmTitleTxt"></span> <button class="iconbtn" data-close aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <p class="note" id="confirmText"></p>
     <div class="actions"><button class="btn primary" id="confirmOk"></button><button class="btn" id="confirmCancel">Cancel</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="proSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="proTitle">
+    <div class="grab"><h2 id="proTitle"><span>Zenigo Pro</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <p class="prowhy" id="proWhy" hidden></p>
+    <p class="prostatus" id="proStatus" role="status"></p>
+    <p class="note">Pro adds sync between devices, the live connection from the device at the telescope (following it is free), Coming up, satellites, the eyepiece view and best eyepiece, and the short route. Everything else stays free. A 12-month licence, paid once, with no automatic renewal.</p>
+    <div class="actions"><a class="btn primary" id="proBuyLink" href="/pro/" target="_blank" rel="noopener">Buy Zenigo Pro</a><button class="btn" id="proEnter">Enter licence key</button></div>
+    <div class="prokeybox" id="proKeyBox" hidden>
+      <label><div class="slabel">Licence key</div><textarea id="proKeyIn" rows="3" placeholder="ZP1.…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></label>
+      <div class="row"><button class="btn primary" id="proKeyAdd">Add the key</button></div>
+      <p class="note" id="proKeyMsg" role="status"></p>
+    </div>
+    <ul class="prokeys" id="proKeys"></ul>
+    <p class="note"><a href="/pro/" target="_blank" rel="noopener">What Pro includes</a> · <a href="/licence/" target="_blank" rel="noopener">Licence agreement</a></p>
   </div>
 </div>
 
@@ -1609,6 +1637,9 @@ cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
 if (cfg.teleSetAt == null && [cfg.tele, cfg.teleTop].some(t => t && Math.hypot(+t.x || 0, +t.y || 0) > 1e-5)) cfg.teleSetAt = 1;
 // satellites are off by default now (switched on again in the filter when wanted)
 if (!cfg.extrasV) { cfg.show.sats = false; cfg.extrasV = 1; }
+// Zenigo Pro (see "Zenigo Pro" below): until the keys are checked, the last result stands (no flicker at start)
+var pro = { checked: false, on: false, cur: null, until: 0, ended: 0, list: [] };
+try { const c = JSON.parse(localStorage.getItem("zenigo-pro-state") || "null"); if (c && c.until > Date.now()) { pro.on = true; pro.until = c.until; } } catch (e) {}
 // stacking got smarter (motion check, float average): the old default of 6 frames becomes 24
 if (!cfg.stackV) { if (+cfg.stack === 6) cfg.stack = 24; cfg.stackV = 2; }
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
@@ -2209,8 +2240,8 @@ function scopeFitCalc(T, D) {
     const wf = a.widest.fov * 60 * (cls === "gal" || cls === "neb" ? 2 : 1);   // their visible part: about half the listed size
     if (size > wf * 1.5) { ok = false; score *= 0.4; why.push("Much larger than your widest field (" + fmtField(a.widest.fov) + "): better in binoculars or the finder."); }
     else if (size > wf * 1.05) { score *= 0.75; why.push("A little larger than your widest field (" + fmtField(a.widest.fov) + "): you see it in parts."); }
-    else if (a.best) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×): " + a.best.note + ".");
-  } else if (a && a.best) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×).");
+    else if (a.best && pro.on) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×): " + a.best.note + ".");
+  } else if (a && a.best && pro.on) why.push("Best in the " + epNameShort(a.best.e) + " (" + Math.round(a.best.mag) + "×).");
   return { ok, score: Math.min(1, score), why };
 }
 // How well placed it is at the shown time: high enough now and in an hour, dark enough, and for faint deep-sky objects
@@ -2822,9 +2853,10 @@ function deepNear(c, radDeg, maxMag, fn) {
 // with SGP4 (satellite.js). Elements age quickly, so they are only used while there is a connection and are not kept.
 const SAT = { list: [], at: 0, loading: false, ok: false, pos: [], posAt: 0, posKey: "" };
 const satShort = n => /^ISS \(/.test(n) ? "ISS" : /^CSS \(/.test(n) ? "Tiangong" : n.replace(/\s+\(.*\)$/, "");
-const satsOn = () => !!(cfg.show.sats && SAT.ok && navigator.onLine);
+const satsOn = () => !!(pro.on && cfg.show.sats && SAT.ok && navigator.onLine);
 async function loadSats(force) {
-  // loaded also while hidden on the map: search, targets and details use them
+  // loaded also while hidden on the map: search, targets and details use them (with Pro)
+  if (!pro.on) return;
   if (!navigator.onLine || SAT.loading || typeof satellite === "undefined") { syncSatState(); return; }
   if (!force && SAT.ok && Date.now() - SAT.at < 6 * 3600e3) return;
   SAT.loading = true; syncSatState();
@@ -5013,7 +5045,7 @@ function backToList() { renderList(); openSheet("listSheet"); const inner = scro
 function todoItems() {
   const tn = nightPlan(), tonight = sets().tonight;
   const items = obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
-  return cfg.listOrder === "route" ? routeOrder(items) : items;
+  return cfg.listOrder === "route" && pro.on ? routeOrder(items) : items;
 }
 // Short route: the telescope moves as little as possible from object to object.
 // Objects that get low within the hour come first (by time), then the rest of what is up now in the order with the
@@ -5148,11 +5180,11 @@ function renderList() {
     } else if (!todo.length) note("Everything planned is seen tonight. Well done!");
     if (todo.length > 2) {   // order: by when objects get low, or the shortest way for the telescope
       const ob = document.createElement("div"); ob.className = "oorder";
-      const route = cfg.listOrder === "route";
-      ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the list"><button role="radio" data-lorder="time">By time</button><button role="radio" data-lorder="route">Short route</button></div><small></small>';
+      const route = cfg.listOrder === "route" && pro.on;
+      ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the list"><button role="radio" data-lorder="time">By time</button><button role="radio" data-lorder="route">Short route' + (pro.on ? '' : '<i class="protag">Pro</i>') + '</button></div><small></small>';
       ob.querySelectorAll("[data-lorder]").forEach(b => { const on = (b.dataset.lorder === "route") === route; b.setAttribute("aria-checked", on); b.classList.toggle("on", on);
-        b.onclick = () => { cfg.listOrder = b.dataset.lorder; save(); nextCache.key = ""; renderList(); syncHudNext(); }; });
-      const byTime = cfg.listOrder === "route" ? (() => { const o = cfg.listOrder; cfg.listOrder = "time"; const v = todoItems(); cfg.listOrder = o; return v; })() : todo;
+        b.onclick = () => { if (b.dataset.lorder === "route" && !pro.on) return proNeed("The short route through your planned objects is part of Zenigo Pro."); cfg.listOrder = b.dataset.lorder; save(); nextCache.key = ""; renderList(); syncHudNext(); }; });
+      const byTime = route ? (() => { const o = cfg.listOrder; cfg.listOrder = "time"; const v = todoItems(); cfg.listOrder = o; return v; })() : todo;
       const a = pathDeg(todo), b = pathDeg(byTime);
       ob.querySelector("small").textContent = route
         ? "Shortest way for " + (cfg.mount === "eq" ? "an equatorial mount" : "an alt-azimuth mount (Dobson)") + ": about " + Math.round(a) + "° of turning in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first. Mount type: Settings › Telescope."
@@ -5500,6 +5532,101 @@ $("bkFile").onchange = async () => {
   }
   hint(lists, 4000);
 };
+/* ---------------- Zenigo Pro ---------------- */
+// Zenigo is free. Pro, a 12-month licence bought on /pro/, adds sync, the live connection from the telescope's device,
+// Coming up, satellites, the eyepiece view and best eyepiece, and the short route. Keys (src/licence.js) are kept in
+// localStorage "zenigo-pro" as a list (a renewal bought before the end starts later) and checked here, offline: the
+// signature and the dates. The welcome page after buying (/pro/welcome/) adds the key to the same list; it can also be
+// pasted in Menu › Zenigo Pro or opened as a link (/app/#pro=ZP1…). Sandbox keys only work away from zenigo.app.
+const PRO_KEY = "zenigo-pro";
+function proKeys() { try { const a = JSON.parse(localStorage.getItem(PRO_KEY) || "[]"); return Array.isArray(a) ? a.filter(k => typeof k === "string") : []; } catch (e) { return []; } }
+function proSaveKeys(a) { try { localStorage.setItem(PRO_KEY, JSON.stringify([...new Set(a)])); } catch (e) {} }
+const proSandboxOk = () => location.hostname !== "zenigo.app";
+const proDate = t => new Date(t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+async function proCheck() {
+  const now = Date.now(), list = [];
+  for (const k of proKeys()) { const p = await ZLicence.verify(k); if (p && (!p.sb || proSandboxOk())) list.push(p); }
+  list.sort((a, b) => Date.parse(a.s) - Date.parse(b.s));
+  const cur = list.filter(p => ZLicence.state(p, now).active).sort((a, b) => Date.parse(b.e) - Date.parse(a.e))[0] || null;
+  let until = cur ? Date.parse(cur.e) : 0;   // with a renewal that follows on: the end of the last one
+  for (const p of list) if (until && Date.parse(p.s) <= until + 86400e3 && Date.parse(p.e) > until) until = Date.parse(p.e);
+  const ends = list.map(p => Date.parse(p.e)).filter(e => e <= now);
+  const was = pro.on;
+  Object.assign(pro, { checked: true, on: !!cur, cur, until, list, ended: !cur && ends.length ? Math.max(...ends) : 0 });
+  try { localStorage.setItem("zenigo-pro-state", JSON.stringify({ until: pro.on ? until : 0 })); } catch (e) {}
+  if (was !== pro.on) proChanged(was);
+  renderPro();
+  return pro.on;
+}
+// Pro came or went: everything that depends on it draws again
+function proChanged(was) {
+  st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; nextCache.key = ""; lastSig = [];
+  if (pro.on) loadSats(true);   // at start they load before the keys are checked
+  syncOptics(); syncFilter(); renderSync(); updateGuide(); renderChips(); syncHudNext();
+  if (!$("listSheet").hidden) renderList();
+  if (pro.on && syncS.code) syncSoon(500);
+  if (was && !pro.on && pro.ended && cfg.proEndSeen !== pro.ended) {
+    cfg.proEndSeen = pro.ended; save();
+    hint("Zenigo Pro has ended. Its features are off; your lists, logbook and settings stay. Menu › Zenigo Pro to renew.", 9000);
+  }
+}
+function renderPro() {
+  const soon = pro.on && pro.until - Date.now() < 30 * 86400e3;
+  $("proMenuState").textContent = pro.on ? (soon ? "ends " : "until ") + proDate(pro.until) : pro.ended ? "ended" : "";
+  const s = $("proStatus");
+  s.classList.toggle("on", pro.on);
+  s.textContent = pro.on ? "Active until " + proDate(pro.until) + "." : pro.ended ? "Your licence ended on " + proDate(pro.ended) + "." : "Not active on this device.";
+  $("proBuyLink").textContent = pro.on || pro.ended ? "Renew Zenigo Pro" : "Buy Zenigo Pro";
+  const ul = $("proKeys"); ul.textContent = "";
+  pro.list.forEach(p => {
+    const li = document.createElement("li"), a = document.createElement("span"), b = document.createElement("small"), x = ZLicence.state(p);
+    a.textContent = proDate(Date.parse(p.s)) + " – " + proDate(Date.parse(p.e)) + (p.sb ? " · sandbox" : "");
+    b.textContent = x.active ? "running" : x.ended ? "ended" : "starts later";
+    li.append(a, b); ul.append(li);
+  });
+}
+// A Pro feature was asked for without Pro: say what it is and how to get it. Returns false, for `return proNeed(…)`.
+function proNeed(why) {
+  $("proWhy").textContent = why || ""; $("proWhy").hidden = !why;
+  $("proKeyBox").hidden = true; $("proKeyMsg").textContent = "";
+  renderPro(); openSheet("proSheet");
+  return false;
+}
+async function proAdd(str) {
+  const p = await ZLicence.verify(str);
+  if (!p) return { err: "That is not a Zenigo Pro licence key. Copy it completely, from “ZP1.” to the end." };
+  if (p.sb && !proSandboxOk()) return { err: "This is a test key from Paddle’s sandbox. It doesn’t work in Zenigo itself." };
+  proSaveKeys([...proKeys(), p.key]); await proCheck();
+  const x = ZLicence.state(p);
+  return { ok: true, p, msg: x.ended ? "Added, but this licence ended on " + proDate(x.end) + "." : x.active ? "Zenigo Pro is active until " + proDate(pro.until) + "." : "Added. It starts on " + proDate(x.start) + ", when your current licence ends." };
+}
+// 30 days before the end: a reminder, at most once a week (daily in the last three days)
+function proRemind() {
+  if (!pro.on) return;
+  const left = Math.ceil((pro.until - Date.now()) / 86400e3), last = +cfg.proRemindAt || 0;
+  if (left > 30 || Date.now() - last < (left <= 3 ? 20 : 7 * 24) * 3600e3) return;
+  cfg.proRemindAt = Date.now(); save();
+  hint("Zenigo Pro ends in " + left + (left === 1 ? " day" : " days") + ". Renew it in Menu › Zenigo Pro; the new year starts when this one ends.", 8000);
+}
+$("btnPro").onclick = () => proNeed("");
+$("proEnter").onclick = () => { $("proKeyBox").hidden = false; $("proKeyMsg").textContent = ""; $("proKeyIn").focus(); };
+$("proKeyAdd").onclick = async () => {
+  const r = await proAdd($("proKeyIn").value);
+  $("proKeyMsg").textContent = r.err || r.msg;
+  if (r.ok) $("proKeyIn").value = "";
+};
+// a key as a link (from the welcome page): taken out of the address at once
+function proFromLink(ms) {
+  const m = /[#&]pro=([^&]+)/.exec(location.hash); if (!m) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  setTimeout(async () => { const r = await proAdd(decodeURIComponent(m[1])); proNeed(""); $("proKeyBox").hidden = false; $("proKeyMsg").textContent = r.err || r.msg; }, ms);
+}
+proFromLink(900);
+addEventListener("hashchange", () => proFromLink(0));   // the app was already open in this tab
+setTimeout(() => proCheck().then(proRemind), 0);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) proCheck().then(proRemind); });
+addEventListener("storage", e => { if (e.key === PRO_KEY) proCheck(); });   // bought in another tab of this browser
+setInterval(() => { if (pro.on && Date.now() >= pro.until) proCheck(); }, 60e3);
 /* ---------------- Sync between devices ---------------- */
 // End-to-end encrypted (src/sync.js): the sync code stays on the devices, the server (worker/sync.js) keeps one encrypted
 // copy per group. This device's data is always the truth here: the app works the same offline, and a sync fetches the
@@ -5540,11 +5667,12 @@ async function syncKeys(code = syncS.code) {
 const syncErr = (msg, code) => Object.assign(new Error(msg), { code });
 async function syncFetch(k, method, ver, body) {
   const headers = { Authorization: "Bearer " + k.token };
+  if (pro.cur) headers["X-Zenigo-Licence"] = pro.cur.key;   // the server checks that Pro runs (not stored)
   if (ver != null) headers["If-Match"] = String(ver);
   try { return await fetch(SYNC_API + "/" + k.id, { method, headers, body, cache: "no-store" }); }
   catch (e) { throw syncErr("offline", "offline"); }
 }
-const syncHttpErr = r => syncErr("server " + r.status, r.status === 503 ? "unavailable" : r.status === 429 ? "busy" : r.status === 413 ? "large" : "server");
+const syncHttpErr = r => syncErr("server " + r.status, r.status === 402 ? "pro" : r.status === 503 ? "unavailable" : r.status === 429 ? "busy" : r.status === 413 ? "large" : "server");
 async function syncGet(k) {
   const r = await syncFetch(k, "GET");
   if (r.status === 404) return null;
@@ -5587,6 +5715,7 @@ function afterSyncedSettings() {
 function syncErrText(c) {
   return ({
     offline: "Not synced: no connection. It syncs when the device is online again.",
+    pro: "Not synced: sync is part of Zenigo Pro (Menu › Zenigo Pro). Your lists and settings stay on this device.",
     newer: "Not synced: another device uses a newer version of Zenigo. Update this app (close it and open it again) to keep syncing.",
     nogroup: "No sync group found for this code. Is the code complete, and still the current one?",
     unavailable: "Sync is not available on the server right now.",
@@ -5598,6 +5727,7 @@ function syncErrText(c) {
 // opts: { join: the group must exist, settings: "remote" to take the group's settings, loud: report problems }
 async function syncNow(opts = {}) {
   if (!syncS.code) return false;
+  if (!pro.on) { if (pro.checked) { syncS.err = "pro"; saveSyncS(); renderSync(); if (opts.loud) proNeed("Sync between devices is part of Zenigo Pro."); } return false; }
   if (syncRt.busy) { syncRt.again = true; return false; }
   syncRt.busy = true; syncRt.lastTry = Date.now(); renderSync();
   try {
@@ -5674,6 +5804,7 @@ async function checkSyncAvail() {
 }
 // Join a group with its code (scanned, pasted or from a link). Nothing changes here before both questions are answered.
 async function joinSync(code, fromLink) {
+  if (!pro.on) { await proCheck(); if (!pro.on) return proNeed("Sync between devices is part of Zenigo Pro. Add your licence key on this device first, then open the sync link again."); }
   if (!code) { hint("That is not a Zenigo sync link or code.", 4000); return false; }
   if (syncS.code === code) { hint("This device already syncs with this group.", 3000); return true; }
   const iosSafari = fromLink && platform() === "ios" && !installedApp();
@@ -5777,11 +5908,12 @@ $("syncBack").onclick = () => { stopScan(); showSyncSettings(); };
 // Menu: not set up yet → the Sync settings; set up → sync now (the line under it shows how it went)
 $("btnSync").onclick = async () => { if (!syncS.code) { showSyncSettings(); return; } if (await syncNow({ loud: true })) hint("Synced.", 2000); };
 $("syncSetup").onclick = async () => {
+  if (!pro.on) return proNeed("Sync between devices is part of Zenigo Pro.");
   const dev = myDevice(); syncS = { code: ZSync.newCode(), dev, ver: 0 }; saveSyncS(); askPersist();
   if (!(await syncNow({ loud: true }))) { syncS = { dev }; saveSyncS(); renderSync(); return; }
   openSyncSheet("show");
 };
-$("syncJoin").onclick = () => openSyncSheet("join");
+$("syncJoin").onclick = () => pro.on ? openSyncSheet("join") : proNeed("Sync between devices is part of Zenigo Pro.");
 $("syncAdd").onclick = () => openSyncSheet("show");
 $("syncNowBtn").onclick = () => syncNow({ loud: true });
 $("syncName").onchange = () => { myDevice().name = $("syncName").value.trim().slice(0, 40) || deviceName(); saveSyncS(); renderSync(); syncNow(); };
@@ -6169,6 +6301,7 @@ function liveSheet(title, step) {
 }
 // The device at the telescope: shows its code (offer), then reads the other device's answer with the camera
 async function liveStart(opts = {}) {
+  if (!pro.on) { proNeed("The live connection from the device at the telescope is part of Zenigo Pro. Following another device is free."); return null; }
   liveStop(true); live.otherSeen = null;
   liveSheet("Connect", "<b>1 of 2</b> · On the other device: Settings › Live › <b>Follow</b> › <b>Connect</b>, and scan this code.<br><b>2 of 2</b> · Then hold the code it shows in front of this device’s camera.");
   if (!opts.noScan && !(await liveScanStart("a", c => liveAnswer(c)))) { closeSheet("liveSheet"); return null; }
@@ -6447,6 +6580,12 @@ function fillEpBox(box, o, keep) {
       setTimeout(() => $(aperture() ? "oEps" : "oAp").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
     box.append(k, d, b); box.hidden = false; return true;
   }
+  if (epAdviceFor(o) && !pro.on) {   // without Pro: what it would show, and where to get it
+    const k = document.createElement("div"); k.className = "k"; k.innerHTML = 'Which eyepiece<i class="protag">Pro</i>';
+    const d = document.createElement("div"); d.className = "course"; d.textContent = "Which of your eyepieces suits this object best, and why, is part of Zenigo Pro.";
+    const b = document.createElement("button"); b.className = "lnk"; b.textContent = "About Zenigo Pro →"; b.onclick = () => proNeed("The best eyepiece for each object is part of Zenigo Pro.");
+    box.append(k, d, b); box.hidden = false; return true;
+  }
   let a = null; try { a = epAdvice(o, skyNow().t); } catch (e) {}
   box.hidden = !a; if (!a) return false;
   const O = opt(), cur = curEpKey(), byKey = k => a.rows.find(r => r.key === k);
@@ -6499,7 +6638,7 @@ function drawRings(c, sol, tx, ty, dpr, col) {
 // Eyepiece view: the field around where the telescope points, oriented like in the eyepiece. Up is the zenith (as seen
 // with the naked eye), turned upside down for a Newtonian or mirrored for a star diagonal, plus a fine rotation.
 function drawEyepiece() {
-  const box = $("epView"), o = opt(), on = !!(o.view && st.sol) && !phView();
+  const box = $("epView"), o = opt(), on = !!(o.view && st.sol && pro.on) && !phView();
   if (box.hidden === on) box.hidden = !on;
   if (!on) return;
   const cv = $("epCanvas"), dpr = Math.min(2, devicePixelRatio || 1), S = Math.round(cv.clientWidth * dpr) || 1;
@@ -6641,8 +6780,9 @@ $("oFinderOrient").onchange = () => setOptics({ finderOrient: $("oFinderOrient")
 $("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
 $("oTelrad").onchange = () => setOptics({ telrad: $("oTelrad").checked });
 $("oRing").onchange = () => setOptics({ ring: $("oRing").checked });
-$("oView").onchange = () => setOptics({ view: $("oView").checked });
-$("qView").onchange = () => setOptics({ view: $("qView").checked });
+const proView = el => { if (el.checked && !pro.on) { el.checked = false; return proNeed("The eyepiece view is part of Zenigo Pro."); } setOptics({ view: el.checked }); };
+$("oView").onchange = () => proView($("oView"));
+$("qView").onchange = () => proView($("qView"));
 $("oOrient").onchange = () => setOptics({ orient: $("oOrient").value });
 $("oRot").oninput = () => setOptics({ rot: +$("oRot").value });
 $("qEp").onchange = () => { const v = $("qEp").value, [i, b] = v.split(":").map(Number); setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: i, useB: b > 1 }); };
@@ -7518,9 +7658,14 @@ function showTonight() {
   });
   box.append(s4);
   // coming up: computed after the sheet is shown (takes a moment once a day)
-  const s5 = el("section", "tn-sec"); s5.append(el("h3", "", "Coming up"));
-  const wait = el("p", "tn-note", "Calculating …"); s5.append(wait); box.append(s5);
-  setTimeout(() => { wait.remove(); fillComingUp(s5, el, esc); }, 30);
+  const s5 = el("section", "tn-sec"); s5.append(el("h3", "", "Coming up" + (pro.on ? "" : '<i class="protag">Pro</i>')));
+  if (pro.on) {
+    const wait = el("p", "tn-note", "Calculating …"); s5.append(wait); box.append(s5);
+    setTimeout(() => { wait.remove(); fillComingUp(s5, el, esc); }, 30);
+  } else {
+    s5.append(el("p", "tn-note", "Eclipses, close pairs of the Moon and planets, oppositions and meteor showers of the coming weeks: part of Zenigo Pro."));
+    const b = el("button", "lnk", "About Zenigo Pro →"); b.onclick = () => proNeed("Coming up is part of Zenigo Pro."); s5.append(b); box.append(s5);
+  }
   box.append(el("p", "tn-note", "For " + $("wxLoc").textContent.replace(/^for /, "") + ", times in your phone’s time zone. Tap an object for details or to make it your target."));
 }
 /* ---------------- Diagnostics: see what Locate worked with ---------------- */
@@ -7746,7 +7891,9 @@ const same = (a, b) => Object.keys(SHOW_DEF).every(k => EXTRAS.includes(k) || a[
 const withExtras = show => ({ ...show, ...Object.fromEntries(EXTRAS.map(k => [k, !!cfg.show[k]])) });   // presets keep the extras as they are
 function presetOf(show) { return Object.keys(PRESETS).find(k => same(show, PRESETS[k].show)) || null; }
 function filterName() { const k = presetOf(cfg.show); return k ? PRESETS[k].label : "Custom"; }
-function setShow(show) { cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); if (show.sats) loadSats(false); if (show.mw) loadMilkyWay(); }
+function setShow(show) {
+  if (show.sats && !cfg.show.sats && !pro.on) { syncFilter(); return proNeed("Satellites and the ISS are part of Zenigo Pro."); }
+  cfg.show = { ...show }; save(); st.filterVer++; syncFilter(); if (show.sats) loadSats(false); if (show.mw) loadMilkyWay(); }
 function syncFilter() {
   const sh = cfg.show, pk = presetOf(sh);
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);

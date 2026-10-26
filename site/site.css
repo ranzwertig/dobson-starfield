@@ -427,3 +427,7 @@ h2 .ptag, h3 .ptag, dt .ptag, .kicker .ptag { margin-left: 8px; }
 @media (max-width: 520px) { .buybox { padding: 18px 16px; } .open.buy { width: 100%; } }
 .freelist li::before { content: "✓"; border: 0; width: auto; height: auto; top: 0; left: 2px; color: var(--amber); font-weight: 700; }
 .buybox .fine:first-child { margin-top: 0; }
+.buybox .current { color: var(--amber); margin: -8px 0 16px; }
+.buybox .keyline code { display: block; padding: 10px 12px; border-radius: 10px; background: #0a0f1f; border: 1px solid var(--line); font-size: 13px; word-break: break-all; user-select: all; }
+.buybox button.open { border: 0; cursor: pointer; font-family: var(--ui); font-size: inherit; }
+.buybox button.open.ghost { border: 1px solid var(--line); }
