@@ -47,14 +47,15 @@ const messier = ld('messier.json').features.map(f => {
 });
 
 // Constellation lines as flat [ra, dec, ...] polylines
-const lines = [];
-for (const f of ld('constellations.lines.json').features)
-  for (const seg of f.geometry.coordinates) lines.push(seg.flatMap(([lon, lat]) => [rnd(ra(lon), 2), rnd(lat, 2)]));
-
 // Constellation names at their label positions: [name, ra, dec, rank] (rank 1 = prominent, 3 = faint/small)
-const cnames = ld('constellations.json').features.map(f => { const [lon, lat] = f.geometry.coordinates; return [f.properties.name, rnd(ra(lon), 2), rnd(lat, 2), +f.properties.rank || 3]; });
+const cfeat = ld('constellations.json').features;
+const cnames = cfeat.map(f => { const [lon, lat] = f.geometry.coordinates; return [f.properties.name, rnd(ra(lon), 2), rnd(lat, 2), +f.properties.rank || 3]; });
+// Constellation lines; CLCON gives each line's constellation (index into CNAMES), for the list of what is in a photo
+const lines = [], lineCon = [], conIdx = new Map(cfeat.map((f, i) => [f.id, i]));
+for (const f of ld('constellations.lines.json').features)
+  for (const seg of f.geometry.coordinates) { lines.push(seg.flatMap(([lon, lat]) => [rnd(ra(lon), 2), rnd(lat, 2)])); lineCon.push(conIdx.get(f.id) ?? -1); }
 
-const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\nconst CNAMES=${JSON.stringify(cnames)};\n`;
+const js = `const STARS=${JSON.stringify(stars)};\nconst STARLABELS=${JSON.stringify(labels)};\nconst STARINFO=${JSON.stringify(info)};\nconst MESSIER=${JSON.stringify(messier)};\nconst CLINES=${JSON.stringify(lines)};\nconst CNAMES=${JSON.stringify(cnames)};\nconst CLCON=${JSON.stringify(lineCon)};\n`;
 writeFileSync(OUT, js);
 
 // ---------- Deep catalogue, loaded by the app after start (map zoomed in, eyepiece view, search) ----------

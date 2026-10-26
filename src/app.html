@@ -726,6 +726,68 @@ a.btn { text-decoration: none; color: var(--fg); }
 .results .sub { color: var(--muted); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .results .alt { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
 .results .grp { padding: 7px 12px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+
+/* Photo mode: a photo from the gallery fills the screen, labelled; a bar at the top, three tools at the bottom.
+   The map's own controls step aside meanwhile. */
+.app.photo-mode #guide, .app.photo-mode #readout, .app.photo-mode #corner, .app.photo-mode #cornerTab, .app.photo-mode #fabs,
+.app.photo-mode #btnMenu, .app.photo-mode #liveChip, .app.photo-mode #wiz { display: none !important; }
+.phbar, .phtime, .phfoot { position: absolute; z-index: 3; left: calc(max(10px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: calc(max(10px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); }
+.phbar { top: max(8px, var(--safe-top)); display: flex; gap: 8px; align-items: center; }
+.phbtn { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; }
+.phbtn svg { width: 22px; height: 22px; }
+.phtitle { flex: 1; min-width: 0; height: 46px; box-sizing: border-box; border-radius: 23px; border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); display: grid; align-content: center; padding: 0 16px; }
+.phtitle b { font-weight: 600; font-size: 15px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phtitle span { font-family: var(--font-num); font-size: 11.5px; color: var(--muted); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phtime { top: calc(max(8px, var(--safe-top)) + 54px); right: auto; display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 3px 13px 3px 10px; box-sizing: border-box;
+  border-radius: 99px; border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); font-size: 13px; color: #c4ccd5; cursor: pointer; max-width: calc(100% - 20px); text-align: left; }
+.phtime svg { width: 16px; height: 16px; flex: none; }
+.phtime .ok { color: var(--ok); }
+.phtime.ask { min-height: 40px; border-color: var(--accent); color: #f6cf93; background: rgba(40,28,10,.92); }
+.phfoot { bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 4px)); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
+.phfoot > * { pointer-events: auto; }
+.phstat { justify-self: start; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #c4ccd5; background: var(--glass); padding: 4px 10px; border-radius: 99px; max-width: 100%; box-sizing: border-box; }
+.phstat span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phtools { width: 100%; max-width: 520px; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 6px;
+  border-radius: 20px; border: 1px solid var(--line); background: rgba(12,15,19,.88); backdrop-filter: blur(4px); }
+.phtools button { min-height: 54px; border: 0; border-radius: 14px; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12.5px; cursor: pointer; padding: 4px; }
+.phtools button svg { width: 22px; height: 22px; }
+.phtools button.primary { background: var(--accent); color: #17110a; font-weight: 600; }
+.phtools button[aria-disabled="true"] { opacity: .38; cursor: not-allowed; }
+.phtools .n { font-family: var(--font-num); font-size: 11px; color: var(--accent); }
+.phstyle { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.phstyle button { min-height: 52px; border: 0; border-radius: 10px; background: none; color: #a9b4c0; display: grid; align-content: center; justify-items: center; line-height: 1.2; cursor: pointer; padding: 4px; }
+.phstyle button small { font-size: 12px; color: var(--muted); }
+.phstyle button[aria-checked="true"] { background: var(--line); color: #f2f4f6; font-weight: 600; }
+.phstyle button[aria-checked="true"] small { color: #a9b4c0; font-weight: 400; }
+.phrows { display: grid; border-radius: 14px; background: var(--raise); border: 1px solid var(--line); }
+.phrow { min-height: 48px; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 4px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.phrow:last-child { border-bottom: 0; }
+.phrow > span:nth-child(2) { display: grid; line-height: 1.25; }
+.phrow small { font-size: 12.5px; color: var(--muted); }
+.phrow .phi { display: grid; place-items: center; color: var(--muted); }
+.phrow .phi svg { width: 22px; height: 22px; }
+.phamount { display: grid; gap: 6px; }
+.phamount label { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; }
+.phamount label span { color: var(--muted); font-size: 13px; }
+.phamount input { width: 100%; accent-color: var(--accent); margin: 0; }
+.phamount .scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.phlist { display: grid; border-radius: 14px; background: var(--raise); border: 1px solid var(--line); overflow: hidden; overflow: clip; }
+.phlist > button { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 64px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+.phlist > button:last-child { border-bottom: 0; }
+.phlist > button:hover, .phlist > button:focus-visible { background: #1d232b; outline: none; }
+.phlist canvas { width: 48px; height: 48px; border-radius: 10px; background: #05070a; outline: 1px solid #2f3742; }
+.phlist .t { display: grid; line-height: 1.25; min-width: 0; }
+.phlist .t > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phlist .t b { color: var(--accent); font-weight: 600; }
+.phlist .t small { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phlist .new { font-size: 12px; color: #f6cf93; border: 1px solid #6b5228; border-radius: 9px; padding: 1px 7px; }
+.phlist .seen svg { width: 18px; height: 18px; color: var(--ok); }
+.phlist .empty { padding: 14px; color: var(--muted); font-size: 14px; }
+#phTabs .chip[aria-selected="true"] { border-color: var(--accent); color: #f6cf93; background: rgba(240,168,69,.14); }
+#phTabs .chip small { font-family: var(--font-num); font-size: 11.5px; margin-left: 3px; }
+.phprev { justify-self: center; display: block; max-width: 160px; max-height: 240px; border-radius: 8px; border: 1px solid #2f3742; background: #07090c; }
+#phSize button { display: grid; justify-items: center; line-height: 1.2; }
+#phSize button small { font-family: var(--font-num); font-size: 10.5px; color: var(--muted); font-weight: 400; }
 </style>
 
 <div class="app">
@@ -848,6 +910,22 @@ a.btn { text-decoration: none; color: var(--fg); }
         <svg class="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg></button>
     </div>
     <div class="progress"><i id="prog"></i></div>
+
+    <!-- Photo mode (a photo from the gallery): title bar, time chip, status and tools -->
+    <div class="phbar" id="phBar" hidden>
+      <button class="phbtn" id="phBack" aria-label="Close the photo, back to the sky map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="phtitle"><b id="phTitle">Photo</b><span id="phWhen"></span></div>
+      <button class="phbtn" id="phMore" aria-label="More: show on the sky map, another photo, solve again" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+    </div>
+    <button class="phtime" id="phTime" hidden></button>
+    <div class="phfoot" id="phFoot" hidden>
+      <div class="phstat" aria-live="polite"><i class="dot" id="phDot"></i><span id="phStat">Opening the photo …</span></div>
+      <div class="phtools">
+        <button id="phLayers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 4l9 4.5-9 4.5-9-4.5z"/><path d="M3 12.5l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>Layers</button>
+        <button id="phInPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg><span>In this photo <span class="n" id="phCount"></span></span></button>
+        <button class="primary" id="phShare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M5 13v6h14v-6"/></svg>Save · Share</button>
+      </div>
+    </div>
   </main>
 
   <input type="file" id="fileIn" accept="image/*" hidden>
@@ -856,7 +934,13 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="cammenu" id="camMenu" role="menu" aria-label="Camera" hidden>
     <button role="menuitem" data-cam="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><circle cx="12" cy="13.2" r="3.6"/></svg><span><b>Live camera</b><small>Locate, follow with Continuous</small></span></button>
     <button role="menuitem" data-cam="night"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 8h3.5L8 5.5h8L17.5 8H21v11H3z"/><path d="M14.2 11.2a3 3 0 1 1-3.9 3.9 3.6 3.6 0 0 0 3.9-3.9z"/></svg><span><b>Night photo</b><small>With the camera app’s night mode: long exposure, many stars</small></span></button>
-    <button role="menuitem" data-cam="gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span><b>Photo from the gallery</b><small>Solve a sky photo you took before</small></span></button>
+    <button role="menuitem" data-cam="gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span><b>Photo from the gallery</b><small>See what is in a sky photo you took, labelled</small></span></button>
+  </div>
+  <div class="cammenu" id="phMoreMenu" role="menu" aria-label="Photo" hidden>
+    <button role="menuitem" data-phm="sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M3.5 15.5l5-4.5 4 3.5 3-2.5 5 4"/><circle cx="16" cy="9.5" r="1.4"/></svg><span><b>Show on the sky map</b><small>The photo stays pinned to its stars</small></span></button>
+    <button role="menuitem" data-phm="another"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="8.5" r="1.5"/></svg><span><b>Another photo</b><small>From the gallery</small></span></button>
+    <button role="menuitem" data-phm="solve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg><span><b>Solve again</b><small>Find the stars in it once more</small></span></button>
+    <button role="menuitem" data-phm="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span><b>When it was taken</b><small>Planets and the Moon need the right time</small></span></button>
   </div>
 </div>
 
@@ -865,6 +949,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="menuTitle"><span class="brand"><img src="logo.svg" alt="" width="30" height="30"><b>zeni<i>go</i></b></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
       <button class="menu-item" id="btnLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span>Logbook</span><em id="logState"></em></button>
+      <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 16l5-4.5 3.5 3 3-2.5L21 17"/><path d="M15.5 7.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="currentColor"/></svg><span>Label a night photo</span><em>what’s in it, to save and share</em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
       <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices</span><em id="syncState"></em></button>
@@ -1127,6 +1212,62 @@ a.btn { text-decoration: none; color: var(--fg); }
     </div>
     <div class="row"><label>Date and time<input type="datetime-local" id="tmPick"></label></div>
     <p class="note">The map, the directions at the top, target search and object details show the sky at this time. It keeps running from there. Locate, the eyepiece point and aligning on a star need the sky as it is now and switch back to the current time.</p>
+  </div>
+</div>
+
+<div class="sheet" id="phLayersSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="phLayersTitle">
+    <div class="grab"><h2 id="phLayersTitle"><span>Layers</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="phstyle" role="radiogroup" aria-label="Style">
+      <button role="radio" data-phstyle="clean" aria-checked="false">Clean<small>names only</small></button>
+      <button role="radio" data-phstyle="labelled" aria-checked="true">Labelled<small>lines and names</small></button>
+      <button role="radio" data-phstyle="atlas" aria-checked="false">Atlas<small>figures and grid</small></button>
+    </div>
+    <div class="phrows">
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb4ff" stroke-width="1.6" stroke-linecap="round"><path d="M3 15l6-6 5 4 7-7"/><circle cx="9" cy="9" r="1.3" fill="#9fb4ff"/><circle cx="14" cy="13" r="1.3" fill="#9fb4ff"/></svg></span><span>Constellation lines</span><span class="switch"><input type="checkbox" data-phl="lines" aria-label="Constellation lines"><i></i></span></label>
+      <label class="phrow"><span class="phi" style="color:#9fb4ff;font-size:11px;font-weight:600;letter-spacing:.08em">ABC</span><span>Constellation names</span><span class="switch"><input type="checkbox" data-phl="names" aria-label="Constellation names"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c2-5 4-8 9-9 3-.6 5-3 5-6"/><path d="M9 12c-2-1-3-3-3-5"/></svg></span><span>Constellation figures<small>drawings by Johan Meuris</small></span><span class="switch"><input type="checkbox" data-phl="figures" aria-label="Constellation figures"><i></i></span></label>
+      <label class="phrow"><span class="phi" style="color:#e6eaef">★</span><span>Star names</span><span class="switch"><input type="checkbox" data-phl="stars" aria-label="Star names"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#f0a845" stroke-width="1.6"><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-25 12 12)"/></svg></span><span>Galaxies, nebulae, clusters</span><span class="switch"><input type="checkbox" data-phl="deep" aria-label="Galaxies, nebulae and clusters"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#e6eaef" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M3 15c5-1 13-5 18-9"/></svg></span><span>Planets and Moon<small id="phPlanetsNote"></small></span><span class="switch"><input type="checkbox" data-phl="planets" aria-label="Planets and Moon"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h18M3 16h18M8 3v18M16 3v18"/></svg></span><span>Grid<small>right ascension and declination</small></span><span class="switch"><input type="checkbox" data-phl="grid" aria-label="Grid"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#7cd39a" stroke-width="1.6"><circle cx="12" cy="12" r="6"/></svg></span><span>Recognised stars<small>the stars the photo was solved with</small></span><span class="switch"><input type="checkbox" data-phl="marks" aria-label="Recognised stars"><i></i></span></label>
+    </div>
+    <div class="phamount">
+      <label for="phLevel">How many labels <span id="phLevelTxt"></span></label>
+      <input type="range" id="phLevel" min="1" max="5" step="1">
+      <div class="scale" aria-hidden="true"><span>Few, the brightest</span><span>All in the catalogue</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="phListSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="phListTitle">
+    <div class="grab"><h2 id="phListTitle"><span>In this photo</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="chips" id="phTabs" role="tablist" aria-label="Show"></div>
+    <div class="phlist" id="phList"></div>
+    <p class="note" id="phListNote">Tap an object to see it on the photo and its details. “new” means it is not in your logbook yet.</p>
+    <div class="qbtns"><button class="btn" id="phStarNew">Star the new ones</button><button class="btn primary" id="phLogAll">Log as seen</button></div>
+  </div>
+</div>
+
+<div class="sheet" id="phShareSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="phShareTitle">
+    <div class="grab"><h2 id="phShareTitle"><span>Save and share</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <canvas class="phprev" id="phPrev" role="img" aria-label="Preview of the image that will be saved"></canvas>
+    <div class="phrows">
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 15.5h17M7 18h6"/></svg></span><span>Caption<small>title, date and time, field of view</small></span><span class="switch"><input type="checkbox" id="phCap" aria-label="Caption"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span>Place in the caption<small id="phPlaceNote">off: where you were stays private</small></span><span class="switch"><input type="checkbox" id="phPlace" aria-label="Place in the caption"><i></i></span></label>
+      <label class="phrow"><span class="phi"><svg viewBox="0 0 24 24" fill="none" stroke="#f0a845" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><span>“zenigo.app” in the corner<small>small, in the caption</small></span><span class="switch"><input type="checkbox" id="phMark" aria-label="zenigo.app in the corner"><i></i></span></label>
+    </div>
+    <div class="qlabel">Size</div>
+    <div class="seg3" id="phSize" role="group" aria-label="Size">
+      <button data-phsize="full" aria-pressed="false">Full<small></small></button>
+      <button data-phsize="large" aria-pressed="true">Large<small></small></button>
+      <button data-phsize="post" aria-pressed="false">For posting<small></small></button>
+    </div>
+    <p class="note">Saved as a new JPEG; your original stays as it is. The saved image carries no GPS data.</p>
+    <div class="qbtns"><button class="btn" id="phSave">Save image</button><button class="btn primary" id="phShareGo">Share …</button></div>
   </div>
 </div>
 
@@ -1496,9 +1637,15 @@ const st = {
   obsVer: 0,                // observing list / logbook changes
   stream: null, track: null,
 };
+// Photo mode (a labelled photo from the gallery, see "Night photos"): the photo at full size, when and where it was
+// taken (EXIF), the time shown before it was opened, and the labelled objects (cached)
+const ph = { on: false, bmp: null, name: "", ex: null, when: null, exact: false, loc: null, timeSet: false, tOffBefore: 0, ver: 0, objs: null, hl: null, tab: "deep", all: false };
+// what the labels on a photo show (the layers), how many, and how a copy is saved
+const PH_DEF = { style: "labelled", lines: true, names: true, figures: false, stars: true, deep: true, planets: true, grid: false, marks: false, level: 2, caption: true, place: false, mark: true, size: "large" };
+cfg.photo = Object.assign({ ...PH_DEF }, cfg.photo || {});
 const view = $("view"), vctx = view.getContext("2d"), video = $("video");
 
-function setStatus(text, kind) { $("statusText").textContent = text; $("dot").className = "dot" + (kind ? " " + kind : ""); }
+function setStatus(text, kind) { $("statusText").textContent = text; $("dot").className = "dot" + (kind ? " " + kind : ""); if (ph.on) photoUi(); }
 // A short message below the menu button; it goes by itself after ms, or with its ✕.
 // Info messages (a mode switched, a confirmation) can be turned off in the settings; what needs attention can't:
 // warnings, errors and steps to do (they start with Tap / Centre / Point / Turn on, or say what is missing or wrong).
@@ -1655,7 +1802,7 @@ async function startCamera() {
     video.srcObject = stream;
     // play() can be interrupted (AbortError, seen on iPad) although the stream is fine: try once more, then rely on autoplay
     try { await video.play(); } catch (e) { if (e && e.name === "AbortError") { await new Promise(r => setTimeout(r, 250)); try { await video.play(); } catch (x) {} } else throw e; }
-    st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
+    photoExit(); st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; }
     $("btnCam").classList.add("on");
     try { await navigator.wakeLock?.request("screen"); } catch (e) {}
@@ -1706,6 +1853,7 @@ function keepViewOnMap() {
   st.mapView = { az: h.az, alt: Math.max(-90, Math.min(90, h.alt)), fov: Math.max(MAP_FOV_MIN, Math.min(140, fov)) };
 }
 function showMap() {
+  photoExit();
   if (st.sol && !st.sol.approx) keepViewOnMap();
   st.source = "map"; st.frame = null; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
   if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; st.solMode = "map"; }
@@ -1793,7 +1941,7 @@ function longFromSol(sol) { const L = Math.max(sol.w, sol.h); return 2 * Math.at
 
 async function solveNow() {
   if (st.busy) return;
-  if (st.tOff) setTimeOffset(0, "Back to the current time: locating needs the sky as it is now.");
+  if (st.tOff && !phView()) setTimeOffset(0, "Back to the current time: locating needs the sky as it is now.");   // a labelled photo keeps the time it was taken
   if (st.source === "map" || (st.source === "video" && !st.stream)) {
     await startCamera(); if (!st.stream) return;
     await new Promise(r => setTimeout(r, 600));   // let exposure settle
@@ -1827,7 +1975,7 @@ async function solveNow() {
       }
     } else {   // values refer to the long image side, the solver works with the image width
       const conv = fl => hfovFromLong(fl, fr.w, fr.h);
-      opts.fovMin = conv(lo || 25); opts.fovMax = conv(hi || 85); opts.fovGuess = conv((isPhoto && cfg.fov.photo) || 66);
+      opts.fovMin = conv(lo || 25); opts.fovMax = conv(hi || 85); opts.fovGuess = conv((isPhoto && (ph.on && ph.fovHint || cfg.fov.photo)) || 66);   // a photo saying its focal length: start there
     }
     setStatus(known ? "Matching against star catalogue …" : isPhoto ? "Finding the photo’s field of view …" : "Finding the camera’s field of view …", "busy");
     const res = await runSolve(fr.gray, fr.w, fr.h, opts, d => {
@@ -1859,6 +2007,7 @@ async function solveNow() {
       else if (!known) { cfg.fov[key] = +longFromSol(sol).toFixed(2); save(); syncSettings(); hint("Field of view found: " + cfg.fov[key].toFixed(1) + "° (saved).", 5000); }
       else if (Math.abs(longFromSol(sol) - known) > 0.05) { cfg.fov[key] = +(0.8 * known + 0.2 * longFromSol(sol)).toFixed(3); save(); }
       setStatus("Solved · " + sol.nMatch + " stars · " + (sol.ms / 1000).toFixed(1) + " s", "ok");
+      if (isPhoto && ph.on) photoSolved();
     } else {
       if (st.source !== "video" || !st.auto) { st.sol = null; st.base = null; }
       const n = res.stars.length;
@@ -1870,6 +2019,7 @@ async function solveNow() {
     updateGuide(); renderReadout();
   } finally {
     st.busy = false;
+    if (ph.on) photoUi();
     if (st.auto && st.stream && !st.abort) setTimeout(solveNow, st.sol && st.sol.near ? 150 : 400);
   }
 }
@@ -1885,7 +2035,8 @@ function setAuto(on) {
 }
 
 /* ---------------- Sky / targets ---------------- */
-function observer() { return new A.Observer(+cfg.lat || 0, +cfg.lon || 0, 400); }
+// where the sky is seen from: the location set, or where a photo in photo mode was taken (if it says so)
+function observer() { const L = ph.on && ph.loc; return new A.Observer(L ? L.lat : +cfg.lat || 0, L ? L.lon : +cfg.lon || 0, 400); }
 function horiz(vec, t) {
   const R = A.Rotation_EQJ_HOR(t, observer());
   const v = A.RotateVector(R, new A.Vector(vec[0], vec[1], vec[2], t));
@@ -2608,7 +2759,7 @@ function horToEqj(t) { return tr3(A.Rotation_HOR_EQJ(t, observer()).rot); }
 // horizon rotation, Sun/Moon/planet positions and theme colours. Saves a lot of work per frame.
 const sky = { at: 0 };
 function skyNow() {
-  const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + cfg.red + "|" + st.tOff;
+  const now = Date.now(), key = cfg.lat + "|" + cfg.lon + "|" + cfg.red + "|" + st.tOff + "|" + (ph.on && ph.loc ? ph.loc.lat + "," + ph.loc.lon : "");
   if (now - sky.at < 1000 && sky.key === key) return sky;
   sky.at = now; sky.key = key; sky.t = A.MakeTime(new Date(now + st.tOff));
   sky.M = horToEqj(sky.t);
@@ -2873,7 +3024,7 @@ async function loadDeep() {
   try {
     const [b, d, li] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null),
       fetch("lists.json").then(r => r.ok ? r.json() : null).catch(() => null)]);
-    if (li) { LISTS.caldwell = new Map(li.caldwell.map(([n, id]) => [id, n])); LISTS.h400 = new Set(li.herschel); LISTS.pop = new Set(li.popular); LISTS.ok = true; }
+    if (li) { LISTS.caldwell = new Map(li.caldwell.map(([n, id]) => [id, n])); LISTS.h400 = new Set(li.herschel); LISTS.pop = new Set(li.popular); LISTS.shapes = new Map((li.shapes || []).map(([id, a, b, pa]) => [id, { a, b, pa }])); LISTS.ok = true; }
     if (b) {
       // decoded and indexed in pieces; DEEP is only filled in at the end, the map draws without it until then
       const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215, tick = slicer();
@@ -2951,7 +3102,7 @@ function mapSolCompute(M, W, H, mv) {
   return { R: mm3(M, Rh), f, w: W, h: H, cx: W / 2, cy: H / 2, k1: 0, poly: null, matches: [], fov: 2 * Math.atan(W / 2 / f) * R2D, fovV: 2 * Math.atan(H / 2 / f) * R2D, rms: 0, nMatch: 0, approx: true };
 }
 // A solved photo without Align: drag and pinch move the sky around it like on the map (the photo stays in place on the sky)
-const photoSky = () => st.source === "photo" && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";
+const photoSky = () => st.source === "photo" && !ph.on && !!st.photoSol && !st.sensor && !!st.sol && st.solMode === "solve";   // photo mode: plain zoom and pan instead
 function mapGestures() { return (st.source === "map" && st.solMode !== "track" && st.solMode !== "remote") || photoSky(); }
 // The first move makes the view a plain projection like the map (the photo's lens distortion is corrected by the mesh)
 // and levels it: up on the screen is the zenith, so the horizon is horizontal and the photo is turned instead.
@@ -3223,6 +3374,599 @@ $("pinChipTxt").onclick = () => {
 };
 $("btnPinOff").onclick = () => st.source === "photo" ? closePhoto() : unpinPhoto();
 
+/* ---------------- Night photos: labelled, listed, saved and shared ---------------- */
+// A photo from the gallery opens in a mode of its own: the photo fills the screen, with the constellations, star names,
+// deep-sky objects and planets drawn on it (the planets where they were when it was taken: the time comes from the
+// photo's EXIF data), a list of what is in it, and a labelled copy to save or share. Everything stays on the device.
+const phView = () => ph.on && st.source === "photo";
+const PH_STYLES = { clean: { lines: false, names: true, figures: false, grid: false }, labelled: { lines: true, names: true, figures: false, grid: false }, atlas: { lines: true, names: true, figures: true, grid: true } };
+// how many labels (1–5): deep-sky objects and named stars down to these magnitudes
+const PH_DSO_MAG = [6, 7.5, 9, 10.5, 12], PH_STAR_MAG = [2.2, 3.0, 3.8, 4.6, 5.5];
+function phLvl(m, L) { if (m == null) return 4; for (let i = 0; i < 5; i++) if (m <= L[i]) return i + 1; return 6; }
+const phTimeKnown = () => ph.when != null || ph.timeSet;
+
+// EXIF: when (and where) a photo was taken, read from the bytes of the file. JPEG and HEIC both carry an "Exif" block
+// with a TIFF header; the image decoder of the browser doesn't expose it.
+function readExif(buf) {
+  const u = new Uint8Array(buf);
+  for (let i = u.indexOf(0x45); i >= 0 && i < u.length - 16; i = u.indexOf(0x45, i + 1)) {
+    if (u[i + 1] !== 0x78 || u[i + 2] !== 0x69 || u[i + 3] !== 0x66 || u[i + 4] !== 0 || u[i + 5] !== 0) continue;
+    const t = i + 6, le = u[t] === 0x49 && u[t + 1] === 0x49;
+    if (!(le || (u[t] === 0x4d && u[t + 1] === 0x4d))) continue;
+    try { return parseExif(new DataView(buf, t), le); } catch (e) { return null; }
+  }
+  return null;
+}
+function parseExif(dv, le) {
+  const g16 = o => dv.getUint16(o, le), g32 = o => dv.getUint32(o, le);
+  const ifd = off => {   // tag -> { type, count, where the value is }
+    const out = {}, n = g16(off);
+    for (let k = 0; k < n; k++) {
+      const e = off + 2 + 12 * k, type = g16(e + 2), cnt = g32(e + 4), size = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8][type] || 1;
+      out[g16(e)] = { type, cnt, at: size * cnt > 4 ? g32(e + 8) : e + 8 };
+    }
+    return out;
+  };
+  const str = x => { if (!x) return ""; let s = ""; for (let i = 0; i < x.cnt; i++) { const c = dv.getUint8(x.at + i); if (!c) break; s += String.fromCharCode(c); } return s.trim(); };
+  const rat = (x, i = 0) => { const a = g32(x.at + 8 * i), b = g32(x.at + 8 * i + 4); return b ? a / b : 0; };
+  const num = x => !x ? null : x.type === 3 ? g16(x.at) : x.type === 4 ? g32(x.at) : x.type === 5 ? rat(x) : null;
+  const i0 = ifd(g32(4)), ex = i0[0x8769] ? ifd(g32(i0[0x8769].at)) : {}, gp = i0[0x8825] ? ifd(g32(i0[0x8825].at)) : {};
+  // the time: with its time zone (OffsetTimeOriginal), or the GPS time (UTC), or else the camera's clock as local time
+  const dto = str(ex[0x9003]) || str(i0[0x0132]), off = str(ex[0x9011]) || str(ex[0x9010]);
+  const m = /^(\d{4}):(\d\d):(\d\d) (\d\d):(\d\d):(\d\d)/.exec(dto), gd = /^(\d{4}):(\d\d):(\d\d)/.exec(str(gp[29]));
+  let date = null, exact = false;
+  if (m && /^[+-]\d\d:\d\d$/.test(off)) {
+    const mins = (off[0] === "-" ? -1 : 1) * (+off.slice(1, 3) * 60 + +off.slice(4, 6));
+    date = new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - mins * 60000); exact = true;
+  } else if (gd && gp[7] && gp[7].cnt === 3) {
+    date = new Date(Date.UTC(+gd[1], gd[2] - 1, +gd[3]) + Math.round((rat(gp[7], 0) * 3600 + rat(gp[7], 1) * 60 + rat(gp[7], 2)) * 1000)); exact = true;
+  } else if (m) date = new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  if (date && isNaN(date)) { date = null; exact = false; }
+  let lat = null, lon = null;
+  if (gp[2] && gp[4] && gp[2].cnt === 3 && gp[4].cnt === 3) {
+    const dms = x => rat(x, 0) + rat(x, 1) / 60 + rat(x, 2) / 3600;
+    lat = dms(gp[2]) * (str(gp[1]) === "S" ? -1 : 1); lon = dms(gp[4]) * (str(gp[3]) === "W" ? -1 : 1);
+    if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180) || (lat === 0 && lon === 0)) lat = lon = null;
+  }
+  const f35 = num(ex[0xa405]);
+  return { date, exact, lat, lon, f35: f35 > 0 ? f35 : null };
+}
+
+function photoEnter(file, bmp, ex) {
+  if (!ph.on) ph.tOffBefore = st.tOff;
+  else if (st.tOff !== ph.tOffBefore) { ph.applying = true; setTimeOffset(ph.tOffBefore); ph.applying = false; }   // another photo: its own time
+  if (ph.bmp && ph.bmp !== bmp && ph.bmp.close) ph.bmp.close();
+  Object.assign(ph, { on: true, bmp, name: (file && file.name) || "photo", ex, when: ex && ex.date ? ex.date.getTime() : null, exact: !!(ex && ex.exact),
+    loc: ex && ex.lat != null ? { lat: ex.lat, lon: ex.lon } : null, timeSet: false, objs: null, grid: null, hl: null, all: false, tab: "deep",
+    fovHint: ex && ex.f35 ? 2 * Math.atan(18 / ex.f35) * R2D : null });
+  ph.ver++; sky.at = 0;
+  document.querySelector(".app").classList.add("photo-mode");
+  setStatus("Finding the stars in the photo …", "busy");
+  $("phBar").hidden = $("phFoot").hidden = false;
+  closePhMore(); hint(null); insetCache = null;
+  photoUi();
+}
+// leave photo mode (back to the map): the time shown before comes back
+function photoExit() {
+  if (!ph.on) return;
+  ph.on = false; ph.loc = null; ph.objs = null; ph.grid = null; ph.hl = null; ph.ver++; sky.at = 0;
+  if (ph.bmp && ph.bmp.close) ph.bmp.close(); ph.bmp = null;
+  document.querySelector(".app").classList.remove("photo-mode");
+  $("phBar").hidden = $("phFoot").hidden = $("phTime").hidden = true; closePhMore();
+  ["phLayersSheet", "phListSheet", "phShareSheet"].forEach(id => closeSheet(id));
+  if (st.tOff !== ph.tOffBefore) setTimeOffset(ph.tOffBefore);
+  insetCache = null; lastSig = [];
+}
+function photoSolved() {
+  if (ph.when != null) { ph.applying = true; setTimeOffset(ph.when - Date.now()); ph.applying = false; }
+  ph.objs = null; ph.grid = null; ph.ver++; photoUi();
+}
+const phSolved = () => phView() && !!st.photoSol;
+function fmtWhen(d) { return d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) + " · " + fmtClock(d); }
+const phFov = s => Math.round(2 * Math.atan(s.w / 2 / s.f) * R2D) + "° × " + Math.round(2 * Math.atan(s.h / 2 / s.f) * R2D) + "°";
+function phCentre(s) {
+  const rd = Solver.v2radec(Solver.pixToSky(s, s.w / 2, s.h / 2)), m = Math.round(((rd.ra + 360) % 360) / 15 * 60) % 1440;
+  return Math.floor(m / 60) + "h " + pad2(m % 60) + "m " + (rd.dec >= 0 ? "+" : "−") + Math.round(Math.abs(rd.dec)) + "°";
+}
+const phPlace = L => Math.abs(L.lat).toFixed(1) + "° " + (L.lat >= 0 ? "N" : "S") + ", " + Math.abs(L.lon).toFixed(1) + "° " + (L.lon >= 0 ? "E" : "W");
+const PH_OK = '<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const PH_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+// the bar, the time chip, the status and the tools
+function photoUi() {
+  if (!ph.on) return;
+  const solved = phSolved(), O = solved ? phObjs() : null, known = phTimeKnown();
+  const title = solved ? O.title : ph.name;
+  if ($("phTitle").textContent !== title) $("phTitle").textContent = title;
+  $("phWhen").textContent = known && solved ? fmtWhen(skyDate()) : solved ? "time unknown" : "";
+  const chip = $("phTime"); chip.hidden = !solved;
+  if (solved) {
+    const html = known ? PH_OK + "<span>" + (ph.timeSet ? "Time set by you" : (ph.loc ? "Time and place from the photo" : "Time from the photo") + (ph.exact ? "" : ", camera clock")) + "</span>"
+      : PH_CLOCK + "<span>When was it taken? Planets and the Moon need it</span>";
+    if (chip.innerHTML !== html) chip.innerHTML = html;
+    chip.classList.toggle("ask", !known);
+    chip.setAttribute("aria-label", known ? "Change when the photo was taken" : "Set when the photo was taken");
+  }
+  const busy = st.busy;
+  $("phDot").className = "dot" + (busy ? " busy" : solved ? " ok" : st.frame && !busy ? " bad" : "");
+  $("phStat").textContent = solved ? "Solved · " + st.photoSol.nMatch + " stars · " + phFov(st.photoSol) : $("statusText").textContent;
+  const why = busy || !st.frame ? "The photo is still being solved …" : "The photo isn’t solved: Zenigo needs about ten stars in it. Try another photo, or ⋯ › Solve again.";
+  ["phLayers", "phInPhoto", "phShare"].forEach(id => setAvail(id, solved, why));
+  $("phCount").textContent = solved ? String(O.labelled) : "";
+  if (!$("phLayersSheet").hidden) syncPhLayers();
+}
+
+// What is in the photo: deep-sky objects, named stars, planets, constellations (their lines and where their names go),
+// in pixels of the solved photo. Each label has a level (1–5): the brighter, the lower; the amount slider picks how many.
+function phObjs() {
+  const sol = st.photoSol, key = NGC.length + "|" + (LISTS.ok ? 1 : 0);
+  if (ph.objs && ph.objs.sol === sol && ph.objs.key === key) return phCount(ph.objs);
+  const W = sol.w, H = sol.h, mrg = 0.15 * Math.max(W, H), sk = skyNow();
+  const near = p => p && p.z > 0.05 && p.x > -mrg && p.y > -mrg && p.x < W + mrg && p.y < H + mrg;
+  const inside = p => p.x >= 0 && p.y >= 0 && p.x <= W && p.y <= H;
+  const nrm = v => { const n = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / n, v[1] / n, v[2] / n]; };
+  const ctr = Solver.pixToSky(sol, W / 2, H / 2), rad = Math.atan(Math.hypot(W, H) / 2 / sol.f) + 0.35, cosR = Math.cos(Math.min(Math.PI, rad));
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  // the scale (photo pixels per radian) next to a point, and the direction of a position angle (from north through east)
+  const local = (v, p, pa) => {
+    const nN = nrm([-v[0] * v[2], -v[1] * v[2], v[0] * v[0] + v[1] * v[1]]), nE = nrm([-v[1], v[0], 0]), a = (pa || 0) * D2R;
+    const q = Solver.skyToPix(sol, nrm([v[0] + 1e-3 * (nN[0] * Math.cos(a) + nE[0] * Math.sin(a)), v[1] + 1e-3 * (nN[1] * Math.cos(a) + nE[1] * Math.sin(a)), v[2] + 1e-3 * (nN[2] * Math.cos(a) + nE[2] * Math.sin(a))]));
+    return q ? { k: Math.hypot(q.x - p.x, q.y - p.y) / 1e-3, ang: Math.atan2(q.y - p.y, q.x - p.x) } : { k: sol.f, ang: 0 };
+  };
+  const dso = [];
+  const addD = (id, name, typ, mag, cls, size, v, ngc) => {
+    if (dot(v, ctr) < cosR) return;
+    const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.05 || !inside(p)) return;
+    // Messier objects come first, then the popular and Caldwell ones, then NGC and IC; other catalogues
+    // (van den Bergh, Collinder, dark nebulae …) only with many labels
+    const b = phLvl(mag, PH_DSO_MAG), lvl = /^M\d/.test(id) ? Math.max(1, b - 1) : LISTS.pop.has(id) || LISTS.caldwell.has(id) ? b : /^(NGC|IC) /.test(id) ? Math.max(3, b) : Math.max(4, b);
+    if (lvl > 5) return;
+    const sh = LISTS.shapes && LISTS.shapes.get(id), L = local(v, p, sh ? sh.pa : 0);
+    const ell = sh ? { a: sh.a / 120 * D2R * L.k, b: sh.b / 120 * D2R * L.k, ang: L.ang - Math.PI / 2 } : null;   // the ellipse's long axis along the position angle
+    dso.push({ id, name: name || "", typ: typ || "", mag, cls, x: p.x, y: p.y, r: ell ? ell.a : (size || 0) / 120 * D2R * L.k, ell, lvl, v, ngc, kind: "dso" });
+  };
+  MESSIER.forEach((row, i) => addD(row[0], row[4], row[5], row[3], MSV[i].cls, MSV[i].size, MSV[i].v, null));
+  for (const o of NGC) { if (o.dm > 12) break; addD(o.id, o.name, o.type, o.mag, o.cls, o.size, o.v, o); }
+  dso.sort((a, b) => a.lvl - b.lvl || (a.mag ?? 99) - (b.mag ?? 99));
+  const stars = [];
+  for (const S of NAMED) {
+    if (S.mag > 5.5) break;
+    const v = Solver.cat.v[S.k]; if (dot(v, ctr) < cosR) continue;
+    const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.05 || !inside(p)) continue;
+    const nm = S.lab || (S.inf[1] ? S.inf[1] + " " + S.inf[3] : ""); if (!nm) continue;
+    stars.push({ id: "S" + S.k, k: S.k, name: nm, mag: S.mag, x: p.x, y: p.y, lvl: S.lab ? phLvl(S.mag, PH_STAR_MAG) : Math.max(4, phLvl(S.mag, PH_STAR_MAG)), kind: "star" });
+  }
+  const planets = [];
+  PLANETS.forEach(([de, en]) => {
+    if (en === "Sun") return;
+    const v = sk.planets.get(en), p = v && Solver.skyToPix(sol, v); if (!p || p.z < 0.05 || !inside(p)) return;
+    planets.push({ id: en, name: de, x: p.x, y: p.y, lvl: 1, kind: "planet", r: en === "Moon" ? 0.26 * D2R * local(v, p).k : 0 });
+  });
+  // constellation lines, cut into short pieces along the sky (lens distortion), kept where they are on or next to the photo
+  const lines = [], conAt = new Map();
+  CLV.forEach((Lv, li) => {
+    const ci = typeof CLCON !== "undefined" ? CLCON[li] : -1;
+    for (let i = 0; i + 1 < Lv.length; i++) {
+      const a = Lv[i], b = Lv[i + 1];
+      if (dot(a, ctr) < cosR && dot(b, ctr) < cosR) continue;
+      const n = Math.max(1, Math.ceil(Math.acos(Math.max(-1, Math.min(1, dot(a, b)))) * R2D / 0.5));
+      let prev = null;
+      for (let j = 0; j <= n; j++) {
+        const t = j / n, v = nrm([a[0] * (1 - t) + b[0] * t, a[1] * (1 - t) + b[1] * t, a[2] * (1 - t) + b[2] * t]), p = Solver.skyToPix(sol, v);
+        const ok = near(p);
+        if (ok && prev) lines.push([prev.x, prev.y, p.x, p.y]);
+        if (ok && ci >= 0 && inside(p)) { const c = conAt.get(ci) || { n: 0, x: 0, y: 0 }; c.n++; c.x += p.x; c.y += p.y; conAt.set(ci, c); }
+        prev = ok ? p : null;
+      }
+    }
+  });
+  const cons = [];
+  conAt.forEach((c, ci) => {
+    const [name, ra, dec, rank] = CNAMES[ci], v = Solver.radec2v(ra, dec), p = Solver.skyToPix(sol, v);
+    const at = p && p.z > 0.05 && inside(p) ? p : { x: c.x / c.n, y: c.y / c.n };
+    cons.push({ id: "C" + ci, name, up: name.toUpperCase(), rank, x: at.x, y: at.y, n: c.n, lvl: 1, kind: "con" });
+  });
+  cons.sort((a, b) => b.n - a.n);
+  // a title: the constellations the photo shows most of, or (a narrow field) its brightest object
+  const fov = 2 * Math.atan(Math.max(W, H) / 2 / sol.f) * R2D, big = cons.filter(c => c.n >= 4);
+  const d0 = dso.find(d => d.lvl <= 3);
+  const title = fov < 8 && d0 ? (d0.name ? d0.id + " · " + d0.name : d0.id)
+    : big.length >= 2 ? big[0].name + " and " + big[1].name : big.length ? big[0].name : d0 ? (d0.name || d0.id) : "Night photo";
+  ph.objs = { sol, key, W, H, dso, stars, planets, cons, lines, title };
+  return phCount(ph.objs);
+}
+// how many labels the layers and the amount show, and how many there are in all
+function phCount(O) {
+  const L = cfg.photo, lv = L.level, t = phTimeKnown();
+  O.total = O.dso.length + O.stars.length + O.cons.length + (t ? O.planets.length : 0);
+  O.labelled = (L.deep ? O.dso.filter(d => d.lvl <= lv).length : 0) + (L.stars ? O.stars.filter(s => s.lvl <= lv).length : 0) + (L.names ? O.cons.length : 0) + (L.planets && t ? O.planets.length : 0);
+  return O;
+}
+// the grid of right ascension and declination, in photo pixels (once per photo)
+function phGrid() {
+  const sol = st.photoSol; if (ph.grid && ph.grid.sol === sol) return ph.grid;
+  const W = sol.w, H = sol.h, mrg = 0.1 * Math.max(W, H), fov = 2 * Math.atan(Math.max(W, H) / 2 / sol.f) * R2D;
+  const step = fov > 60 ? 15 : fov > 30 ? 10 : fov > 12 ? 5 : fov > 5 ? 2 : 1, raStep = { 15: 15, 10: 15, 5: 7.5, 2: 2.5, 1: 1.25 }[step];
+  const ctr = Solver.pixToSky(sol, W / 2, H / 2), cosR = Math.cos(Math.min(Math.PI, Math.atan(Math.hypot(W, H) / 2 / sol.f) + 0.2));
+  const runs = [], labels = [], ds = Math.min(0.5, step / 10);
+  const trace = (pts, lab, side) => {
+    let run = [];
+    const flush = () => { if (run.length > 1) runs.push(run); run = []; };
+    let best = null;
+    for (const v of pts) {
+      if (v[0] * ctr[0] + v[1] * ctr[1] + v[2] * ctr[2] < cosR) { flush(); continue; }
+      const p = Solver.skyToPix(sol, v);
+      if (!p || p.z < 0.05 || p.x < -mrg || p.y < -mrg || p.x > W + mrg || p.y > H + mrg) { flush(); continue; }
+      run.push([p.x, p.y]);
+      if (p.x >= 0 && p.y >= 0 && p.x <= W && p.y <= H && (!best || (side === "L" ? p.x < best[0] : p.y > best[1]))) best = [p.x, p.y];
+    }
+    flush(); if (best) labels.push({ t: lab, x: best[0], y: best[1], side });
+  };
+  for (let d = -90 + step; d < 90; d += step) {
+    const pts = []; for (let a = 0; a <= 360; a += ds / Math.max(0.1, Math.cos(d * D2R))) pts.push(Solver.radec2v(a, d));
+    trace(pts, (d > 0 ? "+" : d < 0 ? "−" : "") + Math.abs(d) + "°", "L");
+  }
+  for (let a = 0; a < 360; a += raStep) {
+    const pts = []; for (let d = -88; d <= 88; d += ds) pts.push(Solver.radec2v(a, d));
+    const m = Math.round(a / 15 * 60); trace(pts, Math.floor(m / 60) + "h" + (m % 60 ? " " + pad2(m % 60) + "m" : ""), "B");
+  }
+  return ph.grid = { sol, runs, labels };
+}
+
+// Draws the labels onto a canvas: the screen (photo mode) or the copy to save. map: photo pixel -> canvas pixel,
+// u: canvas pixels per CSS pixel (thickness of lines, size of text), box: the canvas area labels must stay in.
+function photoDraw(c, map, u, O, sol, box, opt = {}) {
+  const L = cfg.photo, lv = L.level, font = skyNow().col["--font-ui"] || "sans-serif", mono = "IBM Plex Mono, ui-monospace, monospace";
+  const k = Math.hypot(...map(1, 0).map((v, i) => v - map(0, 0)[i]));   // canvas pixels per photo pixel
+  const pl = [], hits = opt.hits;
+  c.save(); c.lineJoin = "round"; c.lineCap = "round"; c.textBaseline = "middle";
+  c.beginPath(); c.rect(box[0], box[1], box[2] - box[0], box[3] - box[1]); c.clip();   // nothing beside the photo
+  if (L.figures) photoFigures(c, map, sol);
+  if (L.grid) {
+    const G = phGrid();
+    c.strokeStyle = "rgba(200,210,225,.26)"; c.lineWidth = 1 * u; c.beginPath();
+    G.runs.forEach(r => r.forEach(([x, y], i) => { const [X, Y] = map(x, y); i ? c.lineTo(X, Y) : c.moveTo(X, Y); })); c.stroke();
+    c.font = `${10.5 * u}px ${mono}`; c.fillStyle = "rgba(200,210,225,.78)";
+    G.labels.forEach(g => {   // kept inside the photo
+      const [X, Y] = map(g.x, g.y), tw = c.measureText(g.t).width;
+      const x = g.side === "L" ? X + 4 * u : X - tw / 2, y = g.side === "L" ? Y - 8 * u : Y - 8 * u;
+      c.fillText(g.t, Math.max(box[0] + 4 * u, Math.min(box[2] - tw - 4 * u, x)), Math.max(box[1] + 8 * u, Math.min(box[3] - 8 * u, y)));
+    });
+  }
+  if (L.lines) {
+    c.strokeStyle = "rgba(159,180,255,.5)"; c.lineWidth = 1.1 * u; c.beginPath();
+    O.lines.forEach(([x1, y1, x2, y2]) => { const a = map(x1, y1), b = map(x2, y2); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); }); c.stroke();
+  }
+  if (L.marks && sol.matches) {
+    c.strokeStyle = "rgba(124,211,154,.85)"; c.lineWidth = 1.3 * u;
+    sol.matches.forEach(m => { const [x, y] = map(m.x, m.y); c.beginPath(); c.arc(x, y, 7 * u, 0, 7); c.stroke(); });
+  }
+  // a label: the first of the spots where it is free; lines [text, font, colour]; y = the middle of the first line
+  const fits = r => r[0] >= box[0] && r[1] >= box[1] && r[2] <= box[2] && r[3] <= box[3] && !pl.some(q => r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1]);
+  const put = (lines, spots, at, spacing = 0) => {
+    const ws = lines.map(([t, f]) => { c.font = f; if ("letterSpacing" in c) c.letterSpacing = spacing + "px"; return c.measureText(t).width; });
+    const hs = lines.map(([, f]) => parseFloat(/([\d.]+)px/.exec(f)[1]) * 1.15), w = Math.max(...ws), h = hs.reduce((s, x) => s + x, 0);
+    for (const [x, y, al] of spots) {
+      const x0 = al === "right" ? x - w : al === "center" ? x - w / 2 : x, y0 = y - hs[0] / 2, r = [x0 - 2 * u, y0 - 1 * u, x0 + w + 2 * u, y0 + h + 1 * u];
+      if (!fits(r)) continue;
+      let yy = y;
+      lines.forEach(([t, f, col], i) => {
+        c.font = f; c.textAlign = al || "left"; if ("letterSpacing" in c) c.letterSpacing = spacing + "px";
+        c.strokeStyle = "rgba(5,7,10,.78)"; c.lineWidth = 3 * u; c.strokeText(t, x, yy); c.fillStyle = col; c.fillText(t, x, yy);
+        yy += (hs[i] + (hs[i + 1] || 0)) / 2;
+      });
+      pl.push(r); if (hits && at) hits.push({ r, at }); c.textAlign = "left"; if ("letterSpacing" in c) c.letterSpacing = "0px";
+      return true;
+    }
+    if ("letterSpacing" in c) c.letterSpacing = "0px";
+    return false;
+  };
+  const amber = "#f0a845", light = "#f4c983", white = "#e6eaef", blue = "#9fb4ff";
+  const F = (px, w = 500, f = font) => `${w} ${px * u}px ${f}`;
+  const around = (x, y, rr, gap) => [[x + rr * 0.72 + gap, y - rr * 0.72, "left"], [x + rr + gap, y, "left"], [x - rr - gap, y, "right"], [x, y + rr + gap + 6 * u, "center"], [x, y - rr - gap - 8 * u, "center"], [x - rr * 0.72 - gap, y - rr * 0.72, "right"]];
+  const hl = ph.hl && opt.hl !== false ? ph.hl : null;
+  // planets and the Moon (only with a known time)
+  if (L.planets && phTimeKnown()) O.planets.forEach(p => {
+    const [x, y] = map(p.x, p.y), rr = Math.max(4 * u, p.r * k);
+    c.strokeStyle = white; c.lineWidth = 1.4 * u; c.beginPath(); c.arc(x, y, rr + 3 * u, 0, 7); c.stroke();
+    put([[p.name, F(13.5, 600), white]], around(x, y, rr + 3 * u, 6 * u), [x, y]);
+  });
+  // deep-sky objects: their outline at true size (galaxies as ellipses at their angle), then the name
+  if (L.deep) for (const d of O.dso) {
+    if (d.lvl > lv && !(hl && hl === d.id)) continue;
+    const [x, y] = map(d.x, d.y); if (x < box[0] - 50 * u || y < box[1] - 50 * u || x > box[2] + 50 * u || y > box[3] + 50 * u) continue;
+    const rr = Math.max(6 * u, d.r * k);
+    c.strokeStyle = amber; c.fillStyle = amber; c.lineWidth = 1.4 * u;
+    if (d.ell && d.ell.a * k >= 6 * u) { c.beginPath(); c.ellipse(x, y, d.ell.a * k, Math.max(2 * u, d.ell.b * k), d.ell.ang, 0, 7); c.stroke(); }
+    else dsoSymbol(c, d.cls, x, y, rr);
+    const ttl = /^M\d/.test(d.id) || !d.name ? [[d.id, F(13.5, 700), amber]] : [[d.id, F(13, 700), amber]];
+    if (d.name) ttl.push([d.name, F(11.5), light]);
+    put(ttl, around(x, y, rr, 5 * u), [x, y]);
+  }
+  // named stars
+  if (L.stars) for (const s of O.stars) {
+    if (s.lvl > lv && !(hl && hl === s.id)) continue;
+    const [x, y] = map(s.x, s.y);
+    put([[s.name, F(12.5), white]], [[x + 7 * u, y, "left"], [x - 7 * u, y, "right"], [x, y - 12 * u, "center"], [x, y + 12 * u, "center"]], [x, y]);
+  }
+  // constellation names: they give way to the rest, trying a little above or below
+  if (L.names) for (const n of O.cons) {
+    const [x, y] = map(n.x, n.y);
+    put([[n.up, F(11, 600), blue]], [0, -16, 16, -32, 32, -48, 48].map(dy => [x, y + dy * u, "center"]), null, 1.6 * u);
+  }
+  // the object picked in the list
+  if (hl) {
+    const o = [...O.dso, ...O.stars, ...O.planets].find(q => q.id === hl);
+    if (o) { const [x, y] = map(o.x, o.y), rr = Math.max(16 * u, (o.r || 0) * k + 8 * u); c.strokeStyle = "#ffffff"; c.lineWidth = 2 * u; c.beginPath(); c.arc(x, y, rr, 0, 7); c.stroke(); }
+  }
+  c.restore();
+}
+// the constellation figures on the photo: the same drawings as on the map, bent onto the photo's stars (mesh)
+function photoFigures(c, map, sol) {
+  figLoad(); if (!FIG.list) return;
+  const W = sol.w, H = sol.h, ctr = Solver.pixToSky(sol, W / 2, H / 2), R = Math.atan(Math.hypot(W, H) / 2 / sol.f), N = 12, mrg = 0.3 * Math.max(W, H);
+  c.save(); c.globalCompositeOperation = "lighter"; c.globalAlpha = 0.32;
+  for (const f of FIG.list) {
+    if (Math.acos(Math.max(-1, Math.min(1, f.c[0] * ctr[0] + f.c[1] * ctr[1] + f.c[2] * ctr[2]))) > R + f.r) continue;
+    const im = figImage(f); if (!im) continue;
+    if (!f.grid) { f.grid = []; for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) f.grid.push([i * f.w / N, j * f.h / N, f.sky(i * f.w / N, j * f.h / N)]); }
+    const pts = f.grid.map(([x, y, v]) => { const p = Solver.skyToPix(sol, v); if (!p || p.z < 0.1 || p.x < -mrg || p.y < -mrg || p.x > W + mrg || p.y > H + mrg) return null; const [u, w] = map(p.x, p.y); return [x, y, u, w]; });
+    const tri = (a, b, d) => {
+      if (!a || !b || !d) return;
+      const [x0, y0, u0, v0] = a, [x1, y1, u1, v1] = b, [x2, y2, u2, v2] = d;
+      const den = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0); if (!den) return;
+      const A = ((u1 - u0) * (y2 - y0) - (u2 - u0) * (y1 - y0)) / den, B = ((v1 - v0) * (y2 - y0) - (v2 - v0) * (y1 - y0)) / den;
+      const C = ((u2 - u0) * (x1 - x0) - (u1 - u0) * (x2 - x0)) / den, D = ((v2 - v0) * (x1 - x0) - (v1 - v0) * (x2 - x0)) / den;
+      c.save(); c.beginPath(); c.moveTo(u0, v0); c.lineTo(u1, v1); c.lineTo(u2, v2); c.closePath(); c.clip();
+      c.transform(A, B, C, D, u0 - A * x0 - C * y0, v0 - B * x0 - D * y0); c.drawImage(im, 0, 0); c.restore();
+    };
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const q = j * (N + 1) + i; tri(pts[q], pts[q + 1], pts[q + N + 1]); tri(pts[q + 1], pts[q + N + 2], pts[q + N + 1]); }
+  }
+  c.restore();
+}
+// the photo on the screen in photo mode: its labels, tappable
+function drawPhotoOverlay(dpr) {
+  placed = []; labelHits = []; st.drawnNgc = [];
+  if (!st.sol || !st.photoSol) return;
+  const O = phObjs();
+  st.drawnNgc = O.dso.filter(d => d.ngc && d.lvl <= cfg.photo.level).map(d => d.ngc);
+  const [x0, y0] = P(0, 0), [x1, y1] = P(st.photoSol.w, st.photoSol.h);
+  vctx.save(); vctx.setTransform(1, 0, 0, 1, 0, 0);
+  photoDraw(vctx, P, dpr, O, st.photoSol, [Math.max(0, x0), Math.max(0, y0), Math.min(view.width, x1), Math.min(view.height, y1)], { hits: labelHits });
+  vctx.restore();
+}
+
+// The labelled copy: the photo at the size chosen (Safari's canvas limit of 16.7 million pixels kept), the labels
+// scaled to it, and a caption strip below
+async function photoRender(size, preview) {
+  const bmp = ph.bmp, sol = st.photoSol, O = phObjs(), L = cfg.photo; if (!bmp || !sol) return null;
+  const W0 = bmp.width, H0 = bmp.height, long = Math.max(W0, H0);
+  let s = preview ? Math.min(1, 480 / long) : size === "full" ? 1 : Math.min(1, (size === "large" ? 2048 : 1080) / long);
+  const capK = L.caption ? 0.16 : 0;   // the caption's height, relative to the shorter side
+  const area = (W0 * s) * (H0 * s + Math.min(W0, H0) * s * capK);
+  if (area > 16e6) s *= Math.sqrt(16e6 / area);
+  const w = Math.round(W0 * s), h = Math.round(H0 * s), u = Math.min(w, h) / 430, capH = L.caption ? Math.round(72 * u) : 0;
+  if (L.figures && !preview) await phFiguresReady(sol);
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h + capH;
+  const c = cv.getContext("2d");
+  c.fillStyle = "#07090c"; c.fillRect(0, 0, w, h + capH);
+  c.imageSmoothingQuality = "high"; c.drawImage(bmp, 0, 0, w, h);
+  const kx = w / sol.w, ky = h / sol.h;
+  photoDraw(c, (x, y) => [x * kx, y * ky], u, O, sol, [0, 0, w, h], { hl: false });
+  if (capH) {
+    const font = skyNow().col["--font-ui"] || "sans-serif", mono = "IBM Plex Mono, ui-monospace, monospace", pad = 16 * u;
+    c.fillStyle = "#07090c"; c.fillRect(0, h, w, capH); c.fillStyle = "#1d232b"; c.fillRect(0, h, w, Math.max(1, u));
+    let right = w - pad;
+    if (L.mark) {   // on the title's line, so the facts below can use the whole width
+      c.font = `500 ${12 * u}px ${font}`; c.textBaseline = "middle"; c.textAlign = "right"; c.fillStyle = "#8f9aa6"; c.fillText("zenigo.app", right, h + capH * 0.36);
+      const tw = c.measureText("zenigo.app").width, cx = right - tw - 13 * u, cy = h + capH * 0.36;
+      c.strokeStyle = "#f0a845"; c.lineWidth = 1.6 * u; c.lineCap = "round"; c.beginPath(); c.arc(cx, cy, 5.5 * u, 0, 7);
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(cx + a * 7 * u, cy + b * 7 * u); c.lineTo(cx + a * 9.5 * u, cy + b * 9.5 * u); }); c.stroke();
+      right = cx - 16 * u;
+    }
+    const fit = (t, max) => { if (c.measureText(t).width <= max) return t; while (t.length > 1 && c.measureText(t + "…").width > max) t = t.slice(0, -1); return t + "…"; };
+    c.textAlign = "left"; c.textBaseline = "middle";
+    c.font = `600 ${16 * u}px ${font}`; c.fillStyle = "#eef1f4"; c.fillText(fit(O.title, right - pad), pad, h + capH * 0.36);
+    const facts = [phTimeKnown() ? fmtWhen(skyDate()) : "", phFov(sol), "centre " + phCentre(sol), L.place && ph.loc ? phPlace(ph.loc) : ""].filter(Boolean).join(" · ");
+    c.font = `${10.5 * u}px ${mono}`; c.fillStyle = "#8f9aa6"; c.fillText(fit(facts, w - 2 * pad), pad, h + capH * 0.7);
+  }
+  return cv;
+}
+// the figure drawings needed for the copy, loaded before it is drawn (on the screen they appear as they arrive)
+async function phFiguresReady(sol) {
+  figLoad();
+  for (let i = 0; i < 40 && !FIG.list; i++) await new Promise(r => setTimeout(r, 75));
+  if (!FIG.list) return;
+  const ctr = Solver.pixToSky(sol, sol.w / 2, sol.h / 2), R = Math.atan(Math.hypot(sol.w, sol.h) / 2 / sol.f);
+  const need = FIG.list.filter(f => Math.acos(Math.max(-1, Math.min(1, f.c[0] * ctr[0] + f.c[1] * ctr[1] + f.c[2] * ctr[2]))) <= R + f.r);
+  need.forEach(figImage);
+  await Promise.all(need.map(f => f.ok ? null : f.img.decode().then(() => { f.ok = true; }).catch(() => {})));
+}
+// the photo's size in a copy (without the caption)
+function phOutSize(size) { const W0 = ph.bmp.width, H0 = ph.bmp.height, s = size === "full" ? 1 : Math.min(1, (size === "large" ? 2048 : 1080) / Math.max(W0, H0)); return [Math.round(W0 * s), Math.round(H0 * s)]; }
+function phFileName() { return "zenigo-" + (ph.name || "photo").replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 40) + "-labelled.jpg"; }
+async function phBlob() {
+  const cv = await photoRender(cfg.photo.size); if (!cv) return null;
+  const b = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.9)); cv.width = cv.height = 0;
+  if (!b) throw new Error("the image is too large for this browser. Choose a smaller size");
+  return b;
+}
+
+/* the photo mode's controls */
+function openPhMore() {
+  const m = $("phMoreMenu"), r = $("phMore").getBoundingClientRect();
+  m.hidden = false; $("camMenuBg").hidden = false;
+  m.style.right = (innerWidth - r.right) + "px"; m.style.top = (r.bottom + 8) + "px";
+  m.querySelector("[data-phm=sky]").hidden = !st.photoSol;
+  m.querySelector("button:not([hidden])").focus({ preventScroll: true });
+}
+function closePhMore() { $("phMoreMenu").hidden = true; if ($("camMenu").hidden) $("camMenuBg").hidden = true; }
+$("phMore").onclick = e => { e.stopPropagation(); $("phMoreMenu").hidden ? openPhMore() : closePhMore(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("phMoreMenu").hidden) { closePhMore(); $("phMore").focus(); } });
+document.querySelectorAll("#phMoreMenu [data-phm]").forEach(b => b.onclick = () => {
+  closePhMore(); const k = b.dataset.phm;
+  if (k === "sky") {   // the photo pinned to its stars, the map turned to it
+    if (!st.photoSol || !st.frame) return;
+    pinPhoto(); showMap(); findPin(); return;
+  }
+  if (k === "another") return galleryPhoto();
+  if (k === "solve") { if (!st.busy) { st.photoSol = null; ph.objs = null; ph.ver++; photoUi(); solveNow(); } return; }
+  if (k === "time") { openSheet("timeSheet"); syncTime(); }
+});
+$("phBack").onclick = () => closePhoto();
+$("phTime").onclick = () => { openSheet("timeSheet"); syncTime(); };
+
+function syncPhLayers() {
+  const L = cfg.photo, S = PH_STYLES[L.style], match = S && Object.keys(S).every(k => L[k] === S[k]);
+  document.querySelectorAll("[data-phstyle]").forEach(b => b.setAttribute("aria-checked", String(match && b.dataset.phstyle === L.style)));
+  document.querySelectorAll("[data-phl]").forEach(i => { i.checked = !!L[i.dataset.phl]; });
+  $("phLevel").value = L.level;
+  if (phSolved()) {
+    const O = phObjs(), np = O.planets.length;
+    $("phLevelTxt").textContent = O.labelled + " of " + O.total;
+    $("phPlanetsNote").textContent = !phTimeKnown() ? "need the time it was taken" : np ? O.planets.map(p => p.name).join(", ") : "none in this photo";
+  }
+}
+function phChanged() { save(); ph.ver++; photoUi(); syncPhLayers(); if (!$("phListSheet").hidden) renderPhList(); }
+document.querySelectorAll("[data-phstyle]").forEach(b => b.onclick = () => { Object.assign(cfg.photo, PH_STYLES[b.dataset.phstyle], { style: b.dataset.phstyle }); phChanged(); });
+document.querySelectorAll("[data-phl]").forEach(i => i.onchange = () => { cfg.photo[i.dataset.phl] = i.checked; phChanged(); });
+$("phLevel").oninput = () => { cfg.photo.level = +$("phLevel").value; phChanged(); };
+$("phLayers").onclick = () => { syncPhLayers(); openSheet("phLayersSheet"); };
+
+// In this photo: the list, by kind; a small cut-out of the photo for each
+const PH_TABS = [["deep", "Deep sky", O => O.dso], ["planets", "Planets", O => phTimeKnown() ? O.planets : []], ["stars", "Stars", O => O.stars], ["cons", "Constellations", O => O.cons]];
+function phCrop(cv, o) {
+  const bmp = ph.bmp, sol = st.photoSol; if (!bmp) return;
+  const k = bmp.width / sol.w, half = Math.max((o.r || 0) * 1.6, 0.03 * Math.min(sol.w, sol.h), o.kind === "con" ? 0.12 * Math.min(sol.w, sol.h) : 0) * k;
+  const sx = Math.max(0, Math.min(bmp.width - 2 * half, o.x * k - half)), sy = Math.max(0, Math.min(bmp.height - 2 * half, o.y * k - half));
+  cv.width = cv.height = 96; const c = cv.getContext("2d"); c.imageSmoothingQuality = "high";
+  c.drawImage(bmp, sx, sy, Math.min(2 * half, bmp.width), Math.min(2 * half, bmp.height), 0, 0, 96, 96);
+}
+function phSub(o) {
+  const mag = o.mag != null ? " · " + (+o.mag).toFixed(1) + " mag" : "";
+  if (o.kind === "dso") return (o.typ || "Deep-sky object") + mag;
+  if (o.kind === "star") { const so = starObj(o.k); return "Star" + (so.desig ? " · " + so.desig : "") + mag; }
+  if (o.kind === "planet") return o.id === "Moon" ? "Earth’s moon" : "Planet";
+  return "Constellation";
+}
+function renderPhList() {
+  if (!phSolved()) return;
+  const O = phObjs(), lv = cfg.photo.level, S = sets(), tabs = $("phTabs"), list = $("phList");
+  const avail = PH_TABS.filter(([id, , get]) => get(O).length);
+  if (!avail.some(t => t[0] === ph.tab)) ph.tab = (avail[0] || PH_TABS[0])[0];
+  tabs.textContent = "";
+  avail.forEach(([id, label, get]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(id === ph.tab));
+    b.innerHTML = label + "<small>" + get(O).length + "</small>"; b.onclick = () => { ph.tab = id; ph.all = false; renderPhList(); }; tabs.append(b);
+  });
+  const all = (PH_TABS.find(t => t[0] === ph.tab) || PH_TABS[0])[2](O), shown = ph.all ? all : all.filter(o => o.lvl <= lv);
+  list.textContent = "";
+  if (!all.length) { const p = document.createElement("div"); p.className = "empty"; p.textContent = "Nothing of this kind in the photo."; list.append(p); }
+  (shown.length ? shown : all.slice(0, 8)).forEach(o => {
+    const b = document.createElement("button"), cv = document.createElement("canvas"), t = document.createElement("span"), top = document.createElement("span"), sub = document.createElement("small");
+    cv.setAttribute("aria-hidden", "true"); phCrop(cv, o);
+    if (o.kind === "dso") { const id = document.createElement("b"); id.textContent = o.id; top.append(id, o.name ? " " + o.name : ""); } else top.textContent = o.name;
+    sub.textContent = phSub(o) + (o.kind !== "con" && S.seen.has(o.id) ? " · in your logbook" : "");
+    t.className = "t"; t.append(top, sub); b.append(cv, t);
+    if (o.kind === "dso" || o.kind === "planet") {
+      const m = document.createElement("span");
+      if (S.seen.has(o.id)) { m.className = "seen"; m.innerHTML = PH_OK; m.setAttribute("aria-label", "Seen"); m.setAttribute("role", "img"); }
+      else { m.className = "new"; m.textContent = "new"; }
+      b.append(m);
+    }
+    b.onclick = () => phPick(o);
+    list.append(b);
+  });
+  const more = all.length - shown.length;
+  if (!ph.all && more > 0 && shown.length) {
+    const b = document.createElement("button"); b.className = "more"; b.style.gridTemplateColumns = "1fr";
+    b.textContent = "Show " + more + " more, fainter (not labelled)"; b.onclick = () => { ph.all = true; renderPhList(); }; list.append(b);
+  }
+  const newOnes = phNew(O);
+  $("phStarNew").hidden = $("phLogAll").hidden = !(ph.tab === "deep" || ph.tab === "planets");
+  setAvail("phStarNew", newOnes.length > 0, "All of them are in your logbook or starred already.");
+  setAvail("phLogAll", newOnes.length > 0 || phToLog(O).length > 0, "All of them are in your logbook for that night already.");
+  $("phLogAll").textContent = "Log as seen" + (phTimeKnown() ? " · " + skyDate().toLocaleDateString([], { day: "numeric", month: "short" }) : "");
+}
+// deep-sky objects and planets labelled in the photo that are neither in the logbook nor starred
+function phNew(O) { const S = sets(), lv = cfg.photo.level; return [...O.dso.filter(d => d.lvl <= lv), ...(phTimeKnown() ? O.planets : [])].filter(o => !S.seen.has(o.id) && !S.starred.has(o.id)); }
+// the ones that have no logbook entry for the night of the photo yet
+function phToLog(O) {
+  const lv = cfg.photo.level, night = nightKey(skyDate());
+  const have = new Set(obs.log.filter(e => e.result !== "miss" && nightKey(new Date(e.t)) === night).map(e => e.obj));
+  return [...O.dso.filter(d => d.lvl <= lv), ...(phTimeKnown() ? O.planets : [])].filter(o => !have.has(o.id));
+}
+// tapped in the list: the photo zooms to it and marks it, then its details
+function phPick(o) {
+  ph.hl = o.kind === "con" ? null : o.id; ph.ver++;
+  const [x, y] = P(o.x, o.y), W = view.width, H = view.height;
+  const nz = Math.min(4, Math.max(zoom.z, o.kind === "con" ? 1 : 2.5));
+  zoomAbout(x, y, nz); const [x2, y2] = P(o.x, o.y);
+  zoom.x += viewCx() - x2; zoom.y += (sidePanels() ? H / 2 : H * 0.3) - y2; clampPan(); lastSig = [];
+  if (!sidePanels()) closeSheet("phListSheet");
+  const ob = o.kind === "con" ? null : objById(o.id);
+  if (ob) setTimeout(() => showInfo(ob), sidePanels() ? 0 : 380);
+}
+$("phInPhoto").onclick = () => { renderPhList(); openSheet("phListSheet"); };
+$("phStarNew").onclick = () => {
+  const n = phNew(phObjs()); if (!n.length) return;
+  n.forEach(o => obs.starred.push({ id: o.id, name: o.kind === "dso" ? obsName(o.id, o.id) : o.name, added: Date.now() }));
+  saveObs(); renderPhList(); hint(n.length + (n.length === 1 ? " object" : " objects") + " starred: you want to see " + (n.length === 1 ? "it" : "them") + " in the telescope some day.", 4000);
+};
+$("phLogAll").onclick = () => {
+  // the entries get the photo's date: without it, set it first
+  if (!phTimeKnown()) { hint("Set when the photo was taken first: the logbook entries get its date.", 5000); openSheet("timeSheet"); syncTime(); return; }
+  const O = phObjs(), todo = phToLog(O); if (!todo.length) return;
+  const d = ph.when != null && !ph.timeSet ? new Date(ph.when) : skyDate(), t = A.MakeTime(d), loc = ph.loc || { lat: +cfg.lat, lon: +cfg.lon };
+  todo.forEach(o => {
+    const v = o.kind === "planet" ? skyNow().planets.get(o.id) : o.v, alt = v ? Math.round(horiz(v, t).alt) : null;
+    obs.log.push({ uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), obj: o.id, name: o.kind === "dso" ? obsName(o.id, o.id) : o.name, t: d.toISOString(),
+      lat: +(+loc.lat).toFixed(2), lon: +(+loc.lon).toFixed(2), alt, moon: null, result: "easy", seeing: null, transp: null, note: "On a photo" + (ph.name ? " (" + ph.name + ")" : ""), ep: "Photo" });
+    obs.starred = obs.starred.filter(x => x.id !== o.id);
+  });
+  saveObs(); renderPhList();
+  hint(todo.length + (todo.length === 1 ? " object" : " objects") + " logged for " + d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) + ".", 4500);
+};
+
+// Save and share
+function syncPhShare() {
+  const L = cfg.photo;
+  $("phCap").checked = !!L.caption; $("phPlace").checked = !!L.place && !!ph.loc; $("phMark").checked = !!L.mark;
+  $("phPlace").disabled = !L.caption || !ph.loc;
+  $("phPlaceNote").textContent = !ph.loc ? "the photo doesn’t say where it was taken" : L.place ? phPlace(ph.loc) + ", rounded" : "off: where you were stays private";
+  $("phMark").disabled = !L.caption;
+  document.querySelectorAll("[data-phsize]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.phsize === L.size)));
+  if (ph.bmp) document.querySelectorAll("[data-phsize]").forEach(b => { const s = phOutSize(b.dataset.phsize); b.querySelector("small").textContent = s[0] + "×" + s[1]; });
+  const canShare = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [new File([new Blob([""], { type: "image/jpeg" })], "x.jpg", { type: "image/jpeg" })] }));
+  $("phShareGo").hidden = !canShare;
+  phPreview();
+}
+async function phPreview() {
+  const cv = await photoRender("post", true); if (!cv) return;
+  const p = $("phPrev"); p.width = cv.width; p.height = cv.height; p.getContext("2d").drawImage(cv, 0, 0);
+  const css = Math.min(160 / cv.width, 240 / cv.height); p.style.width = Math.round(cv.width * css) + "px"; p.style.height = Math.round(cv.height * css) + "px";
+}
+$("phShare").onclick = () => { syncPhShare(); openSheet("phShareSheet"); };
+$("phCap").onchange = () => { cfg.photo.caption = $("phCap").checked; save(); syncPhShare(); };
+$("phPlace").onchange = () => { cfg.photo.place = $("phPlace").checked; save(); syncPhShare(); };
+$("phMark").onchange = () => { cfg.photo.mark = $("phMark").checked; save(); syncPhShare(); };
+document.querySelectorAll("[data-phsize]").forEach(b => b.onclick = () => { cfg.photo.size = b.dataset.phsize; save(); syncPhShare(); });
+async function phBusy(btn, job) {
+  if (btn.dataset.busy) return; btn.dataset.busy = "1"; const t = btn.textContent; btn.textContent = "Preparing …";
+  try { await job(); } catch (e) { if (!(e && e.name === "AbortError")) hint("Could not make the image: " + (e && e.message || e), 5000); }
+  finally { btn.textContent = t; delete btn.dataset.busy; }
+}
+$("phSave").onclick = () => phBusy($("phSave"), async () => {
+  const b = await phBlob(); if (!b) return;
+  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = phFileName(); document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  hint("Saved: " + a.download, 3000);
+});
+$("phShareGo").onclick = () => phBusy($("phShareGo"), async () => {
+  const b = await phBlob(); if (!b) return;
+  const f = new File([b], phFileName(), { type: "image/jpeg" });
+  await navigator.share({ files: [f], title: phObjs().title });
+});
+
 /* ---------------- Zooming and panning ---------------- */
 const zoom = { z: 1, x: 0, y: 0 };
 const ptrs = new Map(); let gest = null, lastTap = 0;
@@ -3310,7 +4054,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, viewCx(), zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.focus, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, st.obsVer, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, st.obsVer, ph.ver, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -3382,12 +4126,12 @@ function draw() {
   const ref = rc ? rc.sol || { w: sw, h: sh } : st.sol || st.frame || (src ? { w: sw, h: sh } : null);
   if (ref) {
     const bw = src ? sw : ref.w, bh = src ? sh : ref.h;
-    const sc0 = (cfg.fill ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;
+    const sc0 = (cfg.fill && !phView() ? Math.max : Math.min)(W / bw, H / bh), sc = sc0 * zoom.z;   // a labelled photo is shown whole
     const dw = bw * sc, dh = bh * sc, fsc = dw / ref.w;
     const cX = overlayInsets(dpr).cx;   // the middle of the free map: the crosshair and the map's centre go there
     let ox = cX - dw / 2 + zoom.x, oy = H / 2 - dh / 2 + zoom.y;
     // Keep the telescope in the middle: shift map and image so the crosshair (eyepiece point) sits at the centre
-    if (st.sol && st.solMode !== "map" && st.sol === ref) {
+    if (st.sol && st.solMode !== "map" && st.sol === ref && !phView()) {
       const tp = telePix(st.sol);
       ox += (ref.w / 2 - tp.x) * fsc; oy += (ref.h / 2 - tp.y) * fsc;
     }
@@ -3565,6 +4309,7 @@ function label(c, txt, x, y, at) {   // only draw a label if it doesn't cover an
 // Star dots subtle over the real image, bold on the plain map
 function showImgAlpha() { const liveVideo = (st.source === "video" && st.stream) || st.solMode === "remote"; return (st.frame || liveVideo) && (liveVideo || !st.moved) ? 0.45 : 1; }
 function drawOverlay(dpr) {
+  if (phView()) { drawPhotoOverlay(dpr); return; }   // a photo in photo mode: its own labels
   const c = vctx, sol = st.sol, sk = skyNow();
   const col = n => sk.col[n];
   c.lineWidth = 1.2 * dpr; c.font = `${12 * dpr}px ${col("--font-ui")}`;
@@ -5534,6 +6279,8 @@ function setTimeOffset(ms, msg) {
   syncTime(); updateGuide(); renderReadout();
   if (!$("searchSheet").hidden) { renderChips(); showResults(); }
   if (msg) hint(msg, 4000);
+  // photo mode: the time shown is when the photo was taken (planets, Moon); changed here, it was set by hand
+  if (ph.on) { if (!ph.applying) ph.timeSet = true; ph.objs = null; ph.ver++; photoUi(); }
 }
 function syncTime() {
   const d = skyDate(), on = !!st.tOff;
@@ -5743,7 +6490,7 @@ function drawRings(c, sol, tx, ty, dpr, col) {
 // Eyepiece view: the field around where the telescope points, oriented like in the eyepiece. Up is the zenith (as seen
 // with the naked eye), turned upside down for a Newtonian or mirrored for a star diagonal, plus a fine rotation.
 function drawEyepiece() {
-  const box = $("epView"), o = opt(), on = !!(o.view && st.sol);
+  const box = $("epView"), o = opt(), on = !!(o.view && st.sol) && !phView();
   if (box.hidden === on) box.hidden = !on;
   if (!on) return;
   const cv = $("epCanvas"), dpr = Math.min(2, devicePixelRatio || 1), S = Math.round(cv.clientWidth * dpr) || 1;
@@ -7067,7 +7814,7 @@ function openCamMenu() {
 }
 const closeCamMenu = () => { $("camMenu").hidden = true; $("camMenuBg").hidden = true; };
 // a tap outside only closes the menu (the backdrop catches it, so it doesn't also pick a star on the map)
-$("camMenuBg").addEventListener("pointerdown", e => { e.preventDefault(); closeCamMenu(); });
+$("camMenuBg").addEventListener("pointerdown", e => { e.preventDefault(); closeCamMenu(); closePhMore(); });
 $("btnCam").onclick = e => { if (st.stream) { stopCamera(); return; } if ($("camMenu").hidden) { e.stopPropagation(); openCamMenu(); } else closeCamMenu(); };
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("camMenu").hidden) { closeCamMenu(); $("btnCam").focus(); } });
 const nightPhoto = () => { st.nightPending = true; $("nightIn").click(); };
@@ -7091,10 +7838,16 @@ function afterNightPhoto(sol) {
 }
 // A photo to solve: from the gallery, or a night photo just taken with the camera app (the phone is still in its
 // holder then: once solved, the motion sensor can follow from it like after a live Locate)
+// A photo from the gallery opens in photo mode: solved, then labelled (see "Night photos")
 async function loadPhotoFile(input, night) {
-  const f = input.files[0]; input.value = ""; if (!f) return;
+  const f = input.files[0]; input.value = ""; if (f) await loadPhoto(f, night);
+}
+async function loadPhoto(f, night) {
   try {
     const bmp = await createImageBitmap(f);
+    // when and where it was taken: from the file's EXIF data (gallery photos only)
+    const ex = night ? null : await f.arrayBuffer().then(readExif).catch(() => null);
+    if (night) photoExit();
     if (st.sensor && !night) setSensor(false);   // a gallery photo does not follow the phone
     unpinPhoto(true);
     if (st.stream) stopCamera();
@@ -7105,6 +7858,7 @@ async function loadPhotoFile(input, night) {
       for (let i = 0; i < 15 && !(sens.rel && performance.now() - (sens.lastEvt || 0) < 300); i++) await new Promise(r => setTimeout(r, 100));
       if (sens.rel) st.photoNight.dev = sens.rel.map(r => r.slice());
     }
+    if (!night) photoEnter(f, bmp, ex);
     updateGuide(); renderReadout(); solveNow();
   } catch (e) { hint("Could not open the image.", 4000); }
 }
@@ -7112,6 +7866,7 @@ $("fileIn").onchange = () => loadPhotoFile($("fileIn"), false);
 $("nightIn").onchange = () => loadPhotoFile($("nightIn"), true);
 $("btnSolve").onclick = () => st.busy ? abortSolve() : wiz.on ? null : wizNeeded() ? wizStart() : solveNow();
 $("btnWiz").onclick = () => { closeSheet("menu"); wizStart(); };
+$("btnPhoto").onclick = () => { closeSheet("menu"); galleryPhoto(); };
 $("sunOk").onclick = () => { st.sunOk = true; closeSheet("sunSheet"); selectTarget("Sun", true); };
 $("btnSensor").onclick = () => setSensor(!st.sensor);
 $("btnAuto").onclick = () => { if (!st.stream) { hint("Continuous mode needs the live camera.", 3000); return; } setAuto(!st.auto); };

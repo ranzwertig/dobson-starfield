@@ -266,6 +266,20 @@ const SHOTS = {
     await snap(p, 'sf-star', [780, 390]);
     await p.context().close();
   },
+  // a labelled night photo (the test photo: the catalogue sky around Andromeda, with EXIF time and place), and its list
+  async photo() {
+    const { withExif } = require(path.join(ROOT, 'test', 'exif.cjs'));
+    const jpg = withExif(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'sky-andromeda.jpg')), { date: '2026:10:17 21:40:00', offset: '+02:00', lat: 48.18, lon: 10.08, f35: 26 });
+    const p = await page();
+    await ev(p, b64 => { st.wizSkip = true; obs.log = [{ uid: 'a', obj: 'M31', name: 'M31 · Andromeda Galaxy', t: '2026-09-20T21:00:00Z', result: 'easy' }]; saveObs();
+      const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); return loadPhoto(new File([bin], 'IMG_2041.jpg', { type: 'image/jpeg' }), false); }, jpg.toString('base64'));
+    await p.waitForFunction(() => ph.on && !st.busy && !!st.photoSol, null, { timeout: 60000 });
+    await wait(p, 800);
+    await snap(p, 'photo', [780, 390]);
+    await p.tap('#phInPhoto'); await wait(p, 800);
+    await snap(p, 'photo-list', [780, 390]);
+    await p.context().close();
+  },
   // planning on a tablet: map with the details panel at the side
   async tablet() {
     const p = await page(TABLET);

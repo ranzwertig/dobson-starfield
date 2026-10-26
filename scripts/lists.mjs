@@ -1,5 +1,5 @@
 // Observing lists for the search categories: Caldwell, Herschel 400 and a curated list of popular showpieces.
-// Writes public/app/lists.json. Objects of these lists that the deep catalogue (public/app/dso.json, from
+// Writes public/app/lists.json (with the shapes of the larger galaxies). Objects of these lists that the deep catalogue (public/app/dso.json, from
 // d3-celestial) lacks are added from OpenNGC (Mattia Verga, CC-BY-SA-4.0, https://github.com/mattiaverga/OpenNGC).
 //   node scripts/lists.mjs path/to/OpenNGC/NGC.csv
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -83,8 +83,21 @@ const caldwell = CALDWELL.map((e, i) => [i + 1, resolve(e)]).filter(x => x[1]);
 const herschel = [...new Set(H400.map(resolve).filter(Boolean))];
 const PLANETS = new Set(['Moon', 'Jupiter', 'Saturn', 'Mars', 'Venus']);
 const popular = POPULAR.map(e => (PLANETS.has(e) || /^M\d+$/.test(e) ? e : resolve(e))).filter(Boolean);
+// Shapes of the larger galaxies (major and minor axis in arcminutes, position angle from north through east), so a
+// labelled photo can outline them as they are: Messier galaxies and those of the deep catalogue at least 3′ long
+const shapes = [];
+const shapeOf = (id, desig) => {
+  let f = open[desig || id]; if (!f) return;
+  if (f[col('Type')] === 'Dup') { const p = f[col('NGC')] ? 'NGC ' + +f[col('NGC')] : f[col('IC')] ? 'IC ' + +f[col('IC')] : null; f = p && open[p]; if (!f) return; }
+  const maj = parseFloat(f[col('MajAx')]), min = parseFloat(f[col('MinAx')]), pa = parseFloat(f[col('PosAng')]);
+  if (!(maj >= 3) || isNaN(min) || isNaN(pa)) return;
+  shapes.push([id, r1(maj), r1(min), Math.round(pa)]);
+};
+MESSIER.forEach(r => { if (/galaxy/i.test(r[5] || '')) shapeOf(r[0], String(r[6] || '').split(/[,/]/)[0].trim()); });
+dso.concat(extra).forEach(d => { if (d[4] === 'gal') shapeOf(d[0]); });
 writeFileSync(new URL('public/app/lists.json', root), JSON.stringify({
-  source: 'Caldwell (P. Moore), Herschel 400 (Astronomical League), popular: curated. Extra objects from OpenNGC (Mattia Verga, CC-BY-SA-4.0).',
-  extra, caldwell, herschel, popular }));
+  source: 'Caldwell (P. Moore), Herschel 400 (Astronomical League), popular: curated. Extra objects and galaxy shapes from OpenNGC (Mattia Verga, CC-BY-SA-4.0).',
+  extra, caldwell, herschel, popular, shapes }));
+console.log(`galaxy shapes: ${shapes.length}`);
 console.log(`public/app/lists.json: ${caldwell.length} Caldwell, ${herschel.length} Herschel 400, ${popular.length} popular, ${extra.length} objects added from OpenNGC`);
 if (missing.length) console.log('not found:', missing.join(', '));

@@ -757,6 +757,59 @@ const TESTS = {
   },
 
   // sync between devices: set up, add a second device, changes both ways, deletions, versions, delete from the server
+  // photo mode: a gallery photo (synthetic: the catalogue sky around Andromeda and Cassiopeia, 50° × 64°) with EXIF
+  // time and place; labels, the list, logging, the copy to save; without EXIF it asks for the time
+  async photo() {
+    const { withExif } = require('./exif.cjs');
+    const raw = fs.readFileSync(path.join(__dirname, 'fixtures', 'sky-andromeda.jpg'));
+    const p = await page();
+    await ev(p, () => { st.wizSkip = true; obs.log = []; obs.starred = []; saveObs(); });
+    await p.tap('#btnMenu'); await wait(p, 500);
+    const [chooser] = await Promise.all([p.waitForEvent('filechooser'), p.tap('#btnPhoto')]);
+    await chooser.setFiles({ name: 'IMG_2041.jpg', mimeType: 'image/jpeg', buffer: withExif(raw, { date: '2026:10:21 22:14:00', offset: '+02:00', lat: 48.18, lon: 10.08, f35: 26 }) });
+    await p.waitForFunction(() => ph.on && !st.busy, null, { timeout: 90000 }); await wait(p, 600);
+    ok(await ev(p, () => !!st.photoSol && document.querySelector('.app').classList.contains('photo-mode')), 'Label a night photo: the photo is solved and shown in photo mode', await ev(p, () => $('statusText').textContent));
+    ok(await ev(p, () => $('fabs').offsetParent === null && $('btnMenu').offsetParent === null && !$('phBar').hidden), 'the map’s buttons step aside for the photo’s bar and tools');
+    ok(await ev(p, () => skyDate().toISOString().slice(0, 16) === '2026-10-21T20:14' && ph.exact && ph.loc && Math.abs(ph.loc.lat - 48.18) < 0.01), 'time (with its time zone) and place come from the EXIF data', await ev(p, () => skyDate().toISOString()));
+    ok(await ev(p, () => /Andromeda/.test($('phTitle').textContent) && /21 Oct 2026|Oct 21, 2026/.test($('phWhen').textContent) && /from the photo/.test($('phTime').textContent)), 'the bar names the photo and when it was taken', await ev(p, () => [$('phTitle').textContent, $('phWhen').textContent, $('phTime').textContent]));
+    const O = await ev(p, () => { const O = phObjs(); return { dso: O.dso.filter(d => d.lvl <= 2).map(d => d.id), stars: O.stars.map(s => s.name), cons: O.cons.map(c => c.name), m31: O.dso.find(d => d.id === 'M31').ell }; });
+    ok(['M31', 'M33', 'M34', 'M52', 'M103'].every(id => O.dso.includes(id)) && !O.dso.some(id => /^(VdB|LDN|Ced) /.test(id)), 'the brighter Messier objects are labelled, minor catalogues only with more labels', O.dso);
+    ok(['Mirfak', 'Algol', 'Almach', 'Mirach'].every(n => O.stars.includes(n)) && ['Andromeda', 'Cassiopeia', 'Perseus', 'Triangulum'].every(n => O.cons.includes(n)), 'named stars and the constellations in it are found');
+    ok(O.m31 && O.m31.a > O.m31.b * 2, 'M31 is outlined as a long ellipse (its shape from OpenNGC)', O.m31);
+    // a tap on a label opens its details
+    const m31 = await ev(p, () => { const q = phObjs().dso.find(d => d.id === 'M31'), [x, y] = P(q.x, q.y), d = fit.dpr; return { x: x / d, y: y / d }; });
+    await ev(p, m => { const r = view.getBoundingClientRect(); handleTap({ clientX: r.left + m.x, clientY: r.top + m.y }); }, m31); await wait(p, 600);   // (the test clock stands still: a real tap would count as a double tap)
+    ok(await ev(p, () => !$('infoSheet').hidden && st.picked && st.picked.id === 'M31'), 'tapping M31 on the photo opens its details');
+    await ev(p, () => closeSheet('infoSheet')); await wait(p, 500);
+    // layers: fewer labels, the Atlas style
+    await p.tap('#phLayers'); await wait(p, 500);
+    const n2 = await ev(p, () => phObjs().labelled);
+    await ev(p, () => { $('phLevel').value = 1; $('phLevel').oninput(); });
+    ok(await ev(p, n => phObjs().labelled < n && /of/.test($('phLevelTxt').textContent), n2), 'the amount slider shows fewer labels');
+    await p.tap('[data-phstyle="atlas"]'); await wait(p, 300);
+    ok(await ev(p, () => cfg.photo.figures && cfg.photo.grid && $('[data-phstyle="atlas"]') === null || document.querySelector('[data-phstyle="atlas"]').getAttribute('aria-checked') === 'true'), 'Atlas turns on figures and the grid');
+    await ev(p, () => { Object.assign(cfg.photo, PH_STYLES.labelled, { style: 'labelled', level: 2 }); phChanged(); closeSheet('phLayersSheet'); }); await wait(p, 500);
+    // the list, logging with the photo's date
+    await p.tap('#phInPhoto'); await wait(p, 600);
+    ok(await ev(p, () => $('phList').querySelectorAll('button canvas').length >= 5 && /Deep sky/.test($('phTabs').textContent)), 'In this photo lists the objects with cut-outs of the photo');
+    await p.tap('#phLogAll'); await wait(p, 300);
+    ok(await ev(p, () => obs.log.length >= 5 && obs.log.every(e => e.t.startsWith('2026-10-21T20:14') && e.ep === 'Photo')), 'Log as seen logs them for the night of the photo', await ev(p, () => obs.log.slice(0, 2)));
+    await ev(p, () => closeSheet('phListSheet')); await wait(p, 500);
+    // the copy: labelled, with a caption, no GPS
+    const out = await ev(p, async () => { cfg.photo.size = 'post'; const b = await phBlob(); const u = new Uint8Array(await b.arrayBuffer()); const im = await createImageBitmap(b); return { type: b.type, w: im.width, h: im.height, gps: readExif(u.buffer) }; });
+    ok(out.type === 'image/jpeg' && Math.max(out.w, out.h) >= 1080 && out.h > out.w * 1.34 && !out.gps, 'the saved copy is a JPEG with the caption below and without EXIF/GPS', out);
+    // leaving: the time comes back
+    await p.tap('#phBack'); await wait(p, 500);
+    ok(await ev(p, () => !ph.on && st.tOff === 0 && st.source === 'map' && $('fabs').offsetParent !== null), 'back closes the photo; the map is at the current time again');
+    // a photo without EXIF: asks for the time, planets wait for it
+    await ev(p, async b64 => { const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); await loadPhoto(new File([bin], 'sky.jpg', { type: 'image/jpeg' }), false); }, raw.toString('base64'));
+    await p.waitForFunction(() => ph.on && !st.busy, null, { timeout: 90000 }); await wait(p, 300);
+    ok(await ev(p, () => !!st.photoSol && $('phTime').classList.contains('ask') && st.tOff === 0), 'without EXIF the time chip asks when it was taken');
+    await ev(p, () => { obs.log = []; saveObs(); }); await p.tap('#phInPhoto'); await wait(p, 500); await p.tap('#phLogAll'); await wait(p, 500);
+    ok(await ev(p, () => obs.log.length === 0 && !$('timeSheet').hidden), 'logging asks for the time first');
+    await done(p);
+  },
+
   async sync() {
     const A = await page(), B = await page({ w: 1280, h: 800, mobile: false });
     // device A: a planned object, a logbook entry, its own telescope; then "Set up sync"
