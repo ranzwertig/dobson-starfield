@@ -913,6 +913,11 @@ const TESTS = {
   async proapp() {
     const p = await page({ pro: false });
     ok(await ev(p, () => pro.checked && !pro.on && $('proMenuState').textContent === ''), 'no licence: Pro is off');
+    const tagged = () => ev(p, () => ['#btnSync', '#setTabSync', '#qView', '#oView', 'input[value="scope"]', 'input[data-show="sats"]'].map(q => {
+      const e = document.querySelector(q), box = e.closest('label, button, .qrow, .row') || e.parentElement; const t = (box.closest('.qrow') || box).querySelector('.protag') || box.querySelector('.protag');
+      return !!t && getComputedStyle(t).display !== 'none'; }));
+    ok((await tagged()).every(Boolean), 'without Pro: sync, eyepiece view, the telescope role and satellites carry a “Pro” tag', await tagged());
+    ok(await ev(p, () => /part of Zenigo Pro/.test($('satState').textContent)), 'the satellite switch says it is part of Pro');
     await ev(p, () => setShow({ ...cfg.show, sats: true })); await wait(p, 300);
     ok(await ev(p, () => !cfg.show.sats && !$('proSheet').hidden && /Satellites/.test($('proWhy').textContent)), 'satellites: the Pro sheet says why, the filter stays off');
     await ev(p, () => closeSheet('proSheet'));
@@ -939,6 +944,7 @@ const TESTS = {
     await p.fill('#proKeyIn', k.slice(0, 40) + '\n' + k.slice(40)); await p.tap('#proKeyAdd'); await wait(p, 300);
     ok(await ev(p, () => pro.on && /active until/i.test($('proKeyMsg').textContent) && /until/.test($('proMenuState').textContent)), 'a pasted key (with a line break) turns Pro on', await ev(p, () => $('proKeyMsg').textContent));
     ok(await ev(p, () => satsOn !== undefined && (setShow({ ...cfg.show, sats: true }), cfg.show.sats)), 'satellites can be switched on now');
+    ok((await tagged()).every(x => !x) && await ev(p, () => getComputedStyle(document.querySelector('.rolecard .nopro')).display === 'none'), 'with Pro the tags are gone', await tagged());
     // a renewal bought before the end: starts later, and Pro runs until its end
     const r2 = await proKey('2027-09-01T00:00:00.000Z', '2028-09-01T00:00:00.000Z', { sb: 1 });
     await ev(p, k => proAdd(k), r2);

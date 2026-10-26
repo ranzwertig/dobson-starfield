@@ -617,6 +617,7 @@ a.menu-item { color: inherit; text-decoration: none; box-sizing: border-box; }
 .prokeys { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .prokeys li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--raise); font-size: 14px; }
 .prokeys small { color: var(--muted); }
+html.pro .protag, html.pro .nopro { display: none; }
 i.protag { font-style: normal; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--accent); border-radius: 99px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .row label { flex: 1 1 120px; display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
@@ -962,7 +963,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 16l5-4.5 3.5 3 3-2.5L21 17"/><path d="M15.5 7.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="currentColor"/></svg><span>Label a night photo</span><em>what’s in it, to save and share</em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
-      <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices</span><em id="syncState"></em></button>
+      <button class="menu-item" id="btnSync" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 8.5A8 8 0 0 0 5 7.2M4.5 15.5A8 8 0 0 0 19 16.8"/><path d="M19.8 3.8v4.9h-4.9M4.2 20.2v-4.9h4.9"/></svg><span>Sync with other devices<i class="protag">Pro</i></span><em id="syncState"></em></button>
       <button class="menu-item" id="btnLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><span>Live connection</span><em id="liveState"></em></button>
       <button class="menu-item" id="btnPro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span>Zenigo Pro</span><em id="proMenuState"></em></button>
     </div>
@@ -1048,7 +1049,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     </fieldset>
     <fieldset>
       <legend>Satellites</legend>
-        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="9.5" y="9.5" width="5" height="5" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M3 8l5-5M16 21l5-5"/></svg></span><span class="flab">ISS and bright satellites<small id="satState">only with an internet connection</small></span><input type="checkbox" data-show="sats"></label>
+        <label class="ftog"><span class="ficon"><svg class="sym" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="9.5" y="9.5" width="5" height="5" transform="rotate(45 12 12)"/><path d="M4 4l4 4M16 16l4 4M3 8l5-5M16 21l5-5"/></svg></span><span class="flab"><span>ISS and bright satellites<i class="protag">Pro</i></span><small id="satState">only with an internet connection</small></span><input type="checkbox" data-show="sats"></label>
     </fieldset>
     <fieldset>
       <legend>Stars</legend>
@@ -1305,7 +1306,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="qlabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
       <select id="qEp" aria-label="Eyepiece in use"></select>
       <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
-        <div class="qlabel">Eyepiece view <span class="qsub">what you should see, bottom left</span></div>
+        <div class="qlabel"><span>Eyepiece view<i class="protag">Pro</i></span> <span class="qsub">what you should see, bottom left</span></div>
         <label class="switch"><input type="checkbox" id="qView" aria-label="Eyepiece view"><i></i></label>
       </div>
     </div>
@@ -1392,7 +1393,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync</button><button class="chip" role="tab" data-stab="live">Live</button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -1444,8 +1445,8 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div id="liveStepRole">
         <p class="livestep" id="liveStepRoleHd"><span>Step 1 of 2</span> What does this device do?</p>
         <div class="liverole" role="radiogroup" aria-label="Role of this device">
-          <label class="rolecard"><input type="radio" name="liveRole" value="scope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l13-7 2 4-13 7z"/><path d="M7.5 17.5L6 22M9 16.5l3 5.5"/><path d="M19.5 6.5l1.5-1"/></svg><span><b>At the telescope</b><small>Sits on the telescope and shares where it points. Optionally its camera image too.</small></span></label>
-          <label class="rolecard"><input type="radio" name="liveRole" value="follow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="11" r="3.2"/><path d="M12 5.5v2.3M12 14.2v2.3M6.5 11h2.3M15.2 11h2.3"/></svg><span><b>Follow</b><small>In your hand: shows where the other device’s telescope points, with the directions to the target.</small></span></label>
+          <label class="rolecard"><input type="radio" name="liveRole" value="scope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15l13-7 2 4-13 7z"/><path d="M7.5 17.5L6 22M9 16.5l3 5.5"/><path d="M19.5 6.5l1.5-1"/></svg><span><b>At the telescope<i class="protag">Pro</i></b><small>Sits on the telescope and shares where it points. Optionally its camera image too.</small></span></label>
+          <label class="rolecard"><input type="radio" name="liveRole" value="follow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="11" r="3.2"/><path d="M12 5.5v2.3M12 14.2v2.3M6.5 11h2.3M15.2 11h2.3"/></svg><span><b>Follow</b><small>In your hand: shows where the other device’s telescope points, with the directions to the target.<span class="nopro"> Free, also without Pro.</span></small></span></label>
         </div>
         <div class="row"><button class="btn primary" id="liveNext">Next</button></div>
       </div>
@@ -1503,7 +1504,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row">
         <label class="check"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
         <label class="check"><input type="checkbox" id="oRing"> Eyepiece and finder field on the map</label>
-        <label class="check"><input type="checkbox" id="oView"> Eyepiece view at the bottom left</label>
+        <label class="check"><input type="checkbox" id="oView"> Eyepiece view at the bottom left<i class="protag">Pro</i></label>
       </div>
       <div class="row">
         <label style="flex-basis:100%">Eyepiece view orientation<select id="oOrient">
@@ -1640,6 +1641,7 @@ if (!cfg.extrasV) { cfg.show.sats = false; cfg.extrasV = 1; }
 // Zenigo Pro (see "Zenigo Pro" below): until the keys are checked, the last result stands (no flicker at start)
 var pro = { checked: false, on: false, cur: null, until: 0, ended: 0, list: [] };
 try { const c = JSON.parse(localStorage.getItem("zenigo-pro-state") || "null"); if (c && c.until > Date.now()) { pro.on = true; pro.until = c.until; } } catch (e) {}
+document.documentElement.classList.toggle("pro", pro.on);   // hides the “Pro” tags
 // stacking got smarter (motion check, float average): the old default of 6 frames becomes 24
 if (!cfg.stackV) { if (+cfg.stack === 6) cfg.stack = 24; cfg.stackV = 2; }
 if (cfg.tele && cfg.tele.u != null && cfg.tele.x == null) {   // old format: fraction of the long image side
@@ -2874,7 +2876,7 @@ async function loadSats(force) {
 }
 function syncSatState() {
   const el = $("satState"); if (!el) return;
-  el.textContent = !navigator.onLine ? "offline: not shown, needs an internet connection" : SAT.loading ? "loading orbits …" : SAT.ok ? SAT.list.length + " satellites, orbits from CelesTrak" : "only with an internet connection";
+  el.textContent = !pro.on ? "part of Zenigo Pro" : !navigator.onLine ? "offline: not shown, needs an internet connection" : SAT.loading ? "loading orbits …" : SAT.ok ? SAT.list.length + " satellites, orbits from CelesTrak" : "only with an internet connection";
 }
 const R_EARTH = 6371;
 // Position of a satellite at a date: direction (unit vector, same frame as the stars), altitude above the horizon,
@@ -5554,15 +5556,16 @@ async function proCheck() {
   const was = pro.on;
   Object.assign(pro, { checked: true, on: !!cur, cur, until, list, ended: !cur && ends.length ? Math.max(...ends) : 0 });
   try { localStorage.setItem("zenigo-pro-state", JSON.stringify({ until: pro.on ? until : 0 })); } catch (e) {}
+  document.documentElement.classList.toggle("pro", pro.on);
   if (was !== pro.on) proChanged(was);
-  renderPro();
+  renderPro(); syncSatState();
   return pro.on;
 }
 // Pro came or went: everything that depends on it draws again
 function proChanged(was) {
   st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; nextCache.key = ""; lastSig = [];
   if (pro.on) loadSats(true);   // at start they load before the keys are checked
-  syncOptics(); syncFilter(); renderSync(); updateGuide(); renderChips(); syncHudNext();
+  syncOptics(); syncFilter(); syncSatState(); renderSync(); updateGuide(); renderChips(); syncHudNext();
   if (!$("listSheet").hidden) renderList();
   if (pro.on && syncS.code) syncSoon(500);
   if (was && !pro.on && pro.ended && cfg.proEndSeen !== pro.ended) {
