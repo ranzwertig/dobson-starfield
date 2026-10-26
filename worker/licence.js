@@ -98,7 +98,10 @@ async function adjusted(env, a) {
 
 export async function handleWebhook(req, env) {
   if (req.method !== 'POST') return json(405, { error: 'method' });
-  if (!env.PADDLE_WEBHOOK_SECRET || !env.PRO_SIGNING_KEY || !env.SYNC_DB) return json(503, { error: 'licences are not set up on this server' });
+  // names only, never values: which setting is missing on this deployment
+  const missing = ['PADDLE_WEBHOOK_SECRET', 'PRO_SIGNING_KEY', 'SYNC_DB', 'PADDLE_PRICE_ID'].filter(k => !env[k]);
+  if (missing.length) return json(503, { error: 'licences are not set up on this server', missing });
+  try { const k = JSON.parse(env.PRO_SIGNING_KEY); if (!k.d || k.crv !== 'P-256') throw 0; } catch (e) { return json(503, { error: 'PRO_SIGNING_KEY is not a private key (JWK with "d")' }); }
   const raw = await req.text();   // the exact bytes Paddle signed: never parse before checking
   if (!(await paddleSignatureOk(raw, req.headers.get('Paddle-Signature'), env.PADDLE_WEBHOOK_SECRET))) return json(401, { error: 'signature' });
   let ev; try { ev = JSON.parse(raw); } catch (e) { return json(400, { error: 'json' }); }
