@@ -304,6 +304,20 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .lsuggest svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
 .lsuggest span { flex: 1; }
 .lsuggest b { color: var(--accent); }
+/* Observing programmes */
+.pgcards { display: grid; gap: 8px; }
+.pgcard { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; text-align: left; width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise); cursor: pointer; color: inherit; font: inherit; }
+.pgcard b { font-size: 16px; font-weight: 600; }
+.pgcard .pgn { font: 400 16px var(--font-num); }
+.pgcard .pgn small { color: var(--muted); font-size: 12.5px; }
+.pgcard small.pga { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.pgbar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.pgbar i { display: block; height: 100%; background: var(--accent); }
+.pghead { display: grid; gap: 6px; margin: 0 0 10px; }
+.pghead .pgn { font: 400 22px var(--font-num); }
+.pghead .pgn small { font-size: 14px; color: var(--muted); }
+.pgtabs { margin: 6px 0 8px; }
+.pgacts { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
 .lgrp { display: flex; justify-content: space-between; gap: 8px; padding: 12px 4px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .lrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) 22px; gap: 2px 10px; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 4px; cursor: pointer; }
 .lrow:hover { background: var(--raise); }
@@ -972,6 +986,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="menuTitle"><span class="brand"><span class="zl"><img src="logo.svg" alt="" width="30" height="30"><i class="propill" aria-hidden="true">Pro</i></span><b>zeni<i>go</i></b></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="menu-list">
       <button class="menu-item" id="btnLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8.5h6"/></svg><span>Logbook</span><em id="logState"></em></button>
+      <button class="menu-item" id="btnProg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h3M4 12h3M4 18h3"/><path d="M10 6h10M10 12h10M10 18h6"/><path d="M17 17.5l1.6 1.6 3-3.2"/></svg><span>Observing programmes</span><em id="progMenuState"></em></button>
       <button class="menu-item" id="btnPhoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 16l5-4.5 3.5 3 3-2.5L21 17"/><path d="M15.5 7.5l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" fill="currentColor"/></svg><span>Label a night photo</span><em>what’s in it, to save and share</em></button>
       <button class="menu-item" id="btnTime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Time: see the sky later</span><em id="timeState">now</em></button>
       <button class="menu-item" id="btnSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Settings</span></button>
@@ -1224,9 +1239,17 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="logTitle">
     <div class="grab"><h2 id="logTitle"><button class="iconbtn" id="logMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Logbook</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="ltiles" id="logTiles"></div>
+    <button class="lsuggest" id="logProg"></button>
     <button class="lsuggest" id="logSuggest" hidden></button>
     <div class="chips" id="logFilter" hidden></div>
     <div id="logBody"></div>
+  </div>
+</div>
+
+<div class="sheet tall" id="progSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="progTitle">
+    <div class="grab"><h2 id="progTitle"><button class="iconbtn" id="progBack" aria-label="All programmes" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="progTitleTxt">Observing programmes</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div id="progBody"></div>
   </div>
 </div>
 
@@ -3085,7 +3108,7 @@ async function loadDeep() {
   try {
     const [b, d, li] = await Promise.all([fetch("deep-stars.bin").then(r => r.ok ? r.arrayBuffer() : null), fetch("dso.json").then(r => r.ok ? r.json() : null),
       fetch("lists.json").then(r => r.ok ? r.json() : null).catch(() => null)]);
-    if (li) { LISTS.caldwell = new Map(li.caldwell.map(([n, id]) => [id, n])); LISTS.h400 = new Set(li.herschel); LISTS.pop = new Set(li.popular); LISTS.shapes = new Map((li.shapes || []).map(([id, a, b, pa]) => [id, { a, b, pa }])); LISTS.ok = true; }
+    if (li) { LISTS.caldwell = new Map(li.caldwell.map(([n, id]) => [id, n])); LISTS.h400 = new Set(li.herschel); LISTS.pop = new Set(li.popular); LISTS.h2 = li.herschel2 || []; LISTS.sac = li.sac110 || []; LISTS.shapes = new Map((li.shapes || []).map(([id, a, b, pa]) => [id, { a, b, pa }])); LISTS.ok = true; }
     if (b) {
       // decoded and indexed in pieces; DEEP is only filled in at the end, the map draws without it until then
       const u = new Uint8Array(b), n = Math.floor(u.length / 7), v = new Float32Array(n * 3), m = new Float32Array(n), U = 16777215, tick = slicer();
@@ -5514,6 +5537,7 @@ function syncSeen() {
 document.querySelectorAll("#seenRes [data-res]").forEach(b => b.onclick = () => { seenState.res = b.dataset.res; syncSeen(); });
 function saveSeen(goOn) {
   const { o, entry } = seenState, f = seenState.facts;
+  const first = !entry && seenState.res !== "miss" && !sets().seen.has(o.id);
   const e = entry || { uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), obj: o.id, name: o.name, t: new Date().toISOString(), lat: f.lat, lon: f.lon, alt: f.alt, moon: f.moon };
   Object.assign(e, { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value });
   if (!entry) obs.log.push(e);
@@ -5523,7 +5547,9 @@ function saveSeen(goOn) {
   saveObs(); closeSheet("seenSheet");
   if (!$("logSheet").hidden) renderLog();
   if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!sideBusy("infoSheet")) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
-  hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (wasStar ? " Its star is removed: done." : ""), 3000);
+  const pn = first ? progNote(e.obj) : "";
+  hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (pn ? " " + pn + "." : "") + (wasStar ? " Its star is removed: done." : ""), pn ? 4500 : 3000);
+  if (!$("progSheet").hidden) renderProgs();
   if (goOn && seenState.next) { goNext(seenState.next); if (sidePanels()) setTimeout(() => openTargetPanel(false), 80); }
 }
 $("seenSave").onclick = () => saveSeen(false);
@@ -5560,6 +5586,8 @@ function renderLog() {
   const nights = new Set(obs.log.map(e => nightKey(new Date(e.t)))).size;
   const tile = (k, v, of) => '<div><span class="k">' + k + '</span><span class="v">' + v + (of ? "<small>/" + of + "</small>" : "") + "</span>" + (of ? '<span class="pb"><i style="width:' + Math.round(v / of * 100) + '%"></i></span>' : '<span class="note">' + ids.size + (ids.size === 1 ? " object" : " objects") + "</span>") + "</div>";
   $("logTiles").innerHTML = tile("Messier", mCount, 110) + tile("Planets", pCount, 7) + tile("Nights", nights);
+  $("logProg").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h3M4 12h3M4 18h3"/><path d="M10 6h10M10 12h10M10 18h6"/></svg><span>Observing programmes: Messier, Caldwell, Herschel and more</span><b>Open</b>';
+  $("logProg").onclick = () => { closeSheet("logSheet"); openProgs(null); };
   // suggestion: Messier objects not seen yet that are well placed tonight
   const tn = nightPlan(), have = sets().list;
   const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && inReach(sm.alt(v)[0], Math.min(30, reach().hi - 5))); }) : [];
@@ -5600,6 +5628,152 @@ function download(name, text, type) {
   document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 const stamp = () => new Date().toISOString().slice(0, 10);
+/* ---------------- Observing programmes ---------------- */
+// Lists to work through, with progress from the logbook: an entry that isn't "Not found" counts, so the progress travels
+// with the logbook (sync, backup) and nothing new is stored. Messier is free; the others are part of Zenigo Pro. Objects
+// of Herschel II and SAC 110 that the free catalogue lacks come with the extended catalogue.
+const PROGRAMS = [
+  { id: "messier", name: "Messier", free: true, about: "Charles Messier’s 110 objects: the classic list to start with.", ids: () => MESSIER.map(r => r[0]) },
+  { id: "caldwell", name: "Caldwell", about: "109 bright objects Messier left out, chosen by Patrick Moore; the last ones are far south. The Coalsack (C99), a dark nebula, isn’t counted here.", ids: () => [...LISTS.caldwell.keys()], label: id => "C" + LISTS.caldwell.get(id) },
+  { id: "h400", name: "Herschel 400", about: "400 of William Herschel’s objects for a 6-inch telescope (Astronomical League).", ids: () => [...LISTS.h400] },
+  { id: "h2", name: "Herschel II", about: "The next 400 Herschel objects, mostly galaxies, for 8 inches and more (Astronomical League).", ids: () => LISTS.h2 || [] },
+  { id: "sac", name: "Best of the NGC", about: "The Saguaro Astronomy Club’s 110 best NGC objects for a medium telescope.", ids: () => LISTS.sac || [] },
+];
+const progState = { p: null, tab: "open", scroll: 0 };
+const progOpen = P => P.free || pro.on;
+function progStats(P) {
+  const ids = P.ids(), set = new Set(ids), seen = sets().seen;
+  const done = ids.filter(id => seen.has(id)), last = obs.log.filter(e => e.result !== "miss" && set.has(e.obj)).sort((a, b) => b.t.localeCompare(a.t))[0];
+  return { ids, n: ids.length, done: done.length, last };
+}
+const progName = (P, id) => (P.label ? P.label(id) + " · " : "") + obsName(id);
+function renderProgMenu() { const m = progStats(PROGRAMS[0]); $("progMenuState").textContent = "Messier " + m.done + "/" + m.n; }
+function openProgs(id) {
+  progState.p = id ? PROGRAMS.find(P => P.id === id) : null;
+  if (progState.p && !progOpen(progState.p)) { progState.p = null; renderProgs(); openSheet("progSheet"); return proNeed(PROGRAMS.find(P => P.id === id).name + " is an observing programme of Zenigo Pro. Messier stays free."); }
+  progState.tab = "open"; renderProgs(); openSheet("progSheet"); scroller($("progSheet")).scrollTop = 0;
+}
+function renderProgs() {
+  const P = progState.p, body = $("progBody"); body.textContent = "";
+  $("progBack").hidden = !P; $("progTitleTxt").textContent = P ? P.name : "Observing programmes";
+  if (!P) {
+    const intro = document.createElement("p"); intro.className = "note";
+    intro.textContent = "Work through a list over many nights. What you log as seen counts; a programme shows what is left and what is well placed tonight.";
+    const box = document.createElement("div"); box.className = "pgcards";
+    PROGRAMS.forEach(Q => {
+      const s = progStats(Q), c = document.createElement("button"); c.className = "pgcard";
+      c.innerHTML = '<b></b><span class="pgn"></span><span class="pgbar"><i></i></span><small class="pga"></small>';
+      c.querySelector("b").textContent = Q.name; if (!progOpen(Q)) c.querySelector("b").insertAdjacentHTML("beforeend", '<i class="protag">Pro</i>');
+      c.querySelector(".pgn").innerHTML = s.done + "<small> / " + s.n + "</small>";
+      c.querySelector(".pgbar i").style.width = (s.n ? s.done / s.n * 100 : 0).toFixed(1) + "%";
+      c.querySelector(".pga").textContent = s.last ? "Last: " + obsName(s.last.obj, s.last.name) + ", " + new Date(s.last.t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) : Q.about;
+      c.onclick = () => openProgs(Q.id); box.append(c);
+    });
+    body.append(intro, box); return;
+  }
+  const s = progStats(P), seen = sets().seen, tn = nightPlan();
+  const head = document.createElement("div"); head.className = "pghead";
+  head.innerHTML = '<span class="pgn"></span><span class="pgbar"><i></i></span><small class="note"></small>';
+  head.querySelector(".pgn").innerHTML = s.done + "<small> of " + s.n + " seen" + (s.done >= s.n && s.n ? " · complete" : "") + "</small>";
+  head.querySelector(".pgbar i").style.width = (s.n ? s.done / s.n * 100 : 0).toFixed(1) + "%";
+  head.querySelector(".note").textContent = P.about;
+  body.append(head);
+  // objects only the extended catalogue has: offer it
+  const missing = s.ids.filter(id => !targetById(id)).length;
+  if (missing) {
+    const n = document.createElement("p"); n.className = "note";
+    n.textContent = missing + " objects of this programme come with the extended catalogue. ";
+    const b = document.createElement("button"); b.className = "lnk"; b.textContent = ext.busy ? "Downloading … " + ext.pct + " %" : ext.have ? "Loading …" : "Download it (" + (EXT ? (EXT.bytes / 1048576).toFixed(1) : 6) + " MB)";
+    b.onclick = () => extDownload(); n.append(b); body.append(n);
+  }
+  const rows = s.ids.map(id => ({ id, p: seen.has(id) ? null : rowPlan(id, tn), seen: seen.has(id) }));
+  const open = rows.filter(r => !r.seen).sort((a, b) => (a.p ? a.p.sort : 3e15) - (b.p ? b.p.sort : 3e15));
+  const good = open.filter(r => r.p && r.p.best && !sets().list.has(r.id));
+  // plan what is well placed tonight (at most 15, in the order they get low)
+  const acts = document.createElement("div"); acts.className = "pgacts";
+  if (good.length) {
+    const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Plan " + Math.min(15, good.length) + " well placed tonight";
+    b.onclick = () => { good.slice(0, 15).forEach(r => obs.list.push({ id: r.id, name: obsName(r.id), added: Date.now() })); saveObs(); renderProgs(); hint(Math.min(15, good.length) + " objects of " + P.name + " planned for tonight.", 3000); };
+    acts.append(b);
+  }
+  if (s.done) {
+    const c = document.createElement("button"); c.className = "btn"; c.textContent = "Programme logbook (CSV)"; c.onclick = () => progExport(P, "csv");
+    const h = document.createElement("button"); h.className = "btn"; h.textContent = "Printable list"; h.onclick = () => progExport(P, "html");
+    acts.append(c, h);
+  }
+  if (acts.children.length) body.append(acts);
+  const tabs = document.createElement("div"); tabs.className = "chips pgtabs"; tabs.setAttribute("role", "tablist");
+  [["open", "Open · " + open.length], ["seen", "Seen · " + s.done], ["all", "All · " + s.n]].forEach(([k, t]) => {
+    const b = document.createElement("button"); b.className = "chip" + (progState.tab === k ? " sel" : ""); b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(progState.tab === k)); b.dataset.ptab = k; b.textContent = t;
+    b.onclick = () => { progState.tab = k; renderProgs(); }; tabs.append(b);
+  });
+  body.append(tabs);
+  const list = progState.tab === "open" ? open : progState.tab === "seen" ? rows.filter(r => r.seen) : rows;
+  if (!list.length) { const n = document.createElement("p"); n.className = "note"; n.textContent = progState.tab === "open" ? "All seen. Well done!" : "Nothing logged yet. Tap “Seen” in an object’s details when you have found it."; body.append(n); }
+  list.forEach(r => body.append(progRow(P, r)));
+}
+function progRow(P, r) {
+  const { id, p } = r, T = targetById(id);
+  const row = document.createElement("div"); row.className = "orow" + (p && p.later ? " later" : ""); row.dataset.id = id;
+  const main = document.createElement("button"); main.className = "omain";
+  const b = document.createElement("b"); b.textContent = progName(P, id);
+  const sm = document.createElement("small");
+  const mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+  const firstSeen = r.seen ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort()[0] : null;
+  sm.textContent = !T ? "in the extended catalogue" : [mrow ? mrow[5] : nrow ? nrow.type : "", T.mag != null ? (+T.mag).toFixed(1) + " mag" : "",
+    firstSeen ? "seen " + new Date(firstSeen).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) : p ? p.sub : ""].filter(Boolean).join(" · ");
+  main.append(b, sm);
+  if (p) main.append(nightBar(p));
+  main.onclick = () => { const o = objById(id); if (o) { progState.scroll = scroller($("progSheet")).scrollTop; showInfo(o, "prog"); } else if (!ext.have) extDownload(); };
+  const alt = document.createElement("span"); alt.className = "oalt";
+  if (r.seen) alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
+  row.append(main, alt);
+  if (T) row.append(toggleButton("plan", id, () => ({ id, name: obsName(id) })));
+  return row;
+}
+function backToProg() { renderProgs(); openSheet("progSheet"); const b = scroller($("progSheet")); requestAnimationFrame(() => { b.scrollTop = progState.scroll; }); }
+// After a first sighting: the progress in the programmes it belongs to, and a word at 25, 50, 75 and 100 %
+function progNote(id) {
+  const out = [];
+  PROGRAMS.filter(P => progOpen(P) && P.ids().includes(id)).forEach(P => {
+    const s = progStats(P), q = [0.25, 0.5, 0.75, 1].find(f => s.done === Math.ceil(s.n * f));
+    out.push(P.name + ": " + s.done + " of " + s.n + (q === 1 ? " · complete!" : q === 0.5 ? " · halfway!" : q ? " · " + q * 100 + " %!" : ""));
+  });
+  return out.join(" · ");
+}
+// The programme's logbook: each seen object with its first sighting (date, time, place, eyepiece, conditions, note),
+// as CSV, or as a page to print (for example for an observing award)
+function progExport(P, kind) {
+  const seen = sets().seen, opt = cfg.optics || {};
+  const scope = aperture() ? Math.round(aperture()) + " mm" + (opt.scope ? ", " + Math.round(opt.scope) + " mm focal length" : "") : "";
+  const rows = P.ids().filter(id => seen.has(id)).map(id => {
+    const e = obs.log.filter(x => x.obj === id && x.result !== "miss").sort((a, b) => a.t.localeCompare(b.t))[0], d = new Date(e.t);
+    const T = targetById(id), mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+    return { label: P.label ? P.label(id) : "", id, name: obsName(id).replace(/^[^·]*· /, ""), type: mrow ? mrow[5] : nrow ? nrow.type : T ? T.kind : "",
+      date: d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), time: pad2(d.getHours()) + ":" + pad2(d.getMinutes()),
+      place: e.lat != null ? (+e.lat).toFixed(2) + ", " + (+e.lon).toFixed(2) : "", ep: e.ep || "", seeing: e.seeing || "", transp: e.transp || "",
+      alt: e.alt != null ? Math.round(e.alt) + "°" : "", moon: e.moon || "", result: e.result === "hard" ? "hard" : "easy", note: e.note || "" };
+  });
+  const cols = [["label", "No."], ["id", "Object"], ["name", "Name"], ["type", "Type"], ["date", "Date"], ["time", "Time"], ["place", "Place (lat, lon)"], ["ep", "Eyepiece"],
+    ["seeing", "Seeing"], ["transp", "Transparency"], ["alt", "Altitude"], ["moon", "Moon"], ["result", "Result"], ["note", "Note"]].filter(([k]) => k !== "label" || P.label);
+  const file = "zenigo-" + P.id + "-" + stamp();
+  if (kind === "csv") {
+    const q = v => { const s2 = v == null ? "" : String(v); return /[",\n;]/.test(s2) ? '"' + s2.replace(/"/g, '""') + '"' : s2; };
+    download(file + ".csv", "﻿" + [cols.map(c => c[1])].concat(rows.map(r => cols.map(c => r[c[0]]))).map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
+    return;
+  }
+  const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(P.name) + " · Zenigo</title>"
+    + "<style>body{font:13px/1.4 system-ui,sans-serif;margin:24px;color:#111}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 12px;color:#444}table{border-collapse:collapse;width:100%}"
+    + "th,td{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}@media print{body{margin:10mm}}</style></head><body>"
+    + "<h1>" + esc(P.name) + " · " + rows.length + " of " + P.ids().length + "</h1><p>Observer: ____________________ · " + (scope ? "Telescope: " + esc(scope) + " · " : "") + "Logged with Zenigo, " + esc(stamp()) + "</p>"
+    + "<table><thead><tr>" + cols.map(c => "<th>" + esc(c[1]) + "</th>").join("") + "</tr></thead><tbody>"
+    + rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c[0]]) + "</td>").join("") + "</tr>").join("") + "</tbody></table></body></html>";
+  download(file + ".html", html, "text/html");
+}
+$("btnProg").onclick = () => { closeSheet("menu"); openProgs(null); };
+$("progBack").onclick = () => openProgs(null);
 /* ---------------- Backup (in the settings): lists, or everything including the settings ---------------- */
 function syncBackup() {
   const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
@@ -7323,7 +7497,7 @@ function closeSheet(id, final) {
   sh._tok = (sh._tok || 0) + 1;
   // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
   if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
-    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : id === "infoSheet" && st.infoFromList === "tonight" ? backToTonight : backToList;
+    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : id === "infoSheet" && st.infoFromList === "tonight" ? backToTonight : id === "infoSheet" && st.infoFromList === "prog" ? backToProg : backToList;
     st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
     setTimeout(() => { if (!sideBusy(id)) back(); }, 60);
   }
@@ -7502,8 +7676,8 @@ function showOnMap(o) {
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = scroller($("infoSheet")), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
-  st.infoFromList = fromList === "search" || fromList === "tonight" ? fromList : !!fromList; $("infoBack").hidden = !fromList;
-  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : fromList === "tonight" ? "Back to Tonight" : "Back to the list");
+  st.infoFromList = fromList === "search" || fromList === "tonight" || fromList === "prog" ? fromList : !!fromList; $("infoBack").hidden = !fromList;
+  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : fromList === "tonight" ? "Back to Tonight" : fromList === "prog" ? "Back to the programme" : "Back to the list");
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o; st.focus = null;
@@ -7571,7 +7745,7 @@ function showInfo(o, fromList) {
   openSheet("infoSheet");
 }
 
-$("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); openSheet("menu"); };
+$("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); renderProgMenu(); openSheet("menu"); };
 $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 // the search field gets the focus right away (within the tap, so phones also open the keyboard)
 const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); try { $("q").focus({ preventScroll: true }); } catch (e) {} };

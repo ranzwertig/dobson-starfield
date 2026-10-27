@@ -909,6 +909,50 @@ const TESTS = {
     await done(A); await done(B);
   },
 
+  // Observing programmes: progress from the logbook, Messier free and the others with Pro, tonight's order, planning,
+  // progress after a first sighting, back from the details, the programme logbook as CSV
+  async programs() {
+    const p = await page({ pro: false });
+    await ev(p, () => { const t = new Date(Date.now() - 86400e3 * 3).toISOString();
+      obs.log.push({ uid: 'p1', obj: 'M13', name: 'M13', t, result: 'easy', ep: '25 mm', lat: 48.2, lon: 10.1 }, { uid: 'p2', obj: 'M31', name: 'M31', t, result: 'hard' }, { uid: 'p3', obj: 'M57', name: 'M57', t, result: 'miss' }); saveObs(); });
+    await ev(p, () => openProgs(null)); await wait(p, 300);
+    const cards = await ev(p, () => [...document.querySelectorAll('.pgcard')].map(c => ({ name: c.querySelector('b').textContent, n: c.querySelector('.pgn').textContent, pro: !!c.querySelector('.protag') })));
+    ok(cards.length === 5 && cards[0].name === 'Messier' && /^2 \/ 110/.test(cards[0].n) && !cards[0].pro && cards.slice(1).every(c => c.pro), 'overview: Messier 2 of 110 (a “Not found” doesn’t count), the others marked Pro', cards);
+    ok(await ev(p, () => /^\d+ \/ 108/.test(document.querySelectorAll('.pgcard')[1].querySelector('.pgn').textContent) && /^0 \/ 400/.test(document.querySelectorAll('.pgcard')[3].querySelector('.pgn').textContent)), 'Caldwell 108 objects (without the Coalsack), Herschel II 400');
+    await ev(p, () => openProgs('caldwell')); await wait(p, 300);
+    ok(await ev(p, () => !$('proSheet').hidden && /Caldwell is an observing programme of Zenigo Pro/.test($('proWhy').textContent)), 'Caldwell without Pro: the Pro sheet');
+    await ev(p, () => { closeSheet('proSheet'); openProgs('messier'); }); await wait(p, 400);
+    ok(await ev(p, () => /2 of 110 seen/.test($('progBody').textContent) && /Open · 108/.test($('progBody').textContent) && document.querySelectorAll('#progBody .orow').length === 108), 'Messier: the open ones listed (108)');
+    ok(await ev(p, () => { const r = [...document.querySelectorAll('#progBody .orow')]; const i = r.findIndex(x => x.classList.contains('later')); return i > 0 && r.slice(0, i).every(x => !x.classList.contains('later')); }), 'well placed tonight first, the later ones after');
+    const before = await ev(p, () => obs.list.length);
+    await ev(p, () => [...document.querySelectorAll('#progBody .pgacts .btn')].find(b => /well placed tonight/.test(b.textContent)).click()); await wait(p, 300);
+    const planned = await ev(p, () => obs.list.length);
+    ok(planned > before && planned - before <= 15, 'one tap plans the well placed ones (at most 15)', [before, planned]);
+    // details from the programme and back
+    await ev(p, () => document.querySelector('#progBody .orow .omain').click()); await wait(p, 400);
+    ok(await ev(p, () => !$('infoSheet').hidden && $('infoBack').getAttribute('aria-label') === 'Back to the programme'), 'a row opens the details, with a way back');
+    await p.click('#infoBack'); await wait(p, 400);
+    ok(await ev(p, () => !$('progSheet').hidden && $('progTitleTxt').textContent === 'Messier'), 'back to the programme');
+    // a first sighting: the progress in the hint
+    await ev(p, () => { openSeen(objById('M27')); seenState.res = 'easy'; }); await wait(p, 300); await ev(p, () => $('seenSave').click()); await wait(p, 300);
+    ok(await ev(p, () => /Messier: 3 of 110/.test($('hint').textContent)), 'after a first sighting: “Messier: 3 of 110”', await ev(p, () => $('hint').textContent));
+    // the programme logbook
+    await ev(p, () => { progState.tab = 'seen'; openProgs('messier'); progState.tab = 'seen'; renderProgs(); }); await wait(p, 300);
+    ok(await ev(p, () => document.querySelectorAll('#progBody .orow').length === 3), 'seen: three objects');
+    const dl = p.waitForEvent('download'); await ev(p, () => [...document.querySelectorAll('#progBody .pgacts .btn')].find(b => /CSV/.test(b.textContent)).click());
+    const csv = fs.readFileSync(await (await dl).path(), 'utf8');
+    ok(/^\ufeff?Object,Name,Type,Date,Time/.test(csv) && /M13,.*25 mm/.test(csv) && /M27/.test(csv) && !/M57/.test(csv) && csv.split('\r\n').length === 4, 'CSV: one row per seen object with its first sighting', csv.slice(0, 300));
+    await done(p);
+    // with Pro: Herschel II opens; objects only the extended catalogue has are marked
+    const q = await page();
+    await ev(q, () => openProgs('h2')); await wait(q, 600);
+    ok(await ev(q, () => $('proSheet').hidden && /0 of 400 seen/.test($('progBody').textContent) && /objects of this programme come with the extended catalogue/.test($('progBody').textContent)
+      && /in the extended catalogue/.test($('progBody').textContent)), 'Herschel II with Pro, without the extended catalogue: says so');
+    await ev(q, () => openProgs('caldwell')); await wait(q, 400);
+    ok(await ev(q, () => /^C\d+ · /.test(document.querySelector('#progBody .orow b').textContent)), 'Caldwell rows carry their number (C…)');
+    await done(q);
+  },
+
   // Extended catalogue (Pro): downloaded right after Pro is there, merged into the map, search and eyepiece view,
   // kept in its own cache, put away when Pro ends, removable
   async extcat() {
