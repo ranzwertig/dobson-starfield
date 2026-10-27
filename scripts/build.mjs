@@ -193,6 +193,7 @@ function faqLd(html) {
 // until Paddle's price for the visitor's country has loaded, so the price is there without Paddle too.
 const proPrice = new Intl.NumberFormat('en', { style: 'currency', currency: PRO.structuredData.currency }).format(Number(PRO.structuredData.price));
 const proHtml = html => html.replaceAll('<!--PRO-NAME-->', esc(PRO.name)).replaceAll('<!--PRO-TAGLINE-->', esc(PRO.tagline)).replaceAll('<!--PRO-TERMS-->', esc(PRO.terms)).replaceAll('<!--PRO-PRICE-->', esc(proPrice))
+  .replace('<!--PRO-COMING-NOTE-->', () => proSoon.length ? '    <p class="muted">Features marked “coming” are planned and not part of what you buy today. If they arrive during your 12 months, they are included.</p>' : '')
   .replace('<!--PRO-FEATURES-->', PRO.features.map(f => `      <dt${f.coming ? ' class="coming"' : ''}>${f.href ? `<a href="${esc(f.href)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`).join('\n'))
   .replace('<!--PRO-FREE-->', PRO.freeFeatures.map(f => `      <li>${esc(f)}</li>`).join('\n'));
 const proLd = JSON.stringify([{ '@type': 'Offer', name: 'Zenigo', price: '0', priceCurrency: 'EUR' },

@@ -13,7 +13,7 @@
     { "title": "Extended catalogue", "text": "The whole NGC and IC catalogues: about 10,000 more galaxies, nebulae and clusters, and about 790,000 more stars down to magnitude 11, on the map, in the search and in the eyepiece view. Downloaded once (6 MB), then it works offline.", "href": "/help/#extended" },
     { "title": "Observing programmes", "text": "Binocular Messier, Caldwell, Herschel 400, Herschel II and the 110 Best of the NGC, with your progress from the logbook, what is well placed tonight, one tap to plan it, and the programme’s logbook to print or export. Messier stays free.", "href": "/help/#programmes" },
     { "title": "Several instruments", "text": "Each telescope with its own eyepieces, finder, Barlow and eyepiece point, and binoculars with their own field. Switch with one tap; the logbook notes what you used.", "href": "/help/#instruments" },
-    { "title": "Logbook statistics", "text": "What you have seen, by night, object type and telescope, and more export formats.", "coming": true }
+    { "title": "Logbook statistics", "text": "What you have seen by month, kind of object, instrument and constellation, with records, seeing and the Moon; a tap shows those entries. Export as OpenAstronomyLog for other observing software, and your year in review as an image to share.", "href": "/help/#statistics" }
   ],
   "freeFeatures": [
     "Locate and push-to: the crosshair, the arrow, how far to turn and tilt, Continuous and Align",

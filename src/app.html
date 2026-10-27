@@ -305,6 +305,58 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ltiles .v small { font-size: 13px; color: var(--muted); }
 .ltiles .pb { height: 5px; border-radius: 3px; background: var(--line); }
 .ltiles .pb i { display: block; height: 5px; border-radius: 3px; background: var(--accent); }
+/* Logbook: Entries | Statistics, the statistics, the filters, export */
+.ltabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 3px; border-radius: 11px; background: #0b0e12; border: 1px solid var(--line); margin-top: 8px; }
+.ltabs button { height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: 600 15px var(--font-ui); cursor: pointer; }
+.ltabs button[aria-selected="true"] { background: var(--line); color: #f6d39c; }
+.lpane { display: grid; gap: 12px; }
+.ltiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ltiles.four > div { padding: 10px 8px; }
+.speriod .chip { min-height: 34px; }
+.sline { margin: -4px 0 0; }
+.ssec { display: grid; gap: 6px; margin-top: 6px; }
+.shead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.shead > span:first-child { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.skey i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin: 0 4px 0 8px; } .skey i:first-child { margin-left: 0; }
+.ko { background: var(--accent); } .kn { background: #4a5563; }
+.sbars { height: 120px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.sbars button { height: 100%; display: flex; gap: 2px; align-items: flex-end; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 3px; }
+.sbars button:disabled { cursor: default; }
+.sbars button:not(:disabled):hover { background: rgba(255,255,255,.04); }
+.sbars i { flex: 1; border-radius: 2px 2px 0 0; min-height: 0; }
+.smon { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; font: 400 10.5px var(--font-num); color: var(--muted); text-align: center; }
+.srow { display: grid; grid-template-columns: 112px minmax(0, 1fr) 72px; align-items: center; gap: 10px; min-height: 34px; border: 0; background: none; color: inherit; font: inherit; text-align: left; padding: 0; cursor: pointer; }
+.srow > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sbar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.sbar i { display: block; height: 100%; background: var(--accent); } .sbar i.ok { background: var(--ok); }
+.sn { font: 500 13px var(--font-num); text-align: right; } .sn small { color: var(--muted); font-size: 12px; } .sn.big { font-size: 18px; }
+.sinst { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--raise); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sinst svg { width: 28px; height: 28px; color: var(--muted); } .sinst span { display: grid; } .sinst b { font-weight: 600; } .sinst small { color: var(--muted); font-size: 13px; }
+.srecs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.srec { display: grid; gap: 2px; padding: 10px; border-radius: 12px; border: 0; background: var(--raise); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.srec .k { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); } .srec b { font-weight: 600; } .srec small { font-size: 12.5px; color: var(--muted); }
+.shists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.shist { display: grid; gap: 6px; font-size: 13.5px; } .shist .m { color: var(--muted); }
+.shbars { height: 80px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; align-items: end; border-bottom: 1px solid var(--line); }
+.shbars i { background: #6b7686; border-radius: 3px 3px 0 0; } .shbars i.top { background: var(--accent); }
+.shlab { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; font: 400 11px var(--font-num); color: var(--muted); text-align: center; }
+.smoonbox { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: var(--raise); }
+.smoon { display: grid; grid-template-columns: 110px minmax(0, 1fr) 44px; align-items: center; gap: 10px; } .smoon .sub { padding-left: 12px; color: var(--muted); }
+.slock { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); min-height: 170px; }
+.slockbg { position: absolute; inset: 14px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; align-items: end; opacity: .2; filter: blur(2px); }
+.slockbg i { background: var(--accent); height: 40%; } .slockbg i:nth-child(3n) { height: 75%; } .slockbg i:nth-child(4n+1) { height: 25%; } .slockbg i:nth-child(8) { height: 100%; }
+.slocktx { position: relative; display: grid; gap: 8px; padding: 18px 16px; background: rgba(17,21,26,.55); min-height: 170px; align-content: center; box-sizing: border-box; }
+.slocktx b { font-size: 18px; font-weight: 600; } .slocktx span { font-size: 14px; line-height: 1.4; color: #c2cad3; }
+.fchip { display: inline-flex; align-items: center; gap: 4px; } .fchip svg { width: 14px; height: 14px; }
+.chip.dim { color: var(--muted); cursor: default; }
+.lcount { margin: 0 0 4px; }
+.lxopts { display: grid; gap: 8px; }
+.lxopt { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--raise); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.lxopt:disabled { opacity: .5; cursor: default; }
+.lxopt svg { width: 28px; height: 28px; color: var(--muted); } .lxopt.pro svg { color: var(--accent); }
+.lxopt span { display: grid; } .lxopt b { font-weight: 600; } .lxopt small { color: var(--muted); font-size: 13px; }
+.lxyear { width: 100%; max-width: 360px; height: auto; aspect-ratio: 4 / 5; justify-self: center; border-radius: 12px; border: 1px solid var(--line); display: block; margin: 0 auto; }
+#lxBody { display: grid; gap: 10px; }
 .lsuggest { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid #3a3222; border-radius: 12px; background: rgba(240,168,69,.07); cursor: pointer; font-size: 14px; }
 .lsuggest svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
 .lsuggest span { flex: 1; }
@@ -1299,12 +1351,23 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="logSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="logTitle">
-    <div class="grab"><h2 id="logTitle"><button class="iconbtn" id="logMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Logbook</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="logTitle"><button class="iconbtn" id="logMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Logbook</span> <button class="iconbtn" id="logExport" aria-label="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <div class="ltabs" id="logTabs" role="tablist" aria-label="Logbook"><button role="tab" data-ltab2="entries" aria-selected="true">Entries</button><button role="tab" data-ltab2="stats" aria-selected="false">Statistics<i class="protag">Pro</i></button></div></div>
+    <div class="lpane" id="logEntriesBox">
     <div class="ltiles" id="logTiles"></div>
     <button class="lsuggest" id="logProg"></button>
     <button class="lsuggest" id="logSuggest" hidden></button>
     <div class="chips" id="logFilter" hidden></div>
     <div id="logBody"></div>
+    </div>
+    <div class="lpane" id="logStatsBox" hidden></div>
+  </div>
+</div>
+
+<div class="sheet" id="logExpSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="lxTitle">
+    <div class="grab"><h2 id="lxTitle"><button class="iconbtn" id="lxBack" aria-label="Back to the logbook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Export</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div id="lxBody"></div>
   </div>
 </div>
 
@@ -1801,6 +1864,7 @@ const INST_ICON = {
   cat: '<path d="M7 13l6.5-5.5 4 4.5-6.5 5.5z"/><path d="M11.5 16v5M8 21h7M17.5 12l1.5 1.5"/>',
   bino: '<circle cx="7" cy="15" r="4"/><circle cx="17" cy="15" r="4"/><path d="M5 11.5V6.5h4V11M19 11.5V6.5h-4V11M9 9h6"/>',
   other: '<path d="M3.5 12.5l14-6.5 1.4 3-14 6.5z"/><path d="M10.5 12.5l-3.5 8.5M10.5 12.5l3.5 8.5"/>',
+  eye: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.8"/>',
 };
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
@@ -5756,9 +5820,10 @@ $("seenDelete").onclick = () => {
 };
 
 // Logbook: progress, entries by night, export and import
-const logState = { filter: null, scroll: 0 };
-// The entries in the order the logbook shows them (newest first, with its filter)
-function logEntries() { return obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t)); }
+// filter: one object (from its details); f: the filters of the statistics (Pro); period: the statistics' period
+const logState = { filter: null, scroll: 0, tab: "entries", f: {}, period: "all" };
+// The entries in the order the logbook shows them (newest first, with its filters)
+function logEntries() { return obs.log.filter(e => (!logState.filter || e.obj === logState.filter) && logMatch(e, logState.f)).sort((a, b) => b.t.localeCompare(a.t)); }
 // Apply what was changed in the open entry without closing it (used when stepping to another entry)
 function seenValues() {
   const inst = $("seenInst").value, ik = kindOfInst(inst), e = seenState.entry;
@@ -5774,8 +5839,9 @@ function keepSeenEdits() {
 function backToLog() { renderLog(); openSheet("logSheet"); const inner = $("logSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = logState.scroll; }); }
 function stepEntry(e) { if (!e) return; keepSeenEdits(); openSeen(objById(e.obj), e, true); }
 const RES_ICON = { easy: ["easy", "var(--ok)", '<path d="M5 12.5l4.5 4.5L19 7.5"/>'], hard: ["hard", "var(--accent)", '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.3"/>'], miss: ["not found", "var(--target)", '<path d="M7 7l10 10M17 7L7 17"/>'] };
-function openLog(filter) { logState.filter = filter || null; renderLog(); openSheet("logSheet"); }
+function openLog(filter) { logState.filter = filter || null; logState.f = {}; logState.tab = "entries"; renderLog(); openSheet("logSheet"); }
 function renderLog() {
+  setLogTab(logState.tab);
   const ok = obs.log.filter(e => e.result !== "miss"), ids = new Set(ok.map(e => e.obj));
   const mCount = [...ids].filter(id => /^M\d+$/.test(id)).length, pCount = [...ids].filter(id => ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].includes(id)).length;
   const nights = new Set(obs.log.map(e => nightKey(new Date(e.t)))).size;
@@ -5791,11 +5857,16 @@ function renderLog() {
     sb.innerHTML = ICON.plan + "<span></span><b>Plan</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
     sb.onclick = () => { sug.sort((a, b) => a[3] - b[3]).slice(0, 12).forEach(r => obs.list.push({ id: r[0], name: r[0], added: Date.now() })); saveObs(); renderLog(); hint(Math.min(12, sug.length) + " objects planned for tonight.", 3000); };
   }
-  const fb = $("logFilter"); fb.hidden = !logState.filter; fb.textContent = "";
-  if (logState.filter) { const c = document.createElement("button"); c.className = "chip sel"; c.textContent = obsName(logState.filter) + " only  ✕"; c.onclick = () => { logState.filter = null; renderLog(); }; fb.append(c); }
+  // the filters as chips (✕ removes one); "+ Filter" goes to the statistics, where a tap on a bar filters
+  const fb = $("logFilter"), f = logState.f, fk = ["period", "cls", "inst", "con", "month", "nf"].filter(k => f[k]); fb.hidden = !logState.filter && !fk.length; fb.textContent = "";
+  const chip = (txt, off) => { const c = document.createElement("button"); c.className = "chip sel fchip"; c.innerHTML = '<span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'; c.firstChild.textContent = txt; c.setAttribute("aria-label", "Remove the filter " + txt); c.onclick = off; fb.append(c); };
+  if (logState.filter) chip(obsName(logState.filter) + " only", () => { logState.filter = null; renderLog(); });
+  fk.forEach(k => chip(filterLabel(k, f[k]), () => setLogFilter({ [k]: null })));
+  if (!fb.hidden && pro.on) { const a = document.createElement("button"); a.className = "chip dashed"; a.textContent = "+ Filter"; a.onclick = () => { setLogTab("stats"); scroller($("logSheet")).scrollTop = 0; hint("Tap a bar or a row to filter the entries.", 3000); }; fb.append(a); }
   const body = $("logBody"); body.textContent = "";
   const list = logEntries();
-  if (!list.length) body.innerHTML = '<p class="note">No entries yet. When you have found an object, open its details and tap “Seen”.</p>';
+  if (fk.length && list.length) { const n = document.createElement("p"); n.className = "note lcount"; const ob = new Set(list.filter(e => e.result !== "miss").map(e => e.obj)).size, ni = new Set(list.map(e => nightKey(new Date(e.t)))).size; n.textContent = list.length + (list.length === 1 ? " entry" : " entries") + " · " + ob + (ob === 1 ? " object" : " objects") + " · " + ni + (ni === 1 ? " night" : " nights"); body.append(n); }
+  if (!list.length) body.innerHTML = obs.log.length ? '<p class="note">No entries with these filters.</p>' : '<p class="note">No entries yet. When you have found an object, open its details and tap “Seen”.</p>';
   let grp = null;
   list.forEach(e => {
     const d = new Date(e.t), k = nightKey(d);
@@ -5817,6 +5888,336 @@ function renderLog() {
     r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
     body.append(r);
   });
+}
+/* ---------------- Logbook statistics, filters and export (statistics, OAL and the year in review: Zenigo Pro) ---------------- */
+// What the statistics know about an object: its kind, magnitude, size, position and constellation (cached; the
+// extended catalogue changes NGC, so the cache follows its length)
+const objInfoC = { n: -1, m: new Map() };
+const PLANET_IDS = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
+function objInfo(id) {
+  if (objInfoC.n !== NGC.length) { objInfoC.n = NGC.length; objInfoC.m.clear(); }
+  let r = objInfoC.m.get(id); if (r) return r;
+  const ms = MESSIER.find(x => x[0] === id), ng = !ms && NGC.find(x => x.id === id);
+  if (ms) r = { cls: dsoClass(ms[5]), mag: ms[3], size: ms[7], ra: ms[1], dec: ms[2], name: ms[4] };
+  else if (ng) r = { cls: ng.cls, mag: ng.mag, size: ng.size, ra: ng.ra, dec: ng.dec, name: ng.name };
+  else if (id === "Moon") r = { cls: "moon" };
+  else if (id === "Sun") r = { cls: "sun" };
+  else if (PLANET_IDS.includes(id)) r = { cls: "planet" };
+  else { const T = targetById(id); if (T && T.kind === "star") { const rd = Solver.v2radec(T.vec()); r = { cls: "star", mag: T.mag, ra: rd.ra, dec: rd.dec }; } }
+  r = r || { cls: "other" };
+  if (r.ra != null) { const c = A.Constellation(r.ra / 15, r.dec); r.con = c.name; r.conSym = c.symbol; }
+  objInfoC.m.set(id, r); return r;
+}
+// kinds as the statistics group them (the Moon, the planets and the Sun together)
+const STAT_CLS = [["gal", "Galaxies"], ["open", "Open clusters"], ["glob", "Globular clusters"], ["neb", "Nebulae"], ["pn", "Planetary nebulae"], ["sol", "Moon, planets"], ["star", "Stars"], ["other", "Other"]];
+const statCls = id => { const c = objInfo(id).cls; return c === "moon" || c === "planet" || c === "sun" ? "sol" : c; };
+const clsName = k => (STAT_CLS.find(x => x[0] === k) || [k, k])[1];
+// how many of each kind and each constellation the catalogue holds (for "52 of 1210")
+const catC = { n: -1, cls: null, con: null };
+function catTotals() {
+  if (catC.n === NGC.length) return catC;
+  const cls = { sol: 8 }, con = {};
+  const add = (c, ra, dec) => { cls[c] = (cls[c] || 0) + 1; const n = A.Constellation(ra / 15, dec).name; con[n] = (con[n] || 0) + 1; };
+  MESSIER.forEach(r => add(dsoClass(r[5]), r[1], r[2])); NGC.forEach(o => add(o.cls, o.ra, o.dec));
+  return Object.assign(catC, { n: NGC.length, cls, con });
+}
+// periods: everything, the last 12 months, or one year (by the night's date)
+const nightYear = e => +nightKey(new Date(e.t)).slice(0, 4);
+function inPeriod(e, p) { return !p || p === "all" ? true : p === "12m" ? Date.parse(e.t) >= Date.now() - 365.25 * 864e5 : nightYear(e) === +p.slice(1); }
+const periodName = p => p === "12m" ? "Last 12 months" : p && p[0] === "y" ? p.slice(1) : "All time";
+function periods() { const ys = [...new Set(obs.log.map(nightYear))].sort((a, b) => b - a); return ["all", "12m", ...ys.map(y => "y" + y)]; }
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// the month of an entry's night: "2026-08", or "m08" for the same month in every year
+const monthOf = (e, every) => { const k = nightKey(new Date(e.t)); return every ? "m" + k.slice(5, 7) : k.slice(0, 7); };
+const monthName = m => m[0] === "m" ? MONTHS[+m.slice(1) - 1] : MONTHS[+m.slice(5, 7) - 1] + " " + m.slice(0, 4);
+// objects tried but never found
+function notFoundIds() { const ok = new Set(obs.log.filter(e => e.result !== "miss").map(e => e.obj)); return new Set(obs.log.filter(e => e.result === "miss" && !ok.has(e.obj)).map(e => e.obj)); }
+// The logbook's filters: an object (from its details), and with Pro a period, kind, instrument, constellation, month or "not found yet"
+function logMatch(e, f) {
+  if (f.period && !inPeriod(e, f.period)) return false;
+  if (f.cls && statCls(e.obj) !== f.cls) return false;
+  if (f.inst && entryInst(e) !== f.inst) return false;
+  if (f.con && objInfo(e.obj).con !== f.con) return false;
+  if (f.month && monthOf(e, f.month[0] === "m") !== f.month) return false;
+  if (f.nf && !f.nfIds.has(e.obj)) return false;
+  return true;
+}
+function filterLabel(k, v) { return k === "period" ? periodName(v) : k === "cls" ? clsName(v) : k === "month" ? monthName(v) : k === "nf" ? "Not found yet" : v; }
+function setLogFilter(patch) {
+  const f = logState.f = Object.assign({}, logState.f, patch);
+  Object.keys(f).forEach(k => { if (f[k] == null || f[k] === false) delete f[k]; });
+  if (f.nf) f.nfIds = notFoundIds(); else delete f.nfIds;
+  logState.tab = "entries"; renderLog(); scroller($("logSheet")).scrollTop = 0;
+}
+
+// The numbers: one pass over the entries of a period
+function logStats(list) {
+  const ok = list.filter(e => e.result !== "miss"), objs = new Set(ok.map(e => e.obj)), byNight = new Map();
+  list.forEach(e => { const k = nightKey(new Date(e.t)); if (!byNight.has(k)) byNight.set(k, []); byNight.get(k).push(e); });
+  let ms = 0, best = null;
+  byNight.forEach((es, k) => {
+    const ts = es.map(e => Date.parse(e.t)); ms += Math.max(...ts) - Math.min(...ts);
+    const n = new Set(es.filter(e => e.result !== "miss").map(e => e.obj)).size; if (!best || n > best.n) best = { k, n };
+  });
+  const first = ok.slice().sort((a, b) => a.t.localeCompare(b.t))[0] || null;
+  const cls = {}, con = {}, inst = new Map(), objNights = new Map();
+  ok.forEach(e => {
+    const c = statCls(e.obj); (cls[c] = cls[c] || new Set()).add(e.obj);
+    const cn = objInfo(e.obj).con; if (cn) (con[cn] = con[cn] || new Set()).add(e.obj);
+    const name = entryInst(e) || "Not noted"; if (!inst.has(name)) inst.set(name, { name, kind: instKind(e), objs: new Set(), nights: new Set() });
+    const I = inst.get(name); I.objs.add(e.obj); I.nights.add(nightKey(new Date(e.t)));
+    if (!objNights.has(e.obj)) objNights.set(e.obj, new Set()); objNights.get(e.obj).add(nightKey(new Date(e.t)));
+  });
+  // seen only with this instrument (in this period)
+  const withObj = new Map(); inst.forEach(I => I.objs.forEach(o => withObj.set(o, (withObj.get(o) || 0) + 1)));
+  inst.forEach(I => { I.only = [...I.objs].filter(o => withObj.get(o) === 1).length; });
+  const recs = {}, dso = [...objs].map(id => ({ id, i: objInfo(id) })).filter(x => ["gal", "open", "glob", "neb", "pn"].includes(x.i.cls));
+  const faint = dso.filter(x => x.i.mag != null).sort((a, b) => b.i.mag - a.i.mag)[0];
+  if (faint) recs.faint = { id: faint.id, txt: faint.i.mag.toFixed(1) + " mag" + (() => { const e = ok.filter(x => x.obj === faint.id)[0]; return e && entryInst(e) ? " · " + entryInst(e) : ""; })() };
+  const small = dso.filter(x => x.i.size > 0).sort((a, b) => a.i.size - b.i.size)[0];
+  if (small) recs.small = { id: small.id, txt: fmtField(small.i.size / 60) + " across" };
+  const low = ok.filter(e => e.alt != null && isFinite(+e.alt)).sort((a, b) => a.alt - b.alt)[0];
+  if (low) recs.low = { id: low.obj, txt: Math.round(low.alt) + "° above the horizon" };
+  let most = null; objNights.forEach((s, id) => { if (s.size > 1 && (!most || s.size > most.n)) most = { id, n: s.size }; });
+  if (most) recs.most = { id: most.id, txt: most.n + " nights" };
+  const hist = k => { const h = [0, 0, 0, 0, 0]; list.forEach(e => { const v = +e[k]; if (v >= 1 && v <= 5) h[v - 1]++; }); return h; };
+  const moonUp = e => /\bup\b/.test(String(e.moon || "")), withMoon = list.filter(e => e.moon);
+  const rate = es => es.length ? es.filter(e => e.result !== "miss").length / es.length : null;
+  return { list, ok, objs, nights: byNight.size, hours: ms / 3600e3, found: rate(list), best, first, cls, con, inst: [...inst.values()].sort((a, b) => b.objs.size - a.objs.size), recs,
+    see: hist("seeing"), tr: hist("transp"), noted: list.filter(e => e.seeing || e.transp).length,
+    moon: { share: withMoon.length ? withMoon.filter(moonUp).length / withMoon.length : null, up: rate(withMoon.filter(moonUp)), down: rate(withMoon.filter(e => !moonUp(e))),
+      galUp: rate(withMoon.filter(e => moonUp(e) && statCls(e.obj) === "gal")) } };
+}
+// months for the chart: the twelve calendar months (all time: the same month of every year), or the last 12
+function statMonths(S, p) {
+  const keys = [];
+  if (p === "12m") { const d = new Date(); d.setDate(1); for (let i = 11; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); keys.push(x.getFullYear() + "-" + pad2(x.getMonth() + 1)); } }
+  else for (let m = 1; m <= 12; m++) keys.push(p && p[0] === "y" ? p.slice(1) + "-" + pad2(m) : "m" + pad2(m));
+  const every = keys[0][0] === "m";
+  return keys.map(k => {
+    const es = S.list.filter(e => monthOf(e, every) === k);
+    return { k, objs: new Set(es.filter(e => e.result !== "miss").map(e => e.obj)).size, nights: new Set(es.map(e => nightKey(new Date(e.t)))).size, lab: MONTHS[+k.slice(-2) - 1][0] };
+  });
+}
+const H = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtNight = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); };
+function renderStats() {
+  const box = $("logStatsBox"), p = logState.period || "all", S = logStats(obs.log.filter(e => inPeriod(e, p)));
+  const tile = (k, v, u) => '<div><span class="k">' + k + '</span><span class="v">' + v + (u ? "<small>" + u + "</small>" : "") + "</span></div>";
+  let h = "";
+  if (pro.on) h += '<div class="chips speriod" role="radiogroup" aria-label="Period">' + periods().map(q => '<button class="chip cat' + (q === p ? " sel" : "") + '" role="radio" aria-checked="' + (q === p) + '" data-per="' + q + '">' + H(periodName(q)) + "</button>").join("") + "</div>";
+  h += '<div class="ltiles four">' + tile("Objects", S.objs.size) + tile("Nights", S.nights) + tile("Hours", Math.round(S.hours)) + tile("Found", S.found == null ? "–" : Math.round(S.found * 100), S.found == null ? "" : "%") + "</div>";
+  const fl = S.first ? "First light " + fmtNight(nightKey(new Date(S.first.t))) + " with " + obsName(S.first.obj, S.first.name) : "No entries yet";
+  h += '<p class="note sline">' + H((pro.on ? periodName(p) === "All time" ? "" : periodName(p) + " · " : "All time · ") + fl + (pro.on ? " · " + S.list.length + (S.list.length === 1 ? " entry" : " entries") + (S.best && S.best.n > 1 ? " · best night " + fmtNight(S.best.k) + ", " + S.best.n + " objects" : "") : "")) + "</p>";
+  if (!pro.on) {
+    h += '<div class="slock"><div class="slockbg" aria-hidden="true">' + "<i></i>".repeat(12) + '</div><div class="slocktx"><b>More in Zenigo Pro</b><span>By month, kind of object, instrument and constellation, records, seeing and the Moon, and what you haven’t found yet. Every bar opens those entries.</span></div></div>'
+      + '<div class="actions"><a class="btn primary" href="/pro/" target="_blank" rel="noopener">Buy Zenigo Pro</a><button class="btn" id="statKey">Enter licence key</button></div><p class="note">The logbook itself, its tiles and the CSV export stay free.</p>';
+    box.innerHTML = h;
+    $("statKey").onclick = () => { proNeed("Logbook statistics are part of Zenigo Pro."); $("proEnter").click(); };
+    return;
+  }
+  // by month
+  const M = statMonths(S, p), mx = Math.max(1, ...M.map(m => m.objs));
+  h += '<section class="ssec"><div class="shead"><span>By month</span><span class="skey"><i class="ko"></i>objects <i class="kn"></i>nights</span></div><div class="sbars">'
+    + M.map(m => '<button data-month="' + m.k + '" aria-label="' + H(monthName(m.k) + ": " + m.objs + " objects, " + m.nights + " nights") + '"' + (m.objs || m.nights ? "" : " disabled") + '><i class="ko" style="height:' + (m.objs / mx * 100).toFixed(1) + '%"></i><i class="kn" style="height:' + (m.nights / mx * 100).toFixed(1) + '%"></i></button>').join("")
+    + '</div><div class="smon">' + M.map(m => "<span>" + m.lab + "</span>").join("") + "</div></section>";
+  // by kind of object, against the catalogue
+  const T = catTotals(), bar = (attr, v, lab, n, of) => '<button class="srow" ' + attr + '="' + H(v) + '"><span>' + H(lab) + '</span><span class="sbar"><i style="width:' + (of ? Math.min(100, n / of * 100).toFixed(1) : 100) + '%"></i></span><span class="sn">' + n + (of ? "<small>/" + of + "</small>" : "") + "</span></button>";
+  const cl = STAT_CLS.filter(([k]) => S.cls[k]);
+  if (cl.length) h += '<section class="ssec"><div class="shead"><span>By kind of object</span><span>seen · of those in Zenigo</span></div>' + cl.map(([k, n]) => bar("data-cls", k, n, S.cls[k].size, T.cls[k] || 0)).join("") + "</section>";
+  // by instrument
+  if (S.inst.length) h += '<section class="ssec"><div class="shead"><span>By instrument</span></div>' + S.inst.map(I => {
+    const rec = cfg.instruments.find(x => x.name === I.name), icon = instIcon(rec || { type: I.kind === "bino" ? "bino" : I.kind === "eye" ? "eye" : "other" });
+    return '<button class="sinst" data-inst="' + H(I.name) + '">' + icon + "<span><b>" + H(I.name) + "</b><small>" + I.nights.size + (I.nights.size === 1 ? " night" : " nights") + (S.inst.length > 1 && I.only ? " · " + I.only + " seen only with " + (I.kind === "bino" ? "them" : "it") : "") + '</small></span><span class="sn big">' + I.objs.size + "</span></button>";
+  }).join("") + "</section>";
+  // by constellation: the four with the most, the rest on request
+  const cons = Object.entries(S.con).sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]));
+  if (cons.length) {
+    const all = logState.allCons, show = all ? cons : cons.slice(0, 4);
+    h += '<section class="ssec"><div class="shead"><span>By constellation</span><span>objects in ' + cons.length + " of 88</span></div>" + show.map(([c, set]) => bar("data-con", c, c, set.size, T.con[c] || set.size)).join("")
+      + (cons.length > 4 ? '<button class="lnk" id="statCons">' + (all ? "Fewer" : "All " + cons.length + " constellations ›") + "</button>" : "") + "</section>";
+  }
+  // records
+  const R = S.recs, rec = (k, lab) => R[k] ? '<button class="srec" data-obj="' + H(R[k].id) + '"><span class="k">' + lab + "</span><b>" + H(obsName(R[k].id)) + "</b><small>" + H(R[k].txt) + "</small></button>" : "";
+  if (Object.keys(R).length) h += '<section class="ssec"><div class="shead"><span>Records</span></div><div class="srecs">' + rec("faint", "Faintest") + rec("small", "Smallest") + rec("low", "Lowest") + rec("most", "Most often") + "</div></section>";
+  // seeing and transparency, the Moon
+  if (S.noted) {
+    const hb = (hs, lab) => { const m = Math.max(1, ...hs), top = hs.indexOf(Math.max(...hs)) + 1; return '<div class="shist"><div class="shbars">' + hs.map((v, i) => '<i class="' + (i + 1 === top ? "top" : "") + '" style="height:' + (v / m * 100).toFixed(1) + '%" title="' + v + '"></i>').join("") + '</div><div class="shlab"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><span>' + lab + (hs.some(Boolean) ? ' <span class="m">· mostly ' + top + "</span>" : "") + "</span></div>"; };
+    h += '<section class="ssec"><div class="shead"><span>Seeing and transparency</span></div><div class="shists">' + hb(S.see, "Seeing") + hb(S.tr, "Transparency") + '</div><p class="note">From ' + S.noted + (S.noted === 1 ? " entry" : " entries") + " with seeing or transparency noted (5 = best).</p></section>";
+  }
+  if (S.moon.share != null) {
+    const mrow = (lab, v, cls) => v == null ? "" : '<div class="smoon"><span' + (cls ? ' class="' + cls + '"' : "") + ">" + lab + '</span><span class="sbar"><i class="' + (cls ? "" : "ok") + '" style="width:' + (v * 100).toFixed(1) + '%"></i></span><span class="sn">' + Math.round(v * 100) + "%</span></div>";
+    h += '<section class="ssec"><div class="shead"><span>The Moon</span></div><div class="smoonbox">' + mrow("Moon down", S.moon.down) + mrow("Moon up", S.moon.up) + mrow("galaxies only", S.moon.galUp, "sub")
+      + '<span class="note">Found, of all tries. The Moon was up for ' + Math.round(S.moon.share * 100) + "% of your entries.</span></div></section>";
+  }
+  // not found yet: show them, or plan those well placed tonight
+  const nf = [...notFoundIds()];
+  if (nf.length) {
+    const tn = nightPlan(), plan = nf.filter(id => !sets().list.has(id)).map(id => ({ id, p: rowPlan(id, tn) })).filter(x => x.p && x.p.best);
+    h += '<section class="ssec"><div class="shead"><span>Not found yet</span><span>' + nf.length + (nf.length === 1 ? " object" : " objects") + '</span></div><div class="chips">' + nf.slice(0, 5).map(id => '<button class="chip" data-obj="' + H(id) + '">' + H(obsName(id)) + "</button>").join("") + (nf.length > 5 ? '<span class="chip dim">+' + (nf.length - 5) + "</span>" : "") + "</div>"
+      + '<div class="actions"><button class="btn" id="statNf">Show the entries</button>' + (plan.length ? '<button class="btn primary" id="statNfPlan">Plan ' + Math.min(12, plan.length) + " for tonight</button>" : "") + "</div>"
+      + (plan.length ? '<p class="note">Plans those well placed tonight.</p>' : '<p class="note">None of them is well placed tonight.</p>') + "</section>";
+    box._nfPlan = plan;
+  }
+  box.innerHTML = h;
+  box.querySelectorAll("[data-per]").forEach(b => b.onclick = () => { logState.period = b.dataset.per; renderStats(); });
+  box.querySelectorAll("[data-month]").forEach(b => b.onclick = () => setLogFilter({ month: b.dataset.month, period: null }));
+  box.querySelectorAll("[data-cls]").forEach(b => b.onclick = () => setLogFilter({ cls: b.dataset.cls, period: p === "all" ? null : p }));
+  box.querySelectorAll("[data-inst]").forEach(b => b.onclick = () => setLogFilter({ inst: b.dataset.inst, period: p === "all" ? null : p }));
+  box.querySelectorAll("[data-con]").forEach(b => b.onclick = () => setLogFilter({ con: b.dataset.con, period: p === "all" ? null : p }));
+  box.querySelectorAll("[data-obj]").forEach(b => b.onclick = () => { logState.filter = b.dataset.obj; setLogFilter({}); });
+  if ($("statCons")) $("statCons").onclick = () => { logState.allCons = !logState.allCons; renderStats(); };
+  if ($("statNf")) $("statNf").onclick = () => setLogFilter({ nf: true });
+  if ($("statNfPlan")) $("statNfPlan").onclick = () => { const pl = box._nfPlan.slice(0, 12); pl.forEach(x => obs.list.push({ id: x.id, name: obsName(x.id), added: Date.now() })); saveObs(); renderStats(); hint(pl.length + " objects you haven’t found yet planned for tonight.", 3000); };
+}
+function setLogTab(t) {
+  logState.tab = t;
+  document.querySelectorAll("#logTabs [data-ltab2]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ltab2 === t)));
+  $("logEntriesBox").hidden = t !== "entries"; $("logStatsBox").hidden = t !== "stats";
+  if (t === "stats") renderStats();
+}
+document.querySelectorAll("#logTabs [data-ltab2]").forEach(b => b.onclick = () => { setLogTab(b.dataset.ltab2); scroller($("logSheet")).scrollTop = 0; });
+
+/* Export: which entries, then CSV (free), OpenAstronomyLog or the year in review (Pro) */
+const lx = { sel: "all", year: null };
+function exportSets() {
+  const out = [["all", "All " + obs.log.length, obs.log.slice()]];
+  const f = logState.f, any = logState.filter || Object.keys(f).some(k => k !== "nfIds");
+  if (any) { const es = logEntries(); out.push(["filter", logFilterText() + " (" + es.length + ")", es]); }
+  const p = logState.period; if (p && p !== "all" && !(f.period === p)) { const es = obs.log.filter(e => inPeriod(e, p)); out.push(["period", periodName(p) + " (" + es.length + ")", es]); }
+  return out;
+}
+function logFilterText() { const f = logState.f, parts = []; if (logState.filter) parts.push(obsName(logState.filter)); ["period", "cls", "inst", "con", "month", "nf"].forEach(k => { if (f[k]) parts.push(filterLabel(k, f[k])); }); return parts.join(" · "); }
+function openLogExport() { const s = exportSets(); lx.sel = s.some(x => x[0] === "filter") ? "filter" : "all"; lx.year = null; renderLogExport(); openSheet("logExpSheet"); }
+function renderLogExport() {
+  const sets2 = exportSets(), cur = sets2.find(x => x[0] === lx.sel) || sets2[0], b = $("lxBody");
+  const years = [...new Set(obs.log.map(nightYear))].sort((a, c) => c - a), yr = logState.period && logState.period[0] === "y" ? +logState.period.slice(1) : years[0];
+  const tag = pro.on ? "" : '<i class="protag">Pro</i>';
+  if (lx.year) {
+    b.innerHTML = '<p class="note">Your ' + lx.year + ' as an image to share.</p><canvas id="lxYear" class="lxyear" role="img" aria-label="Year in review ' + lx.year + '"></canvas><div class="actions"><button class="btn" id="lxYearSave">Save image</button><button class="btn primary" id="lxYearShare">Share …</button></div>';
+    drawYear($("lxYear"), lx.year);
+    const canShare = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [new File([new Blob([""], { type: "image/png" })], "x.png", { type: "image/png" })] }));
+    $("lxYearShare").hidden = !canShare; if (!canShare) $("lxYearSave").classList.add("primary");
+    const blob = () => new Promise(r => $("lxYear").toBlob(r, "image/png")), name = "zenigo-" + lx.year + "-in-review.png";
+    $("lxYearSave").onclick = async () => { const bl = await blob(); const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); };
+    $("lxYearShare").onclick = async () => { const bl = await blob(); try { await navigator.share({ files: [new File([bl], name, { type: "image/png" })], title: "My " + lx.year + " under the stars" }); } catch (e) {} };
+    return;
+  }
+  b.innerHTML = '<div class="slabel">Which entries</div><div class="chips" role="radiogroup" aria-label="Which entries">' + sets2.map(([k, lab]) => '<button class="chip cat' + (k === cur[0] ? " sel" : "") + '" role="radio" aria-checked="' + (k === cur[0]) + '" data-lxs="' + k + '">' + H(lab) + "</button>").join("") + "</div>"
+    + '<div class="slabel" style="margin-top:6px">As</div><div class="lxopts">'
+    + '<button class="lxopt" id="lxCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9h17M3.5 14h17M9 4v16"/></svg><span><b>Spreadsheet (CSV)</b><small>Every field, for Excel, Numbers or Google Sheets</small></span></button>'
+    + '<button class="lxopt pro" id="lxOal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/></svg><span><b>OpenAstronomyLog (OAL)' + tag + "</b><small>For other observing software, with your sites, instruments and eyepieces</small></span></button>"
+    + (yr ? '<button class="lxopt pro" id="lxYearBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 15.5l2.5-3 2 2 3-4"/><circle cx="9" cy="8" r="1.3"/></svg><span><b>Year in review' + tag + "</b><small>An image of your " + yr + " to share</small></span></button>" : "")
+    + '</div><p class="note">To move the logbook to another device, use a backup: Settings › General › Backup and restore.</p>';
+  b.querySelectorAll("[data-lxs]").forEach(x => x.onclick = () => { lx.sel = x.dataset.lxs; renderLogExport(); });
+  $("lxCsv").disabled = $("lxOal").disabled = !cur[2].length;
+  $("lxCsv").onclick = () => logCsv(cur[2]);
+  $("lxOal").onclick = () => { if (!pro.on) return proNeed("Exporting the logbook as OpenAstronomyLog is part of Zenigo Pro."); download("zenigo-logbook-" + stamp() + ".xml", logOal(cur[2]), "application/xml"); hint("Saved as OpenAstronomyLog (OAL 2.1).", 3000); };
+  if ($("lxYearBtn")) $("lxYearBtn").onclick = () => { if (!pro.on) return proNeed("The year in review is part of Zenigo Pro."); lx.year = yr; renderLogExport(); };
+}
+$("logExport").onclick = () => openLogExport();
+$("lxBack").onclick = () => { if (lx.year) { lx.year = null; renderLogExport(); return; } closeSheet("logExpSheet"); backToLog(); };
+// CSV: one row per entry, every field
+function logCsv(list) {
+  const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const rows = [["date", "time", "object", "name", "kind", "constellation", "result", "seeing", "transparency", "instrument", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
+  list.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t), I = objInfo(e.obj); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), clsName(statCls(e.obj)), I.con || "", e.result, e.seeing, e.transp, entryInst(e), instKind(e) === "scope" ? e.ep : "", e.alt, e.moon, e.lat, e.lon, e.note]); });
+  download("zenigo-logbook-" + stamp() + ".csv", "﻿" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
+}
+// OpenAstronomyLog 2.1 (the schema of the VdS Fachgruppe Computerastronomie): observer, sites, one session per night,
+// targets, instruments and eyepieces, and one observation per entry. Zenigo's seeing (5 = best) becomes OAL's
+// Antoniadi scale (1 = best); easy/hard/not found become the Deep Sky Liste ratings 2, 4 and 7.
+function logOal(list) {
+  const x = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
+  const es = list.slice().sort((a, b) => a.t.localeCompare(b.t)), id = s => String(s).replace(/[^A-Za-z0-9_.-]/g, "_");
+  const iso = t => { const d = new Date(t), o = -d.getTimezoneOffset(), z = (o >= 0 ? "+" : "-") + pad2(Math.floor(Math.abs(o) / 60)) + ":" + pad2(Math.abs(o) % 60);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) + z; };
+  // sites: the places of the entries, rounded to 0.01° (about 1 km)
+  const sites = new Map(), siteOf = e => { if (e.lat == null || e.lon == null || !isFinite(+e.lat)) return null; const k = (+e.lat).toFixed(2) + "," + (+e.lon).toFixed(2);
+    if (!sites.has(k)) sites.set(k, { id: "site_" + (sites.size + 1), lat: +(+e.lat).toFixed(2), lon: +(+e.lon).toFixed(2), tz: -new Date(e.t).getTimezoneOffset() }); return sites.get(k); };
+  // sessions: one per night and site
+  const sessions = new Map(), sesOf = e => { const s = siteOf(e); if (!s) return null; const k = nightKey(new Date(e.t)) + "|" + s.id;
+    if (!sessions.has(k)) sessions.set(k, { id: "se_" + (sessions.size + 1), site: s.id, begin: e.t, end: e.t, n: 0 }); const S = sessions.get(k); if (e.t > S.end) S.end = e.t; S.n++; return S; };
+  // instruments: those of the entries; telescopes need aperture and focal length, binoculars magnification
+  const scopes = new Map(), eps = new Map();
+  const scopeOf = e => {
+    const name = entryInst(e), k = instKind(e); if (!name) return null;
+    if (scopes.has(name)) return scopes.get(name);
+    const rec = cfg.instruments.find(i => i.name === name); let s = null;
+    if (k === "eye") s = { id: "opt_eye", xml: '<scope id="opt_eye" xsi:type="oal:fixedMagnificationOpticsType"><model>Naked eye</model><type>A</type><aperture>7</aperture><orientation erect="true" truesided="true"/><magnification>1</magnification></scope>' };
+    else if (rec && isBinoInst(rec) && +rec.bino.ap > 0 && +rec.bino.mag >= 1) { const sid = "opt_" + id(rec.id);
+      s = { id: sid, xml: '<scope id="' + sid + '" xsi:type="oal:fixedMagnificationOpticsType"><model>' + x(name) + "</model><type>B</type><aperture>" + +rec.bino.ap + '</aperture><orientation erect="true" truesided="true"/><magnification>' + +rec.bino.mag + "</magnification>" + (+rec.bino.fov > 0 ? '<trueField unit="deg">' + +rec.bino.fov + "</trueField>" : "") + "</scope>" }; }
+    else if (rec && !isBinoInst(rec) && +rec.o.ap > 0 && +rec.o.scope > 0) { const sid = "opt_" + id(rec.id), T = { dob: "N", newt: "N", refr: "R", cat: "C" }[rec.type];
+      s = { id: sid, rec, xml: '<scope id="' + sid + '" xsi:type="oal:scopeType"><model>' + x(name) + "</model>" + (T ? "<type>" + T + "</type>" : "") + "<aperture>" + +rec.o.ap + "</aperture><focalLength>" + +rec.o.scope + "</focalLength></scope>" }; }
+    scopes.set(name, s); return s;
+  };
+  // the eyepiece of an entry ("25 mm · 48×", "10 mm + 2× · 240×"): its focal length, the magnification, the Barlow in the accessories
+  const epOf = (e, sc) => {
+    const m = /^([\d.]+) mm(?: \+ ([\d.]+)×)?(?: · (\d+)×)?/.exec(e.ep || ""); if (!m) return null;
+    const f = +m[1], ep = sc && sc.rec ? (sc.rec.o.eps || []).find(q => +q.f === f) : null, k = f + "|" + (ep ? ep.a : "");
+    if (!eps.has(k)) eps.set(k, { id: "ep_" + (eps.size + 1), f, a: ep ? +ep.a : null });
+    return { ep: eps.get(k), mag: m[3] ? +m[3] : null, barlow: m[2] ? +m[2] : null };
+  };
+  const targets = new Map(), tgtOf = e => {
+    if (targets.has(e.obj)) return targets.get(e.obj);
+    const I = objInfo(e.obj), tid = "t_" + id(e.obj), nm = x(e.obj), alias = obsName(e.obj, e.name) !== e.obj ? "<alias>" + x(obsName(e.obj, e.name).replace(/^\S+ · /, "")) + "</alias>" : "";
+    const pos = I.ra != null ? '<position><ra unit="deg">' + (+I.ra).toFixed(5) + '</ra><dec unit="deg">' + (+I.dec).toFixed(5) + "</dec></position>" : "", con = I.conSym ? "<constellation>" + x(I.conSym) + "</constellation>" : "";
+    const DS = { gal: "deepSkyGX", open: "deepSkyOC", glob: "deepSkyGC", neb: "deepSkyGN", pn: "deepSkyPN" }[I.cls];
+    let t;
+    if (DS) t = { ds: true, xml: '<target id="' + tid + '" xsi:type="oal:' + DS + '"><datasource>Zenigo</datasource><name>' + nm + "</name>" + alias + pos + con + (I.size > 0 ? '<largeDiameter unit="arcmin">' + (+I.size).toFixed(1) + "</largeDiameter>" : "") + (I.mag != null ? "<visMag>" + (+I.mag).toFixed(1) + "</visMag>" : "") + "</target>" };
+    else if (I.cls === "moon" || I.cls === "sun" || I.cls === "planet") t = { xml: '<target id="' + tid + '" xsi:type="oal:' + (I.cls === "moon" ? "MoonTargetType" : I.cls === "sun" ? "SunTargetType" : "PlanetTargetType") + '"><datasource>Zenigo</datasource><name>' + nm + "</name></target>" };
+    else if (I.cls === "star") t = { xml: '<target id="' + tid + '" xsi:type="oal:starTargetType"><datasource>Zenigo</datasource><name>' + x(obsName(e.obj, e.name)) + "</name>" + pos + con + (I.mag != null ? "<apparentMag>" + (+I.mag).toFixed(2) + "</apparentMag>" : "") + "</target>" };
+    else t = { xml: '<target id="' + tid + '"><datasource>Zenigo</datasource><name>' + x(obsName(e.obj, e.name)) + "</name>" + pos + con + "</target>" };
+    t.id = tid; targets.set(e.obj, t); return t;
+  };
+  const obsXml = es.map((e, i) => {
+    const s = siteOf(e), S = sesOf(e), T = tgtOf(e), sc = scopeOf(e), ep = instKind(e) === "scope" ? epOf(e, sc) : null;
+    const res = { easy: "Seen easily", hard: "Seen with difficulty", miss: "Not found" }[e.result] || "Seen";
+    const desc = [res, e.note, e.transp ? "transparency " + e.transp + " of 5" : "", e.moon ? "Moon " + e.moon : "", e.alt != null ? "altitude " + e.alt + "°" : ""].filter(Boolean).join(". ");
+    return '<observation id="obs_' + (i + 1) + '"><observer>usr_1</observer>' + (s ? "<site>" + s.id + "</site>" : "") + (S ? "<session>" + S.id + "</session>" : "") + "<target>" + T.id + "</target><begin>" + iso(e.t) + "</begin>"
+      + (+e.seeing >= 1 && +e.seeing <= 5 ? "<seeing>" + (6 - +e.seeing) + "</seeing>" : "") + (sc ? "<scope>" + sc.id + "</scope>" : "") + (ep && ep.barlow ? "<accessories>" + ep.barlow + "× Barlow lens</accessories>" : "")
+      + (ep ? "<eyepiece>" + ep.ep.id + "</eyepiece>" + (ep.mag ? "<magnification>" + ep.mag + "</magnification>" : "") : "")
+      + (T.ds ? '<result xsi:type="oal:findingsDeepSkyType" lang="en"><description>' + x(desc) + "</description><rating>" + ({ easy: 2, hard: 4, miss: 7 }[e.result] || 99) + "</rating></result>" : '<result lang="en"><description>' + x(desc) + "</description></result>") + "</observation>";
+  });
+  const site = s => '<site id="' + s.id + '"><name>' + Math.abs(s.lat).toFixed(2) + "° " + (s.lat >= 0 ? "N" : "S") + " " + Math.abs(s.lon).toFixed(2) + "° " + (s.lon >= 0 ? "E" : "W") + '</name><longitude unit="deg">' + s.lon + '</longitude><latitude unit="deg">' + s.lat + "</latitude><timezone>" + s.tz + "</timezone></site>";
+  const ses = S => '<session id="' + S.id + '" lang="en"><begin>' + iso(S.begin) + "</begin><end>" + iso(S.end) + "</end><site>" + S.site + "</site></session>";
+  const epx = q => '<eyepiece id="' + q.id + '"><model>' + q.f + " mm" + (q.a ? " " + q.a + "°" : "") + "</model><focalLength>" + q.f + "</focalLength>" + (q.a ? '<apparentFOV unit="deg">' + q.a + "</apparentFOV>" : "") + "</eyepiece>";
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<oal:observations version="2.1" xmlns:oal="http://groups.google.com/group/openastronomylog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://groups.google.com/group/openastronomylog oal21.xsd">\n'
+    + "<observers><observer id=\"usr_1\"><name>Zenigo</name><surname>Observer</surname></observer></observers>\n"
+    + "<sites>" + [...sites.values()].map(site).join("") + "</sites>\n<sessions>" + [...sessions.values()].map(ses).join("") + "</sessions>\n"
+    + "<targets>\n" + [...targets.values()].map(t => t.xml).join("\n") + "\n</targets>\n<scopes>" + [...scopes.values()].filter(Boolean).map(s => s.xml).join("") + "</scopes>\n"
+    + "<eyepieces>" + [...eps.values()].map(epx).join("") + "</eyepieces>\n<lenses></lenses>\n<filters></filters>\n<imagers></imagers>\n" + obsXml.join("\n") + "\n</oal:observations>\n";
+}
+// The year in review: an image of 1080 × 1350 with the year's numbers, months and highlights
+function drawYear(cv, year) {
+  const W = 1080, Hh = 1350; cv.width = W; cv.height = Hh;
+  const c = cv.getContext("2d"), font = skyNow().col["--font-ui"] || "sans-serif", mono = "IBM Plex Mono, ui-monospace, monospace";
+  const S = logStats(obs.log.filter(e => nightYear(e) === year)), M = statMonths(S, "y" + year), all = obs.log.filter(e => nightYear(e) <= year && e.result !== "miss");
+  c.fillStyle = "#07090c"; c.fillRect(0, 0, W, Hh);
+  // a few stars and a small galaxy in the corner
+  let sd = year; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  c.fillStyle = "#fff"; for (let i = 0; i < 70; i++) { const x = W * (0.66 + 0.32 * rnd()), y = Hh * (0.02 + 0.2 * rnd()), r = 0.8 + 2.4 * rnd() * rnd(); c.globalAlpha = 0.35 + 0.6 * rnd(); c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+  c.globalAlpha = 0.8; c.strokeStyle = "#f0a845"; c.lineWidth = 3; c.save(); c.translate(W * 0.8, Hh * 0.13); c.rotate(-0.55); c.beginPath(); c.ellipse(0, 0, 50, 19, 0, 0, 7); c.stroke(); c.restore(); c.globalAlpha = 1;
+  const P = 88; c.textBaseline = "alphabetic";
+  c.fillStyle = "#f0a845"; c.font = `500 32px ${font}`; c.fillText("YEAR IN REVIEW", P, 140);
+  c.fillStyle = "#eef1f4"; c.font = `700 108px ${font}`; c.fillText("My " + year, P, 250); c.fillText("under the stars", P, 360);
+  const num = (v, lab, x) => { c.fillStyle = "#eef1f4"; c.font = `500 88px ${mono}`; c.fillText(String(v), x, 520); c.fillStyle = "#a9b4c0"; c.font = `400 34px ${font}`; c.fillText(lab, x, 568); };
+  num(S.objs.size, S.objs.size === 1 ? "object" : "objects", P); num(S.nights, S.nights === 1 ? "night" : "nights", P + 320); num(Math.round(S.hours), Math.round(S.hours) === 1 ? "hour" : "hours", P + 620);
+  // months
+  const mx = Math.max(1, ...M.map(m => m.objs)), bw = (W - 2 * P - 11 * 12) / 12, by = 790, bh = 150;
+  M.forEach((m, i) => { const x = P + i * (bw + 12), h = Math.max(m.objs ? 6 : 3, m.objs / mx * bh); c.fillStyle = m.objs ? "#f0a845" : "#3a4350"; c.fillRect(x, by - h, bw, h);
+    c.fillStyle = "#8f9aa6"; c.font = `400 24px ${mono}`; c.textAlign = "center"; c.fillText(m.lab, x + bw / 2, by + 36); c.textAlign = "left"; });
+  // highlights
+  const top = S.inst[0], mes = new Set(all.filter(e => /^M\d+$/.test(e.obj)).map(e => e.obj)).size;
+  const hl = [["FAINTEST", S.recs.faint ? S.recs.faint.id + " · " + S.recs.faint.txt.split(" · ")[0] : "–"], ["BEST NIGHT", S.best && S.best.n ? new Date(S.best.k + "T12:00").toLocaleDateString([], { day: "numeric", month: "long" }) + " · " + S.best.n + " objects" : "–"],
+    ["MESSIER", mes + " of 110"], ["MOST WITH", top ? top.name : "–"]];
+  hl.forEach(([k, v], i) => { const x = P + (i % 2) * 470, y = 940 + Math.floor(i / 2) * 120; c.fillStyle = "#8f9aa6"; c.font = `500 26px ${font}`; c.fillText(k, x, y);
+    c.fillStyle = "#eef1f4"; c.font = `400 36px ${font}`; let t = v; while (c.measureText(t).width > 440 && t.length > 2) t = t.slice(0, -2) + "…"; c.fillText(t, x, y + 46); });
+  // the logo and zenigo.app
+  c.textAlign = "right"; c.fillStyle = "#a9b4c0"; c.font = `500 30px ${font}`; c.fillText("zenigo.app", W - P, Hh - 72); const tw = c.measureText("zenigo.app").width; c.textAlign = "left";
+  phLogo().then(logo => { if (!logo || cv.width !== W) return; const ls = 46, lx2 = W - P - tw - 14 - ls, ly = Hh - 72 - 34; c.drawImage(logo, lx2, ly, ls, ls);
+    if (pro.on) { c.font = `600 15px ${font}`; const pw = c.measureText("PRO").width + 10, ph = 19, bx = lx2 + ls - pw + 8, byy = ly + ls - ph + 6; c.fillStyle = "#07090c"; c.beginPath(); c.roundRect ? c.roundRect(bx - 2, byy - 2, pw + 4, ph + 4, ph) : c.rect(bx - 2, byy - 2, pw + 4, ph + 4); c.fill();
+      c.fillStyle = "#f0a845"; c.beginPath(); c.roundRect ? c.roundRect(bx, byy, pw, ph, ph / 2) : c.rect(bx, byy, pw, ph); c.fill(); c.fillStyle = "#1b1206"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("PRO", bx + pw / 2, byy + ph / 2 + 1); c.textAlign = "left"; c.textBaseline = "alphabetic"; } });
 }
 function download(name, text, type) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
@@ -6003,12 +6404,7 @@ document.querySelectorAll("#sheet .settabs .chip").forEach(b => b.onclick = () =
 setSetTab(cfg.setTab);
 $("bkLists").onclick = () => exportBackup(false);
 $("bkAll").onclick = () => exportBackup(true);
-$("bkCsv").onclick = () => {
-  const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const rows = [["date", "time", "object", "name", "result", "seeing", "transparency", "instrument", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
-  obs.log.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), e.result, e.seeing, e.transp, entryInst(e), instKind(e) === "scope" ? e.ep : "", e.alt, e.moon, e.lat, e.lon, e.note]); });
-  download("zenigo-logbook-" + stamp() + ".csv", "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
-};
+$("bkCsv").onclick = () => logCsv(obs.log);
 $("bkImport").onclick = () => $("bkFile").click();
 $("bkFile").onchange = async () => {
   const f = $("bkFile").files[0]; $("bkFile").value = ""; if (!f) return;
@@ -8040,7 +8436,7 @@ function afterPick(fromSheet, id) {
 }
 const bothPanels = () => sidePanels() && innerWidth >= 1000;
 // tablet and desktop: the menu and everything about the logbook and the settings open on the left, the rest on the right
-const LEFT = new Set(["menu", "logSheet", "seenSheet", "sheet", "syncSheet", "liveSheet"]);
+const LEFT = new Set(["menu", "logSheet", "logExpSheet", "seenSheet", "sheet", "syncSheet", "liveSheet"]);
 const sheetSide = id => (LEFT.has(id) ? "L" : "R");
 // is a panel open where this one would go back to? (on wide screens only the same side counts)
 const sideBusy = id => SHEETS.some(x => !x.hidden && x.classList.contains("open") && (!bothPanels() || sheetSide(x.id) === sheetSide(id)));

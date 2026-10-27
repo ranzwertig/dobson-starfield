@@ -1112,7 +1112,7 @@ const TESTS = {
     const proJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).structuredData;
     ok(await p.textContent('#proPrice') === new Intl.NumberFormat('en', { style: 'currency', currency: proJson.currency }).format(Number(proJson.price)) && /in the EU, including VAT/i.test(await p.textContent('#proTax')), 'without Paddle the EU base price from pro.json is shown, with its tax note');
     ok(await ev(p, () => ['.menumeta', 'footer nav'].every(s => !!document.querySelector(s + ' a[href="/licence/"]') && !!document.querySelector(s + ' a[href="/pro/#refunds"]') && !!document.querySelector(s + ' a[href="/privacy/"]'))), 'licence terms, refund policy and privacy in the menu and the footer');
-    ok(await ev(p, () => document.querySelectorAll('.profeat dt').length >= 6 && document.querySelectorAll('.profeat .ptag.soon').length >= 1 && /Labelling your night photos/.test(document.querySelector('.freelist').textContent)), 'features from pro.json, planned ones marked coming, night photos listed as free');
+    ok(await ev(p, PROSOON => document.querySelectorAll('.profeat dt').length >= 6 && document.querySelectorAll('.profeat .ptag.soon').length === PROSOON && (PROSOON > 0) === /marked “coming”/.test(document.body.textContent) && /Labelling your night photos/.test(document.querySelector('.freelist').textContent), JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).features.filter(f => f.coming).length), 'features from pro.json, planned ones marked coming (with the note only then), night photos listed as free');
     ok(await ev(p, () => [...document.querySelectorAll('.buybox, #proBuy')].every(e => /12-month licence, paid once, no automatic renewal/.test(e.textContent)) && !!document.querySelector('.buybox a[href="/licence/"]') && !!document.querySelector('.buybox a[href="#refunds"]')), 'the terms beside the price and on the button; licence and refunds linked');
     ok(await ev(p, () => document.documentElement.scrollWidth <= innerWidth), 'no sideways scrolling on a phone');
     await done(p);
@@ -1264,6 +1264,91 @@ const TESTS = {
     await ev(p, () => { cfg.instruments.push({ id: 'x1', name: 'Fresh', type: 'dob', mount: 'altaz', o: { scope: 1200, eps: [] }, fresh: true }); afterSyncedSettings(); });
     ok(await ev(p, () => cfg.instruments.length === 2 && !cfg.instruments.some(i => i.fresh) && curInst().name === 'Big Dob'), 'after syncing: a new install’s placeholder instrument goes');
     await done(p);
+  },
+
+  // Logbook statistics (Pro): period, kinds against the catalogue, instruments, constellations, records, seeing, the
+  // Moon and not found; a tap filters the entries; export as CSV, OpenAstronomyLog (checked against the OAL 2.1 schema)
+  // and the year in review; without Pro the overview and the offer
+  async logstats() {
+    const seed = () => {
+      const E = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: 'easy', note: '', lat: 48.18, lon: 10.08, alt: 50, moon: '10 %, down', ...extra });
+      obs.log = [
+        E('a1', 'M31', '2026-08-18T22:40:00.000Z', { inst: 'Dobson 8″', ik: 'scope', ep: '32 mm · 38×', seeing: 4, transp: 4 }),
+        E('a2', 'M33', '2026-08-18T23:10:00.000Z', { inst: 'Dobson 8″', ik: 'scope', ep: '25 mm · 48×', result: 'hard', seeing: 4, transp: 3 }),
+        E('a3', 'M13', '2026-08-18T21:00:00.000Z', { inst: 'Binoculars 10×50', ik: 'bino', alt: 70 }),
+        E('a4', 'M13', '2026-07-01T21:00:00.000Z', { inst: 'Dobson 8″', ik: 'scope', ep: '10 mm + 2× · 240×', moon: '80 %, up', seeing: 3 }),
+        E('a5', 'NGC 7331', '2026-08-18T23:50:00.000Z', { inst: 'Dobson 8″', ik: 'scope', ep: '25 mm · 48×', result: 'miss' }),
+        E('a6', 'Jupiter', '2025-11-20T20:00:00.000Z', { inst: 'Telescope 203 mm f/5.9', alt: 12, note: 'GRS <visible> & bands' }),
+        E('a7', 'M45', '2025-11-20T20:30:00.000Z', { inst: 'Naked eye', ik: 'eye' }),
+      ];
+      saveObs();
+      cfg.instruments = [{ id: 'd8', name: 'Dobson 8″', type: 'dob', mount: 'altaz', o: { ...cfg.instruments[0].o, scope: 1200, ap: 203, eps: [{ f: 32, a: 50 }, { f: 25, a: 52 }, { f: 10, a: 52 }], barlow: 2 }, u: 1 },
+        { id: 'b1', name: 'Binoculars 10×50', type: 'bino', bino: { mag: 10, ap: 50, fov: 6.5, hold: 'hand' }, u: 1 }];
+      cfg.instrumentId = 'd8'; save();
+    };
+    const p = await page();
+    await ev(p, seed);
+    await ev(p, () => { openLog(null); }); await wait(p, 500);
+    ok(await ev(p, () => !$('logTabs').hidden && $('logEntriesBox').hidden === false && $('logStatsBox').hidden), 'the logbook opens on Entries, with the Statistics tab');
+    await p.tap('#logTabs [data-ltab2="stats"]'); await wait(p, 400);
+    const o = await ev(p, () => ({ tiles: [...document.querySelectorAll('#logStatsBox .ltiles .v')].map(v => v.textContent), per: [...document.querySelectorAll('#logStatsBox [data-per]')].map(b => b.textContent), line: document.querySelector('#logStatsBox .sline').textContent }));
+    ok(o.tiles.join('|') === '5|3|3|86%' && o.per.join('|') === 'All time|Last 12 months|2026|2025' && /First light Nov 20, 2025 with Jupiter · 7 entries/.test(o.line) && /best night Aug 18, 2026, 3 objects/.test(o.line), 'overview: objects, nights, hours, found; periods; first light and best night', o);
+    const k = await ev(p, () => ({ cls: [...document.querySelectorAll('#logStatsBox [data-cls]')].map(b => b.dataset.cls + ':' + b.querySelector('.sn').textContent.replace(/\/.*/, '')), inst: [...document.querySelectorAll('#logStatsBox [data-inst]')].map(b => b.dataset.inst + ':' + b.querySelector('.sn').textContent), con: [...document.querySelectorAll('#logStatsBox [data-con]')].map(b => b.dataset.con), recs: [...document.querySelectorAll('#logStatsBox .srec')].map(b => b.querySelector('.k').textContent + ':' + b.querySelector('b').textContent) }));
+    ok(k.cls.join() === 'gal:2,open:1,glob:1,sol:1', 'by kind of object', k.cls);
+    ok(k.inst[0] === 'Dobson 8″:3' && k.inst.includes('Binoculars 10×50:1') && k.inst.includes('Naked eye:1'), 'by instrument', k.inst);
+    ok(k.con.includes('Andromeda') && k.con.includes('Hercules') && k.con.length === 4, 'by constellation (the planet has none)', k.con);
+    ok(k.recs.map(r => r.replace(/ · .*/, '')).join() === 'Faintest:M13,Smallest:M13,Lowest:Jupiter,Most often:M13', 'records', k.recs);
+    ok(await ev(p, () => /mostly 4/.test($('logStatsBox').textContent) && /Moon was up for 14%/.test($('logStatsBox').textContent) && /Not found yet/.test($('logStatsBox').textContent) && /NGC 7331/.test($('logStatsBox').textContent)), 'seeing, the Moon and not found yet');
+    // a period
+    await ev(p, () => document.querySelector('#logStatsBox [data-per="y2025"]').click()); await wait(p, 200);
+    ok(await ev(p, () => [...document.querySelectorAll('#logStatsBox .ltiles .v')].map(v => v.textContent).join('|')) === '2|1|1|100%', 'a year: its numbers only');
+    await ev(p, () => document.querySelector('#logStatsBox [data-per="all"]').click()); await wait(p, 200);
+    // tap a kind: the entries filtered, as chips
+    await ev(p, () => document.querySelector('#logStatsBox [data-cls="gal"]').click()); await wait(p, 300);
+    const f = await ev(p, () => ({ tab: logState.tab, n: document.querySelectorAll('#logBody .lrow').length, chips: [...document.querySelectorAll('#logFilter .chip')].map(c => c.textContent), count: (document.querySelector('#logBody .lcount') || {}).textContent }));
+    ok(f.tab === 'entries' && f.n === 3 && f.chips.join('|') === 'Galaxies|+ Filter' && /3 entries · 2 objects · 1 night/.test(f.count), 'a tap on Galaxies shows their entries, with the filter as a chip', f);
+    await ev(p, () => { setLogTab('stats'); document.querySelector('#logStatsBox [data-inst="Dobson 8″"]').click(); }); await wait(p, 300);
+    ok(await ev(p, () => document.querySelectorAll('#logBody .lrow').length === 3 && [...document.querySelectorAll('#logFilter .chip')].length === 3), 'filters add up: galaxies with the Dobson');
+    await ev(p, () => document.querySelector('#logFilter .chip').click()); await wait(p, 200);
+    ok(await ev(p, () => document.querySelectorAll('#logBody .lrow').length === 4 && !logState.f.cls), '✕ removes a filter');
+    await ev(p, () => setLogFilter({ inst: null, nf: true })); await wait(p, 200);
+    ok(await ev(p, () => document.querySelectorAll('#logBody .lrow').length === 1 && /Not found yet/.test($('logFilter').textContent)), 'not found yet: its entries');
+    // export: the filtered entries as CSV, everything as OAL (valid against the OAL 2.1 schema)
+    await ev(p, () => setLogFilter({ nf: null, cls: 'gal' })); await p.tap('#logExport'); await wait(p, 500);
+    ok(await ev(p, () => !$('logExpSheet').hidden && [...document.querySelectorAll('[data-lxs]')].map(b => b.textContent).join('|') === 'All 7|Galaxies (3)' && document.querySelector('[data-lxs="filter"]').getAttribute('aria-checked') === 'true'), 'export: all entries or the filtered ones');
+    let dl = p.waitForEvent('download'); await p.tap('#lxCsv'); const csv = fs.readFileSync(await (await dl).path(), 'utf8');
+    ok(csv.trim().split('\r\n').length === 4 && /,M31,.*Galaxies,Andromeda,easy/.test(csv) && /kind,constellation/.test(csv), 'CSV of the filtered entries, with kind and constellation', csv.slice(0, 300));
+    await ev(p, () => document.querySelector('[data-lxs="all"]').click());
+    dl = p.waitForEvent('download'); await p.tap('#lxOal'); const xmlPath = await (await dl).path(), xml = fs.readFileSync(xmlPath, 'utf8');
+    const { execFileSync } = require('node:child_process'); let valid = '';
+    try { execFileSync('xmllint', ['--noout', '--schema', path.join(__dirname, 'fixtures', 'oal21', 'oal21.xsd'), xmlPath], { stdio: 'pipe' }); valid = 'ok'; } catch (e) { valid = e.code === 'ENOENT' ? 'ok' : String(e.stderr || e.message).slice(0, 600); }   // without xmllint the schema check is skipped
+    ok(valid === 'ok', 'OAL export is valid OpenAstronomyLog 2.1', valid);
+    ok((xml.match(/<observation /g) || []).length === 7 && (xml.match(/<session /g) || []).length === 3 && /xsi:type="oal:deepSkyGX"/.test(xml) && /PlanetTargetType/.test(xml) && /<seeing>2<\/seeing>/.test(xml)
+      && /fixedMagnificationOpticsType"><model>Binoculars 10×50/.test(xml) && /<accessories>2× Barlow lens<\/accessories>/.test(xml) && /GRS &lt;visible&gt; &amp; bands/.test(xml) && /<rating>7<\/rating>/.test(xml), 'OAL: observations, nights, kinds, seeing on the Antoniadi scale, binoculars, Barlow, escaped notes, not found');
+    // the year in review
+    await p.tap('#lxYearBtn'); await wait(p, 600);
+    const yr = await ev(p, () => { const c = $('lxYear'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0; for (let i = 0; i < d.length; i += 4 * 97) if (d[i] > 120) lit++; return { w: c.width, h: c.height, lit }; });
+    ok(yr.w === 1080 && yr.h === 1350 && yr.lit > 50, 'year in review: a 1080 × 1350 image', yr);
+    if (process.env.SHOTS) { await p.screenshot({ path: path.join(process.env.SHOTS, 'ls-year.png') }); fs.writeFileSync(path.join(process.env.SHOTS, 'ls-year-full.png'), Buffer.from((await ev(p, () => $('lxYear').toDataURL())).split(',')[1], 'base64')); }
+    dl = p.waitForEvent('download'); await p.tap('#lxYearSave'); const yf = await dl;
+    ok(/zenigo-2026-in-review\.png$/.test(yf.suggestedFilename()), 'saved as an image');
+    await p.tap('#lxBack'); await wait(p, 200); await p.tap('#lxBack'); await wait(p, 600);
+    ok(await ev(p, () => !$('logSheet').hidden && $('logExpSheet').hidden), 'back to the logbook');
+    if (process.env.SHOTS) { await ev(p, () => { logState.f = {}; setLogTab('stats'); }); await wait(p, 300); await p.screenshot({ path: path.join(process.env.SHOTS, 'ls-stats.png') });
+      await ev(p, () => { scroller($('logSheet')).scrollTop = 700; }); await wait(p, 200); await p.screenshot({ path: path.join(process.env.SHOTS, 'ls-stats2.png') });
+      await ev(p, () => { scroller($('logSheet')).scrollTop = 1500; }); await wait(p, 200); await p.screenshot({ path: path.join(process.env.SHOTS, 'ls-stats3.png') }); }
+    await done(p);
+    // without Pro: the overview and the offer; OAL and the year in review ask for Pro, CSV stays free
+    const F = await page({ pro: false });
+    await ev(F, seed); await ev(F, () => { openLog(null); setLogTab('stats'); }); await wait(F, 400);
+    ok(await ev(F, () => document.querySelectorAll('#logStatsBox .ltiles .v').length === 4 && !!$('logStatsBox').querySelector('.slock') && !$('logStatsBox').querySelector('[data-cls], [data-per]')), 'without Pro: the overview, the rest offered');
+    if (process.env.SHOTS) await F.screenshot({ path: path.join(process.env.SHOTS, 'ls-free.png') });
+    await ev(F, () => openLogExport()); await wait(F, 400);
+    await F.tap('#lxOal'); await wait(F, 400);
+    ok(await ev(F, () => !$('proSheet').hidden && /OpenAstronomyLog/.test($('proWhy').textContent)), 'OAL asks for Pro');
+    await ev(F, () => { closeSheet('proSheet'); openLogExport(); }); await wait(F, 400);
+    dl = F.waitForEvent('download'); await F.tap('#lxCsv'); ok(/\.csv$/.test((await dl).suggestedFilename()), 'CSV stays free');
+    await done(F);
   },
 
   async offline() {
