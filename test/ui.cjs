@@ -917,8 +917,8 @@ const TESTS = {
       obs.log.push({ uid: 'p1', obj: 'M13', name: 'M13', t, result: 'easy', ep: '25 mm', lat: 48.2, lon: 10.1 }, { uid: 'p2', obj: 'M31', name: 'M31', t, result: 'hard' }, { uid: 'p3', obj: 'M57', name: 'M57', t, result: 'miss' }); saveObs(); });
     await ev(p, () => openProgs(null)); await wait(p, 300);
     const cards = await ev(p, () => [...document.querySelectorAll('.pgcard')].map(c => ({ name: c.querySelector('b').textContent, n: c.querySelector('.pgn').textContent, pro: !!c.querySelector('.protag') })));
-    ok(cards.length === 5 && cards[0].name === 'Messier' && /^2 \/ 110/.test(cards[0].n) && !cards[0].pro && cards.slice(1).every(c => c.pro), 'overview: Messier 2 of 110 (a “Not found” doesn’t count), the others marked Pro', cards);
-    ok(await ev(p, () => /^\d+ \/ 108/.test(document.querySelectorAll('.pgcard')[1].querySelector('.pgn').textContent) && /^0 \/ 400/.test(document.querySelectorAll('.pgcard')[3].querySelector('.pgn').textContent)), 'Caldwell 108 objects (without the Coalsack), Herschel II 400');
+    ok(cards.length === 6 && cards[0].name === 'Messier' && /^2 \/ 110/.test(cards[0].n) && !cards[0].pro && cards.slice(1).every(c => c.pro), 'overview: Messier 2 of 110 (a “Not found” doesn’t count), the others marked Pro', cards);
+    ok(cards[1].name.startsWith('Binocular Messier') && /^0 \/ 50/.test(cards[1].n) && /^\d+ \/ 108/.test(cards[2].n) && /^0 \/ 400/.test(cards[4].n), 'Binocular Messier: 0 of 50 (telescope entries don’t count); Caldwell 108 (without the Coalsack); Herschel II 400', cards);
     await ev(p, () => openProgs('caldwell')); await wait(p, 300);
     ok(await ev(p, () => !$('proSheet').hidden && /Caldwell is an observing programme of Zenigo Pro/.test($('proWhy').textContent)), 'Caldwell without Pro: the Pro sheet');
     await ev(p, () => { closeSheet('proSheet'); openProgs('messier'); }); await wait(p, 400);
@@ -936,12 +936,18 @@ const TESTS = {
     // a first sighting: the progress in the hint
     await ev(p, () => { openSeen(objById('M27')); seenState.res = 'easy'; }); await wait(p, 300); await ev(p, () => $('seenSave').click()); await wait(p, 300);
     ok(await ev(p, () => /Messier: 3 of 110/.test($('hint').textContent)), 'after a first sighting: “Messier: 3 of 110”', await ev(p, () => $('hint').textContent));
+    ok(await ev(p, () => { const e = obs.log.find(x => x.obj === 'M27'); return /^Telescope/.test(e.inst) && e.ep; }), 'the entry keeps the instrument (this telescope) and the eyepiece', await ev(p, () => obs.log.find(x => x.obj === 'M27')));
+    // with binoculars: the eyepiece field goes, the entry says so
+    await ev(p, () => { openSeen(objById('M45')); seenState.res = 'easy'; $('seenInst').value = 'Binoculars'; $('seenInst').onchange(); }); await wait(p, 200);
+    ok(await ev(p, () => $('seenEpL').hidden), 'binoculars: no eyepiece to choose');
+    await ev(p, () => $('seenSave').click()); await wait(p, 300);
+    ok(await ev(p, () => { const e = obs.log.find(x => x.obj === 'M45'); return e.inst === 'Binoculars' && e.ep === '' && instKind(e) === 'bino' && progStats(PROGRAMS[1]).done === 1; }), 'logged with binoculars: counts for Binocular Messier');
     // the programme logbook
     await ev(p, () => { progState.tab = 'seen'; openProgs('messier'); progState.tab = 'seen'; renderProgs(); }); await wait(p, 300);
-    ok(await ev(p, () => document.querySelectorAll('#progBody .orow').length === 3), 'seen: three objects');
+    ok(await ev(p, () => document.querySelectorAll('#progBody .orow').length === 4), 'seen: four objects');
     const dl = p.waitForEvent('download'); await ev(p, () => [...document.querySelectorAll('#progBody .pgacts .btn')].find(b => /CSV/.test(b.textContent)).click());
     const csv = fs.readFileSync(await (await dl).path(), 'utf8');
-    ok(/^\ufeff?Object,Name,Type,Date,Time/.test(csv) && /M13,.*25 mm/.test(csv) && /M27/.test(csv) && !/M57/.test(csv) && csv.split('\r\n').length === 4, 'CSV: one row per seen object with its first sighting', csv.slice(0, 300));
+    ok(/^\ufeff?Object,Name,Type,Date,Time,"Place \(lat, lon\)",Instrument,Eyepiece/.test(csv) && /M13,.*25 mm/.test(csv) && /M27,.*Telescope/.test(csv) && /M45,.*Binoculars/.test(csv) && !/M57/.test(csv) && csv.split('\r\n').length === 5, 'CSV: one row per seen object with its first sighting and instrument', csv.slice(0, 400));
     await done(p);
     // with Pro: Herschel II opens; objects only the extended catalogue has are marked
     const q = await page();

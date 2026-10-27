@@ -5489,6 +5489,16 @@ $("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromLis
 
 // "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
 const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
+// The instrument of a logbook entry: the telescope as set up when it was logged ("Telescope 200 mm f/6"), binoculars or
+// the naked eye. Older entries kept binoculars and the naked eye in the eyepiece field.
+const INST_BINO = "Binoculars", INST_EYE = "Naked eye";
+function scopeLabel() {
+  const ap = aperture(), fl = +opt().scope || 0;
+  return "Telescope" + (ap ? " " + Math.round(ap) + " mm" + (fl ? " f/" + (Math.round(fl / ap * 10) / 10) : "") : fl ? " " + Math.round(fl) + " mm focal length" : "");
+}
+function entryInst(e) { return e.inst || (e.ep === INST_BINO || e.ep === INST_EYE ? e.ep : ""); }
+const instKind = e => { const i = entryInst(e); return i === INST_BINO ? "bino" : i === INST_EYE ? "eye" : "scope"; };
+function seenInstChanged() { const t = $("seenInst").value, sc = t !== INST_BINO && t !== INST_EYE; $("seenEpL").hidden = !sc; }
 function openSeen(o, entry, fromLog) {
   const now = entry ? new Date(entry.t) : new Date(), tNow = A.MakeTime(now), k = nightKey(new Date());
   const lastTonight = obs.log.filter(e => nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
@@ -5501,12 +5511,19 @@ function openSeen(o, entry, fromLog) {
   const f = $("seenFacts"); f.textContent = "";
   const add = (k, v) => { const s = document.createElement("span"); s.innerHTML = "<em></em><b></b>"; s.firstChild.textContent = k; s.lastChild.textContent = v; f.append(s); };
   add("When", now.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
-  // eyepiece: a small select with the user's eyepieces
-  const lab = document.createElement("label"); lab.innerHTML = "<em>Eyepiece</em>"; const sel = document.createElement("select"); sel.id = "seenEp"; sel.setAttribute("aria-label", "Eyepiece");
-  const opts = epCombos().map(c => epLabel(c.e)).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder", "Naked eye", "Binoculars"]);
-  const cur = entry ? entry.ep : (opt().src === "finder" || !curEp() ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
+  // instrument: this telescope, binoculars, the naked eye, or one used in earlier entries
+  const il2 = document.createElement("label"); il2.innerHTML = "<em>Instrument</em>"; const isel = document.createElement("select"); isel.id = "seenInst"; isel.setAttribute("aria-label", "Instrument");
+  const iopts = [scopeLabel(), INST_BINO, INST_EYE];
+  obs.log.map(entryInst).filter(Boolean).forEach(t => { if (!iopts.includes(t)) iopts.push(t); });
+  const icur = entry ? entryInst(entry) || scopeLabel() : lastTonight && entryInst(lastTonight) ? entryInst(lastTonight) : scopeLabel();
+  if (!iopts.includes(icur)) iopts.unshift(icur);
+  iopts.forEach(t => { const op = document.createElement("option"); op.textContent = t; isel.append(op); }); isel.value = icur; isel.onchange = seenInstChanged; il2.append(isel); f.append(il2);
+  // eyepiece: a small select with the user's eyepieces (with a telescope)
+  const lab = document.createElement("label"); lab.id = "seenEpL"; lab.innerHTML = "<em>Eyepiece</em>"; const sel = document.createElement("select"); sel.id = "seenEp"; sel.setAttribute("aria-label", "Eyepiece");
+  const opts = epCombos().map(c => epLabel(c.e)).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder"]);
+  const cur = entry ? (entry.ep === INST_BINO || entry.ep === INST_EYE ? "" : entry.ep) : (opt().src === "finder" || !curEp() ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
   if (cur && !opts.includes(cur)) opts.unshift(cur);
-  opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab);
+  opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab); seenInstChanged();
   if (seenState.facts.alt != null) add("Altitude", seenState.facts.alt + "°");
   if (seenState.facts.moon) add("Moon", seenState.facts.moon);
   if (seenState.facts.lat != null && seenState.facts.lon != null && !isNaN(seenState.facts.lat)) add("Site", Math.abs(seenState.facts.lat).toFixed(2) + "° " + (seenState.facts.lat >= 0 ? "N" : "S") + " " + Math.abs(seenState.facts.lon).toFixed(2) + "° " + (seenState.facts.lon >= 0 ? "E" : "W"));
@@ -5537,9 +5554,9 @@ function syncSeen() {
 document.querySelectorAll("#seenRes [data-res]").forEach(b => b.onclick = () => { seenState.res = b.dataset.res; syncSeen(); });
 function saveSeen(goOn) {
   const { o, entry } = seenState, f = seenState.facts;
-  const first = !entry && seenState.res !== "miss" && !sets().seen.has(o.id);
+  const first = !entry && !!o && seenState.res !== "miss", wasSeen = first && sets().seen.has(o.id);
   const e = entry || { uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), obj: o.id, name: o.name, t: new Date().toISOString(), lat: f.lat, lon: f.lon, alt: f.alt, moon: f.moon };
-  Object.assign(e, { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value });
+  Object.assign(e, seenValues());
   if (!entry) obs.log.push(e);
   const wasStar = e.result !== "miss" && obs.starred.some(x => x.id === e.obj);
   if (wasStar) obs.starred = obs.starred.filter(x => x.id !== e.obj);
@@ -5547,7 +5564,7 @@ function saveSeen(goOn) {
   saveObs(); closeSheet("seenSheet");
   if (!$("logSheet").hidden) renderLog();
   if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!sideBusy("infoSheet")) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
-  const pn = first ? progNote(e.obj) : "";
+  const pn = first ? progNote(e, wasSeen) : "";
   hint(entry ? "Entry updated." : e.result === "miss" ? "Noted: " + e.name + " not found." : e.name + " logged." + (pn ? " " + pn + "." : "") + (wasStar ? " Its star is removed: done." : ""), pn ? 4500 : 3000);
   if (!$("progSheet").hidden) renderProgs();
   if (goOn && seenState.next) { goNext(seenState.next); if (sidePanels()) setTimeout(() => openTargetPanel(false), 80); }
@@ -5571,9 +5588,13 @@ const logState = { filter: null, scroll: 0 };
 // The entries in the order the logbook shows them (newest first, with its filter)
 function logEntries() { return obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t)); }
 // Apply what was changed in the open entry without closing it (used when stepping to another entry)
+function seenValues() {
+  const inst = $("seenInst").value, scope = inst !== INST_BINO && inst !== INST_EYE;
+  return { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), inst, ep: scope ? $("seenEp").value : "" };
+}
 function keepSeenEdits() {
   const e = seenState.entry; if (!e) return;
-  const v = { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), ep: $("seenEp").value };
+  const v = seenValues();
   if (Object.keys(v).some(k => (e[k] ?? null) !== (v[k] ?? null))) { Object.assign(e, v); saveObs(); }
 }
 function backToLog() { renderLog(); openSheet("logSheet"); const inner = $("logSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = logState.scroll; }); }
@@ -5618,7 +5639,7 @@ function renderLog() {
     r.innerHTML = '<span class="tm"></span><b></b><svg viewBox="0 0 24 24" fill="none" stroke="' + colr + '" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="' + lbl + '">' + path + "</svg><small></small>";
     r.querySelector(".tm").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const b = r.querySelector("b"); b.textContent = obsName(e.obj, e.name); if (e.result === "miss") b.className = "miss";
-    r.querySelector("small").textContent = [e.ep, e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
+    r.querySelector("small").textContent = [instKind(e) === "scope" ? e.ep : entryInst(e), e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
     r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
     body.append(r);
   });
@@ -5634,6 +5655,7 @@ const stamp = () => new Date().toISOString().slice(0, 10);
 // of Herschel II and SAC 110 that the free catalogue lacks come with the extended catalogue.
 const PROGRAMS = [
   { id: "messier", name: "Messier", free: true, about: "Charles Messier’s 110 objects: the classic list to start with.", ids: () => MESSIER.map(r => r[0]) },
+  { id: "bino", name: "Binocular Messier", goal: 50, planMag: 8.5, counts: e => instKind(e) === "bino", about: "50 of the Messier objects seen with binoculars (Astronomical League). Only entries with the instrument “Binoculars” count.", ids: () => MESSIER.map(r => r[0]) },
   { id: "caldwell", name: "Caldwell", about: "109 bright objects Messier left out, chosen by Patrick Moore; the last ones are far south. The Coalsack (C99), a dark nebula, isn’t counted here.", ids: () => [...LISTS.caldwell.keys()], label: id => "C" + LISTS.caldwell.get(id) },
   { id: "h400", name: "Herschel 400", about: "400 of William Herschel’s objects for a 6-inch telescope (Astronomical League).", ids: () => [...LISTS.h400] },
   { id: "h2", name: "Herschel II", about: "The next 400 Herschel objects, mostly galaxies, for 8 inches and more (Astronomical League).", ids: () => LISTS.h2 || [] },
@@ -5641,10 +5663,13 @@ const PROGRAMS = [
 ];
 const progState = { p: null, tab: "open", scroll: 0 };
 const progOpen = P => P.free || pro.on;
+// the entries that count for a programme (Binocular Messier: only with binoculars), and the objects they make seen
+const progEntries = P => obs.log.filter(e => e.result !== "miss" && (!P.counts || P.counts(e)));
+const progSeen = P => P.counts ? new Set(progEntries(P).map(e => e.obj)) : sets().seen;
 function progStats(P) {
-  const ids = P.ids(), set = new Set(ids), seen = sets().seen;
-  const done = ids.filter(id => seen.has(id)), last = obs.log.filter(e => e.result !== "miss" && set.has(e.obj)).sort((a, b) => b.t.localeCompare(a.t))[0];
-  return { ids, n: ids.length, done: done.length, last };
+  const ids = P.ids(), set = new Set(ids), seen = progSeen(P);
+  const done = ids.filter(id => seen.has(id)), last = progEntries(P).filter(e => set.has(e.obj)).sort((a, b) => b.t.localeCompare(a.t))[0];
+  return { ids, n: ids.length, goal: P.goal || ids.length, done: done.length, last };
 }
 const progName = (P, id) => (P.label ? P.label(id) + " · " : "") + obsName(id);
 function renderProgMenu() { const m = progStats(PROGRAMS[0]); $("progMenuState").textContent = "Messier " + m.done + "/" + m.n; }
@@ -5664,18 +5689,18 @@ function renderProgs() {
       const s = progStats(Q), c = document.createElement("button"); c.className = "pgcard";
       c.innerHTML = '<b></b><span class="pgn"></span><span class="pgbar"><i></i></span><small class="pga"></small>';
       c.querySelector("b").textContent = Q.name; if (!progOpen(Q)) c.querySelector("b").insertAdjacentHTML("beforeend", '<i class="protag">Pro</i>');
-      c.querySelector(".pgn").innerHTML = s.done + "<small> / " + s.n + "</small>";
-      c.querySelector(".pgbar i").style.width = (s.n ? s.done / s.n * 100 : 0).toFixed(1) + "%";
+      c.querySelector(".pgn").innerHTML = s.done + "<small> / " + s.goal + "</small>";
+      c.querySelector(".pgbar i").style.width = (s.goal ? Math.min(1, s.done / s.goal) * 100 : 0).toFixed(1) + "%";
       c.querySelector(".pga").textContent = s.last ? "Last: " + obsName(s.last.obj, s.last.name) + ", " + new Date(s.last.t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) : Q.about;
       c.onclick = () => openProgs(Q.id); box.append(c);
     });
     body.append(intro, box); return;
   }
-  const s = progStats(P), seen = sets().seen, tn = nightPlan();
+  const s = progStats(P), seen = progSeen(P), tn = nightPlan();
   const head = document.createElement("div"); head.className = "pghead";
   head.innerHTML = '<span class="pgn"></span><span class="pgbar"><i></i></span><small class="note"></small>';
-  head.querySelector(".pgn").innerHTML = s.done + "<small> of " + s.n + " seen" + (s.done >= s.n && s.n ? " · complete" : "") + "</small>";
-  head.querySelector(".pgbar i").style.width = (s.n ? s.done / s.n * 100 : 0).toFixed(1) + "%";
+  head.querySelector(".pgn").innerHTML = s.done + "<small> of " + s.goal + (P.goal ? " needed (" + s.n + " in the list)" : " seen") + (s.done >= s.goal && s.n ? " · complete" : "") + "</small>";
+  head.querySelector(".pgbar i").style.width = (s.goal ? Math.min(1, s.done / s.goal) * 100 : 0).toFixed(1) + "%";
   head.querySelector(".note").textContent = P.about;
   body.append(head);
   // objects only the extended catalogue has: offer it
@@ -5688,7 +5713,7 @@ function renderProgs() {
   }
   const rows = s.ids.map(id => ({ id, p: seen.has(id) ? null : rowPlan(id, tn), seen: seen.has(id) }));
   const open = rows.filter(r => !r.seen).sort((a, b) => (a.p ? a.p.sort : 3e15) - (b.p ? b.p.sort : 3e15));
-  const good = open.filter(r => r.p && r.p.best && !sets().list.has(r.id));
+  const good = open.filter(r => r.p && r.p.best && !sets().list.has(r.id) && (!P.planMag || (r.p.T.mag ?? 99) <= P.planMag));   // binoculars: the brighter ones
   // plan what is well placed tonight (at most 15, in the order they get low)
   const acts = document.createElement("div"); acts.className = "pgacts";
   if (good.length) {
@@ -5719,7 +5744,7 @@ function progRow(P, r) {
   const b = document.createElement("b"); b.textContent = progName(P, id);
   const sm = document.createElement("small");
   const mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
-  const firstSeen = r.seen ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort()[0] : null;
+  const firstSeen = r.seen ? progEntries(P).filter(e => e.obj === id).map(e => e.t).sort()[0] : null;
   sm.textContent = !T ? "in the extended catalogue" : [mrow ? mrow[5] : nrow ? nrow.type : "", T.mag != null ? (+T.mag).toFixed(1) + " mag" : "",
     firstSeen ? "seen " + new Date(firstSeen).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) : p ? p.sub : ""].filter(Boolean).join(" · ");
   main.append(b, sm);
@@ -5734,28 +5759,30 @@ function progRow(P, r) {
 }
 function backToProg() { renderProgs(); openSheet("progSheet"); const b = scroller($("progSheet")); requestAnimationFrame(() => { b.scrollTop = progState.scroll; }); }
 // After a first sighting: the progress in the programmes it belongs to, and a word at 25, 50, 75 and 100 %
-function progNote(id) {
+// after a new entry: a first sighting for the plain programmes, a first one with binoculars for Binocular Messier
+function progNote(e, wasSeen) {
   const out = [];
-  PROGRAMS.filter(P => progOpen(P) && P.ids().includes(id)).forEach(P => {
-    const s = progStats(P), q = [0.25, 0.5, 0.75, 1].find(f => s.done === Math.ceil(s.n * f));
-    out.push(P.name + ": " + s.done + " of " + s.n + (q === 1 ? " · complete!" : q === 0.5 ? " · halfway!" : q ? " · " + q * 100 + " %!" : ""));
+  PROGRAMS.filter(P => progOpen(P) && P.ids().includes(e.obj) && (!P.counts || P.counts(e))).forEach(P => {
+    if (P.counts ? progEntries(P).filter(x => x.obj === e.obj).length > 1 : wasSeen) return;   // seen (this way) before
+    const s = progStats(P), q = [0.25, 0.5, 0.75, 1].find(f => s.done === Math.ceil(s.goal * f));
+    out.push(P.name + ": " + s.done + " of " + s.goal + (q === 1 ? " · complete!" : q === 0.5 ? " · halfway!" : q ? " · " + q * 100 + " %!" : ""));
   });
   return out.join(" · ");
 }
 // The programme's logbook: each seen object with its first sighting (date, time, place, eyepiece, conditions, note),
 // as CSV, or as a page to print (for example for an observing award)
 function progExport(P, kind) {
-  const seen = sets().seen, opt = cfg.optics || {};
+  const seen = progSeen(P), opt = cfg.optics || {};
   const scope = aperture() ? Math.round(aperture()) + " mm" + (opt.scope ? ", " + Math.round(opt.scope) + " mm focal length" : "") : "";
   const rows = P.ids().filter(id => seen.has(id)).map(id => {
-    const e = obs.log.filter(x => x.obj === id && x.result !== "miss").sort((a, b) => a.t.localeCompare(b.t))[0], d = new Date(e.t);
+    const e = progEntries(P).filter(x => x.obj === id).sort((a, b) => a.t.localeCompare(b.t))[0], d = new Date(e.t);
     const T = targetById(id), mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
     return { label: P.label ? P.label(id) : "", id, name: obsName(id).replace(/^[^·]*· /, ""), type: mrow ? mrow[5] : nrow ? nrow.type : T ? T.kind : "",
       date: d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), time: pad2(d.getHours()) + ":" + pad2(d.getMinutes()),
-      place: e.lat != null ? (+e.lat).toFixed(2) + ", " + (+e.lon).toFixed(2) : "", ep: e.ep || "", seeing: e.seeing || "", transp: e.transp || "",
+      place: e.lat != null ? (+e.lat).toFixed(2) + ", " + (+e.lon).toFixed(2) : "", inst: entryInst(e), ep: instKind(e) === "scope" ? e.ep || "" : "", seeing: e.seeing || "", transp: e.transp || "",
       alt: e.alt != null ? Math.round(e.alt) + "°" : "", moon: e.moon || "", result: e.result === "hard" ? "hard" : "easy", note: e.note || "" };
   });
-  const cols = [["label", "No."], ["id", "Object"], ["name", "Name"], ["type", "Type"], ["date", "Date"], ["time", "Time"], ["place", "Place (lat, lon)"], ["ep", "Eyepiece"],
+  const cols = [["label", "No."], ["id", "Object"], ["name", "Name"], ["type", "Type"], ["date", "Date"], ["time", "Time"], ["place", "Place (lat, lon)"], ["inst", "Instrument"], ["ep", "Eyepiece"],
     ["seeing", "Seeing"], ["transp", "Transparency"], ["alt", "Altitude"], ["moon", "Moon"], ["result", "Result"], ["note", "Note"]].filter(([k]) => k !== "label" || P.label);
   const file = "zenigo-" + P.id + "-" + stamp();
   if (kind === "csv") {
@@ -5767,7 +5794,7 @@ function progExport(P, kind) {
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(P.name) + " · Zenigo</title>"
     + "<style>body{font:13px/1.4 system-ui,sans-serif;margin:24px;color:#111}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 12px;color:#444}table{border-collapse:collapse;width:100%}"
     + "th,td{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}@media print{body{margin:10mm}}</style></head><body>"
-    + "<h1>" + esc(P.name) + " · " + rows.length + " of " + P.ids().length + "</h1><p>Observer: ____________________ · " + (scope ? "Telescope: " + esc(scope) + " · " : "") + "Logged with Zenigo, " + esc(stamp()) + "</p>"
+    + "<h1>" + esc(P.name) + " · " + rows.length + " of " + (P.goal || P.ids().length) + "</h1><p>Observer: ____________________ · " + (scope ? "Telescope: " + esc(scope) + " · " : "") + "Logged with Zenigo, " + esc(stamp()) + "</p>"
     + "<table><thead><tr>" + cols.map(c => "<th>" + esc(c[1]) + "</th>").join("") + "</tr></thead><tbody>"
     + rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c[0]]) + "</td>").join("") + "</tr>").join("") + "</tbody></table></body></html>";
   download(file + ".html", html, "text/html");
@@ -5804,8 +5831,8 @@ $("bkLists").onclick = () => exportBackup(false);
 $("bkAll").onclick = () => exportBackup(true);
 $("bkCsv").onclick = () => {
   const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const rows = [["date", "time", "object", "name", "result", "seeing", "transparency", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
-  obs.log.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), e.result, e.seeing, e.transp, e.ep, e.alt, e.moon, e.lat, e.lon, e.note]); });
+  const rows = [["date", "time", "object", "name", "result", "seeing", "transparency", "instrument", "eyepiece", "altitude", "moon", "latitude", "longitude", "note"]];
+  obs.log.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(e => { const d = new Date(e.t); rows.push([d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), pad2(d.getHours()) + ":" + pad2(d.getMinutes()), e.obj, obsName(e.obj, e.name), e.result, e.seeing, e.transp, entryInst(e), instKind(e) === "scope" ? e.ep : "", e.alt, e.moon, e.lat, e.lon, e.note]); });
   download("zenigo-logbook-" + stamp() + ".csv", "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n"), "text/csv");
 };
 $("bkImport").onclick = () => $("bkFile").click();
