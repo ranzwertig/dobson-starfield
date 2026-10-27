@@ -1469,7 +1469,7 @@ const TESTS = {
     await p.goto(base + '/sky/2026-11-06/');
     const en = await ev(p, () => ({ h1: document.querySelector('h1').textContent, lang: document.documentElement.lang,
       alt: [...document.querySelectorAll('link[rel=alternate]')].map(l => l.hreflang + ' ' + new URL(l.href).pathname),
-      draft: !!document.querySelector('.wk-draft'), noindex: !!document.querySelector('meta[name=robots][content=noindex]'),
+      draft: !!document.querySelector('.wk-draft'), noindex: !!document.querySelector('meta[name=robots][content=noindex]'), canon: (document.querySelector('link[rel=canonical]') || {}).href,
       evs: [...document.querySelectorAll('.wk-ev')].map(e => ({ id: e.id, hl: e.classList.contains('hl') })),
       t: document.querySelector('.wk-ev time[data-t]').textContent, tz: document.querySelector('.wk-tz').textContent,
       go: [...document.querySelectorAll('.wk-ev a.open')].map(a => a.getAttribute('href')), rel: [...document.querySelectorAll('.wk-ev a.open')].every(a => a.rel === 'nofollow'),
@@ -1478,7 +1478,7 @@ const TESTS = {
       wide: document.documentElement.scrollWidth > innerWidth }));
     ok(en.h1 === 'Night sky this week: 6–12 November 2026' && en.lang === 'en', 'the week, Friday to Thursday, in English', en.h1);
     ok(en.alt.join('|') === 'en /sky/2026-11-06/|de /de/sky/2026-11-06/|x-default /sky/2026-11-06/', 'language versions linked (hreflang, x-default English)', en.alt);
-    ok(en.draft && en.noindex, 'a draft: marked, and noindex');
+    ok(!en.draft && !en.noindex && /\/sky\/2026-11-06\/$/.test(en.canon || ''), 'published: no draft mark, indexable, its own canonical address', en);
     ok(en.evs.length === 6 && en.evs[0].hl && en.evs[1].hl && !en.evs[2].hl, 'six events, the highlights first', en.evs);
     ok(/^Sat, 7 Nov, 11:40$/.test(en.t) && /Europe\/Berlin/.test(en.tz), 'times in the reader’s time zone (UTC on the page)', [en.t, en.tz]);
     ok(en.go.includes('/app/#go=Venus&src=week') && en.go.includes('/app/#go=M31&src=week') && en.rel, 'Open in Zenigo: links to the object in the app (nofollow)', en.go);
