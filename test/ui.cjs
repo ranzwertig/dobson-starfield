@@ -223,6 +223,33 @@ const TESTS = {
     await done(p);
   },
 
+  // seeing tonight: set in Quick settings or with a logbook entry (the newer counts), it caps the magnification the
+  // eyepiece advice suggests; a tap on the seeing line in the details goes to Quick settings
+  async seeing() {
+    const p = await page();
+    await ev(p, () => { cfg.optics.eps = [{ f: 32, a: 50 }, { f: 25, a: 52 }, { f: 15, a: 52 }, { f: 10, a: 52 }, { f: 6, a: 60 }]; setOptics({ ep: 0, ap: 203, scope: 1200, barlow: 0, useB: false }); });
+    const best = () => ev(p, () => { closeSheet('infoSheet'); showInfo(targetById('Jupiter')); const b = $('infoEp').querySelector('.eb b').textContent, l = $('infoEp').querySelector('.seelnk'); return { b, mag: +b.match(/(\d+)×/)[1], lnk: l && l.textContent, why: $('infoEp').querySelector('.eb small').textContent }; });
+    let r = await best();
+    ok(r.mag >= 180 && /Set tonight’s seeing/.test(r.lnk), 'without seeing: Jupiter at about 200×, and a link to set the seeing', r);
+    await ev(p, () => { closeSheet('infoSheet'); openSheet('quickSheet'); syncQuick(); }); await wait(p, 400);
+    await p.tap('#qSee button:nth-child(2)'); await wait(p, 200);
+    if (process.env.SHOTS) await p.screenshot({ path: path.join(process.env.SHOTS, 'see-quick.png') });
+    ok(await ev(p, () => seeingTonight() === 2 && /^2: restless · sharp to about 100×/.test($('qSeeTxt').textContent) && $('qSee').children[1].getAttribute('aria-pressed') === 'true'), 'Quick settings: seeing 2 for tonight');
+    r = await best();
+    if (process.env.SHOTS) { await wait(p, 500); await ev(p, () => $('infoEp').scrollIntoView({ block: 'center' })); await wait(p, 200); await p.screenshot({ path: path.join(process.env.SHOTS, 'see-info.png') }); }
+    ok(r.mag <= 100 && /Seeing 2 tonight · sharp to about 100×/.test(r.lnk) && /seeing 2 tonight/i.test(r.why), 'seeing 2: the advice stays at about 100× and says why', r);
+    await ev(p, () => { closeSheet('infoSheet'); openSeen(objById('M13')); }); await wait(p, 300);
+    ok(await ev(p, () => seenState.see === 2), 'a new logbook entry starts with tonight’s seeing');
+    await ev(p, () => { seenState.see = 4; $('seenSave').click(); }); await wait(p, 300);
+    ok(await ev(p, () => seeingTonight() === 4), 'an entry with seeing 4 made later counts');
+    r = await best();
+    ok(r.mag > 150 && r.mag <= 200, 'seeing 4: up to about 200×', r);
+    await ev(p, () => { closeSheet('infoSheet'); openSheet('quickSheet'); syncQuick(); }); await wait(p, 400);
+    await p.tap('#qSee button:nth-child(4)'); await wait(p, 200);
+    ok(await ev(p, () => seeingTonight() === null && /how steady the air is/.test($('qSeeTxt').textContent)), 'tapping the selected value again clears it');
+    await done(p);
+  },
+
   // finder types
   async finder() {
     const p = await page();
