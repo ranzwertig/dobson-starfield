@@ -15,7 +15,7 @@ function loadPlaywright() {
 const { chromium } = loadPlaywright();
 
 // ---------- the sync API (worker/sync.js) as an in-memory stand-in, same answers ----------
-const syncStore = new Map(); let syncOn = true;
+const syncStore = new Map(); let syncOn = true, extOn = false;
 function syncApi(req, res, p) {
   const send = (status, data, h = {}) => { res.writeHead(status, { 'content-type': 'application/json', ...h }); res.end(data === undefined ? '' : JSON.stringify(data)); };
   if (!syncOn) return send(503, { error: 'off' });
@@ -48,6 +48,7 @@ function serve() {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p.startsWith('/api/sync/v1')) return syncApi(req, res, p);
     if (p.startsWith('/api/')) { res.writeHead(503); return res.end('{}'); }   // no satellites in tests
+    if (/\/ext-(dso|stars)\./.test(p) && !extOn) { res.writeHead(404); return res.end(); }   // the extended catalogue only in its own test
     if (p.endsWith('/')) p += 'index.html';
     const f = path.join(DIST, path.normalize(p));
     if (!f.startsWith(DIST) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('not found'); }
@@ -906,6 +907,36 @@ const TESTS = {
     await ev(B, () => syncNow());
     ok(await ev(B, () => !syncS.code && obs.log.length >= 2 && /Sync stopped/.test($('hint').textContent)), 'the other device notices, stops syncing and says so');
     await done(A); await done(B);
+  },
+
+  // Extended catalogue (Pro): downloaded right after Pro is there, merged into the map, search and eyepiece view,
+  // kept in its own cache, put away when Pro ends, removable
+  async extcat() {
+    extOn = true;
+    const p = await page();
+    await p.waitForFunction(() => ext.loaded, null, { timeout: 30000 }).catch(() => {});
+    const info = await ev(p, () => ({ loaded: ext.loaded, n: DEEP.n, base: DEEP_BASE.n, ngc: NGC.filter(o => o.ext).length, EXT, t: !!targetById('NGC 1499') }));
+    ok(info.loaded && info.ngc === info.EXT.nDso && info.n === info.base + info.EXT.nStars, 'downloaded and merged: all objects and stars', info);
+    ok(info.t, 'an object of the extended catalogue can be found (NGC 1499)');
+    ok(await ev(p, () => { for (let i = 1; i < DEEP.n; i++) if (DEEP.m[i] < DEEP.m[i - 1]) return false; return DEEP.m[DEEP.n - 1] <= 11.01; }), 'the stars stay sorted by brightness, down to 11 mag');
+    ok(await ev(p, async () => { const c = await caches.open('zenigo-ext'); return (await c.keys()).length === 2; }), 'kept in its own cache (two files)');
+    ok(await ev(p, () => { syncFilter(); return /to 11 mag/.test($('magV').textContent); }), 'the filter says “all (to 11 mag …)”');
+    // zoomed in on a field: the map draws stars fainter than 9 mag
+    ok(await ev(p, () => { let k = 0; deepNear(targetById('NGC 1499').vec(), 1, 11, i => { if (DEEP.m[i] > 9) k++; }); return k > 5; }), 'faint stars around a target, from the extended catalogue');
+    ok(await ev(p, () => /On this device and in use/.test($('extState').textContent) && !$('extDel').hidden), 'settings: in use, with Remove');
+    // a new start: loaded from the cache, nothing downloaded again
+    let fetched = 0; p.on('request', r => { if (/ext-(dso|stars)/.test(r.url())) fetched++; });
+    await p.reload(); await p.waitForFunction(() => typeof ext !== 'undefined' && ext.loaded, null, { timeout: 30000 }).catch(() => {});
+    ok(await ev(p, () => ext.loaded) && fetched === 0, 'next start: from its cache, no download', fetched);
+    // Pro ends: put away, data stays on the device
+    await p.clock.setSystemTime(new Date('2028-01-05T20:00:00Z')); await ev(p, () => proCheck()); await wait(p, 300);
+    ok(await ev(p, () => !ext.loaded && DEEP.n === DEEP_BASE.n && !NGC.some(o => o.ext) && !targetById('NGC 1499') && ext.have), 'Pro ended: put away (still on the device)');
+    // Remove
+    await p.clock.setSystemTime(new Date('2026-10-21T20:00:00Z')); await ev(p, () => proCheck()); await p.waitForFunction(() => ext.loaded, null, { timeout: 30000 }).catch(() => {});
+    await ev(p, () => extRemove()); await wait(p, 300);
+    ok(await ev(p, async () => !ext.loaded && !ext.have && cfg.extAuto === false && !(await caches.keys()).includes('zenigo-ext')), 'Remove deletes it and stops the automatic download');
+    await done(p);
+    extOn = false;
   },
 
   // Zenigo Pro in the app: without a licence the Pro features ask for it, a pasted key turns them on, a renewal that

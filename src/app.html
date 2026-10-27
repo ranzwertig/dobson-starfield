@@ -1157,6 +1157,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <ul><!--PRO-INCL--></ul>
       <p class="note"><!--PRO-SOON--> Everything else stays free. A 12-month licence, paid once, with no automatic renewal.</p>
     </div>
+    <div class="row" id="proExtRow" hidden><button class="btn" id="proExtGet">Download the extended catalogue</button></div>
     <ul class="prokeys" id="proKeys"></ul>
     <div class="actions" id="proMailRow" hidden><a class="btn" id="proMail" href="mailto:">Email my key to me</a></div>
     <p class="note" id="proMailNote" hidden>Keep the key: it brings Pro back if you delete Zenigo or change phones. Backups hold it too.</p>
@@ -1478,6 +1479,12 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row" id="liveOn" hidden><button class="btn" id="liveEnd">Disconnect</button><button class="btn" id="liveChangeRole">Change role</button></div>
       <p class="note"><a href="/help/#live" target="_blank" rel="noopener">Help on the live connection</a></p>
     </fieldset>
+    <fieldset data-stab="general" id="extBox">
+      <legend>Extended catalogue<i class="protag">Pro</i></legend>
+      <p class="note">The rest of the NGC and IC catalogues (about <span data-ext="nDso">10,000</span> more galaxies, nebulae and clusters) and stars down to magnitude 11 (about <span data-ext="nStars">790,000</span> more), on the map when zoomed in, in the search and in the eyepiece view. Downloaded once to this device (<span data-ext="mb">6</span> MB), then it works offline.</p>
+      <div class="row"><button class="btn" id="extGet">Download</button><button class="btn" id="extDel" hidden>Remove from this device</button></div>
+      <p class="note" id="extState" role="status"></p>
+    </fieldset>
     <fieldset data-stab="general" id="backup">
       <legend>Backup and restore</legend>
       <p class="note" id="backupInfo"></p>
@@ -1578,7 +1585,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
       <p class="note">After a camera solve with the motion sensor on, the app compares the compass with the exact solved direction and offers to correct it. The correction is used in compass mode and shown at the bottom left while active.</p>
     </fieldset>
-    <p class="note" data-stab="general">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
+    <p class="note" data-stab="general">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); with the extended catalogue, NGC and IC objects from OpenNGC (Mattia Verga, CC BY-SA 4.0) and stars to magnitude 11 from AT-HYG (David Nash, CC BY-SA 4.0); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
 </div>
 
@@ -2828,8 +2835,11 @@ function dsoClass(type) {
 }
 const MSV = MESSIER.map(([id, ra, dec, mag, , type, , size]) => ({ id, mag, cls: dsoClass(type), size, v: Solver.radec2v(ra, dec) }));
 // Deep catalogue, loaded after start (see loadDeep): stars 6–9 mag and about 1900 deep-sky objects beyond Messier
-const DEEP = { n: 0, v: null, m: null };
+// the filter's faintest-star setting: its end ("all") means every star of the loaded catalogue
+const magLim = show => show.mag >= 9 ? 99 : show.mag;
+const DEEP = { n: 0, v: null, m: null }, DEEP_BASE = { n: 0, v: null, m: null };
 let NGC = [];
+var deepLoaded = null;   // loadDeep(): the free deep catalogue; the extended one (Zenigo Pro) is added on top of it
 // Observing lists (lists.json): Caldwell number by id, Herschel 400 and a curated list of popular showpieces
 const LISTS = { ok: false, caldwell: new Map(), h400: new Set(), pop: new Set() };
 // Sky cells of about 4° × 4° (declination bands, split in right ascension), each holding its stars brightest first,
@@ -3085,7 +3095,7 @@ async function loadDeep() {
         if ((i & 2047) === 0) await tick();
       }
       const bands = await buildDeepIndex(n, v);
-      Object.assign(DEEP, { n, v, m, bands });
+      Object.assign(DEEP, { n, v, m, bands }); Object.assign(DEEP_BASE, DEEP);
     }
     if (d) {
       // objects of the observing lists the catalogue lacks come with the lists (some nebulae without a magnitude)
@@ -3096,6 +3106,99 @@ async function loadDeep() {
     st.filterVer++; lastSig = []; updateGuide();
   } catch (e) {}
 }
+/* ---------------- Extended catalogue (Zenigo Pro) ---------------- */
+// The rest of the NGC and IC catalogues (OpenNGC) and stars from 9 to 11 mag (AT-HYG), made by scripts/extended.mjs.
+// Downloaded once per device on request (and right after Pro is added), kept in their own cache "zenigo-ext" so an app
+// update doesn't download them again, and loaded on top of the free deep catalogue only while Pro runs. The build names
+// the files by their content (EXT); a new version replaces the old files on the next download.
+const EXT = /*__EXT__*/ null, EXT_CACHE = "zenigo-ext";
+const ext = { have: false, busy: false, loaded: false, pct: 0, err: "" };
+const extUrls = () => EXT ? [EXT.dso, EXT.stars].map(f => new URL(f, location.href).href) : [];
+async function extHave() {
+  if (!EXT || !self.caches) return false;
+  try { const c = await caches.open(EXT_CACHE); return (await Promise.all(extUrls().map(u => c.match(u)))).every(Boolean); } catch (e) { return false; }
+}
+// download both files with progress, then drop older versions from the cache
+async function extDownload() {
+  if (!EXT || ext.busy) return;
+  if (!pro.on) return proNeed("The extended catalogue is part of Zenigo Pro.");
+  ext.busy = true; ext.err = ""; ext.pct = 0; renderExt();
+  try {
+    const c = await caches.open(EXT_CACHE), urls = extUrls(); let got = 0;
+    for (const u of urls) {
+      if (await c.match(u)) { got += u === urls[1] ? EXT.starsBytes : EXT.dsoBytes; continue; }
+      const r = await fetch(u, { cache: "no-store" }); if (!r.ok || !r.body) throw new Error(r.status);
+      const rd = r.body.getReader(), parts = [];
+      for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; ext.pct = Math.min(99, Math.round(got / EXT.bytes * 100)); renderExt(); }
+      await c.put(u, new Response(new Blob(parts), { headers: { "Content-Type": r.headers.get("Content-Type") || "application/octet-stream" } }));
+    }
+    for (const k of await c.keys()) if (!urls.includes(k.url)) await c.delete(k);
+    ext.have = true; cfg.extAuto = true; save();
+    await extLoad();
+    hint("Extended catalogue ready: " + EXT.nDso.toLocaleString("en") + " more objects and " + EXT.nStars.toLocaleString("en") + " more stars.", 5000);
+  } catch (e) { ext.err = navigator.onLine ? "The download failed. Try again later." : "No connection. Download it when the device is online."; }
+  ext.busy = false; renderExt();
+}
+async function extRemove() {
+  try { await caches.delete(EXT_CACHE); } catch (e) {}
+  extUnload(); ext.have = false; cfg.extAuto = false; save(); renderExt();
+}
+// on top of the free catalogue: stars merged by brightness and indexed again, objects added to the map and the search
+async function extLoad() {
+  if (ext.loaded || !pro.on || !EXT) return;
+  await deepLoaded;
+  const c = await caches.open(EXT_CACHE), [rd, rs] = await Promise.all(extUrls().map(u => c.match(u)));
+  if (!rd || !rs) return;
+  const rows = await rd.json(), u = new Uint8Array(await rs.arrayBuffer());
+  if (!pro.on || ext.loaded) return;
+  const tick = slicer(), U = 16777215, n2 = Math.floor(u.length / 7), n1 = DEEP_BASE.n, N = n1 + n2;
+  const v = new Float32Array(N * 3), m = new Float32Array(N);
+  let i = 0, j = 0, k = 0, jm = n2 ? u[6] / 20 - 2 : 99;
+  const put2 = () => { const o = j * 7, w = Solver.radec2v((u[o] | u[o + 1] << 8 | u[o + 2] << 16) / U * 360, (u[o + 3] | u[o + 4] << 8 | u[o + 5] << 16) / U * 180 - 90);
+    v[3 * k] = w[0]; v[3 * k + 1] = w[1]; v[3 * k + 2] = w[2]; m[k] = jm; j++; jm = j < n2 ? u[j * 7 + 6] / 20 - 2 : 99; };
+  const put1 = () => { v[3 * k] = DEEP_BASE.v[3 * i]; v[3 * k + 1] = DEEP_BASE.v[3 * i + 1]; v[3 * k + 2] = DEEP_BASE.v[3 * i + 2]; m[k] = DEEP_BASE.m[i]; i++; };
+  for (; k < N; k++) { if (i < n1 && (j >= n2 || DEEP_BASE.m[i] <= jm)) put1(); else put2(); if ((k & 4095) === 0) await tick(); }   // both sorted: merge
+  const bands = await buildDeepIndex(N, v);
+  if (!pro.on) return;
+  Object.assign(DEEP, { n: N, v, m, bands });
+  const objs = rows.map(([id, ra, dec, mag, cls, size, name, type, a, b, pa]) => {
+    if (a) LISTS.shapes && LISTS.shapes.set(id, { a, b, pa });
+    return { id, ra, dec, mag, dm: mag ?? (cls === "gal" ? 15 : 13), cls, size, name, type, v: Solver.radec2v(ra, dec), ext: true };
+  });
+  NGC = NGC.concat(objs).sort((a, b) => a.dm - b.dm);
+  objs.forEach(o => TARGETS.push({ id: o.id, name: o.id, sub: [o.name, o.type, o.mag != null && o.mag + " mag"].filter(Boolean).join(" · "), kind: "dso", ngc: true, ext: true, mag: o.mag, vec: () => o.v }));
+  ext.loaded = true; st.filterVer++; lastSig = []; ph.objs = null; syncFilter(); updateGuide(); renderExt();
+}
+function extUnload() {
+  if (!ext.loaded) return;
+  Object.assign(DEEP, DEEP_BASE);
+  const gone = new Set(NGC.filter(o => o.ext).map(o => o.id));
+  NGC = NGC.filter(o => !o.ext);
+  for (let t = TARGETS.length - 1; t >= 0; t--) if (TARGETS[t].ext) TARGETS.splice(t, 1);
+  if (LISTS.shapes) gone.forEach(id => LISTS.shapes.delete(id));
+  ext.loaded = false; st.filterVer++; lastSig = []; ph.objs = null; syncFilter(); updateGuide(); renderExt();
+}
+// Pro came or went (also at start): load, offer or put away
+async function extSync() {
+  if (!EXT) return;
+  if (!pro.on) { extUnload(); renderExt(); return; }
+  ext.have = await extHave(); renderExt();
+  if (ext.have) extLoad();
+  else if (cfg.extAuto !== false && navigator.onLine) extDownload();   // just bought, or a new device: once, unless removed
+}
+function extStart() { if (pro.checked) extSync(); }
+function renderExt() {
+  if (!EXT) { $("extBox").hidden = true; return; }
+  const mb = (EXT.bytes / 1048576).toFixed(1);
+  document.querySelectorAll("[data-ext]").forEach(e => { const k = e.dataset.ext; e.textContent = k === "mb" ? mb : (Math.floor(EXT[k] / 1000) * 1000).toLocaleString("en"); });
+  $("extGet").hidden = ext.have && !ext.busy; $("extGet").disabled = ext.busy; $("extGet").textContent = ext.busy ? "Downloading … " + ext.pct + " %" : "Download (" + mb + " MB)";
+  $("extDel").hidden = !ext.have || ext.busy;
+  $("extState").textContent = ext.err || (ext.loaded ? "On this device and in use." : ext.have && !pro.on ? "On this device; in use while Zenigo Pro runs." : ext.have ? "On this device." : "");
+  $("proExtRow").hidden = !pro.on || ext.have; $("proExtGet").disabled = ext.busy; $("proExtGet").textContent = ext.busy ? "Downloading the extended catalogue … " + ext.pct + " %" : "Download the extended catalogue (" + mb + " MB)";
+}
+$("extGet").onclick = () => extDownload();
+$("proExtGet").onclick = () => extDownload();
+$("extDel").onclick = async () => { if (await askConfirm("Remove the extended catalogue?", "It is removed from this device. You can download it again at any time while Zenigo Pro runs.", "Remove", "Keep") === true) extRemove(); };
 // Classic chart symbols: galaxy = ellipse, globular = circle with cross, open cluster = dashed circle,
 // nebula = square, planetary nebula = circle with centre dot
 // Small marks on the map: a star for objects on the list, a tick for objects already seen
@@ -4398,7 +4501,9 @@ function drawOverlay(dpr) {
   const show = cfg.show, fovNow = 2 * Math.atan(W / 2 / (fit.sc * sol.f)) * R2D;
   // fainter stars and more deep-sky objects the further you zoom in
   // while a finger drags or pinches a wide view, only the brighter stars (smooth movement); all of them once it rests
-  const starLim = Math.min(show.mag, Math.max(6.5, 10.3 - 2.2 * Math.log10(fovNow)), gestFast() && fovNow > 60 ? 5.5 : 99), dsoLim = Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
+  // with the extended catalogue (Pro) zoomed-in views go fainter: stars to 11 mag at 1°, galaxies to 15 mag at 1°
+  const starLim = Math.min(magLim(show), Math.max(6.5, (ext.loaded ? 10.8 : 10.3) - 2.2 * Math.log10(fovNow)), gestFast() && fovNow > 60 ? 5.5 : 99),
+    dsoLim = ext.loaded ? Math.min(15, Math.max(3.5 + 3.5 * Math.log10(100 / fovNow), 5 + 5 * Math.log10(100 / fovNow))) : Math.min(12, 3.5 + 3.5 * Math.log10(100 / fovNow));
   st.drawnStarLim = show.stars ? starLim : 0;   // what can be tapped
   if (show.mw) drawMilkyWay(c, sol, boresight, Math.min(89, halfDiag));
   if (show.stars) {
@@ -5581,11 +5686,11 @@ async function proCheck() {
   let until = cur ? Date.parse(cur.e) : 0;   // with a renewal that follows on: the end of the last one
   for (const p of list) if (until && Date.parse(p.s) <= until + 86400e3 && Date.parse(p.e) > until) until = Date.parse(p.e);
   const ends = list.map(p => Date.parse(p.e)).filter(e => e <= now);
-  const was = pro.on;
+  const was = pro.on, first = !pro.checked;
   Object.assign(pro, { checked: true, on: !!cur, cur, until, list, ended: !cur && ends.length ? Math.max(...ends) : 0 });
   try { localStorage.setItem("zenigo-pro-state", JSON.stringify({ until: pro.on ? until : 0 })); } catch (e) {}
   document.documentElement.classList.toggle("pro", pro.on);
-  if (was !== pro.on) proChanged(was);
+  if (was !== pro.on) proChanged(was); else if (first) extSync();
   renderPro(); syncSatState();
   return pro.on;
 }
@@ -5596,6 +5701,7 @@ function proChanged(was) {
   syncOptics(); syncFilter(); syncSatState(); renderSync(); updateGuide(); renderChips(); syncHudNext();
   if (!$("listSheet").hidden) renderList();
   if (pro.on && syncS.code) syncSoon(500);
+  extSync();
   if (was && !pro.on && pro.ended && cfg.proEndSeen !== pro.ended) {
     cfg.proEndSeen = pro.ended; save();
     hint("Zenigo Pro has ended. Its features are off; your lists, logbook and settings stay. Menu › Zenigo Pro to renew.", 9000);
@@ -6695,6 +6801,8 @@ function drawEyepiece() {
   const ep = curEp(), FT = FINDERS[finderType()], finder = o.src === "finder" || !ep, naked = finder && !!FT.reticle;
   const fov = finder ? finderViewFov() : epData(ep).fov, orient = naked ? "upright" : finder ? o.finderOrient || "newton" : o.orient, rotDeg = finder ? 0 : +o.rot || 0;
   const lab = finder ? finderLabel() : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
+  // what this aperture shows at most (the extended catalogue goes fainter than a small finder sees)
+  const apD = finder ? (+String(finderType()).split("x")[1] || 30) : aperture() || 150, starVis = 2.5 + 5 * Math.log10(apD), dsoVis = 1.5 + 5 * Math.log10(apD);
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const v = pointVec() || Solver.mul(sol.R, [0, 0, 1]), zen = Solver.mul(sk.M, [0, 0, 1]);
   let up = zen.map((q, i) => q - dot(zen, v) * v[i]), n = Math.hypot(...up);
@@ -6718,7 +6826,7 @@ function drawEyepiece() {
   }
   if (DEEP.n && !naked) {   // the naked eye sees no 6–9 mag stars
     const dv = DEEP.v, dm = DEEP.m;
-    deepNear(v, Math.min(89, fov * 0.75), 99, i => {
+    deepNear(v, Math.min(89, fov * 0.75), starVis, i => {
       const i3 = 3 * i; if (dv[i3] * v[0] + dv[i3 + 1] * v[1] + dv[i3 + 2] * v[2] < cosLim) return;
       const p = proj([dv[i3], dv[i3 + 1], dv[i3 + 2]]); if (!p) return;
       const r = Math.max(0.6, (9.6 - dm[i]) * 0.3 * big) * dpr; c.beginPath(); c.arc(p[0], p[1], r, 0, 7); c.fill();
@@ -6729,7 +6837,7 @@ function drawEyepiece() {
   c.strokeStyle = col("--accent"); c.fillStyle = col("--accent"); c.lineWidth = 1.3 * dpr;
   const er = size => Math.max(7 * dpr, (size || 0) / 120 * D2R * k);   // true size in the field
   MSV.forEach(({ id, cls, v: w, size }) => { const p = proj(w); if (!p) return; const r = er(size); dsoSymbol(c, cls, p[0], p[1], r); c.fillText(id, p[0] + Math.max(10 * dpr, r * 0.7), p[1] - Math.max(9 * dpr, r * 0.7)); });
-  if (!naked) NGC.forEach(o => { if (o.v[0] * v[0] + o.v[1] * v[1] + o.v[2] * v[2] < cosLim) return; const p = proj(o.v); if (!p) return; const r = er(o.size) * 0.85;
+  if (!naked) NGC.forEach(o => { if (o.ext && o.dm > dsoVis) return; if (o.v[0] * v[0] + o.v[1] * v[1] + o.v[2] * v[2] < cosLim) return; const p = proj(o.v); if (!p) return; const r = er(o.size) * 0.85;
     dsoSymbol(c, o.cls, p[0], p[1], r); c.fillText(o.id, p[0] + Math.max(9 * dpr, r * 0.7), p[1] - Math.max(9 * dpr, r * 0.7)); });
   PLANETS.forEach(([de, en]) => {
     const w = sk.planets.get(en); const p = w && proj(w); if (!p) return;
@@ -7363,7 +7471,7 @@ function pickNear(px, py, lim, pointsOnly) {
   if (!pointsOnly) (st.drawnNgc || []).forEach(o => consider(o.v, 4, () => ngcObj(o)));
   if (!pointsOnly) (st.drawnSats || []).forEach(s => consider(s.v, 10, () => satObj(s.x)));
   // every star that is drawn can be tapped: catalogue stars, and when zoomed in the faint ones of the deep catalogue
-  const sLim = Math.min(show.mag, st.drawnStarLim || 5.5);
+  const sLim = Math.min(magLim(show), st.drawnStarLim || 5.5);
   for (let k = 0; show.stars && k < Solver.cat.n; k++) {
     const m = STARS[3 * k + 2]; if (m > sLim) break;          // catalog is sorted by brightness
     consider(Solver.cat.v[k], (STARINFO[k] && STARINFO[k][0] ? 6 : 0) + (5.5 - m) * 1.5, () => starObj(k));
@@ -7945,7 +8053,7 @@ function setShow(show) {
 function syncFilter() {
   const sh = cfg.show, pk = presetOf(sh);
   document.querySelectorAll("[data-show]").forEach(el => el.checked = !!sh[el.dataset.show]);
-  $("showMag").value = sh.mag; $("magV").textContent = sh.mag >= 9 ? "all (to 9 mag, fainter ones when zoomed in)" : sh.mag.toFixed(1) + " mag";
+  $("showMag").value = sh.mag; $("magV").textContent = sh.mag >= 9 ? "all (to " + (ext.loaded ? 11 : 9) + " mag, fainter ones when zoomed in)" : sh.mag.toFixed(1) + " mag";
   $("showMag").disabled = !sh.stars;
   const box = $("presets"); box.textContent = "";
   Object.entries(PRESETS).forEach(([k, p]) => {
@@ -8091,7 +8199,7 @@ updateGuide(); renderReadout();
 requestAnimationFrame(draw);
 // the start screen goes once the first map frame is on screen
 requestAnimationFrame(() => requestAnimationFrame(() => { const sp = $("splash"); if (sp) { sp.classList.add("gone"); setTimeout(() => sp.remove(), 450); } }));
-loadDeep(); loadSats(true); syncListFab();
+deepLoaded = loadDeep(); loadSats(true); syncListFab(); extStart();
 setInterval(() => { updateGuide(); renderReadout(); }, 2000);
 setInterval(renderChips, 60000);
 </script>

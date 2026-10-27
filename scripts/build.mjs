@@ -86,7 +86,16 @@ let page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss).replace(
 const mainOpen = '<script id="main">', mi = page.indexOf(mainOpen), me = page.lastIndexOf('</script>');
 if (mi < 0 || me < mi) throw new Error('main script not found');
 const fJsqr = `jsqr.${createHash('sha256').update(jsqr).digest('hex').slice(0, 10)}.js`;
-const mainJs = page.slice(mi + mainOpen.length, me).replace('__JSQR_FILE__', fJsqr);
+// Extended catalogue of Zenigo Pro (scripts/extended.mjs, public/app/ext/): served under content-named files, not
+// precached; the app downloads them only with Pro and keeps them in their own cache
+let extInfo = 'null';
+if (existsSync(new URL('public/app/ext/dso.json', root))) {
+  const d = readFileSync(new URL('public/app/ext/dso.json', root)), s = readFileSync(new URL('public/app/ext/stars.bin', root));
+  const dso = `ext-dso.${createHash('sha256').update(d).digest('hex').slice(0, 10)}.json`, stars = `ext-stars.${createHash('sha256').update(s).digest('hex').slice(0, 10)}.bin`;
+  extInfo = JSON.stringify({ dso, stars, dsoBytes: d.length, starsBytes: s.length, bytes: d.length + s.length, nDso: JSON.parse(d).length, nStars: Math.floor(s.length / 7) });
+  globalThis.__extFiles = [[dso, d], [stars, s]];
+}
+const mainJs = page.slice(mi + mainOpen.length, me).replace('__JSQR_FILE__', fJsqr).replace('/*__EXT__*/ null', () => extInfo);
 const hashOf = s => createHash('sha256').update(s).digest('hex').slice(0, 10);
 const jsFiles = {};
 const jsFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; jsFiles[f] = src; return f; };
@@ -123,6 +132,8 @@ const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
 
 // static files (robots.txt, app manifest and icons)
 if (existsSync(new URL('public/', root))) cpSync(new URL('public/', root), new URL('dist/', root), { recursive: true });
+rmSync(new URL('dist/app/ext/', root), { recursive: true, force: true });
+for (const [f, data] of globalThis.__extFiles || []) writeFileSync(new URL('dist/app/' + f, root), data);
 write('dist/app/index.html', html);
 for (const [f, src] of Object.entries(jsFiles)) write('dist/app/' + f, src);
 write('dist/app/' + fJsqr, jsqr);

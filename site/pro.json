@@ -10,7 +10,7 @@
     { "title": "Satellites", "text": "The ISS and bright satellites on the map, and their next visible passes.", "href": "/help/#satellites" },
     { "title": "Eyepiece view and best eyepiece", "text": "The target as it looks in your eyepiece, and which of your eyepieces suits each object, with the reason.", "href": "/help/#optics" },
     { "title": "Short route", "text": "Your planned objects in the order with the least turning for your mount, starting where the telescope points now.", "href": "/help/#short-route" },
-    { "title": "Extended catalogue", "text": "About 13,000 galaxies, nebulae and clusters of the NGC and IC catalogues, and fainter stars.", "coming": true },
+    { "title": "Extended catalogue", "text": "The whole NGC and IC catalogues: about 10,000 more galaxies, nebulae and clusters, and about 790,000 more stars down to magnitude 11, on the map, in the search and in the eyepiece view. Downloaded once (6 MB), then it works offline.", "href": "/help/#extended" },
     { "title": "Observing programmes", "text": "Lists such as the Messier and Caldwell objects, with your progress.", "coming": true },
     { "title": "Logbook statistics", "text": "What you have seen, by night, object type and telescope, and more export formats.", "coming": true }
   ],
