@@ -949,6 +949,17 @@ const TESTS = {
     const r2 = await proKey('2027-09-01T00:00:00.000Z', '2028-09-01T00:00:00.000Z', { sb: 1 });
     await ev(p, k => proAdd(k), r2);
     ok(await ev(p, () => pro.on && new Date(pro.until).getUTCFullYear() === 2028 && $('proKeys').children.length === 2 && /starts later/.test($('proKeys').textContent)), 'a renewal that starts later extends Pro to its end');
+    // getting the key back after deleting the app: an email to themselves, and backups
+    const mail = await ev(p, () => !$('proMailRow').hidden && decodeURIComponent($('proMail').href));
+    ok(mail && mail.startsWith('mailto:?subject=') && mail.includes(k) && mail.includes(r2) && mail.includes('/app/#pro=') && mail.includes('/pro/welcome/?txn=txn_01test'), '“Email my key to me”: both keys, the app link and the welcome page link', mail && mail.slice(0, 120));
+    await ev(p, () => setSetTab('general'));
+    const [bdl] = await Promise.all([p.waitForEvent('download'), p.evaluate(() => $('bkLists').click())]);
+    const bkFile = await bdl.path(), bkPro = JSON.parse(fs.readFileSync(bkFile, 'utf8'));
+    ok(Array.isArray(bkPro.licences) && bkPro.licences.includes(k) && bkPro.licences.includes(r2), 'a backup holds the licence keys', bkPro.licences);
+    await ev(p, () => { localStorage.setItem('zenigo-pro', '[]'); return proCheck(); });
+    ok(await ev(p, () => !pro.on), 'app deleted (keys gone): Pro is off');
+    await p.setInputFiles('#bkFile', bkFile); await wait(p, 800);
+    ok(await ev(p, () => pro.on && new Date(pro.until).getUTCFullYear() === 2028 && /Zenigo Pro is back/.test($('hint').textContent)), 'restoring the backup brings both keys and Pro back', await ev(p, () => $('hint').textContent));
     // 30 days before the end: a reminder
     await p.clock.setSystemTime(new Date('2028-08-15T20:00:00Z')); await ev(p, () => { cfg.proRemindAt = 0; return proCheck().then(proRemind); });
     ok(await ev(p, () => /Zenigo Pro ends in 17 days/.test($('hint').textContent)), 'a reminder 30 days before the end', await ev(p, () => $('hint').textContent));
@@ -1006,6 +1017,8 @@ const TESTS = {
     await q.waitForSelector('#keyReady', { state: 'visible', timeout: 8000 }).catch(() => {});
     ok(await ev(q, () => JSON.parse(localStorage.getItem('zenigo-pro') || '[]').includes('ZP1.eyJ2IjoxfQ.c2ln') && /#pro=ZP1/.test(document.getElementById('keyOpen').href) && /until 26 October 2027/.test(document.getElementById('keyState').textContent)),
       'the welcome page waits for the key, keeps it for the app, links it into the app', await ev(q, () => document.getElementById('keyState').textContent));
+    const wmail = await ev(q, () => decodeURIComponent(document.getElementById('keyMail').href));
+    ok(wmail.startsWith('mailto:?subject=') && wmail.includes('ZP1.eyJ2IjoxfQ.c2ln') && wmail.includes('/pro/welcome/?txn=txn_01test') && wmail.includes('/app/#pro='), '“Email it to me”: the key, the app link and this page’s link', wmail.slice(0, 120));
     await done(q);
     const r = await open({ environment: 'production', clientToken: 'live_abc', priceId: 'pri_live' }, 390, PRO_KEY);
     const c2 = await ev(r, () => __pd.calls);

@@ -1142,6 +1142,8 @@ a.btn { text-decoration: none; color: var(--fg); }
       <p class="note" id="proKeyMsg" role="status"></p>
     </div>
     <ul class="prokeys" id="proKeys"></ul>
+    <div class="actions" id="proMailRow" hidden><a class="btn" id="proMail" href="mailto:">Email my key to me</a></div>
+    <p class="note" id="proMailNote" hidden>Keep the key: it brings Pro back if you delete Zenigo or change phones. Backups hold it too.</p>
     <p class="note"><a href="/pro/" target="_blank" rel="noopener">What Pro includes</a> · <a href="/licence/" target="_blank" rel="noopener">Licence agreement</a></p>
   </div>
 </div>
@@ -1466,7 +1468,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row"><button class="btn" id="bkLists">Back up lists</button><button class="btn" id="bkAll">Back up lists and settings</button></div>
       <div class="row"><button class="btn" id="bkImport">Restore from a backup</button><button class="btn" id="bkCsv">Logbook for a spreadsheet (CSV)</button></div>
       <input type="file" id="bkFile" accept=".json,application/json" hidden>
-      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include telescope and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm.</p>
+      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include telescope and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm. Every backup also holds your Zenigo Pro licence key, so restoring brings Pro back.</p>
     </fieldset>
     <fieldset data-stab="scope" id="optics">
       <legend>Telescope and eyepieces</legend>
@@ -5486,6 +5488,7 @@ function syncBackup() {
 }
 function exportBackup(all) {
   const d = ZSync.makeBackup(obs, cfg, all);   // version 4: the shape of version 3 plus change times and deletion marks
+  const keys = proKeys(); if (keys.length) d.licences = keys;   // Zenigo Pro keys, so that restoring brings Pro back
   download("zenigo-" + (all ? "backup" : "lists") + "-" + stamp() + ".json", JSON.stringify(d, null, 1), "application/json");
   obs.exportedAt = Date.now(); saveObs(); syncBackup();
 }
@@ -5516,13 +5519,22 @@ $("bkFile").onchange = async () => {
   let d;
   try { d = JSON.parse(await f.text()); if (!ZSync.readBackup(d)) throw new Error("format"); }
   catch (e) { hint("That file is not a Zenigo backup.", 4000); return; }
+  // Zenigo Pro keys in the backup: added to this device's like a pasted key (checked, sandbox keys not on zenigo.app)
+  let proMsg = "";
+  if (Array.isArray(d.licences)) {
+    const add = [];
+    for (const k of d.licences) { const p = typeof k === "string" ? await ZLicence.verify(k) : null; if (p && (!p.sb || proSandboxOk())) add.push(p.key); }
+    const had = pro.on;
+    if (add.length) { proSaveKeys([...proKeys(), ...add]); await proCheck(); }
+    if (pro.on && !had) proMsg = " Zenigo Pro is back, active until " + proDate(pro.until) + ".";
+  }
   // lists: add what is missing (also entries deleted here since the backup), never delete; any backup version
   const have = new Set(obs.log.map(e => e.uid)); let n = 0, m = 0;
   (d.log || []).forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); have.add(e.uid); n++; } });
   const lh = new Set(obs.list.map(x => x.id)); (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); lh.add(x.id); m++; } });
   const sh = new Set(obs.starred.map(x => x.id)); (d.starred || []).forEach(x => { if (x && x.id && !sh.has(x.id)) { obs.starred.push(x); sh.add(x.id); m++; } });
   saveObs(); syncBackup(); if (!$("logSheet").hidden) renderLog();
-  const lists = !n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects.");
+  const lists = (!n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects.")) + proMsg;
   if (d.settings && typeof d.settings === "object") {
     const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: telescope and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
     if (r === true) {
@@ -5587,6 +5599,17 @@ function renderPro() {
     b.textContent = x.active ? "running" : x.ended ? "ended" : "starts later";
     li.append(a, b); ul.append(li);
   });
+  const keep = pro.list.filter(p => !ZLicence.state(p).ended);
+  $("proMailRow").hidden = $("proMailNote").hidden = !keep.length;
+  if (keep.length) $("proMail").href = proMailHref(keep);
+}
+// The keys as an email the user sends to themselves (Zenigo keeps no address), to get Pro back after deleting the app
+function proMailHref(list) {
+  const o = location.origin, body = list.map(p => "Zenigo Pro, " + proDate(Date.parse(p.s)) + " – " + proDate(Date.parse(p.e)) + ":\r\n" + p.key
+    + "\r\n\r\nOpen Zenigo with this licence: " + o + "/app/#pro=" + encodeURIComponent(p.key)
+    + (p.o ? "\r\nShow the key again: " + o + "/pro/welcome/?txn=" + encodeURIComponent(p.o) : "")).join("\r\n\r\n")
+    + "\r\n\r\nOn another device: Menu › Zenigo Pro › Enter licence key, and paste the key.";
+  return "mailto:?subject=" + encodeURIComponent("My Zenigo Pro licence key") + "&body=" + encodeURIComponent(body);
 }
 // A Pro feature was asked for without Pro: say what it is and how to get it. Returns false, for `return proNeed(…)`.
 function proNeed(why) {

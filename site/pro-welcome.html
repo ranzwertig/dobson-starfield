@@ -22,8 +22,8 @@
       <p id="keyState" role="status">Your licence key is being prepared …</p>
       <div id="keyReady" hidden>
         <p class="keyline"><code id="keyText"></code></p>
-        <p class="cta"><a class="open" id="keyOpen" href="/app/">Open Zenigo with Pro</a> <button class="open ghost" id="keyCopy" type="button">Copy the key</button></p>
-        <p class="fine">In this browser Zenigo already has the key. On another device, or in Zenigo from the Home Screen on an iPhone or iPad, open Menu › Zenigo Pro › Enter licence key and paste it. Keep the key: you can enter it on all your devices.</p>
+        <p class="cta"><a class="open" id="keyOpen" href="/app/">Open Zenigo with Pro</a> <button class="open ghost" id="keyCopy" type="button">Copy the key</button> <a class="open ghost" id="keyMail" href="mailto:">Email it to me</a></p>
+        <p class="fine">In this browser Zenigo already has the key. On another device, or in Zenigo from the Home Screen on an iPhone or iPad, open Menu › Zenigo Pro › Enter licence key and paste it. Keep the key, for example by emailing it to yourself: you can enter it on all your devices, and it brings Pro back if you delete Zenigo or change phones.</p>
       </div>
     </div>
     <p class="muted">Questions or a problem with the order? Write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>, or see <a href="https://paddle.net" rel="noopener" target="_blank">paddle.net</a> for the payment and refunds.</p>
@@ -49,6 +49,12 @@
         store(j.licence);
         state.textContent = Date.parse(j.starts) > Date.now() + 864e5 ? "Your new year of Zenigo Pro runs from " + day(j.starts) + " to " + day(j.ends) + ", right after your current licence." : "Zenigo Pro is yours until " + day(j.ends) + ".";
         $("keyText").textContent = j.licence; $("keyOpen").href = "/app/#pro=" + encodeURIComponent(j.licence); $("keyReady").hidden = false;
+        // the key as an email to themselves (Zenigo keeps no address): their way back to it after deleting the app
+        const mail = "Zenigo Pro, " + day(j.starts) + " – " + day(j.ends) + ":\r\n" + j.licence
+          + "\r\n\r\nOpen Zenigo with this licence: " + location.origin + "/app/#pro=" + encodeURIComponent(j.licence)
+          + "\r\nShow the key again: " + location.origin + "/pro/welcome/?txn=" + encodeURIComponent(id)
+          + "\r\n\r\nOn another device: Menu › Zenigo Pro › Enter licence key, and paste the key.";
+        $("keyMail").href = "mailto:?subject=" + encodeURIComponent("My Zenigo Pro licence key") + "&body=" + encodeURIComponent(mail);
         $("keyCopy").onclick = async () => { try { await navigator.clipboard.writeText(j.licence); $("keyCopy").textContent = "Copied"; } catch (e) { getSelection().selectAllChildren($("keyText")); } };
         return;
       }
