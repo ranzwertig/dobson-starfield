@@ -8,7 +8,7 @@
 const ZLicence = (() => {
   // public keys that may sign licences (the build adds a test key for the UI tests only)
   const KEYS = [
-    { kty: 'EC', crv: 'P-256', x: 'ZCtYmiNCUU3t4WO__IdgAQpdLxkDmjcH4YhEP7Zx2JI', y: '0q27kjIuNJF-yt59CDCzVanIAikljgRmtgURJxNSE9A' },
+    { kty: 'EC', crv: 'P-256', x: 'QpRpvLI1_x-vbr1r87X7YjaVUvPi2QT2sdD9RgABO9w', y: 'DILCQl5Wb5CuxkY8AFYhko4NPbJ0xjAgvaabXXS5syM' },
     /*__PRO_TEST_KEY__*/
   ];
   const enc = new TextEncoder(), dec = new TextDecoder();
