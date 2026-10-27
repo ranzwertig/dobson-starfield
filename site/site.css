@@ -28,6 +28,10 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--amber); outline
 .brand { display: flex; align-items: center; gap: 12px; color: var(--star); text-decoration: none; font-weight: 600; font-size: 24px; letter-spacing: .2px; }
 .brand img { width: 40px; height: 40px; border-radius: 11px; display: block; }
 .brand span span { color: var(--amber); }
+/* Zenigo Pro in this browser (html.has-pro, set by the header): a small "Pro" at the logo's lower right corner */
+.brand .zl { position: relative; display: block; flex: none; }
+.propill { display: none; position: absolute; right: -7px; bottom: -5px; font: normal 600 9.5px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--amber); border-radius: 99px; padding: 2px 5px 1.5px; box-shadow: 0 0 0 2px var(--night); pointer-events: none; }
+html.has-pro .propill { display: block; }
 .open { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 99px; font-weight: 600; font-size: 17px;
   text-decoration: none; background: var(--amber); color: #1b1206; }
 .open:hover { background: #f6b964; }

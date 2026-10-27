@@ -38,7 +38,7 @@
     const $ = id => document.getElementById(id), id = new URLSearchParams(location.search).get("txn"), state = $("keyState");
     if (!id || !/^txn_[a-z0-9]+$/i.test(id)) { state.textContent = "This page shows the licence key after buying Zenigo Pro. If you bought it and see this, write to zenigo@christianranz.com."; return; }
     $("txn").textContent = id; $("txnRow").hidden = false;
-    const store = key => { try { const a = JSON.parse(localStorage.getItem("zenigo-pro") || "[]"); if (!a.includes(key)) a.push(key); localStorage.setItem("zenigo-pro", JSON.stringify(a)); } catch (e) {} };
+    const store = key => { try { const a = JSON.parse(localStorage.getItem("zenigo-pro") || "[]"); if (!a.includes(key)) a.push(key); localStorage.setItem("zenigo-pro", JSON.stringify(a)); } catch (e) {} document.documentElement.classList.add("has-pro"); };
     const day = iso => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     let tries = 0;
     async function ask() {

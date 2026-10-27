@@ -913,6 +913,14 @@ const TESTS = {
   async proapp() {
     const p = await page({ pro: false });
     ok(await ev(p, () => pro.checked && !pro.on && $('proMenuState').textContent === ''), 'no licence: Pro is off');
+    const pills = () => ev(p, () => ['#btnMenu', '#menuTitle', '#updateBar'].map(s => getComputedStyle(document.querySelector(s + ' .propill')).display !== 'none'));
+    ok((await pills()).every(x => !x), 'no “Pro” on the logos without Pro', await pills());
+    const proFeat = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).features;
+    await ev(p, () => proNeed('')); await wait(p, 300);
+    const incl = await ev(p, () => ({ shown: !$('proIncl').hidden && $('proIncl').offsetHeight > 0, items: [...document.querySelectorAll('#proIncl li b')].map(b => b.textContent), note: $('proIncl').querySelector('.note').textContent }));
+    ok(incl.shown && JSON.stringify(incl.items) === JSON.stringify(proFeat.filter(f => !f.coming).map(f => f.title)) && proFeat.filter(f => f.coming).every(f => incl.note.includes(f.title)) && !/<!--/.test(incl.note),
+      'without a licence the Pro sheet lists what Pro adds (from pro.json), planned features in the note', incl);
+    await ev(p, () => closeSheet('proSheet'));
     const tagged = () => ev(p, () => ['#btnSync', '#setTabSync', '#qView', '#oView', 'input[value="scope"]', 'input[data-show="sats"]'].map(q => {
       const e = document.querySelector(q), box = e.closest('label, button, .qrow, .row') || e.parentElement; const t = (box.closest('.qrow') || box).querySelector('.protag') || box.querySelector('.protag');
       return !!t && getComputedStyle(t).display !== 'none'; }));
@@ -943,6 +951,10 @@ const TESTS = {
     ok(await ev(p, () => !pro.on && /not a Zenigo Pro licence key/.test($('proKeyMsg').textContent)), 'a changed key is refused');
     await p.fill('#proKeyIn', k.slice(0, 40) + '\n' + k.slice(40)); await p.tap('#proKeyAdd'); await wait(p, 300);
     ok(await ev(p, () => pro.on && /active until/i.test($('proKeyMsg').textContent) && /until/.test($('proMenuState').textContent)), 'a pasted key (with a line break) turns Pro on', await ev(p, () => $('proKeyMsg').textContent));
+    ok((await pills()).every(Boolean), 'with Pro: a “Pro” on every logo (menu button, menu, update notice)', await pills());
+    ok(await ev(p, () => $('proIncl').hidden), 'with Pro running the list of what Pro adds is hidden');
+    ok(await ev(p, () => { const l = document.querySelector('#btnMenu img').getBoundingClientRect(), t = document.querySelector('#btnMenu .propill').getBoundingClientRect(), b = $('btnMenu').getBoundingClientRect();
+      return t.left + t.width / 2 > l.left + l.width / 2 && t.top + t.height / 2 > l.top + l.height / 2 && t.right <= b.right && t.bottom <= b.bottom; }), 'the “Pro” sits at the logo’s lower right, inside the menu button');
     ok(await ev(p, () => satsOn !== undefined && (setShow({ ...cfg.show, sats: true }), cfg.show.sats)), 'satellites can be switched on now');
     ok((await tagged()).every(x => !x) && await ev(p, () => getComputedStyle(document.querySelector('.rolecard .nopro')).display === 'none'), 'with Pro the tags are gone', await tagged());
     // a renewal bought before the end: starts later, and Pro runs until its end
@@ -966,10 +978,16 @@ const TESTS = {
     // the end: Pro goes off, data stays, the app says so once
     await p.clock.setSystemTime(new Date('2028-09-02T20:00:00Z')); await ev(p, () => proCheck());
     ok(await ev(p, () => !pro.on && !satsOn() && /has ended/.test($('hint').textContent) && $('proMenuState').textContent === 'ended'), 'after the end: Pro is off and the app says so');
+    ok((await pills()).every(x => !x), 'and the “Pro” on the logos is gone', await pills());
     // a link with a key (#pro=…) adds it; a sandbox key is refused on zenigo.app
     const k3 = await proKey('2028-08-01T00:00:00.000Z', '2029-08-01T00:00:00.000Z', { sb: 1 });
     await p.goto(base + '/app/#pro=' + encodeURIComponent(k3)); await p.waitForFunction(() => typeof pro !== 'undefined' && pro.on, null, { timeout: 8000 }).catch(() => {});
     ok(await ev(p, () => pro.on && !/pro=/.test(location.hash)), 'a #pro= link adds the key and leaves the address', await ev(p, () => [typeof pro !== 'undefined' && pro, location.hash.slice(0, 20), Date()]));
+    await wait(p, 300);
+    ok(await ev(p, () => !$('proSheet').hidden && $('proKeyBox').hidden && /Active until/.test($('proStatus').textContent) && /active until/i.test($('hint').textContent)), 'from the welcome page: the Pro sheet shows Pro running, without the key field', await ev(p, () => [$('proKeyBox').hidden, $('proStatus').textContent, $('hint').textContent]));
+    await ev(p, () => closeSheet('proSheet'));
+    await p.goto(base + '/app/#pro=' + encodeURIComponent(k3.slice(0, -4) + 'AAAA')); await wait(p, 1500);
+    ok(await ev(p, () => !$('proSheet').hidden && !$('proKeyBox').hidden && /not a Zenigo Pro licence key/.test($('proKeyMsg').textContent)), 'a broken key in a link: the key field, with the reason', await ev(p, () => $('proKeyMsg').textContent));
     ok(await ev(p, async () => { const h = location.hostname; return h !== 'zenigo.app'; }) && await ev(p, async k => { const p0 = await ZLicence.verify(k); return !!(p0 && p0.sb); }, k3), 'test keys are sandbox keys (refused on zenigo.app itself)');
     await done(p);
   },
@@ -998,6 +1016,7 @@ const TESTS = {
     ok(await p.isVisible('#proBuy') && await p.isDisabled('#proBuy'), 'the page renders with its Buy button, disabled without a configuration');
     ok(/Checkout unavailable/.test(await p.textContent('#proState')) && await p.isVisible('#proState'), 'the config endpoint fails: “Checkout unavailable”');
     ok(p.paddle.length === 0, 'and nothing is loaded from Paddle', p.paddle);
+    ok(await ev(p, () => getComputedStyle(document.querySelector('.brand .propill')).display === 'none'), 'no Pro in this browser: no “Pro” on the logo');
     const proJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).structuredData;
     ok(await p.textContent('#proPrice') === new Intl.NumberFormat('en', { style: 'currency', currency: proJson.currency }).format(Number(proJson.price)) && /in the EU, including VAT/i.test(await p.textContent('#proTax')), 'without Paddle the EU base price from pro.json is shown, with its tax note');
     ok(await ev(p, () => ['.menumeta', 'footer nav'].every(s => !!document.querySelector(s + ' a[href="/licence/"]') && !!document.querySelector(s + ' a[href="/pro/#refunds"]') && !!document.querySelector(s + ' a[href="/privacy/"]'))), 'licence terms, refund policy and privacy in the menu and the footer');
@@ -1017,6 +1036,7 @@ const TESTS = {
     await q.waitForSelector('#keyReady', { state: 'visible', timeout: 8000 }).catch(() => {});
     ok(await ev(q, () => JSON.parse(localStorage.getItem('zenigo-pro') || '[]').includes('ZP1.eyJ2IjoxfQ.c2ln') && /#pro=ZP1/.test(document.getElementById('keyOpen').href) && /until 26 October 2027/.test(document.getElementById('keyState').textContent)),
       'the welcome page waits for the key, keeps it for the app, links it into the app', await ev(q, () => document.getElementById('keyState').textContent));
+    ok(await ev(q, () => getComputedStyle(document.querySelector('.brand .propill')).display !== 'none'), 'the welcome page puts “Pro” on the logo once the key is there');
     const wmail = await ev(q, () => decodeURIComponent(document.getElementById('keyMail').href));
     ok(wmail.startsWith('mailto:?subject=') && wmail.includes('ZP1.eyJ2IjoxfQ.c2ln') && wmail.includes('/pro/welcome/?txn=txn_01test') && wmail.includes('/app/#pro='), '“Email it to me”: the key, the app link and this page’s link', wmail.slice(0, 120));
     await done(q);
@@ -1027,6 +1047,7 @@ const TESTS = {
     const o = (await ev(r, () => __pd.calls)).find(c => c[0] === 'open');
     ok(o && o[1].settings.displayMode === 'overlay' && o[1].settings.variant === 'one-page' && o[1].items[0].priceId === 'pri_live' && o[1].items[0].quantity === 1, 'Buy opens the one-page overlay for that price', o);
     const mineId = (await ZLicence.verify(PRO_KEY, [PRO_TEST.pub])).id;
+    ok(await ev(r, () => getComputedStyle(document.querySelector('.brand .propill')).display !== 'none'), 'Pro in this browser: “Pro” on the logo in the header');
     ok(o && o[1].customData && o[1].customData.renew === mineId && /until 31 December 2027/.test(await r.textContent('#proHave')) && /Renew/.test(await r.textContent('#proBuy')), 'Pro already in this browser: shown, and the purchase renews it', o && o[1].customData);
     await done(r);
   },

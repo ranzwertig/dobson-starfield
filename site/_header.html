@@ -1,6 +1,6 @@
 <header class="sitehead" id="sitehead">
   <div class="wrap top">
-    <a class="brand" href="/"><img src="/app/logo.svg" alt=""><span>zeni<span>go</span></span></a>
+    <a class="brand" href="/"><span class="zl"><img src="/app/logo.svg" alt=""><i class="propill" aria-hidden="true">Pro</i></span><span>zeni<span>go</span></span></a>
     <nav class="topnav" aria-label="Main">
       <a class="prim" href="/features/">Features</a>
       <a class="prim" href="/getting-started/">Getting started</a>
@@ -20,6 +20,14 @@
   </div>
   <div class="menuback" hidden></div>
   <script>
+    // Zenigo Pro in this browser (keys kept by the welcome page and the app, localStorage "zenigo-pro"): a small "Pro" on
+    // the logo. Only the dates are read here, the app checks the signatures; sandbox keys don't count on zenigo.app.
+    try {
+      const now = Date.now(), keys = JSON.parse(localStorage.getItem("zenigo-pro") || "[]");
+      document.documentElement.classList.toggle("has-pro", Array.isArray(keys) && keys.some(k => {
+        try { const b = String(k).split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), p = JSON.parse(atob(b + "===".slice((b.length + 3) % 4))); return Date.parse(p.s) <= now + 864e5 && Date.parse(p.e) > now && !(p.sb && location.hostname === "zenigo.app"); } catch (e) { return false; }
+      }));
+    } catch (e) {}
     // The menu: under the header on wide screens, the whole screen on phones. The header stays in view while it is
     // open (fixed at the top); Esc, ✕, a tap on the darkened page or a link close it.
     (() => {

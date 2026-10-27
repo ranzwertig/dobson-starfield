@@ -76,7 +76,13 @@ for (const chunk of [astronomy, core, satjs, syncJs]) if (/<\/script/i.test(chun
 
 // The scripts are served as separate files (named by their content), loaded with defer: the page with its start screen
 // paints at once, and the browser compiles the scripts in the background instead of blocking on one huge inline script.
-let page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss);
+// Zenigo Pro as described in site/pro.json: the website's Pro page (below) and the app's Pro sheet (what Pro adds)
+const PRO = JSON.parse(read('site/pro.json'));
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const proSoon = PRO.features.filter(f => f.coming).map(f => f.title);
+const proIncl = PRO.features.filter(f => !f.coming).map(f => `<li><b>${esc(f.title)}</b><span>${esc(f.text)}</span></li>`).join('');
+const proSoonText = proSoon.length ? esc('Planned, and included if ' + (proSoon.length > 1 ? 'they arrive' : 'it arrives') + ' during your licence: ' + (proSoon.length > 1 ? proSoon.slice(0, -1).join(', ') + ' and ' + proSoon.at(-1) : proSoon[0]) + '.') : '';
+let page = read('src/app.html').replace('/*__FONTS__*/', () => fontCss).replace('<!--PRO-INCL-->', () => proIncl).replace('<!--PRO-SOON-->', () => proSoonText);
 const mainOpen = '<script id="main">', mi = page.indexOf(mainOpen), me = page.lastIndexOf('</script>');
 if (mi < 0 || me < mi) throw new Error('main script not found');
 const fJsqr = `jsqr.${createHash('sha256').update(jsqr).digest('hex').slice(0, 10)}.js`;
@@ -93,15 +99,19 @@ page = page.replace('<script>/*__ASTRONOMY__*/</script>', `<script src="${fAstro
 if (/__ASTRONOMY__|__SATELLITE__|__CORE__|__SYNC__/.test(page)) throw new Error('script marker left in the page');
 // start screen: drawn by the HTML alone, before any script runs; red light is applied right away
 const logoSvg = read('public/app/logo.svg').replace(/<\?xml[^>]*>/, '').trim();
-const splash = '<div id="splash" aria-hidden="true">' + logoSvg.replace('<svg', '<svg class="splogo"') + '<b>zeni<i>go</i></b><div class="sp"></div></div>'
+const splash = '<div id="splash" aria-hidden="true"><span class="zl">' + logoSvg.replace('<svg', '<svg class="splogo"') + '<i class="propill">Pro</i></span><b>zeni<i>go</i></b><div class="sp"></div></div>'
   + '<script>setTimeout(function(){var s=document.getElementById("splash");if(s)s.classList.add("gone")},10000)</script>';
 const splashCss = '#splash{position:fixed;inset:0;z-index:1000;display:grid;place-content:center;justify-items:center;gap:16px;background:#0a0c0f;color:#e8ecf2;'
   + 'font:600 30px/1 "Saira Semi Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.3px;transition:opacity .4s}'
-  + '#splash.gone{opacity:0;pointer-events:none}#splash .splogo{width:88px;height:88px;border-radius:22px}#splash b i{font-style:normal;color:#f0a845}'
+  + '#splash.gone{opacity:0;pointer-events:none}#splash .splogo{width:88px;height:88px;border-radius:22px;display:block}#splash b i{font-style:normal;color:#f0a845}'
+  + '#splash .zl{position:relative}#splash .propill{display:none;position:absolute;right:-12px;bottom:-8px;font-style:normal;font-weight:600;font-size:15px;line-height:1;letter-spacing:.08em;text-transform:uppercase;'
+  + 'color:#1b1206;background:#f0a845;border-radius:99px;padding:4px 8px 3px;box-shadow:0 0 0 3px #0a0c0f}html.pro #splash .propill{display:block}'
   + '#splash .sp{margin-top:6px;width:24px;height:24px;border-radius:50%;border:2px solid #262d3a;border-top-color:#f0a845;animation:spl 1s linear infinite}'
   + '@keyframes spl{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){#splash .sp{animation:none}#splash{transition:none}}'
   + 'html.red{filter:grayscale(1) sepia(1) saturate(7) hue-rotate(-38deg) brightness(.72)}';
-const redEarly = '<script>try{if((JSON.parse(localStorage.getItem("dobson-lotse")||"{}")||{}).red)document.documentElement.classList.add("red")}catch(e){}</script>';
+// red light, and Zenigo Pro as last checked (the "Pro" on the start screen's logo), before anything is drawn
+const redEarly = '<script>try{if((JSON.parse(localStorage.getItem("dobson-lotse")||"{}")||{}).red)document.documentElement.classList.add("red")}catch(e){}'
+  + 'try{var zp=JSON.parse(localStorage.getItem("zenigo-pro-state")||"null");if(zp&&zp.until>Date.now())document.documentElement.classList.add("pro")}catch(e){}</script>';
 const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">'
   + '<meta name="robots" content="noindex">'
@@ -170,8 +180,6 @@ function faqLd(html) {
 // Zenigo Pro: what it includes and what stays free, from site/pro.json (one place to edit), into site/pro.html; the
 // home page's structured data gets the Pro offer from the same file. The page shows that base price (EU, VAT included)
 // until Paddle's price for the visitor's country has loaded, so the price is there without Paddle too.
-const PRO = JSON.parse(read('site/pro.json'));
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const proPrice = new Intl.NumberFormat('en', { style: 'currency', currency: PRO.structuredData.currency }).format(Number(PRO.structuredData.price));
 const proHtml = html => html.replaceAll('<!--PRO-NAME-->', esc(PRO.name)).replaceAll('<!--PRO-TAGLINE-->', esc(PRO.tagline)).replaceAll('<!--PRO-TERMS-->', esc(PRO.terms)).replaceAll('<!--PRO-PRICE-->', esc(proPrice))
   .replace('<!--PRO-FEATURES-->', PRO.features.map(f => `      <dt${f.coming ? ' class="coming"' : ''}>${f.href ? `<a href="${esc(f.href)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`).join('\n'))
