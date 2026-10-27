@@ -306,9 +306,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ltiles .pb { height: 5px; border-radius: 3px; background: var(--line); }
 .ltiles .pb i { display: block; height: 5px; border-radius: 3px; background: var(--accent); }
 /* Logbook: Entries | Statistics, the statistics, the filters, export */
-.ltabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 3px; border-radius: 11px; background: #0b0e12; border: 1px solid var(--line); margin-top: 8px; }
-.ltabs button { height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: 600 15px var(--font-ui); cursor: pointer; }
-.ltabs button[aria-selected="true"] { background: var(--line); color: #f6d39c; }
+.ltabs { margin-top: 8px; }
 .lpane { display: grid; gap: 12px; }
 .ltiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .ltiles.four > div { padding: 10px 8px; }
@@ -587,8 +585,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet fieldset, .sheet label { min-width: 0; }
 .sheet input, .sheet select, .sheet textarea { min-width: 0; max-width: 100%; }
 .sheet select { text-overflow: ellipsis; }
-.settabs { padding-top: 2px; }
-.settabs .chip.sel { border-color: var(--accent); color: var(--accent); }
+.settabs { margin-top: 2px; }
+.segtabs.settabs > .chip { padding: 0 6px; font-size: 14.5px; }   /* five tabs fit a phone, also with two Pro tags */
+
 .sheet [data-stab].off { display: none; }
 .sheet.dragging .inner { transition: none; }
 .sheet.tall .inner { height: 88%; }
@@ -864,6 +863,13 @@ a.btn { text-decoration: none; color: var(--fg); }
 .chip.sel { border-color: var(--target); color: var(--target); }
 .chip.below { opacity: .45; }
 .chip.cat.sel { border-color: var(--accent); color: var(--accent); background: rgba(240,168,69,.1); }
+/* Tabs: a segmented control (logbook, lists, settings, photo, programmes); scrolls sideways when the tabs don't fit */
+.segtabs { display: flex; padding: 3px; border-radius: 11px; background: #0b0e12; border: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.segtabs::-webkit-scrollbar { display: none; }
+.segtabs > button, .segtabs > .chip { flex: 1 0 auto; min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: 600 15px var(--font-ui); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+.segtabs > button:hover { color: var(--fg); }
+.segtabs > [aria-selected="true"], .segtabs > .chip.sel { background: var(--line); color: #f6d39c; }
+.segtabs i.protag { font-size: 9.5px; padding: 1px 4px; margin-left: 2px; }
 .chips .cdiv { width: 1px; align-self: stretch; background: var(--line); margin: 2px 2px; }
 .fitbox .fitl { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
 .fitbox .fitl b { color: var(--fg); font-weight: 600; }
@@ -933,8 +939,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 .phlist .new { font-size: 12px; color: #f6cf93; border: 1px solid #6b5228; border-radius: 9px; padding: 1px 7px; }
 .phlist .seen svg { width: 18px; height: 18px; color: var(--ok); }
 .phlist .empty { padding: 14px; color: var(--muted); font-size: 14px; }
-#phTabs .chip[aria-selected="true"] { border-color: var(--accent); color: #f6cf93; background: rgba(240,168,69,.14); }
-#phTabs .chip small { font-family: var(--font-num); font-size: 11.5px; margin-left: 3px; }
+#phTabs .chip small { font-family: var(--font-num); font-size: 11.5px; margin-left: 1px; font-weight: 400; }
 .phprev { justify-self: center; display: block; max-width: 160px; max-height: 240px; border-radius: 8px; border: 1px solid #2f3742; background: #07090c; }
 #phSize button { display: grid; justify-items: center; line-height: 1.2; }
 #phSize button small { font-family: var(--font-num); font-size: 10.5px; color: var(--muted); font-weight: 400; }
@@ -1325,7 +1330,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <div class="grab"><h2 id="listTitle"><span>Observing list</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="sbody">
     <p class="note" id="listSub" style="margin-top:-8px"></p>
-    <div class="chips" id="listTabs"><button class="chip" data-ltab="todo"></button><button class="chip" data-ltab="seen"></button><button class="chip" data-ltab="starred"></button></div>
+    <div class="segtabs" id="listTabs" role="tablist" aria-label="Lists"><button class="chip" role="tab" data-ltab="todo"></button><button class="chip" role="tab" data-ltab="seen"></button><button class="chip" role="tab" data-ltab="starred"></button></div>
     <div class="olist" id="listBody"></div>
     </div>
     <div class="lbar bar"><button class="btn primary" id="listNext"></button><button class="btn" id="listAdd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
@@ -1352,7 +1357,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <div class="sheet tall" id="logSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="logTitle">
     <div class="grab"><h2 id="logTitle"><button class="iconbtn" id="logMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Logbook</span> <button class="iconbtn" id="logExport" aria-label="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
-      <div class="ltabs" id="logTabs" role="tablist" aria-label="Logbook"><button role="tab" data-ltab2="entries" aria-selected="true">Entries</button><button role="tab" data-ltab2="stats" aria-selected="false">Statistics<i class="protag">Pro</i></button></div></div>
+      <div class="segtabs ltabs" id="logTabs" role="tablist" aria-label="Logbook"><button role="tab" data-ltab2="entries" aria-selected="true">Entries</button><button role="tab" data-ltab2="stats" aria-selected="false">Statistics<i class="protag">Pro</i></button></div></div>
     <div class="lpane" id="logEntriesBox">
     <div class="ltiles" id="logTiles"></div>
     <button class="lsuggest" id="logProg"></button>
@@ -1458,7 +1463,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 <div class="sheet" id="phListSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="phListTitle">
     <div class="grab"><h2 id="phListTitle"><span>In this photo</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
-    <div class="chips" id="phTabs" role="tablist" aria-label="Show"></div>
+    <div class="segtabs" id="phTabs" role="tablist" aria-label="Show"></div>
     <div class="phlist" id="phList"></div>
     <p class="note" id="phListNote">Tap an object to see it on the photo and its details. “new” means it is not in your logbook yet.</p>
     <div class="qbtns"><button class="btn" id="phStarNew">Star the new ones</button><button class="btn primary" id="phLogAll">Log as seen</button></div>
@@ -1582,7 +1587,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Equipment</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live<i class="protag">Pro</i></button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="segtabs settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Equipment</button><button class="chip" role="tab" data-stab="cam">Camera</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live<i class="protag">Pro</i></button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -5488,7 +5493,7 @@ function renderList() {
   const todo = todoItems(), seenT = obs.log.filter(e => nightKey(new Date(e.t)) === k && e.result !== "miss");
   const seenIds = [...new Set(seenT.map(e => e.obj))];
   const counts = { todo: "Planned · " + todo.length, seen: "Seen tonight · " + seenIds.length, starred: "Starred · " + obs.starred.length };
-  document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.textContent = counts[t]; });
+  document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.setAttribute("aria-selected", String(t === listTab.v)); b.textContent = counts[t]; });
   body.textContent = "";
   const note = html => { const p = document.createElement("p"); p.className = "note"; p.innerHTML = html; body.append(p); };
   // the current target on top, also when it isn't planned: tap opens its panel
@@ -6302,7 +6307,7 @@ function renderProgs() {
     acts.append(c, h);
   }
   if (acts.children.length) body.append(acts);
-  const tabs = document.createElement("div"); tabs.className = "chips pgtabs"; tabs.setAttribute("role", "tablist");
+  const tabs = document.createElement("div"); tabs.className = "segtabs pgtabs"; tabs.setAttribute("role", "tablist"); tabs.setAttribute("aria-label", "Objects");
   [["open", "Open · " + open.length], ["seen", "Seen · " + s.done], ["all", "All · " + s.n]].forEach(([k, t]) => {
     const b = document.createElement("button"); b.className = "chip" + (progState.tab === k ? " sel" : ""); b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(progState.tab === k)); b.dataset.ptab = k; b.textContent = t;
     b.onclick = () => { progState.tab = k; renderProgs(); }; tabs.append(b);
@@ -9041,7 +9046,7 @@ function showTonight() {
   box.append(el("p", "tn-note", "For " + $("wxLoc").textContent.replace(/^for /, "") + ", times in your phone’s time zone. Tap an object for details or to make it your target."));
 }
 /* ---------------- Diagnostics: see what Locate worked with ---------------- */
-// Switched on in Settings › Camera & sensors. Then each Locate keeps its stacked image, the first single frame and the
+// Switched on in Settings › Camera. Then each Locate keeps its stacked image, the first single frame and the
 // numbers, a tap on the status opens them, and while the live camera runs a small line shows how many points of light
 // a quick look finds and how sharp they are (for focusing).
 const diag = { last: null, hist: [], layer: "stretch", marks: true, zoom: 1, zx: 0.5, zy: 0.5 };
