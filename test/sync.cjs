@@ -5,7 +5,8 @@ const fx = n => JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", n), 
 const results = [];
 async function t(name, fn) { try { await fn(); results.push([name, true]); } catch (e) { results.push([name, false]); console.log("  ✗ " + name + "\n    " + (e.stack || e).toString().split("\n").slice(0, 3).join("\n    ")); } }
 const freshObs = () => Z.migrateObs({ list: [], starred: [], log: [], exportedAt: 0 });
-const cfgOf = (o = {}) => ({ lat: 48.18, lon: 10.08, mount: "altaz", show: { stars: true }, optics: { scope: 1200, eps: [{ f: 25, a: 52 }], ep: 0 }, tele: { x: 0, y: 0 }, ...o });
+const inst = (id, o = {}, extra = {}) => ({ id, name: "Telescope " + id, type: "dob", mount: "altaz", o: { scope: 1200, eps: [{ f: 25, a: 52 }], ...o }, u: 0, ...extra });
+const cfgOf = (o = {}) => ({ lat: 48.18, lon: 10.08, mount: "altaz", show: { stars: true }, optics: { scope: 1200, eps: [{ f: 25, a: 52 }], ep: 0, ring: true }, instruments: [inst("i1")], instrumentId: "i1", tele: { x: 0, y: 0 }, ...o });
 const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "easy", note: "", ...extra });
 
 (async () => {
@@ -27,9 +28,11 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
   });
   await t("settings: only synced settings get a time, only when changed", () => {
     const c = cfgOf(); let s = Z.snapSettings(c);
-    c.lat = 47.5; c.tele = { x: 1, y: 1 }; c.optics.ep = 1; c.optics.scope = 1000;
+    c.lat = 47.5; c.tele = { x: 1, y: 1 }; c.optics.ep = 1; c.optics.scope = 1000; c.instrumentId = "i2";
     s = Z.stampSettings(c, s, 500);
-    assert.deepEqual(c.syncT, { lat: 500, "optics.scope": 500 });
+    assert.deepEqual(c.syncT, { lat: 500 }, "the instrument in use, its selected eyepiece and the working copy belong to the device");
+    c.instruments[0].o.scope = 1000; s = Z.stampSettings(c, s, 600);
+    assert.deepEqual(c.syncT, { lat: 500, instruments: 600 });
   });
   await t("merge: union of both devices, newer change wins, deletions win over older entries", () => {
     const A = freshObs(), B = freshObs();
@@ -54,9 +57,9 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
     assert.equal(Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal(B, cfgOf())).log.length, 0);
   });
   await t("merge: settings per setting, the newer one wins, equal times decide the same way everywhere", () => {
-    const ca = cfgOf({ lat: 47, syncT: { lat: 100, mount: 5 } }), cb = cfgOf({ lat: 46, mount: "eq", syncT: { lat: 50, mount: 10 } });
+    const ca = cfgOf({ lat: 47, syncT: { lat: 100, show: 5 } }), cb = cfgOf({ lat: 46, show: { stars: false }, syncT: { lat: 50, show: 10 } });
     const m = Z.merge(Z.fromLocal(freshObs(), ca), Z.fromLocal(freshObs(), cb));
-    assert.equal(m.settings.v.lat, 47); assert.equal(m.settings.v.mount, "eq");
+    assert.equal(m.settings.v.lat, 47); assert.equal(m.settings.v.show.stars, false);
     const x = cfgOf({ lat: 1 }), y = cfgOf({ lat: 2 });
     const r1 = Z.merge(Z.fromLocal(freshObs(), x), Z.fromLocal(freshObs(), y)).settings.v.lat;
     const r2 = Z.merge(Z.fromLocal(freshObs(), y), Z.fromLocal(freshObs(), x)).settings.v.lat;
@@ -97,22 +100,43 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
     const e = Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal(B, cfgOf())).log[0];
     assert.equal(e.note, ""); assert.equal(e.result, "hard");
   });
-  await t("collisions: eyepieces added, removed or edited on two devices are combined", () => {
-    const e25 = { f: 25, a: 52 }, e10 = { f: 10, a: 52 }, e6 = { f: 6, a: 60 }, e32 = { f: 32, a: 50 };
-    const base = { settings: { v: { "optics.eps": [e25, e10] } } };
-    const ca = cfgOf({ optics: { scope: 1200, eps: [e25, e10, e6], ep: 0 }, syncT: { "optics.eps": 10 } });
-    const cb = cfgOf({ optics: { scope: 1200, eps: [e25, e10, e32], ep: 0 }, syncT: { "optics.eps": 20 } });
-    const m = Z.merge(Z.fromLocal(freshObs(), cb), Z.fromLocal(freshObs(), ca), { base });
-    assert.deepEqual(m.settings.v["optics.eps"].map(e => e.f), [25, 10, 32, 6]); assert.equal(m.settings.t["optics.eps"], 21);
-    const m2 = Z.merge(Z.fromLocal(freshObs(), ca), Z.fromLocal(freshObs(), cb), { base });
-    assert.deepEqual(m2.settings.v["optics.eps"].map(e => e.f).sort(), [10, 25, 32, 6].sort(), "both devices end up with all four");
-    // one device removes the 10 mm and edits the 25 mm, the other adds a 6 mm
-    const cc = cfgOf({ optics: { scope: 1200, eps: [{ f: 25, a: 68 }], ep: 0 }, syncT: { "optics.eps": 30 } });
-    const m3 = Z.merge(Z.fromLocal(freshObs(), ca), Z.fromLocal(freshObs(), cc), { base });
-    assert.deepEqual(m3.settings.v["optics.eps"], [e6, { f: 25, a: 68 }]);
-    // changed on one device only: taken as it is
-    const m4 = Z.merge(Z.fromLocal(freshObs(), cfgOf({ optics: { scope: 1200, eps: [e25, e10], ep: 0 } })), Z.fromLocal(freshObs(), ca), { base });
-    assert.deepEqual(m4.settings.v["optics.eps"].map(e => e.f), [25, 10, 6]);
+  await t("instruments: added, edited and deleted on two devices are combined record by record", () => {
+    const d = inst("i1"), e = inst("i2", { scope: 600 }, { type: "refr" }), b = { id: "b1", name: "Binoculars 10×50", type: "bino", bino: { mag: 10, ap: 50, fov: 6.5 }, u: 0 };
+    const base = { settings: { v: { instruments: [d, e] } } };
+    // A: adds binoculars and gives the Dobson a 6 mm; B: adds an ED 80 and deletes the refractor
+    const A = cfgOf({ instruments: [{ ...d, o: { ...d.o, eps: [...d.o.eps, { f: 6, a: 60 }] }, u: 10 }, e, b] });
+    const ed = inst("i3", { scope: 480 }, { name: "ED 80", type: "refr", u: 12 });
+    const B = cfgOf({ instruments: [d, ed] });
+    for (const [r, l] of [[A, B], [B, A]]) {
+      const v = Z.merge(Z.fromLocal(freshObs(), r), Z.fromLocal(freshObs(), l), { base }).settings.v.instruments;
+      assert.deepEqual(v.map(i => i.id).sort(), ["b1", "i1", "i3"], "the refractor is gone, the new ones are in");
+      assert.deepEqual(v.find(i => i.id === "i1").o.eps.map(x => x.f), [25, 6], "the Dobson keeps the new eyepiece");
+    }
+    // the same instrument changed on both: the newer change wins
+    const C = cfgOf({ instruments: [{ ...d, name: "Dobson 8", u: 30 }, e] }), D = cfgOf({ instruments: [{ ...d, name: "My Dob", u: 20 }, e] });
+    assert.equal(Z.merge(Z.fromLocal(freshObs(), C), Z.fromLocal(freshObs(), D), { base }).settings.v.instruments[0].name, "Dobson 8");
+    assert.equal(Z.merge(Z.fromLocal(freshObs(), D), Z.fromLocal(freshObs(), C), { base }).settings.v.instruments[0].name, "Dobson 8");
+    // eyepieces added to the same telescope on each device, and its name changed on one: all of it on both
+    const P = cfgOf({ instruments: [{ ...d, o: { ...d.o, eps: [...d.o.eps, { f: 6, a: 60 }] }, u: 50 }, e] });
+    const Q = cfgOf({ instruments: [{ ...d, name: "Dobson 8″", o: { ...d.o, eps: [...d.o.eps, { f: 32, a: 50 }] }, u: 40 }, e] });
+    for (const [r, l] of [[P, Q], [Q, P]]) {
+      const x = Z.merge(Z.fromLocal(freshObs(), r), Z.fromLocal(freshObs(), l), { base }).settings.v.instruments[0];
+      assert.deepEqual(x.o.eps.map(y => y.f).sort((p, q) => p - q), [6, 25, 32]); assert.equal(x.name, "Dobson 8″"); assert.equal(x.u, 51);
+    }
+    // deleted on one device, changed on the other since: it stays
+    const E = cfgOf({ instruments: [d] }), F = cfgOf({ instruments: [d, { ...e, name: "Refractor 102", u: 40 }] });
+    assert.equal(Z.merge(Z.fromLocal(freshObs(), E), Z.fromLocal(freshObs(), F), { base }).settings.v.instruments.length, 2);
+    // without the last synced version (joining a group): all instruments of both devices
+    const G = cfgOf({ instruments: [d] }), H = cfgOf({ instruments: [ed] });
+    assert.deepEqual(Z.merge(Z.fromLocal(freshObs(), G), Z.fromLocal(freshObs(), H)).settings.v.instruments.map(i => i.id), ["i1", "i3"]);
+  });
+  await t("instruments: the single telescope of schema 1.0 stays in the shared copy for older apps", () => {
+    const remote = Z.fromLocal(freshObs(), cfgOf()); remote.schema = { major: 1, minor: 0 };
+    remote.settings.v["optics.eps"] = [{ f: 9, a: 60 }]; remote.settings.v.mount = "eq"; remote.settings.t["optics.eps"] = 5;
+    const m = Z.merge(remote, Z.fromLocal(freshObs(), cfgOf()));
+    assert.deepEqual(m.settings.v["optics.eps"], [{ f: 9, a: 60 }]); assert.equal(m.settings.v.mount, "eq");
+    const c = cfgOf(); Z.apply(m, freshObs(), c);
+    assert.equal(c.mount, "altaz"); assert.deepEqual(c.optics.eps, [{ f: 25, a: 52 }], "not applied: the instruments carry them now");
   });
   await t("collisions: latitude, longitude and its source always come from the same device", () => {
     const ca = cfgOf({ lat: 47.1, lon: 9.1, loc: { src: "gps" }, syncT: { lat: 10, lon: 10, loc: 10 } });
@@ -124,10 +148,11 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
   });
   await t("apply: merged copy into lists and settings; device settings untouched", () => {
     const o = freshObs(), c = cfgOf({ tele: { x: 3, y: 4 } });
-    const p = Z.fromLocal(freshObs(), cfgOf({ lat: 40, optics: { scope: 900, eps: [{ f: 9, a: 60 }], ep: 0 } }));
+    const p = Z.fromLocal(freshObs(), cfgOf({ lat: 40, instruments: [inst("i1", { scope: 900, eps: [{ f: 9, a: 60 }] })], instrumentId: "other" }));
     p.log = [entry("z", "M42", "2025-02-01T20:00:00Z", { u: 3 })]; p.settings.t.lat = 77;
     assert.equal(Z.apply(p, o, c), true);
-    assert.equal(c.lat, 40); assert.equal(c.optics.scope, 900); assert.deepEqual(c.tele, { x: 3, y: 4 }); assert.equal(c.optics.ep, 0);
+    assert.equal(c.lat, 40); assert.equal(c.instruments[0].o.scope, 900); assert.deepEqual(c.tele, { x: 3, y: 4 }); assert.equal(c.optics.ep, 0);
+    assert.equal(c.instrumentId, "i1", "which instrument the device uses stays");
     assert.equal(c.syncT.lat, 77); assert.equal(o.log[0].uid, "z");
     assert.equal(Z.apply(p, o, c), false, "nothing changed the second time");
   });

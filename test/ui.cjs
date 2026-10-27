@@ -82,6 +82,8 @@ async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [],
 const ev = (p, fn, arg) => p.evaluate(fn, arg);
 const wait = (p, ms = 400) => p.waitForTimeout(ms);
 const openSheets = p => ev(p, () => SHEETS.filter(x => !x.hidden && x.classList.contains('open')).map(x => x.id).sort().join('+'));
+// screenshots for a look at new screens: SHOTS=<folder> node test/ui.cjs <test>
+const shot = (p, name) => process.env.SHOTS ? p.screenshot({ path: path.join(process.env.SHOTS, name + '.png') }).catch(() => {}) : null;
 async function done(p) { ok(p.errors.length === 0, 'no page errors', p.errors); await p.context().close(); }
 
 const TESTS = {
@@ -224,7 +226,7 @@ const TESTS = {
     await ev(p, () => { cfg.optics.eps = [{ f: 25, a: 52 }]; setOptics({ ep: 0, telrad: false, view: true }); syncSettings(); });
     const set = t => ev(p, t => { $('oFinderType').value = t; $('oFinderType').onchange(); setOptics({ src: 'finder' }); }, t);
     await set('reddot'); await wait(p, 300);
-    ok(await ev(p, () => $('epSrc').textContent) === 'Red-dot finder · naked eye', 'red-dot finder: naked-eye finder view');
+    { const t = await ev(p, () => $('epSrc').textContent); ok(t === 'Red-dot finder · naked eye', 'red-dot finder: naked-eye finder view', t); }
     await set('telrad'); ok(await ev(p, () => cfg.optics.telrad), 'Telrad turns its rings on');
     await set('reddot'); ok(await ev(p, () => !cfg.optics.telrad), 'another finder turns the Telrad rings off again');
     await set('8x50'); ok(await ev(p, () => finderFov()) === 6, '8×50 finder: 6° field');
@@ -237,8 +239,8 @@ const TESTS = {
     await ev(p, () => showInfo(objById('M13'))); await wait(p, 500);
     await p.click('#btnMenu'); await wait(p, 500);
     ok(await openSheets(p) === 'infoSheet+menu', 'menu opens on the left, the details stay on the right');
-    await p.click('#btnSettings'); await wait(p, 600);
-    ok(await openSheets(p) === 'infoSheet+sheet', 'settings replace the menu on the left');
+    await p.click('#btnSettings'); await p.waitForFunction(() => $('sheet').classList.contains('open') && $('menu').hidden, null, { timeout: 4000 }).catch(() => {});
+    { const os = await openSheets(p); ok(os === 'infoSheet+sheet', 'settings replace the menu on the left', os); }
     ok(await ev(p, () => $('sheet').querySelector('.inner').getBoundingClientRect().left) < 5, 'settings sit on the left');
     await p.click('#setMenu'); await wait(p, 500);
     await p.click('#menu [data-close]'); await wait(p, 500);
@@ -850,7 +852,7 @@ const TESTS = {
     await B.waitForFunction(() => !$('confirmSheet').hidden, null, { timeout: 5000 }).catch(() => {});
     ok(await ev(B, () => $('confirmTitleTxt').textContent.includes('Join')), 'joining asks first');
     await B.click('#confirmOk'); await wait(B, 900);
-    ok(await ev(B, () => $('confirmTitleTxt').textContent.includes('telescope settings') && !$('confirmSheet').hidden), 'different telescope settings: it asks which ones to use');
+    ok(await ev(B, () => $('confirmTitleTxt').textContent.includes('settings') && !$('confirmSheet').hidden), 'different telescope settings: it asks which ones to use');
     await B.click('#confirmOk'); await wait(B, 1200);
     const b = await ev(B, () => ({ code: syncS.code, log: obs.log.map(e => e.uid).sort(), list: obs.list.map(x => x.id), scope: opt().scope, tele: cfg.tele, devs: Object.values(syncS.devs || {}).length }));
     ok(b.code === code, 'B is in the group');
@@ -936,7 +938,7 @@ const TESTS = {
     // a first sighting: the progress in the hint
     await ev(p, () => { openSeen(objById('M27')); seenState.res = 'easy'; }); await wait(p, 300); await ev(p, () => $('seenSave').click()); await wait(p, 300);
     ok(await ev(p, () => /Messier: 3 of 110/.test($('hint').textContent)), 'after a first sighting: “Messier: 3 of 110”', await ev(p, () => $('hint').textContent));
-    ok(await ev(p, () => { const e = obs.log.find(x => x.obj === 'M27'); return /^Telescope/.test(e.inst) && e.ep; }), 'the entry keeps the instrument (this telescope) and the eyepiece', await ev(p, () => obs.log.find(x => x.obj === 'M27')));
+    ok(await ev(p, () => { const e = obs.log.find(x => x.obj === 'M27'); return e.inst === curInst().name && e.ik === 'scope' && e.ep; }), 'the entry keeps the instrument (the one in use) and the eyepiece', await ev(p, () => obs.log.find(x => x.obj === 'M27')));
     // with binoculars: the eyepiece field goes, the entry says so
     await ev(p, () => { openSeen(objById('M45')); seenState.res = 'easy'; $('seenInst').value = 'Binoculars'; $('seenInst').onchange(); }); await wait(p, 200);
     ok(await ev(p, () => $('seenEpL').hidden), 'binoculars: no eyepiece to choose');
@@ -947,7 +949,7 @@ const TESTS = {
     ok(await ev(p, () => document.querySelectorAll('#progBody .orow').length === 4), 'seen: four objects');
     const dl = p.waitForEvent('download'); await ev(p, () => [...document.querySelectorAll('#progBody .pgacts .btn')].find(b => /CSV/.test(b.textContent)).click());
     const csv = fs.readFileSync(await (await dl).path(), 'utf8');
-    ok(/^\ufeff?Object,Name,Type,Date,Time,"Place \(lat, lon\)",Instrument,Eyepiece/.test(csv) && /M13,.*25 mm/.test(csv) && /M27,.*Telescope/.test(csv) && /M45,.*Binoculars/.test(csv) && !/M57/.test(csv) && csv.split('\r\n').length === 5, 'CSV: one row per seen object with its first sighting and instrument', csv.slice(0, 400));
+    ok(/^\ufeff?Object,Name,Type,Date,Time,"Place \(lat, lon\)",Instrument,Eyepiece/.test(csv) && /M13,.*25 mm/.test(csv) && /M27,.*My telescope/.test(csv) && /M45,.*Binoculars/.test(csv) && !/M57/.test(csv) && csv.split('\r\n').length === 5, 'CSV: one row per seen object with its first sighting and instrument', csv.slice(0, 400));
     await done(p);
     // with Pro: Herschel II opens; objects only the extended catalogue has are marked
     const q = await page();
@@ -1134,6 +1136,117 @@ const TESTS = {
   },
 
   // offline: the service worker keeps page and scripts
+  // Instruments: the telescope of earlier versions becomes the first one; adding (kind, data, eyepieces), switching
+  // (each keeps its eyepieces, the eyepiece chosen and its eyepiece point), binoculars, editing another one, the
+  // logbook, deleting; without Pro one instrument and the offer to replace it
+  async instruments() {
+    const old = { lat: 48.18, lon: 10.08, mount: 'eq', optics: { scope: 1200, ap: 203, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }, { f: 6, a: 60 }], ep: 1, src: 'ep', finderType: '8x50' }, tele: { x: 0.04, y: -0.01 }, teleSetAt: 5 };
+    const F = await page({ pro: false, init: `if (!localStorage.getItem('dobson-lotse')) localStorage.setItem('dobson-lotse', ${JSON.stringify(JSON.stringify(old))});` });
+    const m = await ev(F, () => ({ n: cfg.instruments.length, i: cfg.instruments[0], cur: curInst().id === cfg.instrumentId, ep: opt().ep, scope: opt().scope, mount: cfg.mount }));
+    ok(m.n === 1 && m.i.name === 'Telescope 203 mm f/5.9' && m.i.mount === 'eq' && m.i.o.eps.length === 3 && m.cur && m.ep === 1 && m.mount === 'eq', 'the telescope of an earlier version becomes the first instrument, named as the logbook named it, eyepiece kept', m);
+    await ev(F, () => { syncSettings(); openSheet('sheet'); setSetTab('scope'); }); await wait(F, 400);
+    shot(F, 'equipment-free');
+    ok(await ev(F, () => document.querySelectorAll('#eqList .eqcard').length === 1 && !!$('eqList').querySelector('.inuse') && $('oLegend').textContent === 'Telescope 203 mm f/5.9' && $('oDel').hidden && !$('oReplace').hidden),
+      'Settings › Equipment: the one instrument in use, its settings below, Replace instead of Delete');
+    await F.tap('#eqAdd'); await wait(F, 500);
+    ok(await ev(F, () => !$('proSheet').hidden && /More than one instrument/.test($('proWhy').textContent) && !$('proAltRow').hidden && /Replace Telescope 203 mm f\/5\.9/.test($('proAlt').textContent)), 'without Pro: a second instrument asks for Pro and offers to replace the one there is');
+    shot(F, 'progate');
+    await F.tap('#proAlt'); await wait(F, 600);
+    ok(await ev(F, () => !$('addInstSheet').hidden && /^Replace/.test($('aiTitleTxt').textContent) && document.querySelectorAll('#aiBody .aitype').length === 6), 'Replace: step 1, the kind of instrument');
+    await F.tap('.aitype[data-type="refr"]'); await wait(F, 300);
+    await F.fill('#aiScope', '480'); await F.fill('#aiAp', '80'); await ev(F, () => { $('aiAp').dispatchEvent(new Event('change')); $('aiScope').dispatchEvent(new Event('change')); });
+    await F.fill('#aiName', 'ED 80'); await ev(F, () => $('aiName').dispatchEvent(new Event('change')));
+    await ev(F, () => [...document.querySelectorAll('#aiBtns .btn')].find(b => /eyepieces/.test(b.textContent)).click()); await wait(F, 300);
+    ok(await ev(F, () => [...document.querySelectorAll('#aiBtns .btn')].map(b => b.textContent).join('|')) === 'Back|Add and use ED 80', 'without Pro, replacing: no “Add only”');
+    await ev(F, () => [...document.querySelectorAll('#aiBtns .btn')].pop().click()); await wait(F, 900);
+    const r = await ev(F, () => ({ n: cfg.instruments.length, name: curInst().name, type: curInst().type, scope: opt().scope, ap: opt().ap, orient: opt().orient, tele: cfg.tele, log: $('addInstSheet').hidden }));
+    ok(r.n === 1 && r.name === 'ED 80' && r.type === 'refr' && r.scope === 480 && r.ap === 80 && r.orient === 'mirror' && r.tele.x === 0 && r.log, 'replaced: one instrument, the refractor in use with a star diagonal view, its own eyepiece point', r);
+    await done(F);
+
+    const p = await page();
+    shot(p, 'map');
+    // adding with Pro: Dobsonian, 8″, eyepieces (one from the list, one typed)
+    await ev(p, () => openSheet('quickSheet')); await wait(p, 400);
+    ok(await ev(p, () => [...$('qInst').children].map(b => b.textContent).join('|')) === 'My telescope|+ Add', 'Quick settings: the instruments and “+ Add”');
+    await ev(p, () => [...$('qInst').children].pop().click()); await wait(p, 500);
+    ok(await ev(p, () => !$('addInstSheet').hidden && $('proSheet').hidden), 'with Pro “+ Add” starts adding');
+    shot(p, 'add-type');
+    await p.tap('.aitype[data-type="dob"]'); await wait(p, 300);
+    ok(await ev(p, () => $('aiName').value === 'Dobson 8″' && $('aiScope').value === '1200' && $('aiAp').value === '203' && $('aiMount').value === 'altaz' && $('aiFinder').value === '8x50'), 'a Dobsonian starts as 8″ f/6 with an 8×50 finder, alt-azimuth');
+    await ev(p, () => [...document.querySelectorAll('#aiBody .chip')].find(b => b.textContent === '10″ f/5').click()); await wait(p, 200);
+    ok(await ev(p, () => $('aiName').value === 'Dobson 10″' && $('aiScope').value === '1250' && /f\/4\.9 · stars to about magnitude 15/.test($('aiBody').textContent)), 'a size fills name, focal length and aperture');
+    shot(p, 'add-data');
+    await ev(p, () => [...document.querySelectorAll('#aiBtns .btn')].find(b => /eyepieces/.test(b.textContent)).click()); await wait(p, 300);
+    ok(await ev(p, () => document.querySelectorAll('#aiBody .aiep').length === 2 && /From your other instruments/.test($('aiBody').textContent) === false), 'step 3: the usual 25 mm and 10 mm');
+    await ev(p, () => [...document.querySelectorAll('#aiBody .chip')].find(b => b.textContent === '+ 32 mm').click()); await wait(p, 200);
+    await p.fill('#aiEpF', '7'); await p.fill('#aiEpA', '82'); await ev(p, () => [...document.querySelectorAll('#aiBody .btn')].find(b => b.textContent === 'Add').click()); await wait(p, 200);
+    ok(await ev(p, () => [...document.querySelectorAll('#aiBody .aiep b')].map(b => b.textContent).join('|')) === '32 mm · 50°|25 mm · 52°|10 mm · 52°|7 mm · 82°', 'eyepieces added by a tap and by typing, longest first');
+    shot(p, 'add-eps');
+    await ev(p, () => [...document.querySelectorAll('#aiBtns .btn')].pop().click()); await wait(p, 600);
+    const d = await ev(p, () => ({ n: cfg.instruments.length, name: curInst().name, eps: opt().eps.length, scope: opt().scope, sel: [...$('qInst').children].map(b => b.getAttribute('aria-checked')).join() }));
+    ok(d.n === 2 && d.name === 'Dobson 10″' && d.eps === 4 && d.scope === 1250, 'added and in use', d);
+    // each instrument keeps its eyepiece choice and eyepiece point
+    await ev(p, () => { setOptics({ ep: 3 }); cfg.tele = { x: 0.02, y: 0.03 }; save(); useInst(cfg.instruments[0].id); });
+    let s = await ev(p, () => ({ name: curInst().name, eps: opt().eps.length, ep: opt().ep, tele: cfg.tele, view: !$('epInst').hidden }));
+    ok(s.name === 'My telescope' && s.eps === 2 && s.ep === 0 && s.tele.x === 0, 'switched back: its own eyepieces and eyepiece point', s);
+    await ev(p, () => useInst(cfg.instruments[1].id));
+    s = await ev(p, () => ({ ep: opt().ep, tele: cfg.tele, label: epLabel(curEp()) }));
+    ok(s.ep === 3 && s.tele.x === 0.02 && /^7 mm/.test(s.label), 'and again: the 7 mm and the eyepiece point of the Dobson', s);
+    // the eyepiece view names the instrument; its sheet switches and picks an eyepiece
+    await ev(p, () => setOptics({ view: true })); await wait(p, 400);
+    ok(await ev(p, () => !$('epInst').hidden && $('epInst').textContent === 'Dobson 10″ ▾'), 'under the eyepiece view: the instrument in use');
+    shot(p, 'map-eyepiece');
+    await p.tap('#epInst'); await wait(p, 500);
+    ok(await ev(p, () => !$('instSheet').hidden && document.querySelectorAll('#instList .eqcard').length === 2 && document.querySelectorAll('#instEps .chip').length === 5), 'its sheet: both instruments, the eyepieces and the finder');
+    shot(p, 'switch');
+    await ev(p, () => [...document.querySelectorAll('#instEps .chip')].find(b => /^25 mm/.test(b.textContent)).click()); await wait(p, 200);
+    ok(await ev(p, () => opt().ep === 1 && opt().eps[1].f === 25 && $('instEps').querySelector('.sel').textContent.startsWith('25 mm')), 'an eyepiece chosen in the sheet');
+    await ev(p, () => document.querySelector('#instList .eqcard:not(.inuse) .btn').click()); await wait(p, 300);
+    ok(await ev(p, () => curInst().name === 'My telescope' && $('instList').querySelector('.inuse').parentElement.firstChild.querySelector('b').textContent === 'My telescope'), 'Use in the sheet switches');
+    // binoculars: their own settings, the field on the map, the whole sky
+    await ev(p, () => { closeSheet('instSheet'); openAddInst('quick'); }); await wait(p, 400);
+    await p.tap('.aitype[data-type="bino"]'); await wait(p, 300);
+    ok(await ev(p, () => $('aiName').value === 'Binoculars 10×50' && $('aiFov').value === '6.5'), 'binoculars start as 10×50 with 6.5°');
+    await ev(p, () => [...document.querySelectorAll('#aiBody .chip')].find(b => b.textContent === '15×70').click()); await wait(p, 200);
+    await wait(p, 600); shot(p, 'add-bino');
+    await ev(p, () => [...document.querySelectorAll('#aiBtns .btn')].pop().click()); await wait(p, 500);
+    const b = await ev(p, () => { const e = curEp(), dd = epData(e); return { name: curInst().name, mag: Math.round(dd.mag), fov: +dd.fov.toFixed(1), label: epLabel(e), pupil: +exitPupil(e).toFixed(1), reach: reach(), q: $('qEp').disabled, finder: finderFov() }; });
+    ok(b.name === 'Binoculars 15×70' && b.mag === 15 && b.fov === 4.4 && b.label === '15×70 · 4.4°' && b.pupil === 4.7 && !b.reach.limited && b.finder === 0, 'binoculars in use: 15×, 4.4° field, no finder, the whole sky', b);
+    await wait(p, 300);
+    ok(await ev(p, () => $('epInst').textContent === 'Binoculars 15×70 ▾' && $('epSrc').textContent === '4.4° field'), 'under the eyepiece view: the binoculars and their field', await ev(p, () => $('epInst').textContent + ' | ' + $('epSrc').textContent));
+    // the logbook: the instrument in use, no eyepiece for binoculars; Binocular Messier counts it
+    await ev(p, () => { openSeen(objById('M45')); seenState.res = 'easy'; }); await wait(p, 300);
+    ok(await ev(p, () => $('seenInst').value === 'Binoculars 15×70' && $('seenEpL').hidden && ![...$('seenInst').options].some(o => o.textContent === 'Binoculars')), 'logging: the binoculars in use, no eyepiece');
+    await ev(p, () => { $('seenInst').value = 'Dobson 10″'; $('seenInst').onchange(); }); await wait(p, 100);
+    ok(await ev(p, () => !$('seenEpL').hidden && [...$('seenEp').options].map(o => o.textContent).join('|') === '32 mm · 39×|25 mm · 50×|10 mm · 125×|7 mm · 179×|Finder'), 'another telescope: its own eyepieces');
+    shot(p, 'seen');
+    await ev(p, () => { $('seenInst').value = 'Binoculars 15×70'; $('seenInst').onchange(); $('seenSave').click(); }); await wait(p, 300);
+    ok(await ev(p, () => { const e = obs.log.find(x => x.obj === 'M45'); return e.inst === 'Binoculars 15×70' && e.ik === 'bino' && e.ep === '' && progStats(PROGRAMS.find(x => x.id === 'bino')).done === 1; }), 'logged with the binoculars: counts for Binocular Messier');
+    // Settings › Equipment: tapping another instrument shows its settings; changes go to it, not to the one in use
+    await ev(p, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('scope'); }); await wait(p, 400);
+    ok(await ev(p, () => document.querySelectorAll('#eqList .eqcard').length === 3 && !$('oBinoBox').hidden && $('oScopeA').hidden && $('bMag').value === '15'), 'the binoculars’ own settings');
+    shot(p, 'equipment');
+    await ev(p, () => [...document.querySelectorAll('#eqList .eqmain')].find(b => b.querySelector('b').textContent === 'Dobson 10″').click()); await wait(p, 300);
+    ok(await ev(p, () => !$('oOther').hidden && $('oLegend').textContent === 'Dobson 10″' && $('oScope').value === '1250' && document.querySelectorAll('#oEps .eprow').length === 4 && $('eqList').querySelector('.editing')), 'tapping the Dobson shows its settings, marked as not in use', await ev(p, () => ({ o: $('oOther').hidden, l: $('oLegend').textContent, s: $('oScope').value, n: document.querySelectorAll('#oEps .eprow').length, e: !!$('eqList').querySelector('.editing'), id: st.editId })));
+    shot(p, 'edit-other');
+    await p.fill('#oAp', '250'); await ev(p, () => $('oAp').dispatchEvent(new Event('change'))); await wait(p, 100);
+    await ev(p, () => $('oEpAdd').click()); await wait(p, 100);
+    const e = await ev(p, () => { const dd = cfg.instruments.find(i => i.name === 'Dobson 10″'); return { ap: dd.o.ap, n: dd.o.eps.length, cur: curInst().name, curAp: opt().ap, curN: opt().eps.length }; });
+    ok(e.ap === 250 && e.n === 5 && e.cur === 'Binoculars 15×70' && e.curAp === 70 && e.curN === 1, 'its aperture and a new eyepiece went to the Dobson; the binoculars stay in use', e);
+    await p.fill('#oName', 'Big Dob'); await ev(p, () => $('oName').dispatchEvent(new Event('change'))); await wait(p, 100);
+    ok(await ev(p, () => cfg.instruments.some(i => i.name === 'Big Dob') && /Big Dob/.test($('eqList').textContent)), 'renamed');
+    await ev(p, () => $('oUse').click()); await wait(p, 300);
+    ok(await ev(p, () => curInst().name === 'Big Dob' && opt().ap === 250 && opt().eps.length === 5 && $('oOther').hidden), '“Use it” makes it the one in use, with the changes');
+    // delete the binoculars (not in use)
+    await ev(p, () => [...document.querySelectorAll('#eqList .eqmain')].find(b => /Binoculars/.test(b.textContent)).click()); await wait(p, 300);
+    await p.tap('#oDel'); await wait(p, 500); await p.tap('#confirmOk'); await wait(p, 600);
+    ok(await ev(p, () => cfg.instruments.length === 2 && curInst().name === 'Big Dob' && !$('sheet').hidden && obs.log.find(x => x.obj === 'M45').ik === 'bino'), 'deleted; the logbook entry keeps its name and kind');
+    // another device brings its instruments: the placeholder of a new install goes, the one in use stays
+    await ev(p, () => { cfg.instruments.push({ id: 'x1', name: 'Fresh', type: 'dob', mount: 'altaz', o: { scope: 1200, eps: [] }, fresh: true }); afterSyncedSettings(); });
+    ok(await ev(p, () => cfg.instruments.length === 2 && !cfg.instruments.some(i => i.fresh) && curInst().name === 'Big Dob'), 'after syncing: a new install’s placeholder instrument goes');
+    await done(p);
+  },
+
   async offline() {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
     await p.goto(base + '/app/');

@@ -13,20 +13,24 @@
 //  - Missing fields always mean their default: an entry without a change time "u" counts as 0 (older than any change).
 //  - Backups keep their old top-level shape (list, starred, log, settings), so older app versions can still import them.
 const ZSync = (() => {
-  const SCHEMA = { major: 1, minor: 0 };
+  const SCHEMA = { major: 1, minor: 1 };   // 1.1: instruments (each telescope with its eyepieces) instead of one telescope
   const ENV_V = 1;                // envelope: [version][compression][12 bytes IV][AES-GCM ciphertext]
   const OBS_V = 2;                // local lists: 1 = no change times, 2 = change times "u" and deletion marks "del"
   const BACKUP_V = 4;             // backup file: 3 = lists and settings, 4 = adds change times, deletion marks and setting times
-  // Settings that travel between devices (paths into the settings). Everything else belongs to the device: the eyepiece
-  // point and pointing (they depend on how the phone sits on the telescope), camera and field of view, compass
-  // correction, red light, display and layout.
-  const SETTINGS = ["lat", "lon", "loc", "mount", "show",
-    "optics.scope", "optics.ap", "optics.barlow", "optics.useB", "optics.finder", "optics.finderType", "optics.finderOrient",
-    "optics.eps", "optics.telrad", "optics.ring", "optics.orient", "optics.rot", "optics.altMin", "optics.altMax"];
+  // Settings that travel between devices (paths into the settings). Everything else belongs to the device: which
+  // instrument it uses and its selected eyepiece, the eyepiece point and pointing (they depend on how the phone sits on
+  // the telescope), camera and field of view, compass correction, red light, display and layout.
+  // Schema 1.0 synced one telescope ("mount", "optics.scope", "optics.eps", …). Since 1.1 the instruments carry these;
+  // the old paths stay in the shared copy untouched for apps that still use them.
+  const SETTINGS = ["lat", "lon", "loc", "show", "optics.ring", "instruments"];
   // Settings that only make sense together: when they collide, all of them come from the same device
   const GROUPS = [["lat", "lon", "loc"]];
-  // Lists inside a setting that are merged item by item: an eyepiece added on each of two devices keeps both
-  const SETS = ["optics.eps"];
+  // Lists inside a setting that are merged item by item by content (none at the moment)
+  const SETS = [];
+  // Lists of records with an "id" that are merged record by record: an instrument added on each of two devices keeps
+  // both, one changed on both devices takes the newer change ("u"), one deleted on one device goes unless the other
+  // device changed it since
+  const IDSETS = ["instruments"];
   const KINDS = { list: x => "l:" + x.id, starred: x => "s:" + x.id, log: x => "g:" + x.uid };
   const KNOWN = new Set(["app", "schema", "list", "starred", "log", "del", "settings", "devices"]);
 
@@ -105,6 +109,38 @@ const ZSync = (() => {
     const removed = new Set([...bs].filter(k => !ls.has(k))), rs = new Set(r.map(key));
     return r.filter(x => !removed.has(key(x))).concat(l.filter(x => !bs.has(key(x)) && !rs.has(key(x)))).map(clone);
   }
+  const isObj = x => !!x && typeof x === "object" && !Array.isArray(x);
+  function mergeRec(o, a, b, aWins) {
+    const keys = new Set([...Object.keys(o || {}), ...Object.keys(a), ...Object.keys(b)]), out = {}; keys.delete("u");
+    keys.forEach(k => {
+      const bk = stable(o ? o[k] : undefined), ac = stable(a[k]) !== bk, bc = stable(b[k]) !== bk;
+      let x = bc && !ac ? b[k] : a[k];
+      if (ac && bc && stable(a[k]) !== stable(b[k])) {
+        x = Array.isArray(a[k]) && Array.isArray(b[k]) && o && Array.isArray(o[k]) ? mergeSet(o[k], a[k], b[k])
+          : isObj(a[k]) && isObj(b[k]) && o && isObj(o[k]) ? mergeRec(o[k], a[k], b[k], aWins) : aWins ? a[k] : b[k];
+      }
+      if (x !== undefined) out[k] = clone(x);
+    });
+    return out;
+  }
+  function mergeById(base, r, l) {
+    const ok = x => x && typeof x === "object" && x.id, bm = new Map((base || []).filter(ok).map(x => [x.id, x]));
+    const rm = new Map(r.filter(ok).map(x => [x.id, x])), lm = new Map(l.filter(ok).map(x => [x.id, x])), out = [];
+    [...rm.keys(), ...[...lm.keys()].filter(id => !rm.has(id))].forEach(id => {
+      const a = rm.get(id), b = lm.get(id), o = bm.get(id);
+      if (a && b) {
+        const same = (x, y) => !!y && stable(x) === stable(y);
+        if (same(a, b) || same(a, o) || same(b, o) || !o) { out.push(clone(same(a, b) || same(b, o) ? a : same(a, o) ? b : pick(a, b, a.u || 0, b.u || 0))); return; }
+        // changed on both since the last sync: field by field (an eyepiece added on each device keeps both)
+        const m = mergeRec(o, a, b, pick(a, b, a.u || 0, b.u || 0) === a);
+        out.push(body(m) === body(a) ? clone(a) : body(m) === body(b) ? clone(b) : { ...m, u: Math.max(a.u || 0, b.u || 0) + 1 });
+        return;
+      }
+      const x = a || b;   // on one side only: new there, or deleted on the other (it stays if it changed since)
+      if (!o || stable(x) !== stable(o)) out.push(clone(x));
+    });
+    return out;
+  }
   // Merge two copies: per entry and per setting the newer change wins; deletion marks win over older entries.
   // Starts from the remote copy, so whatever this app version doesn't know stays in it.
   // opts.settings: "remote" takes the remote settings as they are (joining a group and choosing the other device's settings).
@@ -141,6 +177,9 @@ const ZSync = (() => {
         if (!(p in v)) { v[p] = ls.v[p]; t[p] = ls.t[p] || 0; return; }
         const lt = ls.t[p] || 0, rt = t[p] || 0;
         if (stable(v[p]) === stable(ls.v[p])) { t[p] = Math.max(lt, rt); return; }
+        if (IDSETS.includes(p) && Array.isArray(v[p]) && Array.isArray(ls.v[p])) {
+          v[p] = mergeById(bv && Array.isArray(bv[p]) ? bv[p] : null, v[p], ls.v[p]); t[p] = Math.max(lt, rt); return;
+        }
         if (SETS.includes(p) && bv && Array.isArray(bv[p]) && Array.isArray(v[p]) && Array.isArray(ls.v[p])
           && stable(bv[p]) !== stable(v[p]) && stable(bv[p]) !== stable(ls.v[p])) {
           v[p] = mergeSet(bv[p], v[p], ls.v[p]); t[p] = Math.max(lt, rt) + 1; return;   // both changed the list
@@ -246,7 +285,7 @@ const ZSync = (() => {
     return CODE_RE.test(s) ? s : null;
   }
 
-  return { SCHEMA, ENV_V, OBS_V, BACKUP_V, SETTINGS, GROUPS, SETS, KNOWN, stable, migrateObs, snapObs, stampObs, snapSettings, stampSettings,
+  return { SCHEMA, ENV_V, OBS_V, BACKUP_V, SETTINGS, GROUPS, SETS, IDSETS, KNOWN, mergeById, stable, migrateObs, snapObs, stampObs, snapSettings, stampSettings,
     fromLocal, merge, settingsDiffer, apply, same, makeBackup, readBackup, newCode, keys, seal, open, joinLink, parseJoin, b64u };
 })();
 if (typeof module !== "undefined") module.exports = ZSync;

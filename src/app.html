@@ -747,6 +747,52 @@ a.btn { text-decoration: none; color: var(--fg); }
   padding: 11px 12px; font-size: 16px;
 }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Instruments: cards in Settings › Equipment and the instrument sheet, the steps of adding one */
+.eqlist { display: grid; gap: 8px; }
+.eqcard { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise); }
+.eqcard.inuse { border-color: var(--accent); background: rgba(240,168,69,.06); }
+.eqcard.editing { box-shadow: 0 0 0 1px var(--muted); }
+.eqcard.inuse.editing { box-shadow: none; }
+.eqmain { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.eqmain svg, .aitype svg { width: 32px; height: 32px; color: var(--muted); }
+.eqcard.inuse .eqmain svg { color: var(--accent); }
+.eqmain span { display: grid; gap: 1px; min-width: 0; }
+.eqmain b { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eqmain small { color: var(--muted); font-size: 13px; }
+.eqcard .inuse { font-size: 12.5px; color: var(--accent); padding-right: 4px; }
+.eqcard .btn { min-height: 36px; padding: 0 14px; }
+.eqadd { justify-content: center; border-style: dashed; }
+.eqadd svg { width: 18px; height: 18px; }
+.eqother { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--raise); font-size: 13.5px; color: var(--muted); }
+.eqtypes .chip { font-size: 13.5px; }
+.row input#oName { font-family: var(--font-ui); font-size: 16px; }
+.eqother .btn { flex: none; white-space: nowrap; min-height: 36px; padding: 0 14px; }
+.eps.nosel .epsel { visibility: hidden; }
+.eqdel { justify-content: flex-start; }
+.qinst .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.epview .epinst { font-weight: 600; margin-right: 4px; }
+#instEpBox { margin-top: 12px; }
+.aisteps { display: flex; gap: 6px; margin: 2px 0 0; }
+.aisteps i { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.aisteps i.on { background: var(--accent); }
+.aibody { display: grid; gap: 12px; }
+.aihead { display: grid; gap: 2px; margin-top: 4px; }
+.aihead small { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.aihead b { font-size: 20px; font-weight: 600; }
+.aitypes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.aitype { display: grid; justify-items: start; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--raise); color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 116px; }
+.aitype span { display: grid; gap: 2px; } .aitype b { font-size: 16px; font-weight: 600; } .aitype small { color: var(--muted); font-size: 12.5px; line-height: 1.3; }
+.aitype:hover, .aitype:focus-visible { border-color: var(--accent); }
+.aichips .chip { min-height: 36px; }
+.chip.dashed { border-style: dashed; }
+.aieps { display: grid; }
+.aiep { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.aiep span { display: grid; } .aiep b { font: 500 15px var(--font-num); } .aiep small { color: var(--muted); font-size: 13px; }
+.aibody .row input.txt { font-family: var(--font-ui); }
+.actions.aibtns { display: flex; position: sticky; bottom: 0; padding: 12px 0 2px; background: var(--panel); }
+#proAltRow .btn { flex: 1; justify-content: center; }
+.aibtns .btn.primary { flex: 2; } .aibtns .btn { flex: 1; }
+
 .chip { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 5px 12px; font-size: 14px; cursor: pointer; }
 .chip.sel { border-color: var(--target); color: var(--target); }
 .chip.below { opacity: .45; }
@@ -868,7 +914,7 @@ a.btn { text-decoration: none; color: var(--fg); }
       <button class="cornerhide" id="cornerHide" aria-label="Hide the info at the bottom left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
       <div class="epview" id="epView" hidden>
         <canvas id="epCanvas" role="img" aria-label="Eyepiece view: the field around where the telescope points"></canvas>
-        <div class="calchip"><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epSet" aria-label="Telescope, eyepiece and finder settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="calchip"><button class="chiplabel epinst" id="epInst" hidden aria-label="Change the instrument"></button><button class="chiplabel" id="epSrc" aria-label="Switch between eyepiece and finder"></button><button class="iconbtn" id="epSet" aria-label="Telescope, eyepiece and finder settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button><button class="iconbtn" id="epClose" aria-label="Hide the eyepiece view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       </div>
       <div class="calchip" id="timeChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg>
@@ -1162,6 +1208,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <p class="prowhy" id="proWhy" hidden></p>
     <p class="prostatus" id="proStatus" role="status"></p>
     <div class="actions"><a class="btn primary" id="proBuyLink" href="/pro/" target="_blank" rel="noopener">Buy Zenigo Pro</a><button class="btn" id="proEnter">Enter licence key</button></div>
+    <div class="row" id="proAltRow" hidden><button class="btn wide" id="proAlt"></button></div>
     <div class="prokeybox" id="proKeyBox" hidden>
       <label><div class="slabel">Licence key</div><textarea id="proKeyIn" rows="3" placeholder="ZP1.…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></label>
       <div class="row"><button class="btn primary" id="proKeyAdd">Add the key</button></div>
@@ -1250,6 +1297,24 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="progTitle">
     <div class="grab"><h2 id="progTitle"><button class="iconbtn" id="progBack" aria-label="All programmes" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="progTitleTxt">Observing programmes</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div id="progBody"></div>
+  </div>
+</div>
+
+<div class="sheet" id="instSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="instTitle">
+    <div class="grab"><h2 id="instTitle"><span>Instrument</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="eqlist" id="instList"></div>
+    <div id="instEpBox"><div class="slabel" id="instEpLabel">Eyepiece</div><div class="chips" id="instEps" role="radiogroup" aria-label="Eyepiece in use"></div></div>
+    <div class="actions"><button class="btn" id="instAdd">Add an instrument<i class="protag">Pro</i></button><button class="btn" id="instManage">Equipment settings</button></div>
+  </div>
+</div>
+
+<div class="sheet tall" id="addInstSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+    <div class="grab"><h2 id="aiTitle"><button class="iconbtn" id="aiBack" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1" id="aiTitleTxt">Add an instrument</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
+      <div class="aisteps" id="aiSteps" aria-hidden="true"></div></div>
+    <div class="aibody" id="aiBody"></div>
+    <div class="actions aibtns" id="aiBtns"></div>
   </div>
 </div>
 
@@ -1345,7 +1410,11 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
     <div class="grab"><h2 id="quickTitle"><span>Quick settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="qrow">
-      <div class="qlabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
+      <div class="qlabel">Instrument <span class="qsub" id="qInstSub">what you observe with</span></div>
+      <div class="chips qinst" id="qInst" role="radiogroup" aria-label="Instrument in use"></div>
+    </div>
+    <div class="qrow">
+      <div class="qlabel" id="qEpLabel">Eyepiece <span class="qsub">field on the map and in the eyepiece view</span></div>
       <select id="qEp" aria-label="Eyepiece in use"></select>
       <div class="qline" style="display:grid;grid-template-columns:1fr auto;align-items:center">
         <div class="qlabel"><span>Eyepiece view<i class="protag">Pro</i></span> <span class="qsub">what you should see, bottom left</span></div>
@@ -1435,7 +1504,7 @@ a.btn { text-decoration: none; color: var(--fg); }
 
 <div class="sheet tall" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Telescope</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live</button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="chips settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Equipment</button><button class="chip" role="tab" data-stab="cam">Camera &amp; sensors</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live</button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
     <fieldset data-stab="general">
       <legend>Location</legend>
@@ -1465,7 +1534,7 @@ a.btn { text-decoration: none; color: var(--fg); }
     <fieldset data-stab="sync" id="syncBox" hidden>
       <legend>Sync between devices</legend>
       <div id="syncOff">
-        <p class="note">Keep the observing list, starred objects, logbook and telescope settings (eyepieces, location, mount, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
+        <p class="note">Keep the observing list, starred objects, logbook and settings (instruments with their eyepieces, location, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
         <div class="row"><button class="btn" id="syncSetup">Set up sync</button><button class="btn" id="syncJoin">Join with a code</button></div>
       </div>
       <div id="syncOn" hidden>
@@ -1514,10 +1583,25 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row"><button class="btn" id="bkLists">Back up lists</button><button class="btn" id="bkAll">Back up lists and settings</button></div>
       <div class="row"><button class="btn" id="bkImport">Restore from a backup</button><button class="btn" id="bkCsv">Logbook for a spreadsheet (CSV)</button></div>
       <input type="file" id="bkFile" accept=".json,application/json" hidden>
-      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include telescope and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm. Every backup also holds your Zenigo Pro licence key, so restoring brings Pro back.</p>
+      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include instruments and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm. Every backup also holds your Zenigo Pro licence key, so restoring brings Pro back.</p>
+    </fieldset>
+    <fieldset data-stab="scope" id="equipBox">
+      <legend>Your instruments</legend>
+      <div class="eqlist" id="eqList"></div>
+      <button class="btn eqadd" id="eqAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add an instrument<i class="protag">Pro</i></button>
+      <p class="note">Each telescope keeps its own eyepieces, finder, Barlow and eyepiece point; binoculars have their own magnification and field. Switch in Quick settings, here, or with the instrument under the eyepiece view. The logbook notes which one you used.</p>
     </fieldset>
     <fieldset data-stab="scope" id="optics">
-      <legend>Telescope and eyepieces</legend>
+      <legend id="oLegend">Telescope and eyepieces</legend>
+      <div class="eqother" id="oOther" hidden><span id="oOtherTxt">Not in use on this device.</span><button class="btn" id="oUse">Use it</button></div>
+      <div class="row"><label style="flex-basis:100%">Name<input type="text" id="oName" maxlength="40" autocomplete="off" spellcheck="false"></label></div>
+      <div class="chips eqtypes" id="oType" role="radiogroup" aria-label="Type of telescope"></div>
+      <div id="oBinoBox" hidden>
+        <div class="row"><label>Magnification (×)<input type="number" id="bMag" min="2" max="40" step="0.5"></label><label>Aperture (mm)<input type="number" id="bAp" min="15" max="150" step="1"></label><label>Field (°)<input type="number" id="bFov" min="1" max="15" step="0.1"></label></div>
+        <p class="note" id="bInfo"></p>
+        <div class="row"><label style="flex-basis:100%">How you use them<select id="bHold"><option value="hand">Hand-held: the whole sky in reach</option><option value="mount">On a mount with the phone attached (push-to)</option></select></label></div>
+      </div>
+      <div id="oScopeA">
       <div class="row">
         <label style="flex-basis:100%">Mount<select id="oMount">
           <option value="altaz">Alt-azimuth (Dobson)</option>
@@ -1549,11 +1633,13 @@ a.btn { text-decoration: none; color: var(--fg); }
       <div class="row"><button class="btn" id="oEpAdd">Add eyepiece</button>
         <label>Barlow lens<select id="oBarlow"><option value="0">None</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="2.5">2.5×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option></select></label></div>
       <p class="note">The selected eyepiece is used on the map and in the eyepiece view. The details of an object say which of your eyepieces suits it best. Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces. True field = apparent field × eyepiece focal length ÷ telescope focal length.</p>
+      </div>
       <div class="row">
-        <label class="check"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
+        <label class="check" id="oTelradL"><input type="checkbox" id="oTelrad"> Telrad rings on the map (0.5°, 2°, 4°)</label>
         <label class="check"><input type="checkbox" id="oRing"> Eyepiece and finder field on the map</label>
         <label class="check"><input type="checkbox" id="oView"> Eyepiece view at the bottom left<i class="protag">Pro</i></label>
       </div>
+      <div id="oScopeB">
       <div class="row">
         <label style="flex-basis:100%">Eyepiece view orientation<select id="oOrient">
           <option value="newton">Upside down (Newtonian, Dobson)</option>
@@ -1563,6 +1649,8 @@ a.btn { text-decoration: none; color: var(--fg); }
         <label>Turn the view by: <span id="oRotV"></span><input type="range" id="oRot" min="-180" max="180" step="5"></label>
       </div>
       <p class="note">How far a Newtonian turns the view depends on where the focuser sits on the tube and how you look in. Compare the eyepiece view with a star pattern in the eyepiece once and turn it to match. The view shows stars to magnitude 9, deep-sky objects, the Moon and planets.</p>
+      </div>
+      <div class="row eqdel"><button class="btn" id="oReplace">Replace with a new instrument</button><button class="btn danger" id="oDel">Delete this instrument</button></div>
     </fieldset>
     <fieldset data-stab="cam">
       <legend>Pointing</legend>
@@ -1658,6 +1746,45 @@ try { const s = JSON.parse(localStorage.getItem("dobson-lotse") || "null"); if (
 // Telescope optics: focal length, eyepieces (focal length, apparent field), finder field, map rings, eyepiece view
 const OPT_DEF = { scope: 1200, ap: null, barlow: 0, useB: false, finder: 6, finderType: null, finderOrient: "newton", eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], ep: 0, telrad: false, ring: true, view: false, src: "ep", orient: "newton", rot: 0, altMin: 0, altMax: 90 };
 cfg.optics = Object.assign(JSON.parse(JSON.stringify(OPT_DEF)), cfg.optics || {});
+// Instruments (Settings › Equipment): telescopes, each with its own eyepieces, and binoculars. cfg.optics and cfg.mount
+// are the instrument in use; cfg.instruments holds them all (synced), cfg.instrumentId says which one this device uses.
+// A telescope: { id, name, type, mount, o: { the fields of INST_O }, u: change time }; binoculars: { id, name,
+// type: "bino", bino: { mag, ap, fov, hold }, u }. The one telescope of earlier versions becomes the first instrument.
+const INST_O = ["scope", "ap", "barlow", "finder", "finderType", "finderOrient", "eps", "altMin", "altMax", "orient", "rot", "telrad"];
+const newInstId = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+if (!Array.isArray(cfg.instruments) || !cfg.instruments.length) {
+  const o = cfg.optics, ap = +o.ap > 0 ? +o.ap : 0, fl = +o.scope || 0, ob = {};
+  INST_O.forEach(k => { ob[k] = JSON.parse(JSON.stringify(o[k] ?? null)); });
+  // named like the logbook named it until now ("Telescope 200 mm f/6"), so the entries match it
+  const name = "Telescope" + (ap ? " " + Math.round(ap) + " mm" + (fl ? " f/" + (Math.round(fl / ap * 10) / 10) : "") : fl ? " " + Math.round(fl) + " mm focal length" : "");
+  const fresh = cfg === DEF;   // a new install: a placeholder that goes when another device brings its instruments
+  cfg = Object.assign({}, cfg, { instruments: [{ id: newInstId(), name: fresh ? "My telescope" : name, type: cfg.mount === "eq" ? "other" : "dob", mount: cfg.mount === "eq" ? "eq" : "altaz", o: ob, u: 0, ...(fresh ? { fresh: true } : {}) }] });
+  cfg.instrumentId = cfg.instruments[0].id;
+}
+if (!cfg.instruments.some(i => i.id === cfg.instrumentId)) cfg.instrumentId = cfg.instruments[0].id;
+// Kinds of instruments: what a new one starts with (mount, eyepiece view, finder) and common sizes [label, aperture,
+// focal length, name]. Binoculars: [magnification, aperture, field].
+const INST_TYPES = {
+  dob: { name: "Dobsonian", about: "Newtonian on a rocker box, pushed by hand", mount: "altaz", orient: "newton", finder: "8x50",
+    sizes: [["6″ f/8", 152, 1200, "Dobson 6″"], ["8″ f/6", 203, 1200, "Dobson 8″"], ["10″ f/5", 254, 1250, "Dobson 10″"], ["12″ f/5", 305, 1500, "Dobson 12″"]] },
+  refr: { name: "Refractor", about: "Lens telescope, usually with a star diagonal", mount: "altaz", orient: "mirror", finder: "reddot",
+    sizes: [["70/700", 70, 700, "Refractor 70/700"], ["80/600", 80, 600, "Refractor 80/600"], ["102/714", 102, 714, "Refractor 102/714"], ["120/900", 120, 900, "Refractor 120/900"]] },
+  newt: { name: "Newtonian", about: "Mirror telescope on a tripod mount", mount: "eq", orient: "newton", finder: "6x30",
+    sizes: [["114/900", 114, 900, "Newtonian 114/900"], ["130/650", 130, 650, "Newtonian 130/650"], ["150/750", 150, 750, "Newtonian 150/750"], ["200/1000", 200, 1000, "Newtonian 200/1000"]] },
+  cat: { name: "Maksutov or SCT", about: "Compact telescope with a mirror and a lens", mount: "altaz", orient: "mirror", finder: "reddot",
+    sizes: [["Mak 90", 90, 1250, "Maksutov 90"], ["Mak 127", 127, 1500, "Maksutov 127"], ["SCT 6″", 150, 1500, "SCT 6″"], ["SCT 8″", 203, 2032, "SCT 8″"]] },
+  bino: { name: "Binoculars", about: "Hand-held, or on a mount with the phone attached" },
+  other: { name: "Other telescope", about: "Any other telescope", mount: "altaz", orient: "upright", finder: "reddot", sizes: [] },
+};
+const BINO_SIZES = [[7, 50, 7.1], [8, 42, 8], [10, 50, 6.5], [15, 70, 4.4], [20, 80, 3.2]];
+const INST_ICON = {
+  dob: '<path d="M5.5 14.5l9-9 3.5 3.5-9 9z"/><path d="M8 17l-3 4M10.5 17.5l2 3.5M3.5 21h11"/>',
+  refr: '<path d="M3.5 12.5l14-6.5 1.4 3-14 6.5z"/><path d="M10.5 12.5l-3.5 8.5M10.5 12.5l3.5 8.5M18.5 7.5l2-1"/>',
+  newt: '<path d="M5 13.5l9.5-8 3.5 4-9.5 8z"/><path d="M11 15v6M7.5 21h7M15.5 7l1.5-1.5"/>',
+  cat: '<path d="M7 13l6.5-5.5 4 4.5-6.5 5.5z"/><path d="M11.5 16v5M8 21h7M17.5 12l1.5 1.5"/>',
+  bino: '<circle cx="7" cy="15" r="4"/><circle cx="17" cy="15" r="4"/><path d="M5 11.5V6.5h4V11M19 11.5V6.5h-4V11M9 9h6"/>',
+  other: '<path d="M3.5 12.5l14-6.5 1.4 3-14 6.5z"/><path d="M10.5 12.5l-3.5 8.5M10.5 12.5l3.5 8.5"/>',
+};
 // Mirror directions learned in top edge mode before it flipped the image top to bottom (view along the top edge): relearn
 if (!cfg.kv) { const old = o => o && o.mirrorK && o.mirrorK[1][2] === 1; if (old(cfg)) cfg.mirrorK = null; Object.values(cfg.cams || {}).forEach(p => { if (old(p)) p.mirrorK = null; }); cfg.kv = 2; }
 cfg.fov.demo = 60;
@@ -5335,7 +5462,7 @@ function renderList() {
       const byTime = route ? (() => { const o = cfg.listOrder; cfg.listOrder = "time"; const v = todoItems(); cfg.listOrder = o; return v; })() : todo;
       const a = pathDeg(todo), b = pathDeg(byTime);
       ob.querySelector("small").textContent = route
-        ? "Shortest way for " + (cfg.mount === "eq" ? "an equatorial mount" : "an alt-azimuth mount (Dobson)") + ": about " + Math.round(a) + "° of turning in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first. Mount type: Settings › Telescope."
+        ? "Shortest way for " + (cfg.mount === "eq" ? "an equatorial mount" : "an alt-azimuth mount (Dobson)") + ": about " + Math.round(a) + "° of turning in total" + (b - a > 5 ? " (" + Math.round(b) + "° by time)" : "") + ". Objects that get low within the hour stay first. Mount type: Settings › Equipment."
         : "Sorted by when objects get low. About " + Math.round(a) + "° of turning in total.";
       body.append(ob);
     }
@@ -5489,16 +5616,32 @@ $("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromLis
 
 // "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
 const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
-// The instrument of a logbook entry: the telescope as set up when it was logged ("Telescope 200 mm f/6"), binoculars or
-// the naked eye. Older entries kept binoculars and the naked eye in the eyepiece field.
+// The instrument of a logbook entry: the name of one of your instruments ("Dobson 8″"; before there were several,
+// "Telescope 200 mm f/6"), binoculars or the naked eye; "ik" says which kind (scope, bino, eye). Older entries kept
+// binoculars and the naked eye in the eyepiece field.
 const INST_BINO = "Binoculars", INST_EYE = "Naked eye";
-function scopeLabel() {
-  const ap = aperture(), fl = +opt().scope || 0;
-  return "Telescope" + (ap ? " " + Math.round(ap) + " mm" + (fl ? " f/" + (Math.round(fl / ap * 10) / 10) : "") : fl ? " " + Math.round(fl) + " mm focal length" : "");
-}
 function entryInst(e) { return e.inst || (e.ep === INST_BINO || e.ep === INST_EYE ? e.ep : ""); }
-const instKind = e => { const i = entryInst(e); return i === INST_BINO ? "bino" : i === INST_EYE ? "eye" : "scope"; };
-function seenInstChanged() { const t = $("seenInst").value, sc = t !== INST_BINO && t !== INST_EYE; $("seenEpL").hidden = !sc; }
+function kindOfInst(name) {
+  if (name === INST_BINO) return "bino"; if (name === INST_EYE) return "eye";
+  const n = cfg.instruments.find(i => i.name === name); return n && isBinoInst(n) ? "bino" : "scope";
+}
+const instKind = e => e.ik || kindOfInst(entryInst(e));
+// the eyepieces of an instrument for the entry ("25 mm · 48×", with the Barlow, and the finder)
+function seenEpOpts(name) {
+  const i = cfg.instruments.find(x => x.name === name);
+  if (!i || isBinoInst(i)) return epCombos().map(c => epLabel(c.e).replace(/ · [^·]+$/, "")).concat(["Finder"]);
+  const o = i === curInst() ? cfg.optics : i.o || {}, sf = Math.max(1, +o.scope || 1200), B = +o.barlow > 1 ? +o.barlow : 0, out = [];
+  (o.eps || []).forEach(e => { out.push(e.f + " mm · " + Math.round(sf / e.f) + "×"); if (B) out.push(e.f + " mm + " + B + "× · " + Math.round(sf * B / e.f) + "×"); });
+  return out.concat(["Finder"]);
+}
+function seenInstChanged() {
+  const t = $("seenInst").value, sc = kindOfInst(t) === "scope", sel = $("seenEp"); $("seenEpL").hidden = !sc;
+  if (!sc || sel._inst === t) return;
+  const keep = sel.value, opts = seenEpOpts(t); sel.textContent = "";
+  if (sel._keep && !opts.includes(sel._keep) && t === sel._inst0) opts.unshift(sel._keep);
+  opts.forEach(x => { const op = document.createElement("option"); op.textContent = x; sel.append(op); });
+  sel.value = opts.includes(keep) ? keep : opts[0]; sel._inst = t;
+}
 function openSeen(o, entry, fromLog) {
   const now = entry ? new Date(entry.t) : new Date(), tNow = A.MakeTime(now), k = nightKey(new Date());
   const lastTonight = obs.log.filter(e => nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
@@ -5511,19 +5654,20 @@ function openSeen(o, entry, fromLog) {
   const f = $("seenFacts"); f.textContent = "";
   const add = (k, v) => { const s = document.createElement("span"); s.innerHTML = "<em></em><b></b>"; s.firstChild.textContent = k; s.lastChild.textContent = v; f.append(s); };
   add("When", now.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
-  // instrument: this telescope, binoculars, the naked eye, or one used in earlier entries
+  // instrument: the one in use, your other instruments, binoculars, the naked eye, or one used in earlier entries
   const il2 = document.createElement("label"); il2.innerHTML = "<em>Instrument</em>"; const isel = document.createElement("select"); isel.id = "seenInst"; isel.setAttribute("aria-label", "Instrument");
-  const iopts = [scopeLabel(), INST_BINO, INST_EYE];
+  const iopts = cfg.instruments.map(i => i.name);
+  if (!cfg.instruments.some(isBinoInst)) iopts.push(INST_BINO);
+  iopts.push(INST_EYE);
   obs.log.map(entryInst).filter(Boolean).forEach(t => { if (!iopts.includes(t)) iopts.push(t); });
-  const icur = entry ? entryInst(entry) || scopeLabel() : lastTonight && entryInst(lastTonight) ? entryInst(lastTonight) : scopeLabel();
+  const icur = entry ? entryInst(entry) || curInst().name : curInst().name;
   if (!iopts.includes(icur)) iopts.unshift(icur);
   iopts.forEach(t => { const op = document.createElement("option"); op.textContent = t; isel.append(op); }); isel.value = icur; isel.onchange = seenInstChanged; il2.append(isel); f.append(il2);
-  // eyepiece: a small select with the user's eyepieces (with a telescope)
+  // eyepiece: a small select with the eyepieces of that telescope
   const lab = document.createElement("label"); lab.id = "seenEpL"; lab.innerHTML = "<em>Eyepiece</em>"; const sel = document.createElement("select"); sel.id = "seenEp"; sel.setAttribute("aria-label", "Eyepiece");
-  const opts = epCombos().map(c => epLabel(c.e)).map(t => t.replace(/ · [^·]+$/, "")).concat(["Finder"]);
-  const cur = entry ? (entry.ep === INST_BINO || entry.ep === INST_EYE ? "" : entry.ep) : (opt().src === "finder" || !curEp() ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
-  if (cur && !opts.includes(cur)) opts.unshift(cur);
-  opts.forEach(t => { const op = document.createElement("option"); op.textContent = t; sel.append(op); }); sel.value = cur || opts[0]; lab.append(sel); f.append(lab); seenInstChanged();
+  const cur = entry ? (entry.ep === INST_BINO || entry.ep === INST_EYE ? "" : entry.ep) : (opt().src === "finder" || !curEp() || curEp().bino ? "Finder" : epLabel(curEp()).replace(/ · [^·]+$/, ""));
+  sel._inst = null; sel._inst0 = icur; sel._keep = cur || "";
+  lab.append(sel); f.append(lab); seenInstChanged(); if (cur && [...sel.options].some(op => op.textContent === cur)) sel.value = cur;
   if (seenState.facts.alt != null) add("Altitude", seenState.facts.alt + "°");
   if (seenState.facts.moon) add("Moon", seenState.facts.moon);
   if (seenState.facts.lat != null && seenState.facts.lon != null && !isNaN(seenState.facts.lat)) add("Site", Math.abs(seenState.facts.lat).toFixed(2) + "° " + (seenState.facts.lat >= 0 ? "N" : "S") + " " + Math.abs(seenState.facts.lon).toFixed(2) + "° " + (seenState.facts.lon >= 0 ? "E" : "W"));
@@ -5589,13 +5733,15 @@ const logState = { filter: null, scroll: 0 };
 function logEntries() { return obs.log.filter(e => !logState.filter || e.obj === logState.filter).sort((a, b) => b.t.localeCompare(a.t)); }
 // Apply what was changed in the open entry without closing it (used when stepping to another entry)
 function seenValues() {
-  const inst = $("seenInst").value, scope = inst !== INST_BINO && inst !== INST_EYE;
-  return { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), inst, ep: scope ? $("seenEp").value : "" };
+  const inst = $("seenInst").value, ik = kindOfInst(inst), e = seenState.entry;
+  // an entry logged with an instrument that has gone keeps its kind
+  const k = e && entryInst(e) === inst && !cfg.instruments.some(i => i.name === inst) && e.ik ? e.ik : ik;
+  return { result: seenState.res, seeing: seenState.see || null, transp: seenState.tr || null, note: $("seenNote").value.trim(), inst, ik: k, ep: k === "scope" ? $("seenEp").value : "" };
 }
 function keepSeenEdits() {
   const e = seenState.entry; if (!e) return;
   const v = seenValues();
-  if (Object.keys(v).some(k => (e[k] ?? null) !== (v[k] ?? null))) { Object.assign(e, v); saveObs(); }
+  if (Object.keys(v).some(k => k !== "ik" && (e[k] ?? null) !== (v[k] ?? null))) { Object.assign(e, v); saveObs(); }   // looking at an entry changes nothing
 }
 function backToLog() { renderLog(); openSheet("logSheet"); const inner = $("logSheet").querySelector(".inner"); requestAnimationFrame(() => { inner.scrollTop = logState.scroll; }); }
 function stepEntry(e) { if (!e) return; keepSeenEdits(); openSeen(objById(e.obj), e, true); }
@@ -5858,7 +6004,7 @@ $("bkFile").onchange = async () => {
   saveObs(); syncBackup(); if (!$("logSheet").hidden) renderLog();
   const lists = (!n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects.")) + proMsg;
   if (d.settings && typeof d.settings === "object") {
-    const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: telescope and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
+    const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: instruments and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
     if (r === true) {
       // restored settings count as changed now, so the sync group takes them over
       const now = Date.now(); d.settings.syncT = Object.fromEntries(ZSync.SETTINGS.map(p => [p, now]));
@@ -5936,8 +6082,10 @@ function proMailHref(list) {
   return "mailto:?subject=" + encodeURIComponent("My Zenigo Pro licence key") + "&body=" + encodeURIComponent(body);
 }
 // A Pro feature was asked for without Pro: say what it is and how to get it. Returns false, for `return proNeed(…)`.
-function proNeed(why) {
+// alt: { label, run } another way without Pro (a button below Buy)
+function proNeed(why, alt) {
   $("proWhy").textContent = why || ""; $("proWhy").hidden = !why;
+  $("proAltRow").hidden = !alt; if (alt) { $("proAlt").textContent = alt.label; $("proAlt").onclick = () => { closeSheet("proSheet"); setTimeout(alt.run, 60); }; }
   $("proKeyBox").hidden = true; $("proKeyMsg").textContent = "";
   renderPro(); openSheet("proSheet");
   return false;
@@ -6055,11 +6203,9 @@ function applySynced(m) {
   if (!$("listSheet").hidden) renderList();
   if (changed) { setSnap = ZSync.snapSettings(cfg); try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} afterSyncedSettings(); }
 }
-// Settings came from another device: the eyepiece list may have changed under the chosen eyepiece, the filter may lack keys
+// Settings came from another device: the instruments may have changed under the one in use, the filter may lack keys
 function afterSyncedSettings() {
-  const o = cfg.optics;
-  if (!Array.isArray(o.eps) || !o.eps.length) o.eps = JSON.parse(JSON.stringify(OPT_DEF.eps));
-  if (!(o.ep >= 0 && o.ep < o.eps.length)) o.ep = 0;
+  instAfterSync();
   cfg.show = Object.assign({ ...SHOW_DEF }, cfg.show);
   st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; nextCache.key = ""; lastSig = [];
   syncOptics(); syncFilter(); syncSettings(); updateGuide(); renderChips(); renderReadout(); syncHudNext();
@@ -6173,8 +6319,10 @@ async function joinSync(code, fromLink) {
   try { peek = await syncGet(await syncKeys(code)); } catch (e) { hint(syncErrText(e.code || "failed"), 7000); return false; }
   if (!peek) { hint(syncErrText("nogroup"), 7000); return false; }
   const opts = { join: true, loud: true };
-  if (ZSync.settingsDiffer(peek.data, syncLocal(null))) {
-    const r = await askConfirm("Which telescope settings?", "The group has other telescope settings than this device (eyepieces, location, mount or map filter). The lists and the logbook are combined either way; the eyepiece point and the camera stay as they are on each device.", "Use the group’s", "Keep this device’s");
+  // a new install's placeholder instrument doesn't count as settings of its own
+  const mine = syncLocal(null); if (cfg.instruments.every(i => i.fresh)) delete mine.settings.v.instruments;
+  if (ZSync.settingsDiffer(peek.data, mine)) {
+    const r = await askConfirm("Which settings?", "The group has other settings than this device (instruments, location or map filter). With “Keep this device’s” the instruments of both are kept. The lists and the logbook are combined either way; the eyepiece point and the camera stay as they are on each device.", "Use the group’s", "Keep this device’s");
     if (r === true) opts.settings = "remote";
     else if (r === "alt") { const now = Date.now(); cfg.syncT = cfg.syncT || {}; ZSync.SETTINGS.forEach(p => { cfg.syncT[p] = now; }); try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} }
     else return false;
@@ -6807,11 +6955,14 @@ document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
 });
 
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
-function opt() { return cfg.optics; }
+// The optics in use. While the settings show another instrument than the one in use, its handlers run with OPTX set
+// to that instrument's optics (withEdit), so the same code edits it; drawing never sees OPTX.
+let OPTX = null;
+function opt() { return OPTX || cfg.optics; }
 // How low and how high the telescope can point (Settings › Telescope: base, mount, rocker box, obstacles). Suggestions,
 // plans, "well placed" times, night bars and the target line keep inside this range.
 function reach() {
-  const o = cfg.optics, lo = Math.max(0, Math.min(80, +o.altMin || 0));
+  const o = opt(), lo = Math.max(0, Math.min(80, +o.altMin || 0));
   const hi = Math.max(lo + 5, Math.min(90, o.altMax == null || o.altMax === "" ? 90 : +o.altMax));
   return { lo, hi, limited: lo > 0 || hi < 90 };
 }
@@ -6827,6 +6978,7 @@ const FINDERS = {
   "6x30": { name: "6×30 finder", fov: 7, orient: "newton" }, "8x50": { name: "8×50 finder", fov: 6, orient: "newton" },
   "9x50": { name: "9×50 finder", fov: 5.5, orient: "newton" }, "9x50raci": { name: "9×50 right-angle finder", fov: 5.5, orient: "upright" },
   custom: { name: "finder", fov: null },
+  none: { name: "binoculars", fov: 0, view: 10 },   // binoculars: no finder
 };
 function finderType() { const o = opt(); if (!FINDERS[o.finderType]) o.finderType = +o.finder === 6 || !o.finder ? "8x50" : "custom"; return o.finderType; }
 function finderFov() { const t = finderType(), F = FINDERS[t]; return F.fov == null ? Math.max(0.5, +opt().finder || 6) : F.fov; }   // 0: no optical field
@@ -6844,14 +6996,14 @@ function epCombos() {
 }
 function curEp() { const o = opt(); if (!o.eps.length) return null; const e = o.eps[Math.max(0, Math.min(o.ep | 0, o.eps.length - 1))]; return o.useB && barlowF() ? withBarlow(e, barlowF()) : e; }
 const curEpKey = () => { const o = opt(); return o.src === "finder" || !o.eps.length ? "finder" : Math.min(o.ep | 0, o.eps.length - 1) + ":" + (o.useB && barlowF() ? barlowF() : 1); };
-const epName = e => (e.b ? e.base + " mm + " + e.b + "× Barlow" : e.f + " mm");
-const epNameShort = e => (e.b ? e.base + " mm + " + e.b + "×" : e.f + " mm");
+const epName = e => (e.bino ? "binoculars" : e.b ? e.base + " mm + " + e.b + "× Barlow" : e.f + " mm");
+const epNameShort = e => (e.bino ? e.bino : e.b ? e.base + " mm + " + e.b + "×" : e.f + " mm");
 function epData(e) { const o = opt(), sf = Math.max(1, +o.scope || 1200); return { mag: sf / e.f, fov: e.a * e.f / sf }; }   // magnification, true field (°)
 // Aperture (mirror or lens diameter), from the settings; without it there are no exit pupils and no eyepiece advice
 function aperture() { return +opt().ap > 0 ? +opt().ap : null; }
 function exitPupil(e) { const ap = aperture(); return ap ? e.f * ap / Math.max(1, +opt().scope || 1200) : null; }   // mm
 function fmtField(d) { return d < 1 ? Math.round(d * 60) + "′" : (d < 10 ? d.toFixed(1) : d.toFixed(0)) + "°"; }
-function epLabel(e) { const d = epData(e); return epNameShort(e) + " · " + Math.round(d.mag) + "× · " + fmtField(d.fov); }
+function epLabel(e) { const d = epData(e); return epNameShort(e) + (e.bino ? "" : " · " + Math.round(d.mag) + "×") + " · " + fmtField(d.fov); }
 // "Should be in the eyepiece": within the inner part of the selected eyepiece's field
 function hitRadius() { const e = curEp(); return e ? Math.max(0.05, epData(e).fov / 2 * 0.7) : 0.4; }
 // Which of your eyepieces suits an object best. Deep-sky: the object should fit and fill a good part of the field
@@ -6930,7 +7082,7 @@ function fillEpBox(box, o, keep) {
     const miss = [!opt().eps.length && "your eyepieces", !aperture() && "the telescope’s aperture"].filter(Boolean).join(" and ");
     const k = document.createElement("div"); k.className = "k"; k.textContent = "Which eyepiece";
     const d = document.createElement("div"); d.className = "course"; d.textContent = "Enter " + miss + " in the settings to see which eyepiece suits this object best.";
-    const b = document.createElement("button"); b.className = "lnk"; b.textContent = "Telescope settings →";
+    const b = document.createElement("button"); b.className = "lnk"; b.textContent = "Equipment settings →";
     b.onclick = () => { st.infoFromList = st.tgtFromList = false; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope");
       setTimeout(() => $(aperture() ? "oEps" : "oAp").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
     box.append(k, d, b); box.hidden = false; return true;
@@ -6946,7 +7098,7 @@ function fillEpBox(box, o, keep) {
   const O = opt(), cur = curEpKey(), byKey = k => a.rows.find(r => r.key === k);
   if (!keep || !byKey(box._sel)) box._sel = a.best.key;
   const sel = byKey(box._sel), short = r => epNameShort(r.e) + " · " + Math.round(r.mag) + "×";
-  const k = document.createElement("div"); k.className = "k"; k.textContent = O.eps.length > 1 ? "Which eyepiece" : "Eyepiece"; box.append(k);
+  const bino = !!O.eps[0]?.bino, k = document.createElement("div"); k.className = "k"; k.textContent = bino ? "In your binoculars" : O.eps.length > 1 ? "Which eyepiece" : "Eyepiece"; box.append(k);
   const head = document.createElement("div"); head.className = "eb";
   head.innerHTML = "<div><b></b><small></small></div>"; head.querySelector("b").textContent = short(sel) + " · " + fmtField(sel.fov);
   if (sel === a.best && a.rows.length > 1) { const t = document.createElement("i"); t.className = "tbest"; t.textContent = "best"; head.querySelector("b").append(" ", t); }
@@ -6966,6 +7118,7 @@ function fillEpBox(box, o, keep) {
     box.append(list);
   }
   const tips = [];
+  if (bino) return true;
   if (a.alt && sel === a.best) tips.push("For craters along the line between day and night: the " + short(a.alt) + ".");
   const aim = "Aim with the " + finderName() + ", ";
   if (a.widest !== sel && a.widest.fov > sel.fov * 1.3) tips.push(aim + "find it with the " + epName(a.widest.e) + " (widest field, " + fmtField(a.widest.fov) + "), then switch to the " + epName(sel.e) + ".");
@@ -6973,7 +7126,7 @@ function fillEpBox(box, o, keep) {
   tips.forEach(txt => { const d = document.createElement("div"); d.className = "course"; d.textContent = txt; box.append(d); });
   return true;
 }
-function setOptics(patch) { Object.assign(cfg.optics, patch); save(); st.opticsVer = (st.opticsVer || 0) + 1; syncOptics(); updateGuide(); }
+function setOptics(patch) { Object.assign(cfg.optics, patch); storeInst(); save(); st.opticsVer = (st.opticsVer || 0) + 1; syncOptics(); updateGuide(); }
 // Telrad rings (0.5°, 2°, 4°) and the true field of eyepiece and finder, centred on the crosshair
 function drawRings(c, sol, tx, ty, dpr, col) {
   const o = opt(); if (!o.telrad && !o.ring) return;
@@ -7001,7 +7154,8 @@ function drawEyepiece() {
   const c = cv.getContext("2d"), sk = skyNow(), col = n => sk.col[n], sol = st.sol;
   const ep = curEp(), FT = FINDERS[finderType()], finder = o.src === "finder" || !ep, naked = finder && !!FT.reticle;
   const fov = finder ? finderViewFov() : epData(ep).fov, orient = naked ? "upright" : finder ? o.finderOrient || "newton" : o.orient, rotDeg = finder ? 0 : +o.rot || 0;
-  const lab = finder ? finderLabel() : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
+  // with several instruments the binoculars' name is on the button before it
+  const lab = finder ? finderLabel() : ep.bino && cfg.instruments.length > 1 ? fmtField(fov) + " field" : epLabel(ep); if ($("epSrc").textContent !== lab) $("epSrc").textContent = lab;
   // what this aperture shows at most (the extended catalogue goes fainter than a small finder sees)
   const apD = finder ? (+String(finderType()).split("x")[1] || 30) : aperture() || 150, starVis = 2.5 + 5 * Math.log10(apD), dsoVis = 1.5 + 5 * Math.log10(apD);
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -7071,8 +7225,11 @@ function drawEyepiece() {
 }
 const epLine = e => Math.round(epData(e).mag) + "× · true field " + fmtField(epData(e).fov) + (exitPupil(e) ? " · exit pupil " + exitPupil(e).toFixed(1) + " mm" : "")
   + (barlowF() ? " · with Barlow " + Math.round(epData(withBarlow(e, barlowF())).mag) + "×" : "");
-function syncOptics() {
-  const o = opt(), box = $("oEps");
+function syncOptics() { withEdit(syncOptEditor); syncQuickEp(); renderEquip(); renderQuickInst(); }
+// Settings › Equipment, below the list: the instrument chosen there (the one in use unless another was tapped)
+function syncOptEditor() {
+  const o = opt(), box = $("oEps"), i = editInst(), other = i !== curInst();
+  syncInstHead(i, other);
   if (document.activeElement !== $("oScope")) $("oScope").value = o.scope;
   { const r = reach(); if (document.activeElement !== $("oAltMin")) $("oAltMin").value = r.lo; if (document.activeElement !== $("oAltMax")) $("oAltMax").value = r.hi; }
   if (document.activeElement !== $("oFinder")) $("oFinder").value = o.finder;
@@ -7084,11 +7241,14 @@ function syncOptics() {
   if (document.activeElement !== $("oAp")) $("oAp").value = +o.ap > 0 ? o.ap : "";
   $("oBarlow").value = String(barlowF() || 0);
   $("oAp").placeholder = "e.g. 200";
+  $("oMount").value = (other ? i.mount : cfg.mount) === "eq" ? "eq" : "altaz";
   const ap = aperture();
   $("oScopeInfo").textContent = ap ? "f/" + ((+o.scope || 1200) / ap).toFixed(1) + " · highest useful magnification about " + Math.round(2 * ap / 10) * 10 + "×."
     : "Enter the aperture (mirror or lens diameter, 200 mm for an 8-inch Dobson) to see exit pupils and, in each object’s details, which eyepiece suits it best.";
-  $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!o.view;
+  $("oTelrad").checked = !!o.telrad; $("oRing").checked = !!o.ring; $("oView").checked = !!o.view; $("qView").checked = !!cfg.optics.view;
   $("oOrient").value = o.orient; $("oRot").value = o.rot; $("oRotV").textContent = (o.rot > 0 ? "+" : "") + o.rot + "°";
+  // the selected eyepiece belongs to the instrument in use: no choice for another one
+  box.classList.toggle("nosel", other);
   // rebuilt unless a number is being typed (then only the line below each eyepiece is refreshed)
   const ae = document.activeElement, typing = box.contains(ae) && ae.matches("input[type=number]");
   if (typing) box.querySelectorAll(".eprow").forEach((row, i) => { const e = o.eps[i]; if (e) row.querySelector("small").textContent = epLine(e); });
@@ -7100,53 +7260,450 @@ function syncOptics() {
         <label>Eyepiece (mm)<input type="number" min="2" max="60" step="0.5" data-k="f"></label>
         <label>Apparent field (°)<input type="number" min="30" max="120" step="1" data-k="a"></label>
         <button class="iconbtn" aria-label="Remove eyepiece"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button><small></small>`;
-      row.querySelector("[type=radio]").checked = i === (o.ep | 0);
+      row.querySelector("[type=radio]").checked = !other && i === (o.ep | 0);
       row.querySelector("[type=radio]").onchange = () => setOptics({ ep: i });
       row.querySelectorAll("[data-k]").forEach(inp => { inp.value = e[inp.dataset.k];
-        inp.onchange = () => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setOptics({}); }; });
-      row.querySelector("button").onclick = () => {
+        inp.onchange = ed(() => { const val = +inp.value; if (!(val > 0)) { inp.value = e[inp.dataset.k]; return; } e[inp.dataset.k] = val; setEd({}); }); });
+      row.querySelector("button").onclick = ed(() => {
         const sel = o.ep | 0; o.eps.splice(i, 1); document.activeElement?.blur();
-        setOptics({ ep: Math.max(0, Math.min(i < sel ? sel - 1 : sel, o.eps.length - 1)), src: o.eps.length ? o.src : "finder" });
+        setEd({ ep: Math.max(0, Math.min(i < sel ? sel - 1 : sel, o.eps.length - 1)), src: o.eps.length ? o.src : "finder" });
         hint("Removed the " + e.f + " mm eyepiece.", 2500);
-      };
+      });
       row.querySelector("small").textContent = epLine(e);
       box.append(row);
     });
   }
-  const q = $("qEp"); q.textContent = "";
-  epCombos().forEach(c => { const op = document.createElement("option"); op.value = c.key; op.textContent = epLabel(c.e); q.append(op); });
-  { const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = finderLabel(); q.append(fo); }
-  q.value = curEpKey();
 }
-$("oMount").onchange = () => { cfg.mount = $("oMount").value; save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); };
-$("oAltMin").onchange = $("oAltMax").onchange = () => {
+// Quick settings: the eyepieces (and Barlow combinations) of the instrument in use, and its finder
+function syncQuickEp() {
+  const q = $("qEp"), bino = !!cfg.optics.eps[0]?.bino; q.textContent = "";
+  epCombos().forEach(c => { const op = document.createElement("option"); op.value = c.key; op.textContent = epLabel(c.e); q.append(op); });
+  if (!bino) { const fo = document.createElement("option"); fo.value = "finder"; fo.textContent = finderLabel(); q.append(fo); }
+  q.value = curEpKey(); q.disabled = bino;
+  $("qEpLabel").firstChild.textContent = bino ? "Field " : "Eyepiece ";
+}
+const ed = fn => (...a) => withEdit(() => fn(...a));
+$("oMount").onchange = () => {
+  const i = editInst(), v = $("oMount").value === "eq" ? "eq" : "altaz";
+  if (i !== curInst()) { i.mount = v; instTouched(i); save(); syncOptics(); return; }
+  cfg.mount = v; storeInst(); save(); nextCache.key = ""; if (!$("listSheet").hidden) renderList(); syncHudNext(); renderEquip();
+};
+$("oAltMin").onchange = $("oAltMax").onchange = ed(() => {
   const lo = Math.round(+$("oAltMin").value), hi = Math.round(+$("oAltMax").value);
   if (!(lo >= 0 && lo <= 80 && hi >= 10 && hi <= 90 && hi >= lo + 5)) { hint("The highest altitude has to be at least 5° above the lowest (0–80° and 10–90°).", 4000); syncOptics(); return; }
-  setOptics({ altMin: lo, altMax: hi }); reachChanged();
-};
-$("oScope").onchange = () => { const v = +$("oScope").value; if (v >= 100) setOptics({ scope: v }); else syncOptics(); };
-$("oBarlow").onchange = () => { const v = +$("oBarlow").value; setOptics(v > 1 ? { barlow: v } : { barlow: 0, useB: false }); };
-$("oAp").onchange = () => { const v = +$("oAp").value; setOptics({ ap: v >= 30 ? v : null }); };
-$("oFinder").onchange = () => { const v = +$("oFinder").value; if (v > 0) setOptics({ finder: v }); else syncOptics(); };
-$("oFinderType").onchange = () => { const t = $("oFinderType").value, F = FINDERS[t], o = opt(), patch = { finderType: t };
+  setEd({ altMin: lo, altMax: hi }); if (editInst() === curInst()) reachChanged();
+});
+$("oScope").onchange = ed(() => { const v = +$("oScope").value; if (v >= 100) setEd({ scope: v }); else syncOptics(); });
+$("oBarlow").onchange = ed(() => { const v = +$("oBarlow").value; setEd(v > 1 ? { barlow: v } : { barlow: 0, useB: false }); });
+$("oAp").onchange = ed(() => { const v = +$("oAp").value; setEd({ ap: v >= 30 ? v : null }); });
+$("oFinder").onchange = ed(() => { const v = +$("oFinder").value; if (v > 0) setEd({ finder: v }); else syncOptics(); });
+$("oFinderType").onchange = ed(() => { const t = $("oFinderType").value, F = FINDERS[t], o = opt(), patch = { finderType: t };
   if (F.orient) patch.finderOrient = F.orient;
   if (t === "telrad") patch.telrad = true;
   else if (o.finderType === "telrad") patch.telrad = false;
-  setOptics(patch); };
-$("oFinderOrient").onchange = () => setOptics({ finderOrient: $("oFinderOrient").value });
-$("oEpAdd").onclick = () => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setOptics({ ep: o.eps.length - 1, src: "ep" }); };
-$("oTelrad").onchange = () => setOptics({ telrad: $("oTelrad").checked });
+  setEd(patch); });
+$("oFinderOrient").onchange = ed(() => setEd({ finderOrient: $("oFinderOrient").value }));
+$("oEpAdd").onclick = ed(() => { const o = opt(); o.eps.push({ f: 15, a: 52 }); setEd({ ep: o.eps.length - 1, src: "ep" }); });
+$("oTelrad").onchange = ed(() => setEd({ telrad: $("oTelrad").checked }));
 $("oRing").onchange = () => setOptics({ ring: $("oRing").checked });
 const proView = el => { if (el.checked && !pro.on) { el.checked = false; return proNeed("The eyepiece view is part of Zenigo Pro."); } setOptics({ view: el.checked }); };
 $("oView").onchange = () => proView($("oView"));
 $("qView").onchange = () => proView($("qView"));
-$("oOrient").onchange = () => setOptics({ orient: $("oOrient").value });
-$("oRot").oninput = () => setOptics({ rot: +$("oRot").value });
+$("oOrient").onchange = ed(() => setEd({ orient: $("oOrient").value }));
+$("oRot").oninput = ed(() => setEd({ rot: +$("oRot").value }));
 $("qEp").onchange = () => { const v = $("qEp").value, [i, b] = v.split(":").map(Number); setOptics(v === "finder" ? { src: "finder" } : { src: "ep", ep: i, useB: b > 1 }); };
-$("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
+$("epCanvas").onclick = () => { const o = opt(); if (!o.eps.length || o.eps[0].bino) return; setOptics({ src: o.src === "finder" ? "ep" : "finder" }); };
 $("epSrc").onclick = () => $("epCanvas").onclick();
 $("epClose").onclick = () => setOptics({ view: false });
-$("epSet").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); setTimeout(() => $(opt().src === "finder" ? "oFinderType" : "oEps").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
+$("epSet").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); setTimeout(() => $(isBinoInst(curInst()) ? "oBinoBox" : opt().src === "finder" ? "oFinderType" : "oEps").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
+$("epInst").onclick = () => openInstSheet();
+
+/* ---------------- Instruments: telescopes with their own eyepieces, and binoculars ---------------- */
+// The records are in cfg.instruments (see INST_O); cfg.optics and cfg.mount are a working copy of the one in use, so
+// everything that draws or advises keeps reading opt(). Changes to the one in use go back into its record (storeInst);
+// another one is edited in its record directly (setEd, withEdit).
+function instById(id) { return (cfg.instruments || []).find(i => i.id === id) || null; }
+function curInst() { return instById(cfg.instrumentId) || cfg.instruments[0]; }
+function isBinoInst(i) { return !!i && i.type === "bino"; }
+function instTouched(i) { i.u = Date.now(); delete i.fresh; }
+const binoName = b => (+b.mag || "?") + "×" + (+b.ap || "?");
+// What cfg.optics holds for an instrument. Binoculars are one "eyepiece" with their magnification and field
+// (100 mm on a telescope of 100 mm × magnification), without a finder, and reach the whole sky.
+function instOptics(i) {
+  if (isBinoInst(i)) {
+    const b = i.bino || {}, m = Math.max(1, +b.mag || 10), f = Math.max(0.5, +b.fov || 6);
+    return { scope: m * 100, ap: +b.ap > 0 ? +b.ap : null, barlow: 0, finder: 0, finderType: "none", finderOrient: "upright", eps: [{ f: 100, a: f * m, bino: binoName(b) }],
+      altMin: 0, altMax: b.hold === "mount" && b.altMax ? +b.altMax : 90, orient: "upright", rot: 0, telrad: false };
+  }
+  const o = i.o || {}, d = {};
+  INST_O.forEach(k => { d[k] = JSON.parse(JSON.stringify(o[k] != null ? o[k] : OPT_DEF[k] ?? null)); });
+  if (!Array.isArray(d.eps)) d.eps = [];
+  return d;
+}
+// This device's choice of eyepiece for each instrument (not synced)
+function saveSel() { const i = curInst(), o = cfg.optics; if (!i) return; cfg.instSel = cfg.instSel || {}; cfg.instSel[i.id] = { ep: o.ep | 0, useB: !!o.useB, src: o.src === "finder" ? "finder" : "ep" }; }
+function loadInst(i) {
+  const o = cfg.optics, sel = (cfg.instSel || {})[i.id];
+  Object.assign(o, instOptics(i));
+  cfg.mount = !isBinoInst(i) && i.mount === "eq" ? "eq" : "altaz";
+  o.ep = sel ? sel.ep | 0 : 0; o.useB = !!(sel && sel.useB); o.src = sel && sel.src === "finder" ? "finder" : "ep";
+  o.ep = Math.max(0, Math.min(o.ep, o.eps.length - 1)); if (!o.eps.length) o.src = "finder";
+  if (isBinoInst(i)) Object.assign(o, { ep: 0, useB: false, src: "ep" });
+}
+// After a change to the instrument in use: back into its record (with a new change time, which syncs it)
+function storeInst() {
+  const i = curInst(); if (!i) return; saveSel();
+  if (isBinoInst(i)) return;
+  const o = {}; INST_O.forEach(k => { o[k] = JSON.parse(JSON.stringify(cfg.optics[k] ?? null)); });
+  const m = cfg.mount === "eq" ? "eq" : "altaz";
+  if (ZSync.stable(o) !== ZSync.stable(i.o) || m !== i.mount) { i.o = o; i.mount = m; instTouched(i); }
+}
+// The eyepiece point depends on how the phone sits on the instrument: each one keeps its own (on this device)
+function saveTele(id) { cfg.instTele = cfg.instTele || {}; cfg.instTele[id] = { tele: { ...(cfg.tele || { x: 0, y: 0 }) }, teleTop: cfg.teleTop ? { ...cfg.teleTop } : null, at: cfg.teleSetAt ?? null, bak: cfg.calTeleBak || null }; }
+function loadTele(id) {
+  const t = (cfg.instTele || {})[id];
+  cfg.tele = t ? { ...t.tele } : { x: 0, y: 0 }; cfg.teleTop = t && t.teleTop ? { ...t.teleTop } : { x: 0, y: 0 }; cfg.teleSetAt = t ? t.at : null;
+  if (t && t.bak) cfg.calTeleBak = t.bak; else delete cfg.calTeleBak;
+}
+// Everything that depends on the optics, after switching or a change from another device
+function instChanged() {
+  st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; lastSig = []; nextCache.key = "";
+  syncOptics(); updateGuide(); reachChanged(); syncCompassCal(); if (!$("sheet").hidden) syncSettings(); if (!$("quickSheet").hidden) syncQuick();
+}
+function switchInst(n) {
+  const cur = curInst();
+  if (cur && cur !== n && instById(cur.id)) { storeInst(); saveTele(cur.id); }
+  cfg.instrumentId = n.id; loadInst(n); loadTele(n.id); st.editId = null; save(); instChanged();
+}
+function useInst(id, quiet) {
+  const n = instById(id); if (!n) return false;
+  if (n === curInst()) return true;
+  if (!pro.on) return proNeed("Switching between instruments is part of Zenigo Pro. Without it, Zenigo uses one instrument: delete the others in Settings › Equipment, or keep using " + curInst().name + ".");
+  switchInst(n);
+  if (!quiet) hint("Now using " + n.name + (n.type === "bino" ? "." : (cfg.teleSetAt ? "" : ". Set its eyepiece point once, with a star in the eyepiece.")), 3500);
+  return true;
+}
+// A line about an instrument: "Dobsonian · 200 mm f/6 · 4 eyepieces", "Binoculars · 10×50 · 6.5°"
+function instSummary(i) {
+  if (isBinoInst(i)) { const b = i.bino || {}; return "Binoculars · " + binoName(b) + " · " + fmtField(+b.fov || 6) + (b.hold === "mount" ? " · on a mount" : ""); }
+  const o = i.o || {}, ap = +o.ap > 0 ? +o.ap : 0, fl = +o.scope || 0, n = Array.isArray(o.eps) ? o.eps.length : 0;
+  return [(INST_TYPES[i.type] || INST_TYPES.other).name, ap ? Math.round(ap) + " mm" + (fl ? " f/" + (fl / ap).toFixed(1).replace(/\.0$/, "") : "") : fl ? fl + " mm focal length" : "",
+    n === 1 ? "1 eyepiece" : n + " eyepieces"].filter(Boolean).join(" · ");
+}
+const instIcon = i => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (INST_ICON[i.type] || INST_ICON.other) + "</svg>";
+// A card: the instrument (tap: show it in the settings / use it) and "in use" or a Use button
+function instCard(i, onMain, mainLabel) {
+  const cur = i === curInst(), d = document.createElement("div"); d.className = "eqcard" + (cur ? " inuse" : "");
+  const b = document.createElement("button"); b.className = "eqmain"; b.innerHTML = instIcon(i) + "<span><b></b><small></small></span>";
+  b.querySelector("b").textContent = i.name; b.querySelector("small").textContent = instSummary(i); b.setAttribute("aria-label", mainLabel(i)); b.onclick = () => onMain(i);
+  d.append(b);
+  if (cur) { const s = document.createElement("span"); s.className = "inuse"; s.textContent = "in use"; d.append(s); }
+  else { const u = document.createElement("button"); u.className = "btn"; u.textContent = "Use"; u.setAttribute("aria-label", "Use " + i.name); u.onclick = () => useInst(i.id); d.append(u); }
+  return d;
+}
+function renderEquip() {
+  const box = $("eqList"); if (!box) return;
+  const many = cfg.instruments.length > 1, edit = editInst();
+  box.textContent = "";
+  cfg.instruments.forEach(i => {
+    const c = instCard(i, x => { st.editId = x === curInst() ? null : x.id; syncOptics(); $("optics").scrollIntoView({ block: "start", behavior: reduceMotion() ? "auto" : "smooth" }); }, x => "Settings of " + x.name);
+    if (many && i === edit) c.classList.add("editing");
+    box.append(c);
+  });
+}
+// Quick settings: the instruments as chips, and one to add another
+function renderQuickInst() {
+  const q = $("qInst"); if (!q) return;
+  q.textContent = "";
+  cfg.instruments.forEach(i => {
+    const b = document.createElement("button"); b.className = "chip cat" + (i === curInst() ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(i === curInst()));
+    b.textContent = i.name; b.onclick = () => { if (useInst(i.id)) renderQuickInst(); }; q.append(b);
+  });
+  const a = document.createElement("button"); a.className = "chip"; a.innerHTML = "+ Add" + (pro.on ? "" : '<i class="protag">Pro</i>'); a.setAttribute("aria-label", "Add an instrument");
+  a.onclick = () => addInst("quick"); q.append(a);
+  const many = cfg.instruments.length > 1, ei = $("epInst");
+  ei.hidden = !many; if (many) { ei.textContent = curInst().name + " ▾"; }
+}
+// The settings above the eyepieces: name, kind, binoculars, "not in use", delete or replace
+function syncInstHead(i, other) {
+  const bino = isBinoInst(i), many = cfg.instruments.length > 1;
+  $("oLegend").textContent = i.name + (many && !other ? " · in use" : "");
+  $("oOther").hidden = !other; $("oOtherTxt").textContent = "Not in use on this device. Changes here apply to " + i.name + ".";
+  if (document.activeElement !== $("oName")) $("oName").value = i.name;
+  $("oType").hidden = bino; $("oBinoBox").hidden = !bino; $("oScopeA").hidden = $("oScopeB").hidden = $("oTelradL").hidden = bino;
+  if (!bino) {
+    const t = $("oType"); t.textContent = "";
+    ["dob", "refr", "newt", "cat", "other"].forEach(k => {
+      const b = document.createElement("button"); b.className = "chip cat" + (i.type === k ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(i.type === k));
+      b.textContent = INST_TYPES[k].name; b.onclick = () => { i.type = k; instTouched(i); save(); syncOptics(); }; t.append(b);
+    });
+  } else {
+    const b = i.bino || (i.bino = {});
+    [["bMag", "mag"], ["bAp", "ap"], ["bFov", "fov"]].forEach(([id, k]) => { if (document.activeElement !== $(id)) $(id).value = b[k] ?? ""; });
+    $("bHold").value = b.hold === "mount" ? "mount" : "hand";
+    const pupil = +b.ap / +b.mag;
+    $("bInfo").textContent = (pupil > 0 ? "Exit pupil " + pupil.toFixed(1) + " mm · " : "") + (+b.ap > 0 ? "stars to about magnitude " + Math.round(2.5 + 5 * Math.log10(+b.ap)) + ". " : "") + "The field is printed on them, often as metres at 1000 m: 105 m is about 6°.";
+  }
+  $("oDel").hidden = !many; $("oReplace").hidden = many;
+}
+function setBino(patch) {
+  const i = editInst(); if (!isBinoInst(i)) return;
+  Object.assign(i.bino || (i.bino = {}), patch); instTouched(i);
+  if (i === curInst()) { loadInst(i); save(); instChanged(); } else { save(); syncOptics(); }
+}
+[["bMag", "mag", 2, 40], ["bAp", "ap", 15, 150], ["bFov", "fov", 1, 15]].forEach(([id, k, lo, hi]) => $(id).onchange = () => {
+  const v = +$(id).value; if (!(v >= lo && v <= hi)) { syncOptics(); return; }
+  const i = editInst(), b = (i && i.bino) || {}, auto = i && i.name === "Binoculars " + binoName(b);
+  setBino({ [k]: v }); if (auto) { i.name = "Binoculars " + binoName(i.bino); save(); syncOptics(); }
+});
+$("bHold").onchange = () => setBino({ hold: $("bHold").value });
+$("oName").onchange = () => {
+  const i = editInst(), v = $("oName").value.trim().slice(0, 40);
+  if (!v || v === i.name) { $("oName").value = i.name; return; }
+  if (cfg.instruments.some(x => x !== i && x.name === v)) { hint("You already have an instrument called " + v + ".", 3500); $("oName").value = i.name; return; }
+  i.name = v; instTouched(i); save(); syncOptics();
+};
+$("oUse").onclick = () => { const i = editInst(); if (useInst(i.id)) syncSettings(); };
+$("oDel").onclick = () => delInst(editInst());
+$("oReplace").onclick = () => addInst("settings", curInst().id);
+$("eqAdd").onclick = () => addInst("settings");
+// Changes while editing another instrument than the one in use go into its record; device things (view, rings) and
+// the one in use go through setOptics
+function editInst() { return instById(st.editId) || curInst(); }
+function withEdit(fn) {
+  const i = editInst();
+  if (i === curInst()) return fn();
+  OPTX = Object.assign(instOptics(i), { ep: 0, useB: false, src: "ep", view: cfg.optics.view, ring: cfg.optics.ring });
+  if (!isBinoInst(i)) { if (!Array.isArray(i.o.eps)) i.o.eps = []; OPTX.eps = i.o.eps; }   // edited in place
+  try { return fn(); } finally { OPTX = null; }
+}
+function setEd(patch) {
+  const i = editInst();
+  if (i === curInst()) return setOptics(patch);
+  const dev = {};
+  Object.entries(patch).forEach(([k, v]) => { if (INST_O.includes(k)) i.o[k] = v; else if (k === "view" || k === "ring") dev[k] = v; });
+  instTouched(i);
+  if (Object.keys(dev).length) setOptics(dev); else { save(); syncOptics(); }
+}
+async function delInst(i) {
+  if (!i || cfg.instruments.length < 2) return;
+  const fromSet = !$("sheet").hidden;
+  const ok = await askConfirm("Delete " + i.name + "?", (isBinoInst(i) ? "Its settings are deleted" : "Its eyepieces and settings are deleted") + " on this device" + (syncS.code ? " and your synced devices" : "") + ". Logbook entries keep its name.", "Delete");
+  if (ok) {
+    const wasCur = i === curInst();
+    cfg.instruments = cfg.instruments.filter(x => x !== i);
+    if (cfg.instSel) delete cfg.instSel[i.id]; if (cfg.instTele) delete cfg.instTele[i.id];
+    st.editId = null;
+    if (wasCur) { cfg.instrumentId = cfg.instruments[0].id; loadInst(curInst()); loadTele(cfg.instrumentId); save(); instChanged(); }
+    else { save(); syncOptics(); }
+    hint("Deleted " + i.name + "." + (wasCur ? " Now using " + curInst().name + "." : ""), 3500);
+  }
+  if (fromSet) { syncSettings(); openSheet("sheet"); setSetTab("scope"); }
+}
+// Free: one instrument. A second one asks for Pro, and offers to replace the one there is instead.
+function addInst(from, replace) {
+  if (!replace && !pro.on && cfg.instruments.length >= 1) {
+    const cur = curInst();
+    return proNeed("More than one instrument is part of Zenigo Pro. Without it you have one instrument with as many eyepieces as you like: change it in Settings › Equipment, or replace it with a new one. Your logbook keeps what you used.",
+      { label: "Replace " + cur.name + " with a new instrument", run: () => addInst(from, cur.id) });
+  }
+  openAddInst(from, replace);
+}
+
+/* ---------------- Switching: the instrument sheet (from the eyepiece view and Quick settings) ---------------- */
+function openInstSheet() { renderInstSheet(); openSheet("instSheet"); }
+function renderInstSheet() {
+  const box = $("instList"); box.textContent = "";
+  cfg.instruments.forEach(i => box.append(instCard(i, x => { if (useInst(x.id)) renderInstSheet(); }, x => (x === curInst() ? x.name + ", in use" : "Use " + x.name))));
+  const eps = $("instEps"), bino = isBinoInst(curInst()); eps.textContent = "";
+  $("instEpBox").hidden = bino;
+  if (!bino) {
+    const cur = curEpKey(), add = (key, label, patch) => {
+      const b = document.createElement("button"); b.className = "chip cat" + (key === cur ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(key === cur));
+      b.textContent = label; b.onclick = () => { setOptics(patch); renderInstSheet(); }; eps.append(b);
+    };
+    epCombos().forEach(c => add(c.key, epLabel(c.e), { src: "ep", ep: c.i, useB: c.b > 1 }));
+    add("finder", finderLabel(), { src: "finder" });
+  }
+  $("instEpLabel").textContent = "Eyepiece of " + curInst().name;
+}
+$("instAdd").onclick = () => addInst("switch");
+$("instManage").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); };
+
+/* ---------------- Adding an instrument: kind, then its data, then its eyepieces ---------------- */
+const ai = { step: "type", type: null, from: null, replace: null, d: null, b: null, own: false };
+const EP_QUICK = [[32, 50], [20, 52], [15, 52], [12, 60], [9, 60], [6, 60]];
+function openAddInst(from, replace) {
+  Object.assign(ai, { step: "type", type: null, from: from || null, replace: replace || null, d: null, b: null });
+  renderAddInst(); openSheet("addInstSheet");
+}
+function uniqueName(n) { let k = n, j = 2; while (cfg.instruments.some(x => x.name === k && x.id !== ai.replace)) k = n + " " + j++; return k; }
+function aiPickType(t) {
+  ai.type = t;
+  if (t === "bino") { const [m, a, f] = BINO_SIZES[2]; ai.b = { size: 2, mag: m, ap: a, fov: f, hold: "hand", name: "Binoculars " + m + "×" + a, own: false }; ai.step = "bino"; }
+  else {
+    const T = INST_TYPES[t], s = T.sizes[t === "dob" ? 1 : 0];
+    ai.d = { size: s ? T.sizes.indexOf(s) : -1, ap: s ? s[1] : null, scope: s ? s[2] : 1000, name: s ? s[3] : "Telescope", own: false, finderType: T.finder, mount: T.mount, eps: [{ f: 25, a: 52 }, { f: 10, a: 52 }], barlow: 0 };
+    ai.step = "data";
+  }
+  renderAddInst();
+}
+function renderAddInst() {
+  const body = $("aiBody"), btns = $("aiBtns"), steps = ai.type === "bino" ? 2 : 3, n = { type: 1, data: 2, bino: 2, eps: 3 }[ai.step];
+  body.textContent = ""; btns.textContent = "";
+  $("aiTitleTxt").textContent = ai.replace ? "Replace " + (instById(ai.replace) || {}).name : "Add an instrument";
+  $("aiSteps").innerHTML = Array.from({ length: ai.step === "type" ? 3 : steps }, (_, k) => '<i class="' + (k < n ? "on" : "") + '"></i>').join("");
+  const head = (kick, title) => { const h = document.createElement("div"); h.className = "aihead"; h.innerHTML = "<small></small><b></b>"; h.firstChild.textContent = kick; h.lastChild.textContent = title; body.append(h); };
+  const btn = (label, cls, fn, aria) => { const b = document.createElement("button"); b.className = "btn" + (cls ? " " + cls : ""); b.textContent = label; if (aria) b.setAttribute("aria-label", aria); b.onclick = fn; btns.append(b); return b; };
+  const field = (label, val, attrs, onch, mono = true) => {
+    const l = document.createElement("label"); l.textContent = label; const inp = document.createElement("input");
+    Object.entries(attrs).forEach(([k, v]) => inp.setAttribute(k, v)); inp.value = val ?? ""; if (!mono) inp.className = "txt";
+    inp.onchange = () => onch(inp.value, inp); l.append(inp); return l;
+  };
+  const row = (...els) => { const r = document.createElement("div"); r.className = "row"; r.append(...els); body.append(r); return r; };
+  const chips = (label, items, onPick) => {
+    const w = document.createElement("div"); w.className = "chips aichips"; w.setAttribute("role", "radiogroup"); w.setAttribute("aria-label", label);
+    items.forEach(([txt, on], k) => { const b = document.createElement("button"); b.className = "chip cat" + (on ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(!!on)); b.textContent = txt; b.onclick = () => onPick(k); w.append(b); });
+    body.append(w); return w;
+  };
+  const note = t => { const p = document.createElement("p"); p.className = "note"; p.textContent = t; body.append(p); return p; };
+  if (ai.step === "type") {
+    head("Step 1 of " + (ai.type === "bino" ? 2 : 3), "What do you observe with?");
+    const g = document.createElement("div"); g.className = "aitypes";
+    ["dob", "refr", "newt", "cat", "bino", "other"].forEach(t => {
+      const b = document.createElement("button"); b.className = "aitype"; b.dataset.type = t; b.innerHTML = instIcon({ type: t }) + "<span><b></b><small></small></span>";
+      b.querySelector("b").textContent = INST_TYPES[t].name; b.querySelector("small").textContent = INST_TYPES[t].about; b.onclick = () => aiPickType(t); g.append(b);
+    });
+    body.append(g);
+    if (ai.replace) note("The new instrument takes the place of " + (instById(ai.replace) || {}).name + ". Logbook entries keep the name they were saved with.");
+    btn("Cancel", "", () => aiDone(false));
+    return;
+  }
+  if (ai.step === "data") {
+    const T = INST_TYPES[ai.type], d = ai.d;
+    head("Step 2 of 3 · " + T.name, "Which one?");
+    const upd = () => { info.textContent = scopeInfo(d); };
+    if (T.sizes.length) chips("Common sizes", T.sizes.map((s, k) => [s[0], d.size === k]).concat([["Other size", d.size === -1]]), k => {
+      const s = T.sizes[k]; d.size = s ? k : -1;
+      if (s) { d.ap = s[1]; d.scope = s[2]; if (!d.own) d.name = s[3]; }
+      renderAddInst();
+    });
+    row(field("Name", d.name, { type: "text", maxlength: "40", id: "aiName", autocomplete: "off" }, v => { d.name = v.trim() || d.name; d.own = true; }, false)).firstChild.style.flexBasis = "100%";
+    row(field("Focal length (mm)", d.scope, { type: "number", min: "100", max: "5000", step: "10", id: "aiScope" }, (v, i) => { if (+v >= 100) { d.scope = +v; d.size = -1; } else i.value = d.scope; upd(); }),
+      field("Aperture (mm)", d.ap, { type: "number", min: "30", max: "1500", step: "1", id: "aiAp" }, (v, i) => { if (+v >= 30) { d.ap = +v; d.size = -1; } else i.value = d.ap ?? ""; upd(); }));
+    const info = note(""); upd();
+    const fl = document.createElement("label"); fl.textContent = "Finder"; const fs = $("oFinderType").cloneNode(true); fs.id = "aiFinder"; fs.value = d.finderType; fs.onchange = () => { d.finderType = fs.value; }; fl.append(fs);
+    const ml = document.createElement("label"); ml.textContent = "Mount"; const ms = $("oMount").cloneNode(true); ms.id = "aiMount"; ms.value = d.mount; ms.onchange = () => { d.mount = ms.value; }; ml.append(ms);
+    row(fl).firstChild.style.flexBasis = "100%"; row(ml).firstChild.style.flexBasis = "100%";
+    btn("Back", "", () => { ai.step = "type"; renderAddInst(); });
+    btn("Next: eyepieces", "primary", () => { ai.step = "eps"; renderAddInst(); });
+    return;
+  }
+  if (ai.step === "eps") {
+    const d = ai.d, sf = Math.max(100, +d.scope || 1000), has = (f, a) => d.eps.some(e => e.f === f && e.a === a);
+    head("Step 3 of 3 · " + d.name, "Eyepieces for this telescope");
+    const list = document.createElement("div"); list.className = "aieps"; body.append(list);
+    if (!d.eps.length) { const p = document.createElement("p"); p.className = "note"; p.textContent = "No eyepieces yet. You can add them later in Settings › Equipment."; list.append(p); }
+    d.eps.slice().sort((a, b) => b.f - a.f).forEach(e => {
+      const r = document.createElement("div"); r.className = "aiep"; r.innerHTML = "<span><b></b><small></small></span>";
+      r.querySelector("b").textContent = e.f + " mm · " + e.a + "°"; r.querySelector("small").textContent = Math.round(sf / e.f) + "× · " + fmtField(e.a * e.f / sf);
+      const x = document.createElement("button"); x.className = "iconbtn"; x.setAttribute("aria-label", "Remove the " + e.f + " mm eyepiece"); x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      x.onclick = () => { d.eps = d.eps.filter(y => y !== e); renderAddInst(); }; r.append(x); list.append(r);
+    });
+    const addEp = (f, a) => { if (!has(f, a)) d.eps.push({ f, a }); renderAddInst(); };
+    const quick = EP_QUICK.filter(([f]) => !d.eps.some(e => e.f === f));
+    if (quick.length) { const l = document.createElement("div"); l.className = "slabel"; l.textContent = "Tap to add"; body.append(l);
+      const w = document.createElement("div"); w.className = "chips aichips"; quick.forEach(([f, a]) => { const b = document.createElement("button"); b.className = "chip"; b.textContent = "+ " + f + " mm"; b.setAttribute("aria-label", "Add a " + f + " mm eyepiece"); b.onclick = () => addEp(f, a); w.append(b); }); body.append(w); }
+    // eyepieces and Barlow lenses of the other telescopes, if they fit this one too
+    const others = [];
+    cfg.instruments.filter(i => !isBinoInst(i) && i.id !== ai.replace).forEach(i => {
+      (i.o.eps || []).forEach(e => { if (!has(e.f, e.a) && !others.some(x => x.e && x.e.f === e.f && x.e.a === e.a)) others.push({ e, from: i.name }); });
+      if (+i.o.barlow > 1 && !d.barlow && !others.some(x => x.b === +i.o.barlow)) others.push({ b: +i.o.barlow, from: i.name });
+    });
+    if (others.length) { const l = document.createElement("div"); l.className = "slabel"; l.textContent = "From your other instruments"; body.append(l);
+      const w = document.createElement("div"); w.className = "chips aichips"; others.forEach(x => { const b = document.createElement("button"); b.className = "chip dashed";
+        b.textContent = "+ " + (x.e ? x.e.f + " mm " + x.e.a + "°" : x.b + "× Barlow") + " · " + x.from; b.onclick = () => { if (x.e) addEp(x.e.f, x.e.a); else { d.barlow = x.b; renderAddInst(); } }; w.append(b); }); body.append(w); }
+    if (d.barlow) note("With a " + d.barlow + "× Barlow lens.");
+    const fIn = field("Focal length (mm)", "", { type: "number", min: "2", max: "60", step: "0.5", id: "aiEpF", placeholder: "e.g. 15" }, () => {});
+    const aIn = field("Apparent field (°)", "", { type: "number", min: "30", max: "120", step: "1", id: "aiEpA", placeholder: "52" }, () => {});
+    const go = document.createElement("button"); go.className = "btn"; go.textContent = "Add"; go.setAttribute("aria-label", "Add this eyepiece");
+    go.onclick = () => { const f = +$("aiEpF").value, a = +$("aiEpA").value || 52; if (!(f >= 2 && f <= 60) || !(a >= 30 && a <= 120)) { hint("Enter the focal length (2–60 mm) and the apparent field (30–120°).", 3500); return; } addEp(f, a); };
+    const l2 = document.createElement("div"); l2.className = "slabel"; l2.textContent = "Another eyepiece"; body.append(l2); row(fIn, aIn, go);
+    note("Its apparent field is printed on it or in its specs: about 50° for Plössl, 60–70° for wide-angle, 82° and more for ultra-wide eyepieces.");
+    btn("Back", "", () => { ai.step = "data"; renderAddInst(); });
+    aiFinishButtons(btn, d.name);
+    return;
+  }
+  if (ai.step === "bino") {
+    const b = ai.b;
+    head("Step 2 of 2 · Binoculars", "Which binoculars?");
+    chips("Common binoculars", BINO_SIZES.map((s, k) => [s[0] + "×" + s[1], b.size === k]).concat([["Other", b.size === -1]]), k => {
+      const s = BINO_SIZES[k]; b.size = s ? k : -1; if (s) { b.mag = s[0]; b.ap = s[1]; b.fov = s[2]; if (!b.own) b.name = "Binoculars " + s[0] + "×" + s[1]; } renderAddInst();
+    });
+    row(field("Name", b.name, { type: "text", maxlength: "40", id: "aiName", autocomplete: "off" }, v => { b.name = v.trim() || b.name; b.own = true; }, false)).firstChild.style.flexBasis = "100%";
+    const num = (k, v, lo, hi, inp) => { if (+v >= lo && +v <= hi) { b[k] = +v; b.size = -1; if (!b.own) { b.name = "Binoculars " + b.mag + "×" + b.ap; $("aiName").value = b.name; } } else inp.value = b[k]; upd(); };
+    row(field("Magnification (×)", b.mag, { type: "number", min: "2", max: "40", step: "0.5", id: "aiMag" }, (v, i) => num("mag", v, 2, 40, i)),
+      field("Aperture (mm)", b.ap, { type: "number", min: "15", max: "150", step: "1", id: "aiBAp" }, (v, i) => num("ap", v, 15, 150, i)),
+      field("Field (°)", b.fov, { type: "number", min: "1", max: "15", step: "0.1", id: "aiFov" }, (v, i) => num("fov", v, 1, 15, i)));
+    const info = note(""), upd = () => { info.textContent = (b.size >= 0 ? "Typical for " + b.mag + "×" + b.ap + "; yours may say " : "The field is printed on them, for example ") + "6° or 105 m at 1000 m. Exit pupil " + (b.ap / b.mag).toFixed(1) + " mm, stars to about magnitude " + Math.round(2.5 + 5 * Math.log10(b.ap)) + "."; }; upd();
+    chips("How you use them", [["Hand-held", b.hold === "hand"], ["On a mount, phone attached", b.hold === "mount"]], k => { b.hold = k ? "mount" : "hand"; renderAddInst(); });
+    note(b.hold === "hand" ? "Zenigo shows their field on the map and tells you what they show of each object. The whole sky is in reach." : "With the phone on the binoculars, Zenigo guides you like with a telescope (push-to).");
+    btn("Back", "", () => { ai.step = "type"; renderAddInst(); });
+    aiFinishButtons(btn, b.name, true);
+  }
+}
+const scopeInfo = d => { const ap = +d.ap; return ap ? "f/" + (d.scope / ap).toFixed(1).replace(/\.0$/, "") + " · stars to about magnitude " + Math.round(2.5 + 5 * Math.log10(ap)) + " · up to about " + Math.round(2 * ap / 10) * 10 + "×" : "Enter the aperture (mirror or lens diameter) for magnitudes and the highest useful magnification."; };
+function aiFinishButtons(btn, name, bino) {
+  if (!ai.replace && pro.on && ai.from !== "first") btn("Add only", "", () => aiFinish(false), "Add " + name + " without using it now");
+  btn(bino ? "Add and use them" : "Add and use " + name, "primary", () => aiFinish(true));
+}
+function aiFinish(use) {
+  if (!ai.replace && !pro.on && cfg.instruments.length >= 1) { closeSheet("addInstSheet"); return addInst(ai.from); }
+  const name = $("aiName") ? $("aiName").value.trim() : null;
+  let rec;
+  if (ai.type === "bino") { const b = ai.b; rec = { id: newInstId(), name: uniqueName(name || b.name), type: "bino", bino: { mag: b.mag, ap: b.ap, fov: b.fov, hold: b.hold } }; }
+  else {
+    const d = ai.d, T = INST_TYPES[ai.type], F = FINDERS[d.finderType] || FINDERS.reddot, o = {};
+    INST_O.forEach(k => { o[k] = JSON.parse(JSON.stringify(OPT_DEF[k] ?? null)); });
+    Object.assign(o, { scope: +d.scope || 1000, ap: +d.ap > 0 ? +d.ap : null, barlow: d.barlow || 0, eps: d.eps.map(e => ({ f: e.f, a: e.a })).sort((x, y) => y.f - x.f), finderType: d.finderType,
+      finder: F.fov || 6, finderOrient: F.orient || (d.finderType === "custom" ? "newton" : "upright"), orient: T.orient, rot: 0, telrad: d.finderType === "telrad", altMin: 0, altMax: 90 });
+    rec = { id: newInstId(), name: uniqueName(name || d.name), type: ai.type, mount: d.mount === "eq" ? "eq" : "altaz", o };
+  }
+  rec.u = Date.now();
+  if (ai.replace) {
+    const old = instById(ai.replace), k = cfg.instruments.indexOf(old), wasCur = old === curInst();
+    cfg.instruments.splice(k < 0 ? cfg.instruments.length : k, k < 0 ? 0 : 1, rec);
+    if (cfg.instSel) delete cfg.instSel[ai.replace]; if (cfg.instTele) delete cfg.instTele[ai.replace];
+    if (wasCur || use) switchInst(rec); else { save(); syncOptics(); }
+  } else {
+    cfg.instruments.push(rec);
+    if (use) switchInst(rec); else { save(); syncOptics(); }
+  }
+  hint((ai.replace ? "Replaced. " : "Added " + rec.name + ". ") + (use || ai.replace ? "Now using " + rec.name + "." : "Switch to it in Quick settings."), 3500);
+  aiDone(true);
+}
+function aiDone(added) {
+  const from = ai.from; closeSheet("addInstSheet");
+  if (from === "settings") setTimeout(() => { st.editId = null; syncSettings(); openSheet("sheet"); setSetTab("scope"); }, 60);
+  else if (from === "quick" && !added) setTimeout(() => openSheet("quickSheet"), 60);
+  else if (from === "switch") setTimeout(openInstSheet, 60);
+}
+$("aiBack").onclick = () => {
+  if (ai.step === "type") return aiDone(false);
+  ai.step = ai.step === "eps" ? "data" : "type"; renderAddInst();
+};
+// After settings came from another device or a backup: the list may have changed under the instrument in use
+function instAfterSync() {
+  if (!Array.isArray(cfg.instruments) || !cfg.instruments.length) return;
+  if (cfg.instruments.some(i => !i.fresh)) cfg.instruments = cfg.instruments.filter(i => !i.fresh);   // the placeholder of a new install
+  // the one in use went (e.g. the group's instruments were chosen when joining): the first one, with this device's
+  // eyepiece point unless it has one of its own here
+  if (!instById(cfg.instrumentId)) { cfg.instrumentId = cfg.instruments[0].id; if ((cfg.instTele || {})[cfg.instrumentId]) loadTele(cfg.instrumentId); }
+  loadInst(curInst());
+}
+// at the start: the working copy from the record (and the eyepiece choice of earlier versions kept)
+if (!(cfg.instSel || {})[cfg.instrumentId]) saveSel();
+loadInst(curInst());
 
 /* ---------------- Tap telescope point ---------------- */
 // The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
@@ -7412,7 +7969,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels; $("optInfoHints").checked = cfg.infoHints !== false;
-  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("oMount").value = cfg.mount === "eq" ? "eq" : "altaz"; $("optObjLabels").checked = cfg.objLabels !== false; $("optFigures").checked = figOn(); $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
+  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("optObjLabels").checked = cfg.objLabels !== false; $("optFigures").checked = figOn(); $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
