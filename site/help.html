@@ -276,9 +276,15 @@
     <div class="shots"><figure class="ph"><img src="/img/screens/find-780.webp" srcset="/img/screens/find-390.webp 390w, /img/screens/find-780.webp 780w" sizes="230px" width="390" height="844" alt="Choose target with My telescope and Good now selected, and a list of objects with their altitude and night bar." loading="lazy" decoding="async"><figcaption>My telescope and Good now together</figcaption></figure></div>
     <p>The chips under the search field are categories. Tap one or more; they stay selected for next time, and typing narrows the list down further.</p>
     <dl class="ref">
-      <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and not far larger than your widest eyepiece’s field: those are better in binoculars. Its details name the eyepiece that frames it best. Needs the aperture in <a href="#settings-telescope">Settings → Equipment</a>; the sky is assumed to be dark.</dd>
+      <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and not far larger than your widest eyepiece’s field: those are better in binoculars. Its details name the eyepiece that frames it best. Needs the aperture in <a href="#settings-telescope">Settings → Equipment</a>; for galaxies and nebulae it also counts <a href="#settings-location">the sky at your place</a> (a dark sky until you set it).</dd>
       <dt>In reach</dt><dd>Objects that come into <a href="#reach">your telescope’s reach</a> from your location at some time of night or year: they climb at least as high as its lowest altitude and don’t always stay above its highest. Without a set range, all objects that rise at your location at all. It doesn’t depend on the time; for what you can reach right now use Good now.</dd>
-      <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°), within <a href="#reach">your telescope’s reach</a> and still high in an hour, the sky dark enough, and galaxies and nebulae not next to a bright Moon. With another <a href="#time">time</a> set, it reads “Good at …”.</dd>
+      <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°), within <a href="#reach">your telescope’s reach</a> and still high in an hour, the sky dark enough, the sky dark enough, and galaxies and nebulae not washed out by the Moon. With another <a href="#time">time</a> set, it reads “Good at …”. The order also counts what you haven’t seen yet and the programmes you have started; the details say more under <b>Suits you?</b>:
+        <ul>
+          <li><b>The Moon</b> by its light, its height and its distance: faint galaxies and nebulae suffer most, planetary nebulae and globulars less, open clusters and planets hardly (“A good target with the Moon up”).</li>
+          <li><b>Tonight’s air</b>: with <a href="#seeing">seeing</a> 4 or 5 planets, small planetary nebulae and globulars move up, with 1 or 2 down; a logbook entry with transparency 1 or 2 makes faint galaxies and nebulae count less (“Hazy tonight”).</li>
+          <li><b>The best time</b>: “Better later” when it will be much higher in two hours, “Getting low: observe it soon” when it is about to sink out of reach.</li>
+          <li><b>Not found before</b>: “Not found on 3 Oct; now the Moon is down: try again” when the Moon has gone, it stands higher or the air is clearer than at your last try.</li>
+        </ul></dd>
       <dt>Popular</dt><dd>A curated list of about 60 showpieces for small and medium telescopes from mid-northern latitudes: the Moon and bright planets, the Pleiades, the Double Cluster, M13, the Ring, Dumbbell and Orion Nebulae, the Andromeda, Whirlpool and Sombrero Galaxies, the Needle Galaxy and more.</dd>
       <dt>Messier, Caldwell, Herschel 400</dt><dd>The classic observing lists: Messier’s 110 objects; Patrick Moore’s Caldwell list of 109 more for amateur telescopes; and the Herschel 400, 400 of William Herschel’s objects chosen for telescopes from about 15 cm.</dd>
       <dt>Solar system, Galaxies, Clusters, Nebulae</dt><dd>The kind of object.</dd>
@@ -410,7 +416,7 @@
       <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
       <li><b>Moon:</b> phase, how much is lit, rise and set.</li>
       <li><b>Planets</b> that are well placed tonight, with their highest point after dusk.</li>
-      <li><b>Best deep-sky objects:</b> the brightest Messier objects that climb above 30° in darkness (or as high as <a href="#reach">your telescope reaches</a>), with the best time within its reach. Tap any of them for details or to make it your target.</li>
+      <li><b>Best deep-sky objects for you:</b> objects that climb above 30° in darkness (or as high as <a href="#reach">your telescope reaches</a>), with the best time within its reach, from Messier, Caldwell and the popular objects (with <a href="/pro/">Zenigo Pro</a> also the Herschel 400). Without an aperture the bright ones; with it those your telescope shows, the best first. What you haven’t seen yet comes first (“new for you”, or “not found yet: try again”), then objects of programmes you have started, how high they get, the Moon at their best moment and tonight’s air; and the list is mixed, not ten objects of one kind. Tap any of them for details or to make it your target.</li>
     </ul>
     <p>For what the app can’t calculate, one good website per topic, opened for your location:</p>
     <dl class="ref">
@@ -460,7 +466,7 @@
     <h3 id="settings-general">General</h3>
     <dl class="ref">
       <dt id="settings-location">Location</dt>
-      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows. Quick settings shows the location in one line, with <b>GPS</b> and <b>Edit</b>.</dd>
+      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows. Quick settings shows the location in one line, with <b>GPS</b> and <b>Edit</b>. <b>Sky at this place</b>: from dark (no light domes) through rural, suburban and bright suburb to city. It lowers what counts as visible in your telescope for galaxies and nebulae (<b>My telescope</b>, Tonight); not set, the sky counts as dark. It syncs with the location.</dd>
       <dt id="settings-display">Display</dt>
       <dd>How the image and the map look:
         <ul>

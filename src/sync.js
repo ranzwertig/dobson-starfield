@@ -22,9 +22,9 @@ const ZSync = (() => {
   // the telescope), camera and field of view, compass correction, red light, display and layout.
   // Schema 1.0 synced one telescope ("mount", "optics.scope", "optics.eps", …). Since 1.1 the instruments carry these;
   // the old paths stay in the shared copy untouched for apps that still use them.
-  const SETTINGS = ["lat", "lon", "loc", "show", "optics.ring", "instruments"];
+  const SETTINGS = ["lat", "lon", "loc", "sky", "show", "optics.ring", "instruments"];
   // Settings that only make sense together: when they collide, all of them come from the same device
-  const GROUPS = [["lat", "lon", "loc"]];
+  const GROUPS = [["lat", "lon", "loc", "sky"]];   // the sky belongs to the place
   // Lists inside a setting that are merged item by item by content (none at the moment)
   const SETS = [];
   // Lists of records with an "id" that are merged record by record: an instrument added on each of two devices keeps

@@ -277,6 +277,49 @@ const TESTS = {
     await done(p);
   },
 
+  // object recommendations: unseen first and mixed kinds in Tonight, the Moon by its light and distance, tonight's
+  // seeing and transparency, the best time, another try for what wasn't found, started programmes, the sky at the place
+  async recommend() {
+    const p = await page();
+    const r = await ev(p, () => {
+      setOptics({ ap: 203, scope: 1200 });
+      const E = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: 'easy', note: '', lat: 48.18, lon: 10.08, ...extra });
+      obs.log = ['M31', 'M13', 'M45', 'M42', 'M57', 'M27', 'M92', 'M15', 'M2', 'M39', 'M52', 'M103'].map((id, i) => E('s' + i, id, '2025-09-0' + (1 + i % 9) + 'T21:00:00Z'));
+      obs.log.push(E('c1', 'NGC 7000', '2025-09-02T21:00:00Z'));   // Caldwell 20: the Caldwell programme is started
+      saveObs(); planCache.t = null;
+      const tn = nightPlan(), picks = tn.dso.map(x => ({ id: x.id, cls: x.cls, why: x.why.join(' ') }));
+      // the Moon (71 %, up at this night)
+      const t = skyNow().t, gal = TARGETS.filter(T => T.kind === 'dso' && dsoCls(T.id) === 'gal' && /^M\d+$/.test(T.id) && horiz(T.vec(t), t).alt > 20);
+      const washed = gal.filter(T => /washes it out/.test(nowFit(T).why.join(' '))), moonOk = TARGETS.filter(T => T.kind === 'dso' && /^M\d+$/.test(T.id) && /A good target with the Moon up/.test(nowFit(T).why.join(' ')));
+      // the best time: something low and rising
+      const later = TARGETS.filter(T => T.kind === 'dso' && /^M\d+$/.test(T.id)).find(T => /Better later/.test(nowFit(T).why.join(' ')));
+      return { picks, washed: washed.map(T => [T.id, nowFit(T).ok]), moonOk: moonOk.map(T => T.id), later: later && later.id, act: activeProgIds().get('NGC 869') || activeProgIds().get('NGC 7243') || [...activeProgIds().values()][0] };
+    });
+    const seen = ['M31', 'M13', 'M45', 'M42', 'M57', 'M27', 'M92', 'M15', 'M2', 'M39', 'M52', 'M103'];
+    if (process.env.SHOTS) { await ev(p, () => $('btnTonight') ? $('btnTonight').click() : openTonight()); await wait(p, 900); await ev(p, () => { const h = [...document.querySelectorAll('#tonightSheet h3')].find(x => /deep-sky/.test(x.textContent)); h && h.scrollIntoView(); }); await wait(p, 300); await p.screenshot({ path: path.join(process.env.SHOTS, 'rec-tonight.png') }); await ev(p, () => SHEETS.forEach(x => closeSheet(x.id))); await wait(p, 400); }
+    ok(r.picks.length >= 6 && r.picks.slice(0, 4).every(x => !seen.includes(x.id) && /new for you|try again/.test(x.why)), 'Tonight: what you haven’t seen comes first, and says so', r.picks.slice(0, 5));
+    ok(new Set(r.picks.slice(0, 6).map(x => x.cls)).size >= 3, 'Tonight: a mix of kinds', r.picks.map(x => x.cls));
+    ok(r.picks.some(x => /Caldwell/.test(x.why)), 'Tonight: objects of a started programme are marked', r.picks.map(x => x.why));
+    ok(r.washed.every(([, okk]) => !okk) && r.moonOk.length > 0, 'the Moon: galaxies close to it wash out, clusters are good targets with the Moon up', r);
+    ok(!!r.later, 'the best time: “Better later” for something still low and rising', r.later);
+    // seeing and transparency tonight
+    const air = await ev(p, () => { setSeeing(4); const j = nowFit(targetById('Jupiter')).why.join(' '); setSeeing(2); const j2 = nowFit(targetById('Jupiter')).why.join(' '); setSeeing(0);
+      obs.log.push({ uid: 'tr', obj: 'M45', name: 'M45', t: new Date().toISOString(), result: 'easy', transp: 2 }); saveObs();
+      const g = TARGETS.find(T => T.kind === 'dso' && dsoCls(T.id) === 'gal' && /^M\d+$/.test(T.id)); return { j, j2, g: nowFit(g).why.join(' ') }; });
+    ok(/Steady air tonight \(seeing 4\)/.test(air.j) && /Restless air tonight \(seeing 2\)/.test(air.j2) && /Hazy tonight \(transparency 2\)/.test(air.g), 'seeing and transparency of tonight count', air);
+    // another try: not found before when it stood low, now high
+    const retry = await ev(p, () => { const t = skyNow().t, T = TARGETS.find(x => x.kind === 'dso' && /^M\d+$/.test(x.id) && !sets().seen.has(x.id) && horiz(x.vec(t), t).alt > 45);
+      obs.log.push({ uid: 'm1', obj: T.id, name: T.id, t: '2026-03-01T20:00:00Z', result: 'miss', alt: 12, moon: '90 %, up' }); saveObs(); return { id: T.id, why: nowFit(T).why.join(' ') }; });
+    ok(/Not found on Mar 1; now it stands higher: try again\./.test(retry.why), 'not found before: try again when it stands higher', retry);
+    // the sky at the place
+    const sky = await ev(p, () => { const T = targetById('M101'); cfg.sky = 'dark'; st.opticsVer++; const a = scopeFit(T); cfg.sky = 'city'; st.opticsVer++; const b = scopeFit(T); cfg.sky = null; st.opticsVer++; return { a: a.ok, b: b.ok, why: b.why.join(' ') }; });
+    ok(sky.a && !sky.b && /under your city sky/.test(sky.why), 'the sky at the place: M101 in a dark sky yes, under a city sky no', sky);
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(p, 400);
+    await p.selectOption('#skyQ', 'suburb'); await wait(p, 200);
+    ok(await ev(p, () => cfg.sky === 'suburb'), 'Settings › General: the sky at this place');
+    await done(p);
+  },
+
   // finder types
   async finder() {
     const p = await page();
