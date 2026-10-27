@@ -987,6 +987,9 @@ const TESTS = {
     ok(await p.isVisible('#proBuy') && await p.isDisabled('#proBuy'), 'the page renders with its Buy button, disabled without a configuration');
     ok(/Checkout unavailable/.test(await p.textContent('#proState')) && await p.isVisible('#proState'), 'the config endpoint fails: “Checkout unavailable”');
     ok(p.paddle.length === 0, 'and nothing is loaded from Paddle', p.paddle);
+    const proJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).structuredData;
+    ok(await p.textContent('#proPrice') === new Intl.NumberFormat('en', { style: 'currency', currency: proJson.currency }).format(Number(proJson.price)) && /in the EU, including VAT/i.test(await p.textContent('#proTax')), 'without Paddle the EU base price from pro.json is shown, with its tax note');
+    ok(await ev(p, () => ['.menumeta', 'footer nav'].every(s => !!document.querySelector(s + ' a[href="/licence/"]') && !!document.querySelector(s + ' a[href="/pro/#refunds"]') && !!document.querySelector(s + ' a[href="/privacy/"]'))), 'licence terms, refund policy and privacy in the menu and the footer');
     ok(await ev(p, () => document.querySelectorAll('.profeat dt').length >= 6 && document.querySelectorAll('.profeat .ptag.soon').length >= 1 && /Labelling your night photos/.test(document.querySelector('.freelist').textContent)), 'features from pro.json, planned ones marked coming, night photos listed as free');
     ok(await ev(p, () => [...document.querySelectorAll('.buybox, #proBuy')].every(e => /12-month licence, paid once, no automatic renewal/.test(e.textContent)) && !!document.querySelector('.buybox a[href="/licence/"]') && !!document.querySelector('.buybox a[href="#refunds"]')), 'the terms beside the price and on the button; licence and refunds linked');
     ok(await ev(p, () => document.documentElement.scrollWidth <= innerWidth), 'no sideways scrolling on a phone');
@@ -996,7 +999,7 @@ const TESTS = {
     ok(calls.some(c => c[0] === 'env' && c[1] === 'sandbox') && calls.some(c => c[0] === 'init' && c[1] === 'test_abc'), 'sandbox environment and the client token from the configuration');
     const pv = calls.find(c => c[0] === 'preview');
     ok(pv && pv[1].items[0].priceId === 'pri_test' && pv[1].address && pv[1].address.countryCode === 'DE', 'the price preview for that price and the visitor’s country', pv);
-    ok(await q.textContent('#proPrice') === '€19.99' && await q.isVisible('#proSandbox') && await q.isEnabled('#proBuy'), 'Paddle’s formatted total is shown as it is; sandbox note; button enabled');
+    ok(await q.textContent('#proPrice') === '€19.99' && /for your country/.test(await q.textContent('#proTax')) && await q.isVisible('#proSandbox') && await q.isEnabled('#proBuy'), 'Paddle’s formatted total is shown as it is, as the price for the visitor’s country; sandbox note; button enabled');
     await q.click('#proBuy'); await q.waitForURL(/\/pro\/welcome\//, { timeout: 5000 }).catch(() => {});
     ok(/\/pro\/welcome\/\?txn=txn_01test$/.test(q.url()), 'checkout completed: on to the welcome page with the transaction ID', q.url());
     ok(await q.isVisible('#txnRow') && await q.textContent('#txn') === 'txn_01test', 'the welcome page shows the order reference');

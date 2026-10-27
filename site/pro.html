@@ -28,10 +28,10 @@
       <h2 id="buyTitle" class="sr">Buy Zenigo Pro</h2>
       <p class="sandbox" id="proSandbox" hidden>Sandbox: test payments only, no real money is charged.</p>
       <div class="pricerow">
-        <span class="price" id="proPrice" aria-live="polite">…</span>
+        <span class="price" id="proPrice" aria-live="polite"><!--PRO-PRICE--></span>
         <span class="terms"><!--PRO-TERMS--></span>
       </div>
-      <p class="taxnote" id="proTax">Price for your country, including VAT or sales tax where it applies.</p>
+      <p class="taxnote" id="proTax">Price in the EU, including VAT. In other countries, the checkout shows the price in your currency.</p>
       <p class="current" id="proHave" hidden></p>
       <button class="open buy" id="proBuy" type="button" disabled>
         <span>Buy Pro</span>
@@ -55,7 +55,7 @@
 <!--PRO-FREE-->
     </ul>
 
-    <h2 id="refunds">Refunds</h2>
+    <h2 id="refunds">Refund policy</h2>
     <p>If Pro isn’t for you, you get your money back within 30 days of buying, without giving a reason. Ask Paddle at <a href="https://paddle.net" rel="noopener" target="_blank">paddle.net</a> (or reply to the receipt email), or write to <a href="mailto:zenigo@christianranz.com">zenigo@christianranz.com</a>. The licence then ends. Your statutory rights are not affected.</p>
 
     <h2 id="questions">Questions</h2>
@@ -73,14 +73,15 @@
 <!--FOOTER-->
 <script>
   // Zenigo Pro checkout. The Worker (/api/pro/config) says which Paddle account and price to use; without it the page
-  // shows "Checkout unavailable" and loads nothing from Paddle. Prices are shown exactly as Paddle formats them.
+  // shows "Checkout unavailable" and loads nothing from Paddle. Prices are shown exactly as Paddle formats them; until
+  // then (or without Paddle) the page shows the EU base price from pro.json.
   (() => {
     const $ = id => document.getElementById(id);
     const buy = $("proBuy"), price = $("proPrice"), state = $("proState");
     let cfg = null;
     const unavailable = why => {
       if (why) console.warn("Zenigo Pro checkout:", why);
-      buy.disabled = true; price.textContent = "—"; $("proTax").hidden = true;
+      buy.disabled = true;
       state.textContent = "Checkout unavailable at the moment. Please try again later, or write to zenigo@christianranz.com.";
       state.hidden = false; document.documentElement.dataset.checkout = "off";
     };
@@ -132,9 +133,9 @@
         if (cfg.country) req.address = { countryCode: cfg.country };
         const res = await Paddle.PricePreview(req);
         price.textContent = res.data.details.lineItems[0].formattedTotals.total;
+        $("proTax").textContent = "Price for your country, including VAT or sales tax where it applies.";
       } catch (e) {
-        console.warn("Zenigo Pro price:", e);
-        price.textContent = ""; $("proTax").textContent = "The price for your country is shown in the checkout.";
+        console.warn("Zenigo Pro price:", e);   // the EU base price and its note stay
       }
     })();
   })();

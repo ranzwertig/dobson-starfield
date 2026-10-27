@@ -1,5 +1,5 @@
 {
-  "_comment": "Zenigo Pro as shown on /pro/ (scripts/build.mjs puts it into site/pro.html). Edit here. The price itself comes from Paddle; structuredData is only the base price for search engines (schema.org Offer on the home page) and must match the Paddle base price.",
+  "_comment": "Zenigo Pro as shown on /pro/ (scripts/build.mjs puts it into site/pro.html). Edit here. The price itself comes from Paddle; structuredData is the base price for search engines (schema.org Offer on the home page) and the price shown on /pro/ until Paddle's price for the visitor's country has loaded, so it must match the Paddle base price.",
   "name": "Zenigo Pro",
   "tagline": "Zenigo is free, and everything you need to find objects with your telescope stays free. Pro adds more for planning, for observing with a second device and for using Zenigo on all your devices.",
   "terms": "12-month licence, paid once, no automatic renewal",
