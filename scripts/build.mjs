@@ -15,6 +15,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { heroSvg } from './hero.mjs';
 import { buildSky } from './sky.mjs';
+import { buildTopics, weekRelated } from './sky-topics.mjs';
 
 const require = createRequire(import.meta.url);
 const root = new URL('../', import.meta.url);
@@ -177,24 +178,24 @@ const pages = { 'index.html': 'dist/index.html', 'features.html': 'dist/features
   'diy-accessories.html': 'dist/diy-accessories/index.html', 'diy-mirror-holder.html': 'dist/diy-accessories/mirror-holder/index.html',
   'pro.html': 'dist/pro/index.html', 'pro-welcome.html': 'dist/pro/welcome/index.html', 'licence.html': 'dist/licence/index.html',
   'privacy.html': 'dist/privacy/index.html', 'imprint.html': 'dist/imprint/index.html', '404.html': 'dist/404.html' };
-// Links to the night sky this week (between <!--SKY--> and <!--/SKY-->) only once a week is published (or with drafts)
-const skyOn = (() => { try { return readdirSync(new URL('content/sky/', root)).some(f => f.endsWith('.json') && /"status"\s*:\s*"published"/.test(read('content/sky/' + f))); } catch (e) { return false; } })() || process.env.SKY_DRAFTS === '1' || (!!process.env.WORKERS_CI_BRANCH && process.env.WORKERS_CI_BRANCH !== 'main');
-const skyLinks = h => skyOn ? h.replace(/<!--\/?SKY-->/g, '') : h.replace(/<!--SKY-->[\s\S]*?<!--\/SKY-->\n?/g, '');
-const header = skyLinks(read('site/_header.html')), footer = skyLinks(read('site/_footer.html'));
+const header = read('site/_header.html'), footer = read('site/_footer.html');
 // Search engines: canonical address per page and a sitemap (the app itself at /app/ is excluded in robots.txt)
 const SITE = 'https://zenigo.app';
 const urlOf = dst => dst === 'dist/404.html' ? null : SITE + dst.replace(/^dist/, '').replace(/index\.html$/, '');
 const today = new Date().toISOString().slice(0, 10);
 // Night sky this week (scripts/sky.mjs, content/sky/): English and German pages, in the sitemap with their language
 // versions. Drafts only in preview builds of other branches than main, and with SKY_DRAFTS=1 (the UI tests).
-const skyDrafts = process.env.SKY_DRAFTS === '1' || (!!process.env.WORKERS_CI_BRANCH && process.env.WORKERS_CI_BRANCH !== 'main');   // as skyOn above
-const sky = buildSky({ write, header, footer, fontCss, SITE, year, drafts: skyDrafts });
+const skyDrafts = process.env.SKY_DRAFTS === '1' || (!!process.env.WORKERS_CI_BRANCH && process.env.WORKERS_CI_BRANCH !== 'main');
+const sky = buildSky({ write, header, footer, fontCss, SITE, year, drafts: skyDrafts, related: weekRelated });
+// and the topic pages: Moon calendar, meteor showers, the calendar of each year (scripts/sky-topics.mjs)
+const topics = buildTopics({ sky, fontCss, SITE });
+const skyUrls = [...sky.urls, ...topics.urls];
 const skyUrl = u => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod>` + Object.entries(u.alt).map(([l, p]) => `<xhtml:link rel="alternate" hreflang="${l}" href="${SITE + p}"/>`).join('')
   + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE + u.alt.en}"/></url>\n` + Object.entries(u.alt).filter(([l]) => l !== 'en').map(([l, p]) => `  <url><loc>${SITE + p}</loc><lastmod>${u.lastmod}</lastmod>`
   + Object.entries(u.alt).map(([l2, p2]) => `<xhtml:link rel="alternate" hreflang="${l2}" href="${SITE + p2}"/>`).join('') + `<xhtml:link rel="alternate" hreflang="x-default" href="${SITE + u.alt.en}"/></url>`).join('\n');
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
   + Object.entries(pages).filter(([src]) => !hidden.has(src)).map(([, dst]) => urlOf(dst)).filter(Boolean).map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n') + '\n'
-  + sky.urls.map(skyUrl).join('\n') + (sky.urls.length ? '\n' : '') + '</urlset>\n';
+  + skyUrls.map(skyUrl).join('\n') + (skyUrls.length ? '\n' : '') + '</urlset>\n';
 write('dist/sitemap.xml', sitemap);
 // The FAQ page also as structured data (schema.org FAQPage), taken from its questions and answers
 const plain = h => h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
@@ -218,8 +219,8 @@ for (const [src, dst] of Object.entries(pages)) {
   const ld = src === 'faq.html' ? faqLd(read('site/' + src)) : '';   // the 404 page carries its own noindex
   // the header marks the current page in its navigation
   const here = url && url.slice(SITE.length), hdr = here && here !== "/" ? header.replaceAll(`href="${here}">`, `href="${here}" aria-current="page">`) : header;
-  write(dst, skyLinks(read('site/' + src)).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || '').replace(/<!--PRO-[A-Z]+-->/g, m => proHtml(m)).replace('"offers": "<!--OFFERS-->"', () => '"offers": ' + proLd));
+  write(dst, read('site/' + src).replace('<!--FONTS-->', () => seo + ld + '\n<!--FONTS-->').replace('<!--HEADER-->', () => hdr).replace('<!--FOOTER-->', () => footer).replace('<!--FONTS-->', () => `<style>${fontCss}</style>`).replace('<!--HERO-->', () => hero).replaceAll('<!--YEAR-->', String(year)).replace('<!--SCRIPTS-->', () => pageScripts[src] || '').replace(/<!--PRO-[A-Z]+-->/g, m => proHtml(m)).replace('"offers": "<!--OFFERS-->"', () => '"offers": ' + proLd));
 }
 for (const f of readdirSync(new URL('site/', root))) if (!f.endsWith('.html') && f !== 'pro.json') cpSync(new URL('site/' + f, root), new URL('dist/' + f, root));
 
-console.log(`sitemap: ${Object.keys(pages).filter(p => !hidden.has(p) && p !== '404.html').length} pages + ${sky.urls.length * 2} night sky; night sky weeks: ${sky.weeks.join(', ') || 'none'}${skyDrafts ? ' (with drafts)' : ''}; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);
+console.log(`sitemap: ${Object.keys(pages).filter(p => !hidden.has(p) && p !== '404.html').length} pages + ${skyUrls.length * 2} night sky; night sky weeks: ${sky.weeks.join(', ') || 'none'}${skyDrafts ? ' (with drafts)' : ''}; dist/app/index.html ${Buffer.byteLength(html) >> 10} KB, sw.js ${version}; website: ${Object.values(pages).join(', ')}`);

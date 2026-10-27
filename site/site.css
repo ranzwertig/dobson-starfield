@@ -471,3 +471,38 @@ h2 .ptag, h3 .ptag, dt .ptag, .kicker .ptag { margin-left: 8px; }
 .wk-archive a { font-size: 20px; font-weight: 600; }
 .wk-archive small { color: var(--mist); font-size: 15px; }
 @media (max-width: 560px) { .wk-moon { width: 32px; height: 32px; } .wk-moons small { font-size: 11px; } .wk-ev { padding: 16px 16px 4px; } }
+/* night sky navigation and topic pages (scripts/sky-topics.mjs) */
+.sky-nav { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 22px; padding-bottom: 4px; scrollbar-width: none; }
+.sky-nav::-webkit-scrollbar { display: none; }
+.sky-nav a { flex: none; padding: 6px 14px; border: 1px solid var(--line); border-radius: 99px; color: var(--star); text-decoration: none; font-size: 16px; white-space: nowrap; }
+.sky-nav a:hover { border-color: var(--mist); }
+.sky-nav a[aria-current="page"] { background: var(--amber); border-color: var(--amber); color: #1b1206; font-weight: 600; }
+.wk .sky-more { list-style: none; padding: 0; display: grid; gap: 8px; margin: 0 0 14px; }
+.wk .sky-more li { margin: 0; }
+.sky-links { font-size: 16px; color: var(--mist); }
+.wk .mc-list { list-style: none; padding: 0; margin: 0 0 10px; display: grid; gap: 4px; }
+.wk .mc-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.mc-list .wk-moon { width: 30px; height: 30px; flex: none; }
+.mc-list time { color: var(--mist); font-variant-numeric: tabular-nums; }
+.mc-tag { font: 600 12px/1 var(--ui); letter-spacing: .08em; text-transform: uppercase; color: #1b1206; background: var(--amber); border-radius: 99px; padding: 4px 8px 3px; text-decoration: none; }
+.mc-tag.ecl { background: var(--coral); }
+.mc-jump { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 0; font-size: 16px; }
+.wk .cal-list { list-style: none; padding: 0; margin: 0 0 10px; }
+.wk .cal-list li { display: grid; grid-template-columns: 11.5em minmax(0, 1fr); gap: 2px 14px; margin: 0; padding: 8px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 20px; }
+.cal-d { color: var(--mist); font-size: 15px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.cal-t b { font-weight: 600; }
+.cal-t b a { color: var(--star); }
+.cal-t small { display: block; color: var(--mist); font-size: 15px; line-height: 1.4; }
+.cal-ev.hl .cal-t b, .cal-ev.hl .cal-t b a { color: var(--amber); }
+.cal-ev:target { background: rgba(240, 168, 69, .08); }
+.wk .cal-hl { columns: 2; column-gap: 28px; padding-left: 18px; }
+.cal-hl small { color: var(--mist); }
+.sky-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 24px; }
+.sky-card { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; text-decoration: none; color: var(--star); background: rgba(12, 17, 36, .55); }
+.sky-card:hover { border-color: var(--amber); }
+.sky-card small { color: var(--mist); font-size: 15px; }
+.sh-facts th { width: 34%; white-space: nowrap; }
+.sh-table td, .sh-table th { white-space: nowrap; }
+.wk-planets thead th { color: var(--mist); font: 500 15px var(--ui); }
+.wk-planets .num:not(:last-child) { padding-right: 18px; }
+@media (max-width: 560px) { .wk .cal-list li { grid-template-columns: 1fr; } .wk .cal-hl { columns: 1; } .sky-cards { grid-template-columns: 1fr; } .sh-facts th { white-space: normal; } }

@@ -1495,6 +1495,20 @@ const TESTS = {
     await p.goto(base + '/sky/');
     ok(await ev(p, () => /^Night sky this week/.test(document.querySelector('h1').textContent) && new URL(document.querySelector('link[rel=alternate][hreflang=de]').href).pathname === '/de/sky/'), '/sky/ (the build’s week here; the Worker serves the week of the day): its own language versions');
     ok(await ev(p, () => !!document.querySelector('.sitemenu a[href="/sky/"]') && !!document.querySelector('footer a[href="/sky/"]')), 'linked from the menu and the footer');
+    // the topic pages: Moon calendar, meteor showers, the calendar of the year, linked from the week
+    await p.goto(base + '/sky/2026-11-06/'); await p.click('.sky-more a[href="/sky/meteor-showers/taurids/"]'); await p.waitForURL('**/sky/meteor-showers/taurids/');
+    const sh = await ev(p, () => ({ h1: document.querySelector('h1').textContent, cur: document.querySelector('.sky-nav [aria-current]').textContent, years: document.querySelectorAll('.wk-planets tbody tr').length,
+      t: document.querySelector('.sh-facts time[data-t]').textContent, wide: document.documentElement.scrollWidth > innerWidth }));
+    ok(/^Taurids 20\d\d: peak, Moon and where to look$/.test(sh.h1) && sh.cur === 'Meteor showers' && !sh.wide, 'from the week to the Taurids: its page, marked in the navigation, fits a phone', sh);
+    ok(!/UTC/.test(sh.t), 'its peak in the reader’s time zone', sh.t);
+    await p.goto(base + '/de/sky/moon/2026/');
+    const mo = await ev(p, () => { const n = document.querySelector('.sky-nav'), a = n.querySelector('[aria-current]'); return { cur: a.textContent, inView: a.offsetLeft - n.offsetLeft - n.scrollLeft >= 0 && a.offsetLeft - n.offsetLeft - n.scrollLeft + a.offsetWidth <= n.clientWidth + 1,
+      months: document.querySelectorAll('h2[id]').length, fulls: [...document.querySelectorAll('.mc-list b')].filter(b => /^Vollmond/.test(b.textContent)).length, wide: document.documentElement.scrollWidth > innerWidth }; });
+    ok(mo.cur === 'Mondkalender' && mo.inView && mo.months === 12 && mo.fulls === 13 && !mo.wide, 'Mondkalender 2026: 12 months, 13 full Moons; the navigation shows its item on a phone', mo);
+    await shot(p, 'sky-moon');
+    await p.goto(base + '/sky/calendar/2026/#2026-08-12-solar-eclipse');
+    ok(await ev(p, () => (document.getElementById('2026-08-12-solar-eclipse') || {classList: {contains: () => false}}).classList.contains('hl') && document.querySelectorAll('.cal-hl li').length >= 8 && document.documentElement.scrollWidth <= innerWidth), 'calendar 2026: the eclipse as a highlight and an anchor, the highlights of the year');
+    await shot(p, 'sky-calendar');
     ok(p.errors.length === 0, 'no page errors', p.errors); await ctx.close();
     // the app: #go= opens the object (cold start and while open), and is taken out of the address
     const a = await page();

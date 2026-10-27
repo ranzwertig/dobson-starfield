@@ -9,6 +9,8 @@
 //     /sky/           and  /de/sky/             this week: the Worker (worker/sky.js) serves the week of the day
 //                                                from /sky-now/<lang>/<friday>, the copy for that address; the files here
 //                                                are the week of the build, for a plain static server
+//   The topic pages (Moon calendar, meteor showers, the calendar of a year) are scripts/sky-topics.mjs; every page
+//   carries the night sky navigation (skyNav) and links across.
 //   Only weeks with "status": "published" are built. Preview builds of other branches (Workers Builds sets
 //   WORKERS_CI_BRANCH) and SKY_DRAFTS=1 build drafts too, marked as drafts and noindex.
 //
@@ -102,12 +104,12 @@ export function weekSky(slug) {
 }
 
 // ---------- words ----------
-const MONTH = { en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+export const MONTH = { en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   de: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'] };
-const CON_DE = { Aries: 'Widder', Taurus: 'Stier', Gemini: 'Zwillinge', Cancer: 'Krebs', Leo: 'Löwe', Virgo: 'Jungfrau', Libra: 'Waage', Scorpius: 'Skorpion', Ophiuchus: 'Schlangenträger',
+export const CON_DE = { Aries: 'Widder', Taurus: 'Stier', Gemini: 'Zwillinge', Cancer: 'Krebs', Leo: 'Löwe', Virgo: 'Jungfrau', Libra: 'Waage', Scorpius: 'Skorpion', Ophiuchus: 'Schlangenträger',
   Sagittarius: 'Schütze', Capricornus: 'Steinbock', Aquarius: 'Wassermann', Pisces: 'Fische', Cetus: 'Walfisch', Orion: 'Orion', Sextans: 'Sextant', Crater: 'Becher', Hydra: 'Wasserschlange',
   Pegasus: 'Pegasus', Auriga: 'Fuhrmann', Corvus: 'Rabe', 'Serpens Cauda': 'Schlange', Scutum: 'Schild' };
-const PL_DE = { Mercury: 'Merkur', Venus: 'Venus', Mars: 'Mars', Jupiter: 'Jupiter', Saturn: 'Saturn', Uranus: 'Uranus', Neptune: 'Neptun', Moon: 'Mond' };
+export const PL_DE = { Mercury: 'Merkur', Venus: 'Venus', Mars: 'Mars', Jupiter: 'Jupiter', Saturn: 'Saturn', Uranus: 'Uranus', Neptune: 'Neptun', Moon: 'Mond' };
 export const L = {
   en: {
     sky: 'Night sky', title: r => `Night sky this week: ${r}`, short: r => `Night sky ${r}`, thisWeek: 'This week', events: 'Events', moon: 'The Moon', planets: 'Planets',
@@ -126,7 +128,7 @@ export const L = {
   de: {
     sky: 'Sternenhimmel', title: r => `Sternenhimmel diese Woche: ${r}`, short: r => `Sternenhimmel ${r}`, thisWeek: 'Diese Woche', events: 'Ereignisse', moon: 'Der Mond', planets: 'Planeten',
     open: 'In Zenigo öffnen', highlight: 'Höhepunkt', tip: 'Tipp', archive: 'Alle Wochen', prev: 'Vorige Woche', next: 'Nächste Woche', other: 'English', draft: 'Entwurf: noch nicht veröffentlicht',
-    utc: 'Zeiten in UTC.', local: z => `Zeiten in deiner Zeitzone (${z}).`, until: 'bis',
+    utc: 'Zeiten in deutscher Zeit (MEZ/MESZ).', local: z => `Zeiten in deiner Zeitzone (${z}).`, until: 'bis',
     peak: { conjunction: 'am engsten', occultation: 'am engsten', 'meteor-shower': 'Maximum', opposition: 'Opposition', elongation: 'größte Elongation', 'lunar-eclipse': 'Maximum', 'solar-eclipse': 'Maximum', comet: 'am hellsten' },
     eq: { 'naked-eye': 'Bloßes Auge', binoculars: 'Fernglas', telescope: 'Teleskop' }, hemi: { north: 'Nordhalbkugel', south: 'Südhalbkugel', both: '' },
     q: ['Neumond', 'Erstes Viertel', 'Vollmond', 'Letztes Viertel'], lit: ' % beleuchtet', moonNote: 'Der Mond an jedem Abend (20:00 UTC). Ohne sein Licht ist der Himmel am dunkelsten: am besten für Galaxien und Nebel.',
@@ -144,34 +146,63 @@ export function rangeText(slug, lang) {
   if (lang === 'de') return m1 === m2 ? `${d1}.–${d2}. ${M[m2]} ${y2}` : y1 === y2 ? `${d1}. ${M[m1]} – ${d2}. ${M[m2]} ${y2}` : `${d1}. ${M[m1]} ${y1} – ${d2}. ${M[m2]} ${y2}`;
   return m1 === m2 ? `${d1}–${d2} ${M[m2]} ${y2}` : y1 === y2 ? `${d1} ${M[m1]} – ${d2} ${M[m2]} ${y2}` : `${d1} ${M[m1]} ${y1} – ${d2} ${M[m2]} ${y2}`;
 }
-const fmtUtc = (d, lang, time) => new Intl.DateTimeFormat(lang === 'de' ? 'de-DE' : 'en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', ...(time ? { hour: '2-digit', minute: '2-digit' } : {}) }).format(d) + (time ? ' UTC' : '');
+// Times on the pages: English in UTC, German in German time (CET/CEST); the browser turns them into the reader's zone
+export const ZONE = { en: 'UTC', de: 'Europe/Berlin' };
+export const LOCALE = { en: 'en-GB', de: 'de-DE' };
+export const fmtAt = (d, lang, time, extra) => new Intl.DateTimeFormat(LOCALE[lang], { timeZone: ZONE[lang], weekday: 'short', day: 'numeric', month: 'short', ...(extra || {}), ...(time ? { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' } : {}) }).format(d);
+// a time as <time>, turned into the reader's zone by tzScript
+export const timeTag = (d, lang, extra) => `<time datetime="${d.toISOString().replace(/\.\d+Z$/, 'Z')}" data-t="dt">${esc(fmtAt(d, lang, true, extra))}</time>`;
+export const tzNote = lang => `<p class="wk-tz muted" data-zone="${ZONE[lang]}" data-local="${esc(L[lang].local('{z}'))}">${esc(L[lang].utc)}</p>`;
+export const tzScript = `<script>
+// times in the reader's own time zone (the page has them in UTC, German pages in German time)
+(() => {
+  const n = document.querySelector(".wk-tz"), l = document.documentElement.lang === "de" ? "de-DE" : "en-GB", tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const zone = n ? n.dataset.zone : "UTC";
+  if (!tz || tz === zone || (zone === "UTC" && tz === "Etc/UTC")) return;
+  const f = new Intl.DateTimeFormat(l, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  document.querySelectorAll("time[data-t]").forEach(t => { t.title = t.textContent; t.textContent = f.format(new Date(t.dateTime)); });
+  if (n) n.textContent = n.dataset.local.replace("{z}", tz.replace(/_/g, " "));
+})();
+</script>`;
 
 // ---------- pages ----------
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 export const weekPath = (lang, slug) => (lang === 'en' ? '' : '/' + lang) + '/sky/' + (slug ? slug + '/' : '');
 export const archivePath = lang => weekPath(lang) + 'archive/';
+// the topic pages (scripts/sky-topics.mjs)
+export const skyPath = (lang, rest) => weekPath(lang) + (rest ? rest + '/' : '');
+export const NAV = { en: { week: 'This week', moon: 'Moon calendar', showers: 'Meteor showers', calendar: y => 'Calendar ' + y, archive: 'All weeks', label: 'Night sky' },
+  de: { week: 'Diese Woche', moon: 'Mondkalender', showers: 'Meteorströme', calendar: y => 'Kalender ' + y, archive: 'Alle Wochen', label: 'Sternenhimmel' } };
+// The night sky navigation on every sky page: this week, Moon calendar, meteor showers, the calendar, all weeks
+export function skyNav(lang, active, { year, archive }) {
+  const n = NAV[lang], items = [['week', weekPath(lang), n.week], ['moon', skyPath(lang, 'moon'), n.moon], ['showers', skyPath(lang, 'meteor-showers'), n.showers],
+    ['calendar', skyPath(lang, 'calendar/' + year), n.calendar(year)], ...(archive ? [['archive', archivePath(lang), n.archive]] : [])];
+  // on a phone the bar scrolls sideways: the current item into view
+  return `<nav class="sky-nav" aria-label="${esc(n.label)}">${items.map(([k, h, t]) => `<a href="${h}"${k === active ? ' aria-current="page"' : ''}>${esc(t)}</a>`).join('')}</nav>`
+    + (active ? '<script>(() => { const a = document.currentScript.previousElementSibling.querySelector("[aria-current]"), n = a && a.parentElement; if (n && n.scrollWidth > n.clientWidth) n.scrollLeft = a.offsetLeft - n.offsetLeft - (n.clientWidth - a.offsetWidth) / 2; })();</script>' : '');
+}
 // the app opens an object from #go=<id> (src/app.html)
 export const goLink = (t, src) => t && t.id ? '/app/#go=' + encodeURIComponent(t.id) + '&src=' + src : null;
 
-function moonSvg(phase, cls) {
+export function moonSvg(phase, cls) {
   const r = 20, p = phase * Math.PI / 180, rx = Math.abs(Math.cos(p)) * r, wax = phase < 180, cres = Math.cos(p) > 0;
   const limb = wax ? `M0 ${-r}A${r} ${r} 0 0 1 0 ${r}` : `M0 ${-r}A${r} ${r} 0 0 0 0 ${r}`;
   const term = `A${rx.toFixed(2)} ${r} 0 0 ${wax ? (cres ? 0 : 1) : (cres ? 1 : 0)} 0 ${-r}Z`;
   return `<svg class="${cls}" viewBox="-22 -22 44 44" aria-hidden="true"><circle r="${r}" fill="#1a2140"/><path d="${limb}${term}" fill="#e9e4cc"/></svg>`;
 }
 
-function weekBody(w, lang, nav, draft) {
+function weekBody(w, lang, nav, draft, opts) {
   const t = L[lang], sky = weekSky(w.week), range = rangeText(w.week, lang);
   // highlights first, then by the first day (the window's or the peak's)
   const start = v => v.window ? Date.parse(v.window.from) : Date.parse(v.peak);
   const evs = [...w.events].sort((a, b) => (b.highlight ? 1 : 0) - (a.highlight ? 1 : 0) || start(a) - start(b) || Date.parse(a.peak) - Date.parse(b.peak));
   const when = v => {
     // a peak at 00:00 UTC is a day (a meteor shower's morning after the peak night): shown as that day, not a time
-    const pk = new Date(v.peak), tm = /T00:00(:00)?Z$/.test(v.peak) ? `<time datetime="${v.peak.slice(0, 10)}">${esc(fmtUtc(pk, lang))}</time>`
-      : `<time datetime="${v.peak}" data-t="dt">${esc(fmtUtc(pk, lang, true))}</time>`;
+    const pk = new Date(v.peak), tm = /T00:00(:00)?Z$/.test(v.peak) ? `<time datetime="${v.peak.slice(0, 10)}">${esc(fmtAt(pk, lang))}</time>`
+      : timeTag(pk, lang);
     if (!v.window) return tm;
     // a window: the days, and the peak where the kind has one (closest, maximum, opposition), even after the week
-    const days = `<time datetime="${v.window.from}">${esc(fmtUtc(new Date(v.window.from + 'T12:00:00Z'), lang))}</time> ${t.until} <time datetime="${v.window.to}">${esc(fmtUtc(new Date(v.window.to + 'T12:00:00Z'), lang))}</time>`;
+    const days = `<time datetime="${v.window.from}">${esc(fmtAt(new Date(v.window.from + 'T12:00:00Z'), lang))}</time> ${t.until} <time datetime="${v.window.to}">${esc(fmtAt(new Date(v.window.to + 'T12:00:00Z'), lang))}</time>`;
     return t.peak[v.type] ? `${days} · ${esc(t.peak[v.type])} ${tm}` : days;
   };
   const ev = v => {
@@ -183,14 +214,15 @@ function weekBody(w, lang, nav, draft) {
       </article>`;
   };
   const moonDays = sky.days.map(x => `<li>${moonSvg(x.phase, 'wk-moon')}<b>${esc(new Intl.DateTimeFormat(lang === 'de' ? 'de-DE' : 'en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' }).format(x.d))}</b><small>${Math.round(x.k * 100)}${esc(t.lit)}</small></li>`).join('');
-  const phases = sky.phases.map(q => `<li><b>${esc(t.q[q.quarter])}</b> <time datetime="${q.peak.toISOString()}" data-t="dt">${esc(fmtUtc(q.peak, lang, true))}</time></li>`).join('');
+  const phases = sky.phases.map(q => `<li><b>${esc(t.q[q.quarter])}</b> ${timeTag(q.peak, lang)}</li>`).join('');
   const planets = sky.planets.map(p => `<tr${p.elong < 15 ? ' class="wk-off"' : ''}><th scope="row">${esc(t.pl(p.b))}</th><td>${esc(t.vis(p))}</td><td>${esc(t.inCon(t.con(p.con)))}</td><td class="num">${p.mag.toFixed(1)} ${t.mag}</td></tr>`).join('\n          ');
   return `<main class="wrap">
   <article class="doc full wk">
     ${draft ? `<p class="wk-draft">${esc(t.draft)}</p>\n    ` : ''}<nav class="wk-crumbs" aria-label="Breadcrumb"><a href="${archivePath(lang)}">${esc(t.sky)}</a> › <span>${esc(range)}</span><a class="wk-lang" href="${weekPath(lang === 'en' ? 'de' : 'en', w.week)}" hreflang="${lang === 'en' ? 'de' : 'en'}" lang="${lang === 'en' ? 'de' : 'en'}">${esc(t.other)}</a></nav>
+    ${skyNav(lang, opts.active || '', opts)}
     <h1>${esc(t.title(range))}</h1>
     <p class="intro">${esc(w.intro[lang])}</p>
-    <p class="wk-tz muted" data-utc="${esc(t.utc)}" data-local="${esc(t.local('{z}'))}">${esc(t.utc)}</p>
+    ${tzNote(lang)}
     <h2>${esc(t.events)}</h2>
     <div class="wk-list">
 ${evs.map(ev).join('\n')}
@@ -206,24 +238,16 @@ ${evs.map(ev).join('\n')}
       </tbody>
     </table></div>
     <p class="muted">${esc(t.planetNote)}</p>
+    ${opts.related ? opts.related(w, lang) : ''}
     <p class="wk-app">${esc(t.appLine)} <a class="open" href="/app/">${lang === 'de' ? 'Zenigo öffnen' : 'Open Zenigo'}</a></p>
     <nav class="wk-nav" aria-label="${esc(t.sky)}">${nav.prev ? `<a href="${weekPath(lang, nav.prev)}">← ${esc(t.prev)}</a>` : '<span></span>'}<a href="${archivePath(lang)}">${esc(t.archive)}</a>${nav.next ? `<a href="${weekPath(lang, nav.next)}">${esc(t.next)} →</a>` : '<span></span>'}</nav>
     <p class="muted wk-small">${esc(t.calc)}</p>
   </article>
 </main>
-<script>
-// times in the reader's own time zone (the page has them in UTC)
-(() => {
-  const l = document.documentElement.lang === "de" ? "de-DE" : "en-GB", tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (!tz || tz === "UTC" || tz === "Etc/UTC") return;
-  const f = new Intl.DateTimeFormat(l, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-  document.querySelectorAll("time[data-t]").forEach(t => { t.title = t.textContent; t.textContent = f.format(new Date(t.dateTime)); });
-  const n = document.querySelector(".wk-tz"); if (n) n.textContent = n.dataset.local.replace("{z}", tz.replace(/_/g, " "));
-})();
-</script>`;
+${tzScript}`;
 }
 
-function archiveBody(weeks, lang) {
+function archiveBody(weeks, lang, opts) {
   const t = L[lang];
   const rows = [...weeks].reverse().map(w => {
     const hl = w.events.filter(v => v.highlight).concat(w.events.filter(v => !v.highlight)).slice(0, 3).map(v => esc(v.title[lang])).join(' · ');
@@ -232,6 +256,7 @@ function archiveBody(weeks, lang) {
   return `<main class="wrap">
   <article class="doc full wk">
     <nav class="wk-crumbs" aria-label="Breadcrumb"><span>${esc(t.sky)}</span><a class="wk-lang" href="${archivePath(lang === 'en' ? 'de' : 'en')}" hreflang="${lang === 'en' ? 'de' : 'en'}" lang="${lang === 'en' ? 'de' : 'en'}">${esc(t.other)}</a></nav>
+    ${skyNav(lang, 'archive', opts)}
     <h1>${esc(t.archiveTitle)}</h1>
     <p class="intro">${esc(t.archiveIntro)}</p>
     <ul class="wk-archive">
@@ -243,7 +268,7 @@ ${rows}
 
 // One page: the head with title, description, canonical address, language versions and structured data, then the
 // site's header and footer around the body
-function pageHtml({ lang, title, desc, url, alt, body, ld, noindex, header, footer, fontCss, SITE }) {
+export function pageHtml({ lang, title, desc, url, alt, body, ld, noindex, header, footer, fontCss, SITE }) {
   const links = alt ? Object.entries(alt).map(([l, p]) => `<link rel="alternate" hreflang="${l}" href="${SITE + p}">`).join('') + `<link rel="alternate" hreflang="x-default" href="${SITE + alt.en}">` : '';
   return `<!doctype html>
 <html lang="${lang}">
@@ -275,7 +300,7 @@ ${footer}
 }
 
 // Builds every page; returns the sitemap entries ({ loc, alt }) and the files written
-export function buildSky({ write, header, footer, fontCss, SITE, year, drafts = false, now = new Date(), dir }) {
+export function buildSky({ write, header, footer, fontCss, SITE, year, drafts = false, now = new Date(), dir, related }) {
   const { weeks: all, errors } = loadWeeks(dir);
   if (errors.length) throw new Error('content/sky:\n  ' + errors.join('\n  '));
   const weeks = all.filter(w => w.status === 'published' || drafts);
@@ -284,6 +309,7 @@ export function buildSky({ write, header, footer, fontCss, SITE, year, drafts = 
   const hdr = (lang, path) => { const h = header.replaceAll(`href="${path}">`, `href="${path}" aria-current="page">`); return lang === 'en' ? h : h.replace('<header class="sitehead"', '<header class="sitehead" lang="en"'); };
   const ftr = lang => lang === 'en' ? footer : footer.replace('<footer>', '<footer lang="en">');
   const put = (file, html) => { write(file, html.replaceAll('<!--YEAR-->', String(year))); files.push(file); };
+  const navOpts = { year: now.getUTCFullYear(), archive: weeks.length > 0, related };
   const thisWeek = fridayOf(now), current = [...weeks].reverse().find(w => w.week <= thisWeek) || weeks[0];
   weeks.forEach((w, i) => {
     const nav = { prev: weeks[i - 1] && weeks[i - 1].week, next: weeks[i + 1] && weeks[i + 1].week }, draft = w.status !== 'published';
@@ -294,17 +320,17 @@ export function buildSky({ write, header, footer, fontCss, SITE, year, drafts = 
       const ld = [{ '@context': 'https://schema.org', '@type': 'Article', headline: t.title(range), inLanguage: lang, datePublished: w.generatedAt, dateModified: w.generatedAt,
         author: { '@type': 'Organization', name: 'Zenigo', url: SITE + '/' }, publisher: { '@type': 'Organization', name: 'Zenigo', url: SITE + '/' }, mainEntityOfPage: url, description: w.intro[lang] },
         { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: t.sky, item: SITE + archivePath(lang) }, { '@type': 'ListItem', position: 2, name: range, item: url }] }];
-      const page = (canon, p) => pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: canon, alt, body: weekBody(w, lang, nav, draft), ld, noindex: draft, header: hdr(lang, p), footer: ftr(lang), fontCss, SITE });
+      const page = (canon, p) => pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: canon, alt, body: weekBody(w, lang, nav, draft, navOpts), ld, noindex: draft, header: hdr(lang, p), footer: ftr(lang), fontCss, SITE });
       put('dist' + path + 'index.html', page(url, path));
       // the copy for /sky/ (this week, served by the Worker): canonical /sky/, the language versions of /sky/
-      put(`dist/sky-now/${lang}/${w.week}.html`, pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: SITE + weekPath(lang), alt: Object.fromEntries(LANGS.map(l => [l, weekPath(l)])), body: weekBody(w, lang, nav, draft), ld, noindex: draft, header: hdr(lang, weekPath(lang)), footer: ftr(lang), fontCss, SITE }));
-      if (w === current) put('dist' + weekPath(lang) + 'index.html', pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: SITE + weekPath(lang), alt: Object.fromEntries(LANGS.map(l => [l, weekPath(l)])), body: weekBody(w, lang, nav, draft), ld, noindex: draft, header: hdr(lang, weekPath(lang)), footer: ftr(lang), fontCss, SITE }));
+      put(`dist/sky-now/${lang}/${w.week}.html`, pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: SITE + weekPath(lang), alt: Object.fromEntries(LANGS.map(l => [l, weekPath(l)])), body: weekBody(w, lang, nav, draft, { ...navOpts, active: 'week' }), ld, noindex: draft, header: hdr(lang, weekPath(lang)), footer: ftr(lang), fontCss, SITE }));
+      if (w === current) put('dist' + weekPath(lang) + 'index.html', pageHtml({ lang, title: t.title(range), desc: t.desc(range, top), url: SITE + weekPath(lang), alt: Object.fromEntries(LANGS.map(l => [l, weekPath(l)])), body: weekBody(w, lang, nav, draft, { ...navOpts, active: 'week' }), ld, noindex: draft, header: hdr(lang, weekPath(lang)), footer: ftr(lang), fontCss, SITE }));
     }
     if (!draft) urls.push({ loc: SITE + alt.en, alt, lastmod: w.generatedAt.slice(0, 10) });
   });
   if (weeks.length) {
     const alt = Object.fromEntries(LANGS.map(l => [l, archivePath(l)]));
-    for (const lang of LANGS) put('dist' + archivePath(lang) + 'index.html', pageHtml({ lang, title: L[lang].archiveTitle, desc: L[lang].archiveIntro, url: SITE + archivePath(lang), alt, body: archiveBody(weeks, lang), noindex: !weeks.some(w => w.status === 'published'), header: hdr(lang, archivePath(lang)), footer: ftr(lang), fontCss, SITE }));
+    for (const lang of LANGS) put('dist' + archivePath(lang) + 'index.html', pageHtml({ lang, title: L[lang].archiveTitle, desc: L[lang].archiveIntro, url: SITE + archivePath(lang), alt, body: archiveBody(weeks, lang, navOpts), noindex: !weeks.some(w => w.status === 'published'), header: hdr(lang, archivePath(lang)), footer: ftr(lang), fontCss, SITE }));
     const pub = weeks.filter(w => w.status === 'published');
     if (pub.length) {
       const last = pub.at(-1).generatedAt.slice(0, 10);
@@ -312,7 +338,7 @@ export function buildSky({ write, header, footer, fontCss, SITE, year, drafts = 
       urls.push({ loc: SITE + archivePath('en'), alt, lastmod: last });
     }
   }
-  return { urls, files, weeks: weeks.map(w => w.week) };
+  return { urls, files, weeks: weeks.map(w => w.week), published: weeks.filter(w => w.status === 'published'), all: weeks, current, hdr, ftr, put };
 }
 
 // ---------- command line ----------

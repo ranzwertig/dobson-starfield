@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { validateWeek, loadWeeks, fridayOf, rangeText, weekSky, buildSky, goLink } from '../scripts/sky.mjs';
 import { handleSky, isSky } from '../worker/sky.js';
+import { SHOWERS, showerPeak, moonYear, calendarYear, buildTopics, weekRelated } from '../scripts/sky-topics.mjs';
 
 const require = createRequire(import.meta.url);
 const A = require('astronomy-engine'), ZEvents = require('../src/events.js');
@@ -51,6 +52,16 @@ const here = ZEvents.search(A, { from: new Date('2026-10-27T20:00:00Z'), obs: ne
 ok(here.some(e => e.type === 'meteor-shower' && e.name === 'Geminids') && here.some(e => e.type === 'opposition' && e.bodies[0] === 'Uranus') && !here.some(e => e.type === 'moon-phase'), 'events seen from a place (Coming up in the app)');
 ok(goLink({ id: 'NGC 891' }, 'week') === '/app/#go=NGC%20891&src=week' && goLink({ ra: 3, dec: 22 }, 'week') === null, 'links into the app');
 
+// meteor showers from the solar longitude of their maximum, the Moon's year, the calendar of a year
+const pk = slug => showerPeak(SHOWERS.find(x => x.slug === slug), 2026);
+ok(pk('perseids').d.toISOString().slice(0, 10) === '2026-08-13' && pk('geminids').d.toISOString().slice(0, 10) === '2026-12-14' && pk('quadrantids').d.toISOString().slice(0, 10) === '2026-01-03', 'shower peaks 2026 (IMO: Perseids 13 Aug, Geminids 14 Dec, Quadrantids 3 Jan)', SHOWERS.map(x => x.slug + ' ' + showerPeak(x, 2026).d.toISOString()));
+ok(pk('perseids').k < 0.05 && pk('geminids').k < 0.35, 'the Moon at the peaks: Perseids moonless, Geminids a crescent');
+const my = moonYear(2026, 'en', calendarYear(2026)), fulls = my.filter(q => q.quarter === 2);
+ok(fulls.length === 13 && fulls.find(q => q.blue).peak.toISOString().slice(0, 10) === '2026-05-31' && fulls.find(q => q.name === 'Harvest Moon').at.m === 8 && fulls.some(q => q.super) && fulls.filter(q => q.eclipse).length === 2, 'Moon 2026: 13 full Moons, the blue moon on 31 May, the Harvest Moon in September, a supermoon, two eclipses', fulls.map(q => q.peak.toISOString().slice(0, 10) + ' ' + q.name));
+const c26 = calendarYear(2026);
+ok(c26.filter(e => e.type === 'solar-eclipse').length === 2 && c26.filter(e => e.type === 'lunar-eclipse').length === 2 && c26.filter(e => e.type === 'season').length === 4 && c26.filter(e => e.type === 'meteor-shower').length === SHOWERS.length && c26.filter(e => e.type === 'elongation' && e.bodies[0] === 'Mercury').length >= 6, 'calendar 2026: 2 solar and 2 lunar eclipses, the seasons, every shower, all of Mercury’s elongations', c26.map(e => e.id));
+ok(new Set(c26.map(e => e.id)).size === c26.length, 'calendar ids are unique (anchors)');
+
 // pages: published only, unless drafts; a draft is noindex and not in the sitemap
 const tmp = mkdtempSync(path.join(tmpdir(), 'sky-')), dir = path.join(tmp, 'content') + '/';
 mkdirSync(dir);
@@ -72,6 +83,24 @@ Object.keys(out).forEach(k => delete out[k]);
 const r2 = buildSky({ ...ctx, drafts: true });
 ok(r2.weeks.join() === '2026-11-06,2026-11-13' && /noindex/.test(out['dist/sky/2026-11-13/index.html']) && /Draft/.test(out['dist/sky/2026-11-13/index.html']) && r2.urls.length === 3, 'with drafts: built, marked, noindex, not in the sitemap');
 ok(out['dist/sky/index.html'].includes('13–19 November') && out['dist/sky/2026-11-06/index.html'].includes('href="/sky/2026-11-13/"'), 'with drafts: /sky/ and the next-week link include them');
+
+// topic pages: built for every year from 2026 to the year after, each in both languages, linked across
+Object.keys(out).forEach(k => delete out[k]);
+const r3 = buildSky({ ...ctx, related: weekRelated }), t3 = buildTopics({ sky: r3, fontCss: '', SITE: 'https://zenigo.app', now: ctx.now });
+const locs = t3.urls.map(u => u.loc.replace('https://zenigo.app', ''));
+ok(t3.years.join() === '2026,2027' && ['/sky/moon/', '/sky/moon/2026/', '/sky/moon/2027/', '/sky/meteor-showers/', '/sky/meteor-showers/geminids/', '/sky/calendar/2026/', '/sky/calendar/2027/'].every(p => locs.includes(p)) && locs.length === 16, 'topic pages in the sitemap (/sky/ itself comes from the week)', locs);
+ok(t3.urls.every(u => out['dist' + u.alt.en + 'index.html'] && out['dist' + u.alt.de + 'index.html']), 'every topic page in English and German');
+const gem = out['dist/de/sky/meteor-showers/geminids/index.html'], cal = out['dist/sky/calendar/2026/index.html'], moon = out['dist/de/sky/moon/2026/index.html'], wk = out['dist/sky/2026-11-06/index.html'];
+ok(/<h1>Geminiden 2026: Maximum/.test(gem) && /hreflang="en" href="https:\/\/zenigo.app\/sky\/meteor-showers\/geminids\/"/.test(gem) && /vom 14\. Dezember auf den 15\. Dezember/.test(gem) && /MEZ/.test(gem), 'shower page: the year, the night of the peak in German time, language versions');
+ok(/class="sky-nav"/.test(gem) && /aria-current="page">Meteorströme</.test(gem) && /href="\/de\/sky\/archive\/"/.test(gem), 'shower page: the night sky navigation, its own item marked');
+ok(/id="2026-08-12-solar-eclipse"/.test(cal) && /Total solar eclipse/.test(cal) && /London: \d+ % covered/.test(cal) && /href="\/sky\/meteor-showers\/perseids\/">Perseids peak/.test(cal), 'calendar: the eclipse with how much is covered in London, meteor showers linked to their pages');
+ok(/href="\/sky\/2026-11-06\/">6–12 November 2026/.test(cal), 'calendar: the published week in its month');
+ok(/Blue Moon/.test(moon) && /Erntemond/.test(moon) && /Supermond/.test(moon) && /id="november"/.test(moon) && /href="\/de\/sky\/2026-11-06\/">Sternenhimmel dieser Woche/.test(moon), 'Moon calendar: blue moon, harvest moon, supermoon, months as anchors, the week of the new Moon');
+ok(/href="\/sky\/moon\/2026\/#november"/.test(wk) && /href="\/sky\/calendar\/2026\/#november"/.test(wk) && /href="\/sky\/meteor-showers\/taurids\/"/.test(wk), 'the week links its month in the Moon calendar and calendar, and the Taurids');
+ok(!out['dist/sky/index.html'].includes('Coming up'), '/sky/ is the week while there is one');
+Object.keys(out).forEach(k => delete out[k]);
+const t4 = buildTopics({ sky: buildSky({ ...ctx, dir: pathToFileURL(path.join(tmp, 'none') + '/') }), fontCss: '', SITE: 'https://zenigo.app', now: ctx.now });
+ok(/<h1>Night sky<\/h1>/.test(out['dist/sky/index.html'] || '') && /Coming up/.test(out['dist/sky/index.html']) && t4.urls.some(u => u.loc === 'https://zenigo.app/sky/') && !/href="\/sky\/archive\/"/.test(out['dist/sky/moon/index.html']), 'no week yet: /sky/ is an overview, in the sitemap; no link to an archive');
 rmSync(tmp, { recursive: true, force: true });
 let threw = false; try { const t2 = mkdtempSync(path.join(tmpdir(), 'sky-')) + '/'; writeFileSync(t2 + '2026-11-06.json', '{"week":"2026-11-06"}'); buildSky({ ...ctx, dir: pathToFileURL(t2) }); } catch (e) { threw = /content\/sky/.test(e.message); }
 ok(threw, 'the build stops on a broken file');

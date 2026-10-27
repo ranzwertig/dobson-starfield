@@ -116,7 +116,7 @@ const ZEvents = (() => {
     }));
     safe("elongation", () => ["Mercury", "Venus"].forEach(b => {
       let x = A.SearchMaxElongation(A.Body[b], T(from));
-      for (let i = 0; i < 4 && x.time.date.getTime() <= until("elongation"); i++) {
+      for (let i = 0; i < 12 && x.time.date.getTime() <= until("elongation"); i++) {
         out.push({ type: "elongation", peak: x.time.date, bodies: [b], elongation: x.elongation, visibility: x.visibility });
         if (!o.to) break;
         x = A.SearchMaxElongation(A.Body[b], A.MakeTime(new Date(x.time.date.getTime() + 10 * DAY)));
