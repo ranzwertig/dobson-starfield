@@ -165,7 +165,10 @@ const TESTS = {
     await p.tap('#btnLog'); await wait(p, 500);
     await p.tap('.lrow'); await wait(p, 500);
     ok(await ev(p, () => !$('seenDelete').hidden), 'an opened entry can be deleted');
-    await p.tap('#seenDelete'); await wait(p, 500); await p.tap('#confirmOk'); await wait(p, 500);
+    await p.tap('#seenDelete'); await wait(p, 200);
+    ok(await ev(p, () => $('seenDelete').classList.contains('armed') && $('seenDelete').textContent === 'Yes, delete' && $('seenSave').hidden && !!$('seenActs').querySelector('.armcancel') && !$('seenSheet').hidden && $('confirmSheet').hidden),
+      'Delete asks in place: a red “Yes, delete” with Cancel, no dialog');
+    await p.tap('#seenDelete'); await wait(p, 500);
     ok(await ev(p, () => obs.log.length) === 1, 'Delete removes the entry');
     // backup and restore in Settings → General
     await ev(p, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(p, 500);
@@ -814,6 +817,12 @@ const TESTS = {
     await ev(p, async b64 => { const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); await loadPhoto(new File([bin], 'sky.jpg', { type: 'image/jpeg' }), false); }, raw.toString('base64'));
     await p.waitForFunction(() => ph.on && !st.busy, null, { timeout: 90000 }); await wait(p, 300);
     ok(await ev(p, () => !!st.photoSol && $('phTime').classList.contains('ask') && st.tOff === 0), 'without EXIF the time chip asks when it was taken');
+    await ev(p, () => { cfg.photo.caption = true; cfg.photo.place = true; syncPhShare(); });
+    ok(await ev(p, () => !$('phPlace').disabled && $('phPlace').checked && /your location in Zenigo/.test($('phPlaceNote').textContent)), 'a photo without a place: the caption can show the location set in Zenigo', await ev(p, () => $('phPlaceNote').textContent));
+    if (process.env.SHOTS) { await ev(p, () => openSheet('phShareSheet')); await wait(p, 900); await p.screenshot({ path: path.join(process.env.SHOTS, 'photo-share.png') }); await ev(p, () => closeSheet('phShareSheet')); await wait(p, 400);
+      const png = await ev(p, async () => { const cv = await photoRender('post'), c = document.createElement('canvas'); c.width = 420; c.height = 200; c.getContext('2d').drawImage(cv, cv.width - 420, cv.height - 200, 420, 200, 0, 0, 420, 200); return c.toDataURL(); });
+      fs.writeFileSync(path.join(process.env.SHOTS, 'caption.png'), Buffer.from(png.split(',')[1], 'base64'));
+      await ev(p, () => { SHEETS.forEach(x => closeSheet(x.id)); $('updateBar').hidden = false; }); await wait(p, 600); await p.screenshot({ path: path.join(process.env.SHOTS, 'update.png'), clip: { x: 0, y: 0, width: 390, height: 160 } }); await ev(p, () => { $('updateBar').hidden = true; }); }
     await ev(p, () => { obs.log = []; saveObs(); }); await p.tap('#phInPhoto'); await wait(p, 500); await p.tap('#phLogAll'); await wait(p, 500);
     ok(await ev(p, () => obs.log.length === 0 && !$('timeSheet').hidden), 'logging asks for the time first');
     await done(p);
@@ -904,7 +913,7 @@ const TESTS = {
     // delete from the server: every device stops syncing, their data stays
     await ev(B, async () => { const k = await syncKeys(); const g = await syncGet(k); await syncPut(k, g.ver, { ...g.data, schema: { major: 1, minor: 0 } }); });
     await ev(A, () => { SHEETS.forEach(x => closeSheet(x.id)); syncSettings(); openSheet('sheet'); setSetTab('sync'); }); await wait(A, 400);
-    await ev(A, () => { $('syncBox').querySelector('details').open = true; }); await A.tap('#syncDelete'); await wait(A, 500); await A.tap('#confirmOk'); await wait(A, 800);
+    await ev(A, () => { $('syncBox').querySelector('details').open = true; }); await A.tap('#syncDelete'); await wait(A, 200); await A.tap('#syncDelete'); await wait(A, 800);
     ok(syncStore.size === 0 && await ev(A, () => !syncS.code && obs.log.length >= 2), 'Delete removes the group from the server; the lists stay');
     await ev(B, () => syncNow());
     ok(await ev(B, () => !syncS.code && obs.log.length >= 2 && /Sync stopped/.test($('hint').textContent)), 'the other device notices, stops syncing and says so');
@@ -1167,7 +1176,8 @@ const TESTS = {
     shot(p, 'map');
     // adding with Pro: Dobsonian, 8″, eyepieces (one from the list, one typed)
     await ev(p, () => openSheet('quickSheet')); await wait(p, 400);
-    ok(await ev(p, () => [...$('qInst').children].map(b => b.textContent).join('|')) === 'My telescope|+ Add', 'Quick settings: the instruments and “+ Add”');
+    ok(await ev(p, () => [...$('qInst').children].map(b => b.textContent).join('|') === 'My telescope|+ Add' && !!$('qInstManage').offsetParent), 'Quick settings: the instruments, “+ Add” and Manage');
+    if (process.env.SHOTS) { await p.screenshot({ path: path.join(process.env.SHOTS, 'quick.png') }); await ev(p, () => { $('updateBar').hidden = false; }); await p.screenshot({ path: path.join(process.env.SHOTS, 'update.png'), clip: { x: 0, y: 0, width: 390, height: 140 } }); await ev(p, () => { $('updateBar').hidden = true; }); }
     await ev(p, () => [...$('qInst').children].pop().click()); await wait(p, 500);
     ok(await ev(p, () => !$('addInstSheet').hidden && $('proSheet').hidden), 'with Pro “+ Add” starts adding');
     shot(p, 'add-type');
@@ -1239,7 +1249,12 @@ const TESTS = {
     ok(await ev(p, () => curInst().name === 'Big Dob' && opt().ap === 250 && opt().eps.length === 5 && $('oOther').hidden), '“Use it” makes it the one in use, with the changes');
     // delete the binoculars (not in use)
     await ev(p, () => [...document.querySelectorAll('#eqList .eqmain')].find(b => /Binoculars/.test(b.textContent)).click()); await wait(p, 300);
-    await p.tap('#oDel'); await wait(p, 500); await p.tap('#confirmOk'); await wait(p, 600);
+    await p.tap('#oDel'); await wait(p, 200);
+    ok(await ev(p, () => $('oDel').textContent === 'Delete Binoculars 15×70' && $('oDel').classList.contains('armed') && /Logbook entries keep its name/.test($('optics').textContent) && cfg.instruments.length === 3), 'Delete: confirm in place');
+    if (process.env.SHOTS) await ev(p, () => $('oDel').scrollIntoView({ block: 'center' })), await wait(p, 200), await p.screenshot({ path: path.join(process.env.SHOTS, 'armed.png') });
+    await ev(p, () => $('optics').querySelector('.armcancel').click()); await wait(p, 100);
+    ok(await ev(p, () => $('oDel').textContent === 'Delete this instrument' && !$('optics').querySelector('.armcancel, .armnote') && cfg.instruments.length === 3), 'Cancel puts it back');
+    await p.tap('#oDel'); await wait(p, 200); await p.tap('#oDel'); await wait(p, 600);
     ok(await ev(p, () => cfg.instruments.length === 2 && curInst().name === 'Big Dob' && !$('sheet').hidden && obs.log.find(x => x.obj === 'M45').ik === 'bino'), 'deleted; the logbook entry keeps its name and kind');
     // another device brings its instruments: the placeholder of a new install goes, the one in use stays
     await ev(p, () => { cfg.instruments.push({ id: 'x1', name: 'Fresh', type: 'dob', mount: 'altaz', o: { scope: 1200, eps: [] }, fresh: true }); afterSyncedSettings(); });

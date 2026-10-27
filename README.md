@@ -165,7 +165,7 @@ npm run test:pro     # /api/pro/config (environment, token, price, country, no f
 # SYNC_URL=http://localhost:8787 node test/sync-api.cjs   # the sync API of a running Worker (wrangler dev with a D1 binding)
 npm run test:ui      # the built app in Chromium: navigation, logbook and backup, camera choice, eyepieces and
                      # Barlow, finders, side panels, sound, locate and diagnostics, sync between two devices
-                     # against a stand-in API, telescope reach, centring beside panels, live connection and its camera image, constellation figures, labelled night photos, the extended catalogue (download, merge, cache, put away), observing programmes, instruments (adding, switching, binoculars, logbook, without Pro), Zenigo Pro in the app (gates, keys, renewal, reminder, end) and its website pages with a stand-in for Paddle.js, camera retries, offline start (377 checks);
+                     # against a stand-in API, telescope reach, centring beside panels, live connection and its camera image, constellation figures, labelled night photos, the extended catalogue (download, merge, cache, put away), observing programmes, instruments (adding, switching, binoculars, logbook, without Pro), Zenigo Pro in the app (gates, keys, renewal, reminder, end) and its website pages with a stand-in for Paddle.js, camera retries, offline start (381 checks);
                      # needs Playwright: npm i --no-save playwright && npx playwright install chromium
 npm run dev          # local server via wrangler dev
 npm run deploy       # manual deploy (otherwise on push to main)

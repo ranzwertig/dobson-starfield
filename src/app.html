@@ -155,6 +155,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 }
 .update img { border-radius: 7px; flex: none; }
 .update span { flex: 1; min-width: 0; }
+.update span.zl { flex: none; }
 .update .btn { padding: 7px 14px; white-space: nowrap; }
 @keyframes upd-in { from { opacity: 0; transform: translateY(-10px); } }
 .update .ico { width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--accent); }
@@ -270,6 +271,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .btn.danger { border-color: rgba(255,106,92,.55); color: #ff8a7e; background: rgba(255,106,92,.06); }
 .btn.danger:hover { background: rgba(255,106,92,.12); }
 .btn.danger svg { flex: none; }
+.btn.armed, .btn.danger.armed { background: #d9443a; border-color: #d9443a; color: #fff; font-weight: 600; justify-content: center; }
+.btn.armed:hover { background: #c63a31; }
+.ostar.armed { width: auto; padding: 0 12px; border-radius: 99px; background: #d9443a; color: #fff !important; font: 600 13px var(--font-ui); }
+.armnote { color: #ff9a90; margin: 0; }
 .actions .btn.wide { grid-column: 1 / -1; }
 /* details and target panel: the main buttons stay at the bottom while the content scrolls */
 /* Panels with buttons at the bottom (details, target, list, "Seen"): only the body scrolls; the title on top and the
@@ -769,6 +774,9 @@ a.btn { text-decoration: none; color: var(--fg); }
 .eqother .btn { flex: none; white-space: nowrap; min-height: 36px; padding: 0 14px; }
 .eps.nosel .epsel { visibility: hidden; }
 .eqdel { justify-content: flex-start; }
+.qlabrow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.qlabrow > span { display: grid; gap: 2px; }
+.qlabrow .lnk { background: none; border: 0; padding: 4px 0; color: var(--accent); font: 600 14px var(--font-ui); cursor: pointer; white-space: nowrap; }
 .qinst .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .epview .epinst { font-weight: 600; margin-right: 4px; }
 #instEpBox { margin-top: 12px; }
@@ -1410,7 +1418,7 @@ a.btn { text-decoration: none; color: var(--fg); }
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
     <div class="grab"><h2 id="quickTitle"><span>Quick settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="qrow">
-      <div class="qlabel">Instrument <span class="qsub" id="qInstSub">what you observe with</span></div>
+      <div class="qlabel qlabrow"><span>Instrument <span class="qsub" id="qInstSub">what you observe with</span></span><button class="lnk" id="qInstManage">Manage ›</button></div>
       <div class="chips qinst" id="qInst" role="radiogroup" aria-label="Instrument in use"></div>
     </div>
     <div class="qrow">
@@ -3348,7 +3356,7 @@ function renderExt() {
 }
 $("extGet").onclick = () => extDownload();
 $("proExtGet").onclick = () => extDownload();
-$("extDel").onclick = async () => { if (await askConfirm("Remove the extended catalogue?", "It is removed from this device. You can download it again at any time while Zenigo Pro runs.", "Remove", "Keep") === true) extRemove(); };
+$("extDel").onclick = () => armDelete($("extDel"), "Yes, remove it", "The extended catalogue is removed from this device. You can download it again at any time while Zenigo Pro runs.", extRemove);
 // Classic chart symbols: galaxy = ellipse, globular = circle with cross, open cluster = dashed circle,
 // nebula = square, planetary nebula = circle with centre dot
 // Small marks on the map: a star for objects on the list, a tick for objects already seen
@@ -3772,6 +3780,9 @@ function phCentre(s) {
   const rd = Solver.v2radec(Solver.pixToSky(s, s.w / 2, s.h / 2)), m = Math.round(((rd.ra + 360) % 360) / 15 * 60) % 1440;
   return Math.floor(m / 60) + "h " + pad2(m % 60) + "m " + (rd.dec >= 0 ? "+" : "−") + Math.round(Math.abs(rd.dec)) + "°";
 }
+// where the photo was taken: from the photo, or else the location set in Zenigo (photos picked from the gallery
+// often come without it: Safari and some apps leave the place out)
+const phWhere = () => ph.loc || (isFinite(+cfg.lat) && isFinite(+cfg.lon) && cfg.lat !== "" ? { lat: +cfg.lat, lon: +cfg.lon } : null);
 const phPlace = L => Math.abs(L.lat).toFixed(1) + "° " + (L.lat >= 0 ? "N" : "S") + ", " + Math.abs(L.lon).toFixed(1) + "° " + (L.lon >= 0 ? "E" : "W");
 const PH_OK = '<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const PH_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
@@ -4064,6 +4075,12 @@ async function photoRender(size, preview) {
     c.font = `500 ${12 * u}px ${font}`; c.textBaseline = "middle"; c.textAlign = "right"; c.fillStyle = "#a9b4c0"; c.fillText("zenigo.app", right, cy);
     const tw = c.measureText("zenigo.app").width, ls = 20 * u, lx = right - tw - 7 * u - ls;
     if (logo) c.drawImage(logo, lx, cy - ls / 2, ls, ls);
+    if (logo && pro.on) {   // the small "Pro" pill at the logo's corner, as in the app
+      c.font = `600 ${6.5 * u}px ${font}`; const t = "PRO", pw2 = c.measureText(t).width + 5 * u, ph3 = 9 * u, bx = lx + ls - pw2 + 4 * u, by = cy + ls / 2 - ph3 + 3 * u;
+      c.fillStyle = "#07090c"; c.beginPath(); c.roundRect ? c.roundRect(bx - u, by - u, pw2 + 2 * u, ph3 + 2 * u, ph3) : c.rect(bx - u, by - u, pw2 + 2 * u, ph3 + 2 * u); c.fill();
+      c.fillStyle = "#f0a845"; c.beginPath(); c.roundRect ? c.roundRect(bx, by, pw2, ph3, ph3 / 2) : c.rect(bx, by, pw2, ph3); c.fill();
+      c.fillStyle = "#1b1206"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(t, bx + pw2 / 2, by + ph3 / 2 + 0.3 * u);
+    }
     c.textAlign = "left"; return lx;
   };
   if (!capH) {
@@ -4077,7 +4094,7 @@ async function photoRender(size, preview) {
     const fit = (t, max) => { if (c.measureText(t).width <= max) return t; while (t.length > 1 && c.measureText(t + "…").width > max) t = t.slice(0, -1); return t + "…"; };
     c.textAlign = "left"; c.textBaseline = "middle";
     c.font = `600 ${16 * u}px ${font}`; c.fillStyle = "#eef1f4"; c.fillText(fit(O.title, right - pad), pad, h + capH * 0.36);
-    const facts = [phTimeKnown() ? fmtWhen(skyDate()) : "", phFov(sol), "centre " + phCentre(sol), L.place && ph.loc ? phPlace(ph.loc) : ""].filter(Boolean).join(" · ");
+    const facts = [phTimeKnown() ? fmtWhen(skyDate()) : "", phFov(sol), "centre " + phCentre(sol), L.place && phWhere() ? phPlace(phWhere()) : ""].filter(Boolean).join(" · ");
     c.font = `${10.5 * u}px ${mono}`; c.fillStyle = "#8f9aa6"; c.fillText(fit(facts, w - 2 * pad), pad, h + capH * 0.7);
   }
   return cv;
@@ -4246,9 +4263,11 @@ $("phLogAll").onclick = () => {
 // Save and share
 function syncPhShare() {
   const L = cfg.photo;
-  $("phCap").checked = !!L.caption; $("phPlace").checked = !!L.place && !!ph.loc;
-  $("phPlace").disabled = !L.caption || !ph.loc;
-  $("phPlaceNote").textContent = !ph.loc ? "the photo doesn’t say where it was taken" : L.place ? phPlace(ph.loc) + ", rounded" : "off: where you were stays private";
+  const w = phWhere();
+  $("phCap").checked = !!L.caption; $("phPlace").checked = !!L.place && !!w;
+  $("phPlace").disabled = !L.caption || !w;
+  $("phPlaceNote").textContent = !L.caption ? "needs the caption" : !w ? "no place known" : !L.place ? "off: where you were stays private"
+    : phPlace(w) + ", rounded" + (ph.loc ? ", from the photo" : ", your location in Zenigo (the photo has none)");
   document.querySelectorAll("[data-phsize]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.phsize === L.size)));
   if (ph.bmp) document.querySelectorAll("[data-phsize]").forEach(b => { const s = phOutSize(b.dataset.phsize); b.querySelector("small").textContent = s[0] + "×" + s[1]; });
   const canShare = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [new File([new Blob([""], { type: "image/jpeg" })], "x.jpg", { type: "image/jpeg" })] }));
@@ -5436,7 +5455,7 @@ function renderList() {
     let tail;
     if (mode === "seen") {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "Planned"
       tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
-      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name);
+      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name, tail);
     } else if (mode === "todo") {
       tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
       tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from tonight’s plan"); tail.onclick = () => { togglePlan({ id, name: obsName(id, name) }); renderList(); };
@@ -5577,15 +5596,14 @@ $("tgtChipTxt").onclick = () => openTargetPanel(false);
 $("btnTgtOff").onclick = () => clearTarget();
 $("infoBack").onclick = () => closeSheet("infoSheet");
 $("tgtBack").onclick = () => closeSheet("targetSheet");
-async function unseeTonight(id, name) {
+function unseeTonight(id, name, btn) {
   const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
   if (!es.length) return;
   const nm = obsName(id, name), times = es.map(e => new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })).join(", ");
   const back = sets().list.has(id) ? " It goes back to “Planned”." : "";
-  // the question replaces the list sheet; the list opens again afterwards either way
-  const ok = await askConfirm("Remove " + nm + " from seen tonight?", "The logbook " + (es.length === 1 ? "entry from " + times + " is" : "entries from " + times + " are") + " deleted." + back, "Remove");
-  if (ok) { const del = new Set(es.map(e => e.uid)); obs.log = obs.log.filter(e => !del.has(e.uid)); saveObs(); hint(nm + " removed from seen tonight.", 3000); }
-  renderList(); openSheet("listSheet");
+  armDelete(btn, "Remove", "Tap Remove again to delete the logbook " + (es.length === 1 ? "entry from " + times : "entries from " + times) + "." + back, () => {
+    const del = new Set(es.map(e => e.uid)); obs.log = obs.log.filter(e => !del.has(e.uid)); saveObs(); hint(nm + " removed from seen tonight.", 3000); renderList();
+  }, true);
 }
 function addTonightsBest() {
   const tn = nightPlan(), have = sets().list, seen = sets().seen; let n = 0;
@@ -5719,12 +5737,13 @@ $("seenBack").onclick = () => closeSheet("seenSheet");
 $("seenPrev").onclick = () => stepEntry(seenState.prevE);
 $("seenNextE").onclick = () => stepEntry(seenState.nextE);
 $("seenSaveNext").onclick = () => saveSeen(true);
-$("seenDelete").onclick = async () => {
+$("seenDelete").onclick = () => {
   const e = seenState.entry; if (!e) return;
-  const fromLog = seenState.fromLog; seenState.fromLog = false;   // no automatic return to the log while asking
-  closeSheet("seenSheet");
-  if (!(await askConfirm("Delete this entry?", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ". This can’t be undone.", "Delete"))) { if (fromLog) openSeen(objById(e.obj), e, true); return; }
-  obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); seenState.fromLog = false; backToLog(); hint("Entry deleted.", 2500);
+  armDelete($("seenDelete"), "Yes, delete", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ": the entry is deleted. This can’t be undone.", () => {
+    const fromLog = seenState.fromLog; seenState.fromLog = false;
+    obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); closeSheet("seenSheet"); if (fromLog) backToLog(); else if (!$("logSheet").hidden) renderLog();
+    hint("Entry deleted.", 2500);
+  });
 };
 
 // Logbook: progress, entries by night, export and import
@@ -6458,15 +6477,15 @@ $("syncLeave").onclick = async () => {
   syncS = { dev: syncS.dev }; syncRt.keys = null; saveSyncS(); renderSync(); syncBackup();
   hint("Sync is off on this device.", 3000);
 };
-$("syncDelete").onclick = async () => {
-  if ((await askConfirm("Delete the synced copy from the server?", "Every device in the group stops syncing. The lists, logbook and settings on your devices stay. This can’t be undone.", "Delete")) !== true) return;
+$("syncDelete").onclick = () => armDelete($("syncDelete"), "Yes, delete it", "The synced copy is deleted and every device in the group stops syncing. The lists, logbook and settings on your devices stay. This can’t be undone.", syncDeleteNow);
+async function syncDeleteNow() {
   try {
     const r = await syncFetch(await syncKeys(), "DELETE");
     if (!r.ok && r.status !== 204) throw syncHttpErr(r);
   } catch (e) { hint(syncErrText(e.code || "failed"), 6000); return; }
   syncS = { dev: syncS.dev }; syncRt.keys = null; saveSyncS(); renderSync(); syncBackup();
   hint("The synced copy is deleted from the server. Sync is off.", 4000);
-};
+}
 $("syncRekey").onclick = async () => {
   if ((await askConfirm("Move the group to a new sync code?", "Use this when a device with the code is lost or the link got into the wrong hands. The old code stops working; add your other devices again with the new code.", "New code")) !== true) return;
   if (!(await syncNow({ loud: true }))) return;   // the latest copy first
@@ -7429,7 +7448,7 @@ function syncInstHead(i, other) {
   const bino = isBinoInst(i), many = cfg.instruments.length > 1;
   $("oLegend").textContent = i.name + (many && !other ? " · in use" : "");
   $("oOther").hidden = !other; $("oOtherTxt").textContent = "Not in use on this device. Changes here apply to " + i.name + ".";
-  if (document.activeElement !== $("oName")) $("oName").value = i.name;
+  if (document.activeElement !== $("oName") || $("oName")._for !== i.id) { $("oName").value = i.name; $("oName")._for = i.id; }
   $("oType").hidden = bino; $("oBinoBox").hidden = !bino; $("oScopeA").hidden = $("oScopeB").hidden = $("oTelradL").hidden = bino;
   if (!bino) {
     const t = $("oType"); t.textContent = "";
@@ -7458,13 +7477,13 @@ function setBino(patch) {
 });
 $("bHold").onchange = () => setBino({ hold: $("bHold").value });
 $("oName").onchange = () => {
-  const i = editInst(), v = $("oName").value.trim().slice(0, 40);
+  const i = instById($("oName")._for) || editInst(), v = $("oName").value.trim().slice(0, 40);
   if (!v || v === i.name) { $("oName").value = i.name; return; }
   if (cfg.instruments.some(x => x !== i && x.name === v)) { hint("You already have an instrument called " + v + ".", 3500); $("oName").value = i.name; return; }
   i.name = v; instTouched(i); save(); syncOptics();
 };
 $("oUse").onclick = () => { const i = editInst(); if (useInst(i.id)) syncSettings(); };
-$("oDel").onclick = () => delInst(editInst());
+$("oDel").onclick = () => { const i = editInst(); armDelete($("oDel"), "Delete " + i.name, (isBinoInst(i) ? "Its settings are deleted" : "Its eyepieces and settings are deleted") + " on this device" + (syncS.code ? " and your synced devices" : "") + ". Logbook entries keep its name.", () => delInst(i)); };
 $("oReplace").onclick = () => addInst("settings", curInst().id);
 $("eqAdd").onclick = () => addInst("settings");
 // Changes while editing another instrument than the one in use go into its record; device things (view, rings) and
@@ -7485,11 +7504,9 @@ function setEd(patch) {
   instTouched(i);
   if (Object.keys(dev).length) setOptics(dev); else { save(); syncOptics(); }
 }
-async function delInst(i) {
+function delInst(i) {
   if (!i || cfg.instruments.length < 2) return;
-  const fromSet = !$("sheet").hidden;
-  const ok = await askConfirm("Delete " + i.name + "?", (isBinoInst(i) ? "Its settings are deleted" : "Its eyepieces and settings are deleted") + " on this device" + (syncS.code ? " and your synced devices" : "") + ". Logbook entries keep its name.", "Delete");
-  if (ok) {
+  {
     const wasCur = i === curInst();
     cfg.instruments = cfg.instruments.filter(x => x !== i);
     if (cfg.instSel) delete cfg.instSel[i.id]; if (cfg.instTele) delete cfg.instTele[i.id];
@@ -7498,7 +7515,6 @@ async function delInst(i) {
     else { save(); syncOptics(); }
     hint("Deleted " + i.name + "." + (wasCur ? " Now using " + curInst().name + "." : ""), 3500);
   }
-  if (fromSet) { syncSettings(); openSheet("sheet"); setSetTab("scope"); }
 }
 // Free: one instrument. A second one asks for Pro, and offers to replace the one there is instead.
 function addInst(from, replace) {
@@ -7528,6 +7544,7 @@ function renderInstSheet() {
   $("instEpLabel").textContent = "Eyepiece of " + curInst().name;
 }
 $("instAdd").onclick = () => addInst("switch");
+$("qInstManage").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); };
 $("instManage").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); };
 
 /* ---------------- Adding an instrument: kind, then its data, then its eyepieces ---------------- */
@@ -8055,6 +8072,30 @@ async function cameraBlocked() {
   try { const p = await navigator.permissions.query({ name: "camera" }); return p.state === "denied"; } catch (e) { return false; }
 }
 
+// Deleting in place: the first tap turns the button into a red confirm button, with Cancel in place of the buttons
+// beside it and what will happen below; the second tap deletes. Cancel, a tap elsewhere or 8 seconds put it back.
+// small: a small button in a list row (no Cancel; the note as a hint)
+function armDelete(btn, label, note, run, small) {
+  if (btn._arm) { btn._arm.off(); return run(); }
+  const html = btn.innerHTML, aria = btn.getAttribute("aria-label"), box = btn.parentElement;
+  const sibs = small ? [] : [...box.children].filter(x => x !== btn && !x.hidden);
+  btn.classList.add("armed"); btn.textContent = label; if (aria) btn.setAttribute("aria-label", label);
+  let cancel = null, n = null;
+  if (!small) {
+    sibs.forEach(x => { x.hidden = true; });
+    cancel = document.createElement("button"); cancel.className = "btn armcancel"; cancel.type = "button"; cancel.textContent = "Cancel"; btn.before(cancel);
+    if (note) { n = document.createElement("p"); n.className = "note armnote"; n.setAttribute("role", "status"); n.textContent = note; box.after(n); }
+  } else if (note) hint(note, 5000);
+  const away = e => { if (e.target !== btn) off(); };
+  const off = () => {
+    if (btn._arm !== arm) return; btn._arm = null; clearTimeout(arm.t); document.removeEventListener("pointerdown", away, true);
+    btn.classList.remove("armed"); btn.innerHTML = html; if (aria) btn.setAttribute("aria-label", aria);
+    sibs.forEach(x => { x.hidden = false; }); cancel?.remove(); n?.remove();
+  };
+  const arm = { off, t: setTimeout(off, 8000) };
+  btn._arm = arm; setTimeout(() => document.addEventListener("pointerdown", away, true), 0);
+  if (cancel) cancel.onclick = off;
+}
 // Small confirmation dialog; resolves true for the confirm button, false for cancel, ✕, Esc or tapping outside.
 // With altLabel the second button is a real alternative instead of "Cancel" and resolves "alt".
 function askConfirm(title, text, okLabel, altLabel) {
