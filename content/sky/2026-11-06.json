@@ -1,0 +1,146 @@
+{
+  "week": "2026-11-06",
+  "status": "draft",
+  "generatedAt": "2026-10-27T22:30:00Z",
+  "intro": {
+    "en": "A new Moon on Monday makes this the darkest week of November: ideal for the Andromeda Galaxy, the Northern Taurids and Uranus, which is close to opposition. Before dawn a thin crescent Moon meets Venus, and Mars and Jupiter move closer together every morning.",
+    "de": "Neumond am Montag macht diese Woche zur dunkelsten im November: ideal für die Andromedagalaxie, die Nördlichen Tauriden und Uranus, der kurz vor seiner Opposition steht. Vor der Dämmerung trifft eine schmale Mondsichel die Venus, und Mars und Jupiter rücken jeden Morgen näher zusammen."
+  },
+  "events": [
+    {
+      "id": "2026-11-07-moon-venus",
+      "type": "conjunction",
+      "peak": "2026-11-07T10:40:00Z",
+      "bodies": ["Moon", "Venus"],
+      "target": { "id": "Venus" },
+      "magnitude": -4.6,
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Thin crescent Moon next to Venus",
+        "de": "Schmale Mondsichel neben der Venus"
+      },
+      "text": {
+        "en": "On Saturday morning a crescent Moon, only 4 % lit, stands about 2–3° from brilliant Venus, low in the east-southeast shortly before sunrise. They are closest a few hours later, while it is still dark in North America; in Europe the pair is lower and already in brightening twilight.",
+        "de": "Am Samstagmorgen steht eine nur zu 4 % beleuchtete Mondsichel etwa 2–3° neben der strahlend hellen Venus, tief im Ostsüdosten kurz vor Sonnenaufgang. Am engsten stehen beide einige Stunden später, wenn es in Nordamerika noch dunkel ist; in Europa steht das Paar tiefer und schon in der hellen Dämmerung."
+      },
+      "tip": {
+        "en": "Find a free view down to the eastern horizon; binoculars help to pick up the thin crescent. Stop looking once the Sun is about to rise.",
+        "de": "Such dir einen freien Blick bis zum Osthorizont; mit dem Fernglas findest du die schmale Sichel leichter. Hör auf, bevor die Sonne aufgeht."
+      }
+    },
+    {
+      "id": "2026-11-09-new-moon",
+      "type": "moon-phase",
+      "peak": "2026-11-09T07:02:00Z",
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "title": {
+        "en": "New Moon: the darkest nights of the month",
+        "de": "Neumond: die dunkelsten Nächte des Monats"
+      },
+      "text": {
+        "en": "The Moon is new on Monday. From Friday to Thursday it hardly lights the night sky, so this is the week for faint galaxies, nebulae and the Milky Way.",
+        "de": "Am Montag ist Neumond. Von Freitag bis Donnerstag hellt der Mond den Nachthimmel kaum auf: die Woche für lichtschwache Galaxien, Nebel und die Milchstraße."
+      },
+      "tip": {
+        "en": "Get away from street lights and give your eyes 20 minutes to adapt to the dark. Use red light only.",
+        "de": "Geh weg von Straßenlaternen und gib deinen Augen 20 Minuten, um sich an die Dunkelheit zu gewöhnen. Nur rotes Licht verwenden."
+      }
+    },
+    {
+      "id": "andromeda-galaxy",
+      "type": "deep-sky",
+      "peak": "2026-11-09T21:00:00Z",
+      "window": { "from": "2026-11-06", "to": "2026-11-12" },
+      "target": { "id": "M31" },
+      "magnitude": 3.4,
+      "equipment": "binoculars",
+      "hemisphere": "north",
+      "highlight": true,
+      "title": {
+        "en": "The Andromeda Galaxy high in the evening sky",
+        "de": "Die Andromedagalaxie hoch am Abendhimmel"
+      },
+      "text": {
+        "en": "In November the Andromeda Galaxy (M31) stands high in the evening sky of the northern hemisphere. Under a dark sky it is an elongated haze even to the naked eye: 2.5 million light-years away, the most distant thing most people can see without help. With no Moon this week, it is as good as it gets.",
+        "de": "Im November steht die Andromedagalaxie (M31) auf der Nordhalbkugel abends hoch am Himmel. Unter dunklem Himmel ist sie schon mit bloßem Auge ein länglicher Nebelfleck: 2,5 Millionen Lichtjahre entfernt, das Fernste, was die meisten Menschen ohne Hilfsmittel sehen können. Ohne Mond ist sie diese Woche so gut zu sehen wie nur möglich."
+      },
+      "tip": {
+        "en": "In a telescope use the lowest magnification: the galaxy is wider than the field of most eyepieces. Look for its small companions M32 and M110 next to it.",
+        "de": "Im Teleskop die kleinste Vergrößerung nehmen: Die Galaxie ist breiter als das Gesichtsfeld der meisten Okulare. Daneben findest du ihre kleinen Begleiter M32 und M110."
+      }
+    },
+    {
+      "id": "mars-jupiter-approach",
+      "type": "conjunction",
+      "peak": "2026-11-16T02:00:00Z",
+      "window": { "from": "2026-11-06", "to": "2026-11-12" },
+      "bodies": ["Mars", "Jupiter"],
+      "target": { "id": "Jupiter" },
+      "magnitude": -2.1,
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "title": {
+        "en": "Mars and Jupiter draw closer in the morning sky",
+        "de": "Mars und Jupiter rücken am Morgenhimmel zusammen"
+      },
+      "text": {
+        "en": "Before dawn, bright Jupiter and the fainter, reddish Mars stand together in Leo. During the week the gap between them shrinks from about 4° to under 2°; they are closest, 1.2° apart, on 16 November.",
+        "de": "Vor der Dämmerung stehen der helle Jupiter und der schwächere, rötliche Mars zusammen im Löwen. Im Lauf der Woche schrumpft der Abstand von etwa 4° auf unter 2°; am 16. November stehen sie mit 1,2° am engsten."
+      },
+      "tip": {
+        "en": "Look on a few mornings and watch the gap shrink. In a telescope Jupiter shows its cloud belts and four large moons; Mars is still a small disc.",
+        "de": "Schau an mehreren Morgen hin und sieh zu, wie der Abstand schrumpft. Im Teleskop zeigt Jupiter seine Wolkenbänder und vier große Monde; Mars ist noch ein kleines Scheibchen."
+      }
+    },
+    {
+      "id": "2026-11-12-northern-taurids",
+      "type": "meteor-shower",
+      "peak": "2026-11-12T00:00:00Z",
+      "window": { "from": "2026-11-11", "to": "2026-11-12" },
+      "target": { "ra": 3.87, "dec": 22, "label": "Northern Taurids radiant" },
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "title": {
+        "en": "Northern Taurids: few meteors, but slow fireballs",
+        "de": "Nördliche Tauriden: wenige Meteore, aber langsame Feuerkugeln"
+      },
+      "text": {
+        "en": "The Northern Taurids peak in the night of 11 to 12 November. They are a weak shower, about 5 meteors an hour, but known for slow, bright fireballs. With almost no Moon the conditions are good. The radiant lies in Taurus near the Pleiades and is well up from the late evening.",
+        "de": "Die Nördlichen Tauriden haben ihr Maximum in der Nacht vom 11. auf den 12. November. Sie sind ein schwacher Strom mit etwa 5 Meteoren pro Stunde, aber bekannt für langsame, helle Feuerkugeln. Fast ohne Mond sind die Bedingungen gut. Der Radiant liegt im Stier nahe den Plejaden und steht ab dem späten Abend hoch genug."
+      },
+      "tip": {
+        "en": "Lie back and look about halfway up the sky, not straight at the radiant. The shower is active from late October to early December, so any clear night this week can bring a Taurid.",
+        "de": "Leg dich hin und schau etwa auf halbe Höhe, nicht direkt zum Radianten. Der Strom ist von Ende Oktober bis Anfang Dezember aktiv, jede klare Nacht dieser Woche kann also eine Tauride bringen."
+      }
+    },
+    {
+      "id": "uranus-near-opposition",
+      "type": "opposition",
+      "peak": "2026-11-25T22:27:00Z",
+      "window": { "from": "2026-11-06", "to": "2026-11-12" },
+      "bodies": ["Uranus"],
+      "target": { "id": "Uranus" },
+      "magnitude": 5.6,
+      "equipment": "binoculars",
+      "hemisphere": "both",
+      "title": {
+        "en": "Uranus at its best, near the Pleiades",
+        "de": "Uranus in Bestform, nahe den Plejaden"
+      },
+      "text": {
+        "en": "Uranus reaches opposition on 25 November: it is up all night and as bright as it gets, magnitude 5.6, at the limit of the naked eye. It stands in Taurus about 6° south-east of the Pleiades. In binoculars it looks like a star; a telescope at 100× or more shows a tiny blue-green disc.",
+        "de": "Uranus steht am 25. November in Opposition: Er ist die ganze Nacht zu sehen und mit 5,6 mag so hell wie sonst nie, an der Grenze des bloßen Auges. Er steht im Stier etwa 6° südöstlich der Plejaden. Im Fernglas sieht er aus wie ein Stern; im Teleskop ab 100-facher Vergrößerung zeigt er ein winziges blaugrünes Scheibchen."
+      },
+      "tip": {
+        "en": "The hard part is knowing which “star” is Uranus. Zenigo takes you straight to it.",
+        "de": "Schwierig ist nur zu wissen, welcher „Stern“ Uranus ist. Zenigo führt dich direkt hin."
+      }
+    }
+  ],
+  "sources": [
+    "https://www.imo.net/calendar/"
+  ]
+}

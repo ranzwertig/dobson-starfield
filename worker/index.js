@@ -3,6 +3,7 @@
 //   /api/sync/v1  sync between devices: stores end-to-end encrypted copies (worker/sync.js).
 //   /api/pro/config  what the Zenigo Pro page needs for Paddle: environment, client token, price, country (worker/pro.js).
 //   /api/pro/webhook, /api/pro/licence  licence keys from Paddle's purchase notifications (worker/licence.js).
+//   /sky/, /de/sky/  night sky this week: the week of the day (worker/sky.js).
 // With SYNC_NEEDS_PRO = "true", reading and writing a sync group needs a running Pro licence (header X-Zenigo-Licence);
 // deleting a group never does.
 // The app only contacts its own server; the Worker fetches CelesTrak at most twice a day for everyone
@@ -10,6 +11,7 @@
 import { handleSync } from './sync.js';
 import { proConfig } from './pro.js';
 import { handleWebhook, handleLicence, licenceActive } from './licence.js';
+import { isSky, handleSky } from './sky.js';
 
 const GROUPS = ['stations', 'visual'];
 const FRESH = 12 * 3600e3;           // fetch new data twice a day
@@ -75,6 +77,7 @@ export default {
       try { return url.pathname === '/api/pro/webhook' ? await handleWebhook(req, env) : await handleLicence(req, env, url); }
       catch (e) { return new Response(JSON.stringify({ error: 'server error' }), { status: 500, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }); }
     }
+    if (isSky(url.pathname)) return handleSky(req, env, url);
     return env.ASSETS.fetch(req);
   },
 };

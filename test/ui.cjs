@@ -1460,6 +1460,55 @@ const TESTS = {
     ok(await p.evaluate(() => Solver.cat.n > 4000 && !!worker), 'the app starts offline, with catalogue and solver');
     await done(p);
   },
+
+  // Night sky this week (scripts/sky.mjs, content/sky/2026-11-06.json; built with drafts for the tests): the week in
+  // English and German as language versions, times in the reader's time zone, links that open the object in the app
+  async sky() {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, timezoneId: 'Europe/Berlin', locale: 'de-DE' });
+    const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
+    await p.goto(base + '/sky/2026-11-06/');
+    const en = await ev(p, () => ({ h1: document.querySelector('h1').textContent, lang: document.documentElement.lang,
+      alt: [...document.querySelectorAll('link[rel=alternate]')].map(l => l.hreflang + ' ' + new URL(l.href).pathname),
+      draft: !!document.querySelector('.wk-draft'), noindex: !!document.querySelector('meta[name=robots][content=noindex]'),
+      evs: [...document.querySelectorAll('.wk-ev')].map(e => ({ id: e.id, hl: e.classList.contains('hl') })),
+      t: document.querySelector('.wk-ev time[data-t]').textContent, tz: document.querySelector('.wk-tz').textContent,
+      go: [...document.querySelectorAll('.wk-ev a.open')].map(a => a.getAttribute('href')), rel: [...document.querySelectorAll('.wk-ev a.open')].every(a => a.rel === 'nofollow'),
+      moons: document.querySelectorAll('.wk-moons li').length, planets: document.querySelectorAll('.wk-planets tr').length,
+      ld: JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent).map(x => x['@type']),
+      wide: document.documentElement.scrollWidth > innerWidth }));
+    ok(en.h1 === 'Night sky this week: 6–12 November 2026' && en.lang === 'en', 'the week, Friday to Thursday, in English', en.h1);
+    ok(en.alt.join('|') === 'en /sky/2026-11-06/|de /de/sky/2026-11-06/|x-default /sky/2026-11-06/', 'language versions linked (hreflang, x-default English)', en.alt);
+    ok(en.draft && en.noindex, 'a draft: marked, and noindex');
+    ok(en.evs.length === 6 && en.evs[0].hl && en.evs[1].hl && !en.evs[2].hl, 'six events, the highlights first', en.evs);
+    ok(/^Sat, 7 Nov, 11:40$/.test(en.t) && /Europe\/Berlin/.test(en.tz), 'times in the reader’s time zone (UTC on the page)', [en.t, en.tz]);
+    ok(en.go.includes('/app/#go=Venus&src=week') && en.go.includes('/app/#go=M31&src=week') && en.rel, 'Open in Zenigo: links to the object in the app (nofollow)', en.go);
+    ok(en.moons === 7 && en.planets === 7, 'the Moon on each of the 7 evenings, the 7 planets', [en.moons, en.planets]);
+    ok(en.ld.join() === 'Article,BreadcrumbList' && !en.wide, 'structured data; fits a phone', en.ld);
+    await shot(p, 'sky-week');
+    await p.click('.wk-lang'); await p.waitForURL('**/de/sky/2026-11-06/');
+    const de = await ev(p, () => ({ h1: document.querySelector('h1').textContent, lang: document.documentElement.lang, head: document.querySelector('header.sitehead').lang, foot: document.querySelector('footer').lang,
+      open: document.querySelector('.wk-ev a.open').textContent, planet: document.querySelector('.wk-planets th').textContent }));
+    ok(de.h1 === 'Sternenhimmel diese Woche: 6.–12. November 2026' && de.lang === 'de' && de.head === 'en' && de.foot === 'en', 'German: its own page; the English header and footer marked as English', de);
+    ok(de.open === 'In Zenigo öffnen' && de.planet === 'Merkur', 'German words', de);
+    await p.goto(base + '/sky/archive/');
+    ok(await ev(p, () => [...document.querySelectorAll('.wk-archive a')].map(a => a.getAttribute('href')).join() === '/sky/2026-11-06/'), 'archive: the week');
+    await p.goto(base + '/sky/');
+    ok(await ev(p, () => /^Night sky this week/.test(document.querySelector('h1').textContent) && new URL(document.querySelector('link[rel=alternate][hreflang=de]').href).pathname === '/de/sky/'), '/sky/ (the build’s week here; the Worker serves the week of the day): its own language versions');
+    ok(await ev(p, () => !!document.querySelector('.sitemenu a[href="/sky/"]') && !!document.querySelector('footer a[href="/sky/"]')), 'linked from the menu and the footer');
+    ok(p.errors.length === 0, 'no page errors', p.errors); await ctx.close();
+    // the app: #go= opens the object (cold start and while open), and is taken out of the address
+    const a = await page();
+    await ev(a, () => { location.hash = '#go=M31&src=week'; });
+    ok(await a.waitForFunction(() => $('infoName').textContent === 'M31 · Andromeda Galaxy' && !location.hash, null, { timeout: 5000 }).then(() => true, () => false), 'open app: #go=M31 shows the Andromeda Galaxy');
+    await ev(a, () => { location.hash = '#go=Nowhere'; });
+    ok(await a.waitForFunction(() => /isn’t in Zenigo’s catalogue/.test($('hint').textContent), null, { timeout: 15000 }).then(() => true, () => false), 'an unknown object says so');
+    const b = await a.context().newPage(); b.errors = []; b.on('pageerror', e => b.errors.push(String(e)));
+    await b.goto(base + '/app/#go=Saturn');
+    ok(await b.waitForFunction(() => typeof $ === 'function' && $('infoName') && $('infoName').textContent === 'Saturn' && !location.hash, null, { timeout: 15000 }).then(() => true, () => false), 'cold start with #go=Saturn: Saturn’s details');
+    await shot(b, 'sky-golink');
+    ok(b.errors.length === 0, 'no page errors (cold start)', b.errors);
+    await done(a);
+  },
 };
 
 (async () => {

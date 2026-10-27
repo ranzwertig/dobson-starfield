@@ -435,3 +435,39 @@ h2 .ptag, h3 .ptag, dt .ptag, .kicker .ptag { margin-left: 8px; }
 .buybox .keyline code { display: block; padding: 10px 12px; border-radius: 10px; background: #0a0f1f; border: 1px solid var(--line); font-size: 13px; word-break: break-all; user-select: all; }
 .buybox button.open { border: 0; cursor: pointer; font-family: var(--ui); font-size: inherit; }
 .buybox button.open.ghost { border: 1px solid var(--line); }
+
+/* night sky this week (scripts/sky.mjs) */
+.wk-crumbs { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; color: var(--mist); font-size: 15px; margin-bottom: 18px; }
+.wk-crumbs a { color: var(--mist); }
+.wk-crumbs .wk-lang { margin-left: auto; color: var(--amber); }
+.wk-draft { background: #3a2a10; color: #f6d39c; border: 1px solid #6b4b1a; border-radius: 10px; padding: 8px 14px; font-weight: 600; }
+.wk-tz { font-size: 15px; margin-top: -20px; }
+.wk-list { display: grid; gap: 16px; }
+.wk-ev { border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 6px; background: rgba(12, 17, 36, .55); scroll-margin-top: 20px; }
+.wk-ev.hl { border-color: rgba(240, 168, 69, .55); }
+.wk-ev h3 { font-size: 22px; margin-top: 0; }
+.wk-tag { display: inline-block; font: 600 12px/1 var(--ui); letter-spacing: .1em; text-transform: uppercase; color: #1b1206; background: var(--amber); border-radius: 99px; padding: 4px 9px 3px; margin-bottom: 8px; }
+.wk-when { color: var(--mist); font-size: 15px; }
+.wk-when time { font-variant-numeric: tabular-nums; }
+.wk .tip { color: #c9d0dc; font-size: 17px; }
+.wk .open.ghost { padding: 7px 16px; font-size: 16px; }
+.wk .wk-moons { list-style: none; padding: 0; margin: 0 0 12px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.wk .wk-moons li { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; }
+.wk-moon { width: 40px; height: 40px; }
+.wk-moons b { font-size: 15px; font-weight: 500; }
+.wk-moons small { color: var(--mist); font-size: 13px; line-height: 1.2; }
+.wk .wk-phases { list-style: none; padding: 0; margin: 0 0 8px; }
+.wk-tablewrap { overflow-x: auto; margin-bottom: 12px; }
+.wk-planets { border-collapse: collapse; width: 100%; font-size: 17px; }
+.wk-planets th, .wk-planets td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); color: #ccd3de; vertical-align: top; }
+.wk-planets th { color: var(--star); font-weight: 600; }
+.wk-planets .num { font-family: var(--num); font-size: 15px; white-space: nowrap; text-align: right; padding-right: 0; }
+.wk-planets .wk-off td, .wk-planets .wk-off th { color: var(--mist); }
+.wk-app { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 36px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 16px; }
+.wk-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 17px; }
+.wk-small { font-size: 14px; margin-top: 18px; }
+.wk .wk-archive { list-style: none; padding: 0; }
+.wk .wk-archive li { padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.wk-archive a { font-size: 20px; font-weight: 600; }
+.wk-archive small { color: var(--mist); font-size: 15px; }
+@media (max-width: 560px) { .wk-moon { width: 32px; height: 32px; } .wk-moons small { font-size: 11px; } .wk-ev { padding: 16px 16px 4px; } }

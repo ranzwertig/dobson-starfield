@@ -1,7 +1,8 @@
 {
   // Static site from dist/ (website at /, app at /app/, unknown paths get dist/404.html).
   // The Worker (worker/index.js) only runs for /api/*: satellite orbital data for the app (from CelesTrak, twice a day)
-  // and sync between devices (worker/sync.js, end-to-end encrypted copies in the D1 database SYNC_DB).
+  // and sync between devices (worker/sync.js, end-to-end encrypted copies in the D1 database SYNC_DB); and for the night
+  // sky of this week, /sky/ and /de/sky/, which show the week of the day (worker/sky.js).
   // "build" makes wrangler deploy/dev run npm run build first.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dobson-starfield",
@@ -14,7 +15,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/sky", "/sky/", "/de/sky", "/de/sky/", "/sky-now/*"]
   },
   // Sync: at most 60 requests a minute per IP address (counted in memory by Cloudflare, nothing is stored)
   "ratelimits": [

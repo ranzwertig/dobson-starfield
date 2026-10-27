@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /app/
 Disallow: /diy-accessories/mirror-holder/
+Disallow: /sky-now/
 
 Sitemap: https://zenigo.app/sitemap.xml

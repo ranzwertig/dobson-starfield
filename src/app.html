@@ -6622,6 +6622,18 @@ function proFromLink(ms) {
 }
 proFromLink(900);
 addEventListener("hashchange", () => proFromLink(0));   // the app was already open in this tab
+// Opened with a link to an object (#go=<id>, e.g. #go=M31 or #go=Saturn, from the website's night sky this week): its
+// details, once the catalogue has loaded. The link is taken out of the address; an unknown id says so.
+function goFromLink(ms) {
+  const m = /[#&]go=([^&]+)/.exec(location.hash); if (!m) return;
+  let id = ""; try { id = decodeURIComponent(m[1]).trim().slice(0, 40); } catch (e) {}
+  history.replaceState(null, "", location.pathname + location.search);
+  let n = 0;
+  const open = () => { const o = id && objById(id); if (o) showInfo(o); else if (id && ++n < 20) setTimeout(open, 500); else hint("“" + id + "” isn’t in Zenigo’s catalogue.", 4000); };
+  setTimeout(open, ms);
+}
+goFromLink(900);
+addEventListener("hashchange", () => goFromLink(0));
 setTimeout(() => proCheck().then(proRemind), 0);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) proCheck().then(proRemind); });
 addEventListener("storage", e => { if (e.key === PRO_KEY) proCheck(); });   // bought in another tab of this browser
@@ -9056,78 +9068,23 @@ function tonightPicks(samples, best, R, illum) {
 }
 /* ---------------- Coming up: events calculated on the phone ---------------- */
 // Eclipses visible here, the Moon passing planets (and covering them), planets meeting, oppositions, greatest
-// elongations and meteor showers. Computed once a day (and when the location changes), when the Tonight sheet opens.
-const METEORS = [["Quadrantids", 0, 3], ["Lyrids", 3, 22], ["Eta Aquariids", 4, 6], ["Perseids", 7, 12], ["Orionids", 9, 21], ["Leonids", 10, 17], ["Geminids", 11, 14]];
+// elongations and meteor showers, from src/events.js (the same code as the website's night sky this week). Computed
+// once a day (and when the location changes), when the Tonight sheet opens.
 const evCache = { key: "", v: null };
 function upcomingEvents() {
   const now = new Date(), key = now.toDateString() + "|" + cfg.lat + "|" + cfg.lon;
   if (evCache.key === key) return evCache.v;
-  const T = d => A.MakeTime(d), obs = observer(), out = [], DAY = 864e5;
-  const altOf = (body, d) => { const e = A.Equator(A.Body[body], T(d), obs, true, true); return A.Horizon(T(d), obs, e.ra, e.dec, "normal").altitude; };
-  const sunAlt = d => altOf("Sun", d);
-  const dayTxt = d => fmtDay(d) + ", " + fmtHM(d);
-  const safe = f => { try { f(); } catch (e) {} };
-  // lunar eclipses in the next year, if the Moon is up here
-  safe(() => {
-    let e = A.SearchLunarEclipse(T(now));
-    for (let i = 0; i < 4 && e.peak.date - now < 365 * DAY; i++, e = A.NextLunarEclipse(e.peak)) {
-      const a = altOf("Moon", e.peak.date); if (a <= 0) continue;
-      out.push({ d: e.peak.date, txt: e.kind.charAt(0).toUpperCase() + e.kind.slice(1) + " lunar eclipse", sub: "peak " + dayTxt(e.peak.date) + ", Moon " + Math.round(a) + "° high" + (e.kind === "penumbral" ? " (only a faint shading)" : "") });
-    }
-  });
-  // solar eclipses seen from here in the next two years
-  safe(() => {
-    const e = A.SearchLocalSolarEclipse(T(now), obs);
-    if (e.peak.time.date - now < 730 * DAY && e.peak.altitude > 0)
-      out.push({ d: e.peak.time.date, txt: e.kind.charAt(0).toUpperCase() + e.kind.slice(1) + " solar eclipse", sub: "peak " + dayTxt(e.peak.time.date) + ", " + Math.round(e.obscuration * 100) + " % of the Sun covered. Only with a certified solar filter!" });
-  });
-  // the Moon passing planets in the next 30 days (closer than 3°, covering them when closer than its radius)
-  const PL = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
-  const geo = (b, d) => unit3(v3(A.GeoVector(A.Body[b], T(d), true)));
-  const topo = (b, d) => { const e = A.Equator(A.Body[b], T(d), obs, true, true); return unit3(v3(e.vec)); };
-  const sep = (a, b) => Math.acos(Math.max(-1, Math.min(1, dot3(a, b)))) * R2D;
-  const minimum = (f, t0, t1, step) => { let best = null; for (let t = t0; t <= t1; t += step) { const v = f(new Date(t)); if (!best || v < best.v) best = { t, v }; } return best; };
-  safe(() => {
-    const step = 2 * 3600e3, n = 30 * 12;
-    PL.forEach(b => {
-      let prev2 = null, prev = null;
-      for (let i = 0; i <= n; i++) {
-        const d = new Date(now.getTime() + i * step), v = sep(geo("Moon", d), geo(b, d));
-        if (prev && prev2 && prev.v < prev2.v && prev.v <= v && prev.v < 4) {
-          const m = minimum(x => sep(topo("Moon", x), topo(b, x)), prev.t - step, prev.t + step, 5 * 60e3);
-          const d0 = new Date(m.t), ma = altOf("Moon", d0), dark = sunAlt(d0) < -6, R = 0.26;
-          if (m.v < 3 && ma > 0 && (dark || b === "Venus" || b === "Jupiter"))
-            out.push({ d: d0, txt: m.v < R ? "The Moon covers " + b : "Moon and " + b + " " + m.v.toFixed(1) + "° apart", sub: dayTxt(d0) + ", " + Math.round(ma) + "° high" + (dark ? "" : " (twilight or daylight)"), body: b });
-        }
-        prev2 = prev; prev = { t: d.getTime(), v };
-      }
-    });
-  });
-  // planets meeting in the next 60 days (closer than 2°, away from the Sun)
-  safe(() => {
-    for (let i = 0; i < PL.length; i++) for (let j = i + 1; j < PL.length; j++) {
-      const a = PL[i], b = PL[j]; let prev2 = null, prev = null;
-      for (let k = 0; k <= 60; k++) {
-        const d = new Date(now.getTime() + k * DAY), v = sep(geo(a, d), geo(b, d));
-        if (prev && prev2 && prev.v < prev2.v && prev.v <= v && prev.v < 2.5) {
-          const m = minimum(x => sep(geo(a, x), geo(b, x)), prev.t - DAY, prev.t + DAY, 3600e3), d0 = new Date(m.t);
-          if (m.v < 2 && A.AngleFromSun(A.Body[a], T(d0)) > 15) out.push({ d: d0, txt: a + " and " + b + " " + m.v.toFixed(1) + "° apart", sub: fmtDay(d0) + ", " + A.Elongation(A.Body[a], T(d0)).visibility + " sky", body: a });
-        }
-        prev2 = prev; prev = { t: d.getTime(), v };
-      }
-    }
-  });
-  // oppositions and greatest elongations in the next 4 months
-  safe(() => {
-    ["Mars", "Jupiter", "Saturn", "Uranus", "Neptune"].forEach(b => { const x = A.SearchRelativeLongitude(A.Body[b], 0, T(now)); if (x.date - now < 120 * DAY) out.push({ d: x.date, txt: b + " at opposition", sub: fmtDay(x.date) + ": closest and brightest, up all night", body: b }); });
-    ["Mercury", "Venus"].forEach(b => { const x = A.SearchMaxElongation(A.Body[b], T(now)); if (x.time.date - now < 120 * DAY) out.push({ d: x.time.date, txt: b + " at greatest elongation", sub: fmtDay(x.time.date) + ": " + Math.round(x.elongation) + "° from the Sun, " + x.visibility + " sky", body: b }); });
-  });
-  // meteor shower peaks in the next 60 days, with the Moon's light
-  METEORS.forEach(([name, mo, dd]) => {
-    let d = new Date(now.getFullYear(), mo, dd, 2); if (d < now - DAY) d = new Date(now.getFullYear() + 1, mo, dd, 2);
-    if (d - now > 60 * DAY) return;
-    let k = 0; try { k = A.Illumination(A.Body.Moon, T(d)).phase_fraction; } catch (e) {}
-    out.push({ d, txt: name + " meteor shower", sub: "peak night " + fmtDay(new Date(d.getTime() - DAY)) + " to " + fmtDay(d) + " · Moon " + Math.round(k * 100) + " % lit" + (k > 0.6 ? ", washes out fainter meteors" : "") });
+  const dayTxt = d => fmtDay(d) + ", " + fmtHM(d), cap = s => s.charAt(0).toUpperCase() + s.slice(1), out = [];
+  let ev = []; try { ev = ZEvents.search(A, { from: now, obs: observer(), skip: ["moon-phase"] }); } catch (e) {}
+  ev.forEach(e => {
+    const d = e.peak, b = e.bodies && e.bodies[e.bodies.length - 1];
+    if (e.type === "lunar-eclipse") out.push({ d, txt: cap(e.kind) + " lunar eclipse", sub: "peak " + dayTxt(d) + ", Moon " + Math.round(e.alt) + "° high" + (e.kind === "penumbral" ? " (only a faint shading)" : "") });
+    else if (e.type === "solar-eclipse") out.push({ d, txt: cap(e.kind) + " solar eclipse", sub: "peak " + dayTxt(d) + ", " + Math.round(e.obscuration * 100) + " % of the Sun covered. Only with a certified solar filter!" });
+    else if (e.bodies && e.bodies[0] === "Moon") out.push({ d, txt: e.type === "occultation" ? "The Moon covers " + b : "Moon and " + b + " " + e.sep.toFixed(1) + "° apart", sub: dayTxt(d) + ", " + Math.round(e.alt) + "° high" + (e.dark ? "" : " (twilight or daylight)"), body: b });
+    else if (e.type === "conjunction") out.push({ d, txt: e.bodies[0] + " and " + b + " " + e.sep.toFixed(1) + "° apart", sub: fmtDay(d) + ", " + e.visibility + " sky", body: e.bodies[0] });
+    else if (e.type === "opposition") out.push({ d, txt: b + " at opposition", sub: fmtDay(d) + ": closest and brightest, up all night", body: b });
+    else if (e.type === "elongation") out.push({ d, txt: b + " at greatest elongation", sub: fmtDay(d) + ": " + Math.round(e.elongation) + "° from the Sun, " + e.visibility + " sky", body: b });
+    else if (e.type === "meteor-shower") out.push({ d, txt: e.name + " meteor shower", sub: "peak night " + fmtDay(new Date(d.getTime() - 864e5)) + " to " + fmtDay(d) + " · Moon " + Math.round(e.moon * 100) + " % lit" + (e.moon > 0.6 ? ", washes out fainter meteors" : "") });
   });
   out.sort((a, b) => a.d - b.d);
   evCache.key = key; evCache.v = out;
