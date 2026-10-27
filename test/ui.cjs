@@ -1190,8 +1190,9 @@ const TESTS = {
     ok(await ev(p, () => document.querySelectorAll('#aiBody .aiep').length === 2 && /From your other instruments/.test($('aiBody').textContent) === false), 'step 3: the usual 25 mm and 10 mm');
     await ev(p, () => [...document.querySelectorAll('#aiBody .chip')].find(b => b.textContent === '+ 32 mm').click()); await wait(p, 200);
     await p.fill('#aiEpF', '7'); await p.fill('#aiEpA', '82'); await ev(p, () => [...document.querySelectorAll('#aiBody .btn')].find(b => b.textContent === 'Add').click()); await wait(p, 200);
-    ok(await ev(p, () => [...document.querySelectorAll('#aiBody .aiep b')].map(b => b.textContent).join('|')) === '32 mm · 50°|25 mm · 52°|10 mm · 52°|7 mm · 82°', 'eyepieces added by a tap and by typing, longest first');
+    ok(await ev(p, () => [...document.querySelectorAll('#aiBody .aiep b')].map(b => b.textContent).join('|')) === '32 mm · 50° · 1.25″|25 mm · 52° · 1.25″|10 mm · 52° · 1.25″|7 mm · 82° · 1.25″', 'eyepieces added by a tap and by typing, longest first, with their barrel');
     shot(p, 'add-eps');
+    ok(await ev(p, () => [...document.querySelectorAll('#aiBody .chip')].some(b => b.textContent === '+ 30 mm 2″')), 'a 2″ focuser: 2″ eyepieces offered too');
     await ev(p, () => [...document.querySelectorAll('#aiBtns .btn')].pop().click()); await wait(p, 600);
     const d = await ev(p, () => ({ n: cfg.instruments.length, name: curInst().name, eps: opt().eps.length, scope: opt().scope, sel: [...$('qInst').children].map(b => b.getAttribute('aria-checked')).join() }));
     ok(d.n === 2 && d.name === 'Dobson 10″' && d.eps === 4 && d.scope === 1250, 'added and in use', d);
@@ -1242,6 +1243,9 @@ const TESTS = {
     await p.fill('#oAp', '250'); await ev(p, () => $('oAp').dispatchEvent(new Event('change'))); await wait(p, 100);
     await ev(p, () => $('oEpAdd').click()); await wait(p, 100);
     const e = await ev(p, () => { const dd = cfg.instruments.find(i => i.name === 'Dobson 10″'); return { ap: dd.o.ap, n: dd.o.eps.length, cur: curInst().name, curAp: opt().ap, curN: opt().eps.length }; });
+    await ev(p, () => { $('oFocuser').value = '1.25'; $('oFocuser').onchange(); const r = [...document.querySelectorAll('#oEps .eprow')].pop(); r.querySelector('select').value = '2'; r.querySelector('select').onchange(); }); await wait(p, 100);
+    ok(await ev(p, () => { const r = [...document.querySelectorAll('#oEps .eprow')].pop(), dd = cfg.instruments.find(i => i.name === 'Dobson 10″'); return dd.o.focuser === 1.25 && dd.o.eps[dd.o.eps.length - 1].d === 2 && r.querySelector('small').classList.contains('nofit') && /^Doesn’t fit the 1\.25″ focuser/.test(r.querySelector('small').textContent); }), 'a 2″ eyepiece on a 1.25″ focuser: marked as not fitting');
+    if (process.env.SHOTS) { await ev(p, () => $('oEps').scrollIntoView({ block: 'center' })); await wait(p, 200); await p.screenshot({ path: path.join(process.env.SHOTS, 'eps.png') }); }
     ok(e.ap === 250 && e.n === 5 && e.cur === 'Binoculars 15×70' && e.curAp === 70 && e.curN === 1, 'its aperture and a new eyepiece went to the Dobson; the binoculars stay in use', e);
     await p.fill('#oName', 'Big Dob'); await ev(p, () => $('oName').dispatchEvent(new Event('change'))); await wait(p, 100);
     ok(await ev(p, () => cfg.instruments.some(i => i.name === 'Big Dob') && /Big Dob/.test($('eqList').textContent)), 'renamed');
