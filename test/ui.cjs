@@ -250,6 +250,33 @@ const TESTS = {
     await done(p);
   },
 
+  // more in the eyepiece advice: the object's surface brightness, how low it stands (the air blurs it), and the Moon
+  // lighting the sky
+  async advice() {
+    const p = await page();
+    const r = await ev(p, () => {
+      cfg.optics.eps = [{ f: 32, a: 50 }, { f: 25, a: 52 }, { f: 15, a: 52 }, { f: 10, a: 52 }, { f: 6, a: 60 }]; setOptics({ ep: 0, ap: 203, scope: 1200, barlow: 0, useB: false });
+      const at = d => A.MakeTime(d), altOf = (id, d) => horiz(targetById(id).vec(at(d)), at(d)).alt;
+      const t0 = skyDate().getTime(), times = Array.from({ length: 144 }, (_, i) => new Date(t0 - 12 * 3600e3 + i * 600e3));
+      // surface brightness: the faint, spread-out M33 gets a wider exit pupil than the small, bright M32
+      const sbFaint = epAdvice(objById('M33'), at(times[72])), sbBright = epAdvice(objById('M32'), at(times[72]));
+      // Jupiter low (about 20°) and high (over 45°), the low one in the dark
+      const dark = d => horiz(targetById('Sun').vec(at(d)), at(d)).alt < -12;
+      const lowT = times.find(d => dark(d) && Math.abs(altOf('Jupiter', d) - 20) < 3), highT = times.find(d => altOf('Jupiter', d) > 40);
+      const jl = lowT && epAdvice(targetById('Jupiter'), at(lowT)), jh = highT && epAdvice(targetById('Jupiter'), at(highT));
+      // the Moon: up and bright, or down, for M101 above the horizon
+      const ill = d => A.Illumination(A.Body.Moon, at(d)).phase_fraction;
+      const moonUp = times.find(d => altOf('Moon', d) > 10 && ill(d) > 0.4 && altOf('M101', d) > 10), moonDown = times.find(d => altOf('Moon', d) < -5 && altOf('M101', d) > 10);
+      const m1 = moonUp && epAdvice(objById('M101'), at(moonUp)), m2 = moonDown && epAdvice(objById('M101'), at(moonDown));
+      return { faintP: sbFaint.best.pupil, brightP: sbBright.best.pupil, faintWhy: sbFaint.best.why,
+        low: jl && { mag: jl.best.mag, why: jl.best.why }, high: jh && { mag: jh.best.mag }, m1: m1 && m1.best.why, m2: m2 && m2.best.why, m1p: m1 && m1.best.pupil, m2p: m2 && m2.best.pupil };
+    });
+    ok(r.faintP > r.brightP && /Faint and spread out/.test(r.faintWhy), 'surface brightness: a wider exit pupil for the faint, spread-out M33 than for M32', r);
+    ok(r.low && r.high && r.low.mag < r.high.mag && /Low in the sky \(\d+°\)/.test(r.low.why), 'Jupiter low in the sky: less magnification, and why', r);
+    ok(r.m1 && r.m2 && /The Moon brightens the sky/.test(r.m1) && !/The Moon/.test(r.m2) && r.m1p <= r.m2p, 'the Moon up and bright: a smaller exit pupil for a galaxy, and why', r);
+    await done(p);
+  },
+
   // finder types
   async finder() {
     const p = await page();

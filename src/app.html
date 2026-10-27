@@ -7479,16 +7479,22 @@ function epAdvice(o, t) {
   if (!eps.length || !aperture() || !epAdviceFor(o)) return null;
   // tonight's seeing (when set) caps the magnification the air shows sharply, below what the aperture would
   const ap = aperture(), see = seeingTonight(), seeMax = see ? SEE_MAX[see] : null, byAir = !!seeMax && seeMax < 2 * ap;
-  const maxM = byAir ? seeMax : 2 * ap, body = o.kind === "planet" ? o.body || o.id : null;
+  // how high it stands now: low down its light passes through more air, which blurs it more (seeing grows with the
+  // airmass to the power 0.6: about 0.66 of the magnification at 30°, 0.53 at 20°); not when it is below the horizon
+  let altNow = null; try { altNow = horiz(o.vec(t), t).alt; } catch (e) {}
+  const low = altNow != null && altNow > 3 && altNow < 50, lowK = low ? Math.pow(Math.sin(altNow * D2R), 0.6) : 1;
+  const maxM = (byAir ? seeMax : 2 * ap) * lowK, body = o.kind === "planet" ? o.body || o.id : null;
+  const lowTxt = n => "Low in the sky (" + Math.round(altNow) + "°), the air blurs it more: more than about " + Math.round(n / 10) * 10 + "× only makes it blurrier.";
   const rows = epCombos().map(c => { const d = epData(c.e); return { i: c.i, b: c.b, key: c.key, e: c.e, mag: d.mag, fov: d.fov, pupil: exitPupil(c.e), score: 0, note: "", why: "" }; });
   const pick = list => list.reduce((a, b) => (b.score < a.score ? b : a));
   // a Barlow adds glass: when it is about as good, the eyepiece alone wins
   const magPenalty = r => (r.mag > maxM ? 3 : 0) + (r.pupil > 7.5 ? 1 : 0) + (r.b > 1 ? 0.08 : 0);
-  const tooMuch = byAir ? "More magnification than tonight’s seeing allows (seeing " + see + ": about " + seeMax + "× at most). " : "More magnification than this aperture shows sharply (about " + Math.round(maxM / 10) * 10 + "× at most). ";
+  const tooMuch = low && lowK < 0.9 ? "More magnification than the air shows sharply this low (about " + Math.round(maxM / 10) * 10 + "× at most). "
+    : byAir ? "More magnification than tonight’s seeing allows (seeing " + see + ": about " + seeMax + "× at most). " : "More magnification than this aperture shows sharply (about " + Math.round(maxM / 10) * 10 + "× at most). ";
   let best, alt = null, kind;
   if (body === "Moon") {
     kind = "moon";
-    const size = 2 * Math.atan(1737.4 / (A.GeoVector(A.Body.Moon, t, true).Length() * AU_KM)) * R2D, ideal = Math.min(250, 1.2 * ap, seeMax || 999), fits = r => r.fov >= size * 1.08;
+    const size = 2 * Math.atan(1737.4 / (A.GeoVector(A.Body.Moon, t, true).Length() * AU_KM)) * R2D, ideal = Math.min(250, 1.2 * ap, seeMax || 999) * lowK, fits = r => r.fov >= size * 1.08;
     rows.forEach(r => { r.note = fits(r) ? (r.fov > size * 2.5 ? "whole Moon, small" : "whole Moon") : r.mag > maxM ? "too much magnification" : "part of the Moon";
       r.score = (fits(r) ? -r.mag / 1000 : 10 + Math.abs(Math.log(r.mag / ideal))) + magPenalty(r);
       r.det = Math.abs(Math.log(r.mag / ideal)) + magPenalty(r); });
@@ -7500,19 +7506,36 @@ function epAdvice(o, t) {
     if (det !== best && !fits(det)) alt = det;
   } else if (body) {
     kind = "planet";
-    const [k, cap] = EP_PLANET[body] || [1, 220], ideal0 = Math.max(50, Math.min(cap, k * ap)), ideal = Math.max(50, Math.min(ideal0, seeMax || 999)), arcsec = planetDisc(body, t).arcsec;
+    const [k, cap] = EP_PLANET[body] || [1, 220], ideal0 = Math.max(50, Math.min(cap, k * ap)), ideal1 = Math.max(50, Math.min(ideal0, seeMax || 999)), ideal = Math.max(40, ideal1 * lowK), arcsec = planetDisc(body, t).arcsec;
     rows.forEach(r => { const q = r.mag / ideal, rel = arcsec * r.mag / 1865;   // vs the full Moon to the naked eye
       r.score = Math.abs(Math.log(q)) + magPenalty(r);
       r.note = r.mag > maxM ? "too much magnification" : q < 0.45 ? "small disc" : q < 0.8 ? "good overview" : q <= 1.3 ? "good for details" : "only on very steady nights";
       r.why = (r.mag > maxM ? tooMuch : "") + o.name + " looks " + (rel >= 1.3 ? "about " + (rel < 2.5 ? rel.toFixed(1).replace(/\.0$/, "") : Math.round(rel)) + "× as large as" : rel >= 0.75 ? "about as large as" : rel >= 0.4 ? "about half as large as" : "much smaller than") + " the full Moon does to the naked eye."
         + (q < 0.8 ? " More magnification (up to about " + Math.round(ideal / 10) * 10 + "×) would show more detail." : q > 1.3 && r.mag <= maxM ? (see ? "" : " Sharp only when the air is very steady.") : "")
-        + (ideal < ideal0 && r.mag >= ideal * 0.7 ? " With seeing " + see + " tonight, more than about " + seeMax + "× only makes it blurrier." : ""); });
+        + (ideal1 < ideal0 && r.mag >= ideal * 0.7 ? " With seeing " + see + " tonight, more than about " + seeMax + "× only makes it blurrier." : "")
+        + (lowK < 0.9 && r.mag >= ideal * 0.7 ? " " + lowTxt(ideal) : ""); });
     best = pick(rows);
   } else {
     kind = "dso";
     const ms = MESSIER.find(r => r[0] === o.id), ng = !ms && NGC.find(n => n.id === o.id);
     const cls = ms ? dsoClass(ms[5]) : ng ? ng.cls : "neb", sz = ms ? ms[7] : ng ? ng.size : null, size = sz > 0 ? sz / 60 : null;
-    const [fillT, pupT, wF, wP] = EP_DSO[cls] || EP_DSO.neb;
+    const [fillT, pupT0, wF, wP] = EP_DSO[cls] || EP_DSO.neb;
+    // surface brightness (magnitude spread over the object's area, mag per square arcminute): faint, spread-out galaxies
+    // and nebulae want a wide exit pupil, small bright ones take more magnification
+    const mg = ms ? ms[3] : ng ? ng.mag : null, sb = mg != null && sz > 0 ? mg + 2.5 * Math.log10(Math.PI / 4 * sz * sz) : null;
+    const diffuse = cls === "gal" || cls === "neb";
+    let pupT = pupT0;
+    if (sb != null && diffuse) pupT = Math.max(1.8, Math.min(5, 1.5 + (sb - 11) * 0.8));
+    else if (sb != null && cls === "pn") pupT = Math.max(0.8, Math.min(3, 0.8 + (sb - 9) * 0.5));
+    // the Moon up and bright lights the sky: a little more magnification (a smaller exit pupil) darkens the background
+    let moonK = 1;
+    if (diffuse) try {
+      const mv = targetById("Moon").vec(t), mAlt = horiz(mv, t).alt, ill = A.Illumination(A.Body.Moon, t).phase_fraction;
+      if (mAlt > 0 && ill > 0.25) { const ov = o.vec(t), n = Math.hypot(...mv) * Math.hypot(...ov), sep = Math.acos(Math.max(-1, Math.min(1, (mv[0] * ov[0] + mv[1] * ov[1] + mv[2] * ov[2]) / n))) * R2D;
+        moonK = 1 - 0.35 * ill * (sep < 60 ? 1 : 0.6); }
+    } catch (e) {}
+    pupT = Math.max(cls === "pn" ? 0.8 : 1.5, pupT * moonK);
+    const faintSB = sb != null && sb >= 13.5, brightSB = sb != null && sb <= 11;
     rows.forEach(r => {
       const f = size ? size / r.fov : null;
       const frame = f == null ? 0 : f > 0.9 ? 3 + (f - 0.9) * 5 : Math.abs(Math.log(f / fillT)) * wF;
@@ -7523,11 +7546,15 @@ function epAdvice(o, t) {
     best = pick(rows);
     const allBig = size && rows.every(r => r.fill > 0.95);
     rows.forEach(r => {
-      const pw = "exit pupil " + r.pupil.toFixed(1) + " mm" + ((cls === "gal" || cls === "neb") ? (r.pupil >= 2 && r.pupil <= 4.5 ? ", good for faint light" : r.pupil < 2 ? ", rather dim for faint light" : "")
+      const near = Math.abs(Math.log(r.pupil / pupT)) < 0.35;
+      const pw = "exit pupil " + r.pupil.toFixed(1) + " mm" + (diffuse ? (near ? ", good for " + (faintSB ? "its faint, spread-out light" : "it") : r.pupil < pupT ? ", rather dim for " + (faintSB ? "such faint, spread-out light" : "it") : moonK < 0.9 ? ", but the moonlit sky stays bright" : "")
         : cls === "glob" ? (r.pupil <= 2.2 ? ", enough magnification to resolve stars" : ", too little magnification to resolve many stars")
         : cls === "pn" ? (r.pupil > 2 ? ", more magnification would make the small disc easier to see" : ", magnified enough to show it as a small disc") : "");
       r.why = (r.mag > maxM ? tooMuch : "") + (!size ? pw[0].toUpperCase() + pw.slice(1) + "." : r.fill > 0.95 ? (allBig && r === best ? "Larger than any of your fields: this one shows the most of it." : "Larger than the field: you only see part of it at once.")
-        : "It " + fillWords(r.fill).replace(/^a small/, "is a small") + "; " + pw + ".");
+        : "It " + fillWords(r.fill).replace(/^a small/, "is a small") + "; " + pw + ".")
+        + (r === best && diffuse && faintSB ? " Faint and spread out (" + sb.toFixed(1) + " mag per square arcminute): a wide exit pupil shows it best." : r === best && (diffuse || cls === "pn") && brightSB ? " Small and bright: it takes magnification well." : "")
+        + (r === best && moonK < 0.9 ? " The Moon brightens the sky: a little more magnification darkens the background." : "")
+        + (r === best && lowK < 0.75 && r.mag > maxM * 0.6 ? " " + lowTxt(maxM) : "");
     });
   }
   const widest = rows.reduce((a, b) => (b.fov > a.fov ? b : a));
