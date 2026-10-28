@@ -240,7 +240,7 @@ ${evs.map(ev).join('\n')}
     <p class="muted">${esc(t.planetNote)}</p>
     ${opts.related ? opts.related(w, lang) : ''}
     <p class="wk-app">${esc(t.appLine)} <a class="open" href="/app/">${lang === 'de' ? 'Zenigo öffnen' : 'Open Zenigo'}</a></p>
-    <nav class="wk-nav" aria-label="${esc(t.sky)}">${nav.prev ? `<a href="${weekPath(lang, nav.prev)}">← ${esc(t.prev)}</a>` : '<span></span>'}<a href="${archivePath(lang)}">${esc(t.archive)}</a>${nav.next ? `<a href="${weekPath(lang, nav.next)}">${esc(t.next)} →</a>` : '<span></span>'}</nav>
+    <nav class="wk-nav" aria-label="${esc(t.sky)}">${nav.prev ? `<a href="${weekPath(lang, nav.prev)}" title="${esc(t.prev)}">← ${esc(rangeText(nav.prev, lang))}</a>` : '<span></span>'}<a href="${archivePath(lang)}">${esc(t.archive)}</a>${nav.next ? `<a href="${weekPath(lang, nav.next)}" title="${esc(t.next)}">${esc(rangeText(nav.next, lang))} →</a>` : '<span></span>'}</nav>
     <p class="muted wk-small">${esc(t.calc)}</p>
   </article>
 </main>

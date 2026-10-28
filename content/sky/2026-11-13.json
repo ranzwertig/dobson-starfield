@@ -1,0 +1,102 @@
+{
+  "week": "2026-11-13",
+  "status": "published",
+  "generatedAt": "2026-10-28T00:15:00Z",
+  "intro": {
+    "en": "Mars and Jupiter are closest on Monday morning, only 1.2° apart, and the Leonids peak in the night of 17 to 18 November, after the Moon has set. In the evening the growing Moon is at its best in a telescope, and Saturn shows its slowly opening rings.",
+    "de": "Mars und Jupiter stehen am Montagmorgen am engsten, nur 1,2° auseinander, und die Leoniden haben ihr Maximum in der Nacht vom 17. auf den 18. November, nachdem der Mond untergegangen ist. Abends ist der zunehmende Mond im Teleskop am schönsten, und Saturn zeigt seine sich langsam öffnenden Ringe."
+  },
+  "events": [
+    {
+      "id": "2026-11-16-mars-jupiter",
+      "type": "conjunction",
+      "peak": "2026-11-16T02:00:00Z",
+      "window": { "from": "2026-11-13", "to": "2026-11-19" },
+      "bodies": ["Mars", "Jupiter"],
+      "target": { "id": "Jupiter" },
+      "magnitude": -2.1,
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Mars and Jupiter only 1.2° apart",
+        "de": "Mars und Jupiter nur 1,2° auseinander"
+      },
+      "text": {
+        "en": "In the morning sky, bright Jupiter and the reddish Mars stand together in Leo. On Monday they are closest, 1.2° apart, about two Moon widths; all week the gap stays under 2°. Both are high in the south-east before dawn.",
+        "de": "Am Morgenhimmel stehen der helle Jupiter und der rötliche Mars zusammen im Löwen. Am Montag stehen sie am engsten, 1,2° auseinander, etwa zwei Monddurchmesser; die ganze Woche bleibt der Abstand unter 2°. Vor der Dämmerung stehen beide hoch im Südosten."
+      },
+      "tip": {
+        "en": "With a low-power eyepiece both fit into one field of view: Jupiter with its moons and cloud belts, Mars as a small orange disc.",
+        "de": "Mit einem Okular für kleine Vergrößerung passen beide in ein Gesichtsfeld: Jupiter mit seinen Monden und Wolkenbändern, Mars als kleines orangefarbenes Scheibchen."
+      }
+    },
+    {
+      "id": "2026-11-17-leonids",
+      "type": "meteor-shower",
+      "peak": "2026-11-17T23:31:00Z",
+      "window": { "from": "2026-11-16", "to": "2026-11-18" },
+      "target": { "ra": 10.2, "dec": 22, "label": "Leonids radiant" },
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Leonids: the fastest meteors of the year",
+        "de": "Leoniden: die schnellsten Meteore des Jahres"
+      },
+      "text": {
+        "en": "The Leonids peak in the night of 17 to 18 November. Expect about 10 to 15 meteors an hour under a dark sky, very fast, sometimes with glowing trails. The half Moon sets around midnight, so the second half of the night is dark, just when the radiant in Leo climbs high.",
+        "de": "Die Leoniden haben ihr Maximum in der Nacht vom 17. auf den 18. November. Unter dunklem Himmel kannst du 10 bis 15 Meteore pro Stunde erwarten, sehr schnell, manchmal mit nachleuchtender Spur. Der Halbmond geht gegen Mitternacht unter, die zweite Nachthälfte ist also dunkel, genau wenn der Radiant im Löwen hoch steigt."
+      },
+      "tip": {
+        "en": "Watch after midnight and look a little away from Leo. The Northern Taurids are still active too: a slow fireball may be one of them.",
+        "de": "Beobachte nach Mitternacht und schau etwas neben den Löwen. Auch die Nördlichen Tauriden sind noch aktiv: Eine langsame Feuerkugel kann eine von ihnen sein."
+      }
+    },
+    {
+      "id": "2026-11-17-first-quarter",
+      "type": "moon-phase",
+      "peak": "2026-11-17T11:48:00Z",
+      "target": { "id": "Moon" },
+      "equipment": "telescope",
+      "hemisphere": "both",
+      "title": {
+        "en": "First quarter: the Moon at its best in a telescope",
+        "de": "Erstes Viertel: der Mond im Teleskop am schönsten"
+      },
+      "text": {
+        "en": "On Tuesday the Moon is half lit. Along the line between day and night, the terminator, shadows are long and craters, mountain ranges and valleys stand out sharply. In the evenings around first quarter the Moon is high in the sky.",
+        "de": "Am Dienstag ist der Mond halb beleuchtet. Entlang der Grenze zwischen Tag und Nacht, dem Terminator, sind die Schatten lang, und Krater, Gebirge und Täler treten scharf hervor. An den Abenden um das erste Viertel steht der Mond hoch am Himmel."
+      },
+      "tip": {
+        "en": "Look along the terminator on several evenings: every night other craters come into the light. A moon filter or a higher magnification takes away the glare.",
+        "de": "Schau an mehreren Abenden entlang des Terminators: Jede Nacht kommen andere Krater ins Licht. Ein Mondfilter oder eine höhere Vergrößerung nimmt die Blendung."
+      }
+    },
+    {
+      "id": "saturn-rings-opening",
+      "type": "other",
+      "peak": "2026-11-16T20:00:00Z",
+      "window": { "from": "2026-11-13", "to": "2026-11-19" },
+      "target": { "id": "Saturn" },
+      "magnitude": 0.5,
+      "equipment": "telescope",
+      "hemisphere": "both",
+      "title": {
+        "en": "Saturn and its thin rings in the evening",
+        "de": "Saturn mit schmalen Ringen am Abend"
+      },
+      "text": {
+        "en": "Saturn is the planet of the evening, in Cetus. In 2025 we saw its rings exactly edge-on; now they are tilted about 6° towards us again, a slim line that slowly widens over the coming years. Its largest moon, Titan, is easy to see next to it.",
+        "de": "Saturn ist der Planet des Abends, im Walfisch. 2025 sahen wir genau auf die Kante seiner Ringe; jetzt sind sie wieder um etwa 6° zu uns geneigt, ein schmaler Strich, der in den kommenden Jahren langsam breiter wird. Sein größter Mond Titan ist daneben leicht zu sehen."
+      },
+      "tip": {
+        "en": "Observe early in the evening, when Saturn stands highest. From about 50× the rings separate from the ball.",
+        "de": "Beobachte früh am Abend, wenn Saturn am höchsten steht. Ab etwa 50-facher Vergrößerung lösen sich die Ringe von der Kugel."
+      }
+    }
+  ],
+  "sources": [
+    "https://www.imo.net/calendar/"
+  ]
+}

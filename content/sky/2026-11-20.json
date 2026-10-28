@@ -1,0 +1,101 @@
+{
+  "week": "2026-11-20",
+  "status": "published",
+  "generatedAt": "2026-10-28T00:15:00Z",
+  "intro": {
+    "en": "A week of the full Moon, and good for planets: Mercury shows itself in the morning twilight below brilliant Venus, Uranus reaches opposition, and on Tuesday the full Moon passes the Pleiades.",
+    "de": "Eine Vollmondwoche, und eine gute für die Planeten: Merkur zeigt sich in der Morgendämmerung unter der strahlenden Venus, Uranus steht in Opposition, und am Dienstag zieht der Vollmond an den Plejaden vorbei."
+  },
+  "events": [
+    {
+      "id": "2026-11-20-mercury-morning",
+      "type": "elongation",
+      "peak": "2026-11-20T23:35:00Z",
+      "window": { "from": "2026-11-20", "to": "2026-11-26" },
+      "bodies": ["Mercury"],
+      "target": { "id": "Mercury" },
+      "magnitude": -0.6,
+      "equipment": "naked-eye",
+      "hemisphere": "north",
+      "highlight": true,
+      "title": {
+        "en": "Mercury in the morning sky, below Venus",
+        "de": "Merkur am Morgenhimmel, unter der Venus"
+      },
+      "text": {
+        "en": "Mercury reaches its greatest distance from the Sun as the week begins, 20° west of it. From the northern hemisphere this is one of the best morning appearances of the year: look low in the south-east in the brightening dawn. Venus, much brighter and higher, points the way; it is at its brightest around 27 November.",
+        "de": "Merkur erreicht zu Beginn der Woche seinen größten Abstand von der Sonne, 20° westlich von ihr. Von der Nordhalbkugel aus ist das eine der besten Morgensichtbarkeiten des Jahres: Schau tief im Südosten in die helle Dämmerung. Die viel hellere und höhere Venus zeigt den Weg; um den 27. November ist sie am hellsten."
+      },
+      "tip": {
+        "en": "You need a free view down to the south-eastern horizon. Binoculars help to find Mercury; stop before the Sun rises.",
+        "de": "Du brauchst freie Sicht bis zum Südosthorizont. Mit dem Fernglas findest du Merkur leichter; hör auf, bevor die Sonne aufgeht."
+      }
+    },
+    {
+      "id": "2026-11-24-full-moon-pleiades",
+      "type": "conjunction",
+      "peak": "2026-11-24T11:30:00Z",
+      "bodies": ["Moon"],
+      "target": { "id": "M45" },
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Full Moon at the Pleiades",
+        "de": "Vollmond bei den Plejaden"
+      },
+      "text": {
+        "en": "On Tuesday the Moon is full, the Beaver Moon, and passes the Pleiades. From East Asia and western North America it covers some of their stars; from Europe it rises in the evening already just past the cluster.",
+        "de": "Am Dienstag ist Vollmond, der Bibermond, und er zieht an den Plejaden vorbei. Von Ostasien und dem Westen Nordamerikas aus bedeckt er einige ihrer Sterne; in Europa geht er am Abend schon knapp neben dem Sternhaufen auf."
+      },
+      "tip": {
+        "en": "The bright Moon hides the fainter Pleiades: binoculars show them best. The Moon moves east by about its own width every hour and slowly leaves the cluster behind.",
+        "de": "Der helle Mond überstrahlt die schwächeren Plejaden: Im Fernglas siehst du sie am besten. Der Mond wandert jede Stunde etwa um seinen eigenen Durchmesser nach Osten und lässt den Sternhaufen langsam hinter sich."
+      }
+    },
+    {
+      "id": "2026-11-25-uranus-opposition",
+      "type": "opposition",
+      "peak": "2026-11-25T22:27:00Z",
+      "bodies": ["Uranus"],
+      "target": { "id": "Uranus" },
+      "magnitude": 5.6,
+      "equipment": "binoculars",
+      "hemisphere": "both",
+      "title": {
+        "en": "Uranus at opposition",
+        "de": "Uranus in Opposition"
+      },
+      "text": {
+        "en": "On Wednesday Uranus stands opposite the Sun: up all night and as bright as it gets, magnitude 5.6. It lies in Taurus, about 6° from the Pleiades. This week the full Moon is close by, so Uranus is easier once the Moon has moved on, on the following evenings.",
+        "de": "Am Mittwoch steht Uranus der Sonne gegenüber: die ganze Nacht zu sehen und mit 5,6 mag so hell wie sonst nie. Er steht im Stier, etwa 6° von den Plejaden entfernt. Diese Woche ist der Vollmond in der Nähe, Uranus wird also leichter, wenn der Mond an den folgenden Abenden weitergezogen ist."
+      },
+      "tip": {
+        "en": "In a telescope at 100× or more Uranus is a tiny, pale blue-green disc, clearly not a star. Zenigo takes you straight to it.",
+        "de": "Im Teleskop ab 100-facher Vergrößerung ist Uranus ein winziges, blassblaugrünes Scheibchen, eindeutig kein Stern. Zenigo führt dich direkt hin."
+      }
+    },
+    {
+      "id": "full-moon-week-planets",
+      "type": "other",
+      "peak": "2026-11-22T20:00:00Z",
+      "window": { "from": "2026-11-20", "to": "2026-11-26" },
+      "target": { "id": "Saturn" },
+      "equipment": "telescope",
+      "hemisphere": "both",
+      "title": {
+        "en": "A bright week: time for planets and double stars",
+        "de": "Eine helle Woche: Zeit für Planeten und Doppelsterne"
+      },
+      "text": {
+        "en": "Around the full Moon faint galaxies and nebulae are washed out, but planets and double stars don’t mind. Saturn in the evening, Jupiter and Mars from late evening and Venus before dawn are all well placed.",
+        "de": "Um den Vollmond verblassen lichtschwache Galaxien und Nebel, Planeten und Doppelsterne stört das nicht. Saturn am Abend, Jupiter und Mars ab dem späten Abend und Venus vor der Dämmerung stehen alle gut."
+      },
+      "tip": {
+        "en": "Bright double stars such as Albireo in Cygnus or Almach in Andromeda show their colours even next to a full Moon.",
+        "de": "Helle Doppelsterne wie Albireo im Schwan oder Alamak in der Andromeda zeigen ihre Farben sogar neben dem Vollmond."
+      }
+    }
+  ],
+  "sources": []
+}

@@ -1,0 +1,81 @@
+{
+  "week": "2026-12-11",
+  "status": "published",
+  "generatedAt": "2026-10-28T00:15:00Z",
+  "intro": {
+    "en": "The Geminids, the richest meteor shower of the year, peak on Monday, with only a thin crescent Moon that sets early in the evening. The dark evenings also suit the Orion Nebula, and Mars brightens on its way to opposition in February.",
+    "de": "Die Geminiden, der ergiebigste Meteorstrom des Jahres, haben am Montag ihr Maximum, mit nur einer schmalen Mondsichel, die früh am Abend untergeht. Die dunklen Abende passen auch für den Orionnebel, und Mars wird auf dem Weg zu seiner Opposition im Februar heller."
+  },
+  "events": [
+    {
+      "id": "2026-12-14-geminids",
+      "type": "meteor-shower",
+      "peak": "2026-12-14T13:26:00Z",
+      "window": { "from": "2026-12-13", "to": "2026-12-15" },
+      "target": { "ra": 7.47, "dec": 33, "label": "Geminids radiant" },
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Geminids: up to 150 meteors an hour",
+        "de": "Geminiden: bis zu 150 Meteore pro Stunde"
+      },
+      "text": {
+        "en": "The Geminids peak on Monday, by day in Europe, so both the night of 13 to 14 and the night of 14 to 15 December are rich. Under a really dark sky you can count 50 to 100 an hour at the best time. The crescent Moon sets early in the evening and doesn’t disturb.",
+        "de": "Die Geminiden haben ihr Maximum am Montag, in Europa am Tag, deshalb sind die Nacht vom 13. auf den 14. und die vom 14. auf den 15. Dezember beide ergiebig. Unter wirklich dunklem Himmel kannst du zur besten Zeit 50 bis 100 pro Stunde zählen. Die Mondsichel geht früh am Abend unter und stört nicht."
+      },
+      "tip": {
+        "en": "The radiant near Castor is up from the evening; the most meteors come around 2 a.m., when it is highest. Dress warmly and lie back.",
+        "de": "Der Radiant nahe Kastor steht ab dem Abend am Himmel; die meisten Meteore kommen gegen 2 Uhr, wenn er am höchsten steht. Zieh dich warm an und leg dich hin."
+      }
+    },
+    {
+      "id": "orion-nebula",
+      "type": "deep-sky",
+      "peak": "2026-12-14T23:00:00Z",
+      "window": { "from": "2026-12-11", "to": "2026-12-17" },
+      "target": { "id": "M42" },
+      "magnitude": 4,
+      "equipment": "binoculars",
+      "hemisphere": "both",
+      "title": {
+        "en": "The Orion Nebula in the dark evenings",
+        "de": "Der Orionnebel in den dunklen Abenden"
+      },
+      "text": {
+        "en": "With the Moon gone from the evening sky, the Orion Nebula (M42) below Orion’s belt is a fine sight from the late evening on: a glowing cloud of gas where new stars are born, 1,300 light-years away. Even binoculars show its shape.",
+        "de": "Ohne Mond am Abendhimmel ist der Orionnebel (M42) unter dem Gürtel des Orion ab dem späten Abend ein schöner Anblick: eine leuchtende Gaswolke, in der neue Sterne entstehen, 1300 Lichtjahre entfernt. Schon im Fernglas erkennst du seine Form."
+      },
+      "tip": {
+        "en": "In a telescope look for the Trapezium, four young stars at the heart of the nebula. An OIII or UHC filter brings out its wings.",
+        "de": "Im Teleskop findest du das Trapez, vier junge Sterne im Herzen des Nebels. Ein OIII- oder UHC-Filter holt seine Flügel heraus."
+      }
+    },
+    {
+      "id": "mars-towards-opposition",
+      "type": "other",
+      "peak": "2026-12-14T23:00:00Z",
+      "window": { "from": "2026-12-11", "to": "2026-12-17" },
+      "bodies": ["Mars", "Jupiter"],
+      "target": { "id": "Mars" },
+      "magnitude": 0.2,
+      "equipment": "telescope",
+      "hemisphere": "both",
+      "title": {
+        "en": "Mars and Jupiter rise in the late evening",
+        "de": "Mars und Jupiter gehen am späten Abend auf"
+      },
+      "text": {
+        "en": "Mars and Jupiter still stand close together in Leo and now rise in the late evening. Mars brightens week by week on its way to opposition on 19 February 2027; Jupiter reaches opposition a week earlier. Both are best in the second half of the night, when they are high.",
+        "de": "Mars und Jupiter stehen noch nah beieinander im Löwen und gehen jetzt am späten Abend auf. Mars wird Woche für Woche heller, auf dem Weg zu seiner Opposition am 19. Februar 2027; Jupiter steht eine Woche früher in Opposition. Am besten sind beide in der zweiten Nachthälfte, wenn sie hoch stehen."
+      },
+      "tip": {
+        "en": "Mars is still small: wait for steady air and use high magnification to see its dark markings and a polar cap.",
+        "de": "Mars ist noch klein: Warte auf ruhige Luft und nimm eine hohe Vergrößerung, um seine dunklen Gebiete und eine Polkappe zu sehen."
+      }
+    }
+  ],
+  "sources": [
+    "https://www.imo.net/calendar/"
+  ]
+}

@@ -505,4 +505,4 @@ h2 .ptag, h3 .ptag, dt .ptag, .kicker .ptag { margin-left: 8px; }
 .sh-table td, .sh-table th { white-space: nowrap; }
 .wk-planets thead th { color: var(--mist); font: 500 15px var(--ui); }
 .wk-planets .num:not(:last-child) { padding-right: 18px; }
-@media (max-width: 560px) { .wk .cal-list li { grid-template-columns: 1fr; } .wk .cal-hl { columns: 1; } .sky-cards { grid-template-columns: 1fr; } .sh-facts th { white-space: normal; } }
+@media (max-width: 560px) { .wk-planets { font-size: 15px; } .wk-planets th, .wk-planets td { padding-right: 8px; } .wk-planets .num { font-size: 13px; } .wk .cal-list li { grid-template-columns: 1fr; } .wk .cal-hl { columns: 1; } .sky-cards { grid-template-columns: 1fr; } .sh-facts th { white-space: normal; } }
