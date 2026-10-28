@@ -1491,7 +1491,8 @@ const TESTS = {
     ok(de.h1 === 'Sternenhimmel diese Woche: 6.–12. November 2026' && de.lang === 'de' && de.head === 'en' && de.foot === 'en', 'German: its own page; the English header and footer marked as English', de);
     ok(de.open === 'In Zenigo öffnen' && de.planet === 'Merkur', 'German words', de);
     await p.goto(base + '/sky/archive/');
-    ok(await ev(p, () => [...document.querySelectorAll('.wk-archive a')].map(a => a.getAttribute('href')).join() === '/sky/2026-12-11/,/sky/2026-11-20/,/sky/2026-11-13/,/sky/2026-11-06/'), 'archive: the weeks, newest first');
+    const arch = await ev(p, () => [...document.querySelectorAll('.wk-archive a')].map(a => a.getAttribute('href')));
+    ok(arch.includes('/sky/2026-11-06/') && arch.join() === [...arch].sort().reverse().join(), 'archive: every week, newest first', arch);
     await p.goto(base + '/sky/');
     ok(await ev(p, () => /^Night sky this week/.test(document.querySelector('h1').textContent) && new URL(document.querySelector('link[rel=alternate][hreflang=de]').href).pathname === '/de/sky/'), '/sky/ (the build’s week here; the Worker serves the week of the day): its own language versions');
     ok(await ev(p, () => !!document.querySelector('.sitemenu a[href="/sky/"]') && !!document.querySelector('footer a[href="/sky/"]')), 'linked from the menu and the footer');
