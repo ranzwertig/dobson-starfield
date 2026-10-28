@@ -1726,8 +1726,10 @@ const TESTS = {
     await ev(p, () => SHEETS.forEach(x => closeSheet(x.id, true))); await wait(p, 300);
     // the observing list: a tap on a planned row opens the details too
     await ev(p, () => { obs.list = ['M13', 'M31'].map(id => ({ id, name: id, added: 1 })); saveObs(); listTab.v = 'todo'; renderList(); openSheet('listSheet'); }); await wait(p, 400);
-    r = await ev(p, () => { const row = $('listBody').querySelector('.orow'); return { btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'remove'), id: row.dataset.id }; });
-    ok(r.btns.join(' ') === 'oinfo otgt omap remove', 'Planned: details, ◎, map and ✕ under each row', r);
+    r = await ev(p, () => { const row = $('listBody').querySelector('.orow'); return { btns: [...row.querySelectorAll('.racts button')].map(b => (b.className.replace('ostar', '').trim() || 'star') + (b.getAttribute('aria-pressed') === 'true' ? '+' : '')), id: row.dataset.id }; });
+    ok(r.btns.join(' ') === 'oinfo otgt omap oplan+ star', 'Planned: details, ◎, map, plan (on) and star under each row', r);
+    await ev(p, () => { obs.starred.push({ id: 'M31', name: 'M31', added: 1 }); saveObs(); renderList(); }); await wait(p, 200);
+    ok(await ev(p, () => $('listBody').querySelector('.orow[data-id="M31"] .racts .ostar:not(.oplan):not(.otgt):not(.omap):not(.oinfo)').getAttribute('aria-pressed') === 'true'), 'the star shows its state in the list too');
     await shot(p, 'rowacts-list');
     await ev(p, () => $('listBody').querySelector('.orow .oinfo').click()); await wait(p, 400);
     ok(await ev(p, () => !$('infoSheet').hidden && cfg.target === null), 'Planned: ⓘ opens the details (no longer sets the target)');

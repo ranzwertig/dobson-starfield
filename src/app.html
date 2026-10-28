@@ -5840,15 +5840,14 @@ function renderList() {
     const alt = document.createElement("span"); alt.className = "oalt";
     if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
-    let tail;
+    // the same buttons in every tab: plan and star with their state; seen tonight also ✕ (back to "Planned")
+    const mkO = () => ({ id, name: obsName(id, name) });
+    let tail = null;
     if (mode === "seen") {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "Planned"
       tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
       tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name, tail);
-    } else if (mode === "todo") {
-      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
-      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from tonight’s plan"); tail.onclick = () => { togglePlan({ id, name: obsName(id, name) }); renderList(); };
-    } else tail = toggleButton("plan", id, () => ({ id, name: obsName(id, name) }));
-    row.append(main, alt, rowActs(id, () => objById(id), det, tail));
+    }
+    row.append(main, alt, rowActs(id, () => objById(id), det, toggleButton("plan", id, mkO), toggleButton("star", id, mkO), tail));
     return row;
   };
   if (listTab.v === "todo") {
@@ -6647,7 +6646,7 @@ function progRow(P, r) {
   if (r.seen) alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
   row.append(main, alt);
-  if (T) row.append(rowActs(id, () => objById(id), det, toggleButton("plan", id, () => ({ id, name: obsName(id) }))));
+  if (T) row.append(rowActs(id, () => objById(id), det, toggleButton("plan", id, () => ({ id, name: obsName(id) })), toggleButton("star", id, () => ({ id, name: obsName(id) }))));
   else { const d = document.createElement("div"), g = document.createElement("button"); d.className = "racts"; g.className = "ostar oinfo"; g.innerHTML = ICON.info; g.setAttribute("aria-label", "Details of " + progName(P, id) + " (needs the extended catalogue)"); g.onclick = det; d.append(g); row.append(d); }   // only in the extended catalogue: ⓘ offers it
   return row;
 }
@@ -9716,7 +9715,7 @@ function showTonight() {
   if (!t.planets.length) s3.append(el("p", "tn-note", "No planet gets higher than 8° tonight."));
   t.planets.forEach(p => {
     const b = el("div", "tn-row", "<b>" + esc(p.de) + "</b><span class=\"tn-alt\">" + Math.round(p.b.alt) + "°</span><small>highest at " + fmt(p.b.d) + " in the " + dir(p.b.az) + " · " + p.mag.toFixed(1) + " mag</small>");
-    const it = el("div", "tn-item"); it.append(b, rowActs(p.en, () => planetObj(p.de, p.en), () => infoFromTonight(planetObj(p.de, p.en)), toggleButton("plan", p.en, () => ({ id: p.en, name: p.de })))); s3.append(it);
+    const it = el("div", "tn-item"); it.append(b, rowActs(p.en, () => planetObj(p.de, p.en), () => infoFromTonight(planetObj(p.de, p.en)), toggleButton("plan", p.en, () => ({ id: p.en, name: p.de })), toggleButton("star", p.en, () => ({ id: p.en, name: p.de })))); s3.append(it);
   });
   box.append(s3);
   // deep sky
