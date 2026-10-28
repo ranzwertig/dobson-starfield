@@ -109,16 +109,16 @@ const TESTS = {
     await p.tap('#fabList'); await wait(p); await p.tap('[data-ltab="starred"]'); await wait(p, 300);
     await ev(p, () => { scroller($('listSheet')).scrollTop = 300; }); await wait(p, 100);
     const id = await ev(p, () => [...document.querySelectorAll('#listBody .orow')][6].dataset.id);
-    await p.tap(`#listBody .orow[data-id="${id}"] .omain`); await wait(p, 500);
+    await p.tap(`#listBody .orow[data-id="${id}"] .oinfo`); await wait(p, 500);
     ok(await ev(p, () => !$('infoBack').hidden), 'details from the list have a back arrow');
     await p.tap('#infoBack'); await wait(p, 600);
     const back = await ev(p, () => [!$('listSheet').hidden, listTab.v, scroller($('listSheet')).scrollTop]);
     ok(back[0] && back[1] === 'starred' && back[2] > 100, 'back returns to the same tab and scroll position', back);
-    await p.tap('[data-ltab="seen"]'); await wait(p, 300); await p.tap('#listBody .orow .omain'); await wait(p, 500);
+    await p.tap('[data-ltab="seen"]'); await wait(p, 300); await p.tap('#listBody .orow .oinfo'); await wait(p, 500);
     await p.tap('#infoSheet [data-close]'); await wait(p, 600);
     ok(await ev(p, () => $('listSheet').hidden && $('infoSheet').hidden), '✕ on details opened from the list closes them (back is the arrow)');
     await p.tap('#fabList'); await wait(p, 500);
-    await p.tap('[data-ltab="starred"]'); await wait(p, 300); await p.tap('#listBody .orow .omain'); await wait(p, 500);
+    await p.tap('[data-ltab="starred"]'); await wait(p, 300); await p.tap('#listBody .orow .oinfo'); await wait(p, 500);
     const tid = await ev(p, () => st.picked.id); await p.tap('#infoTarget'); await wait(p, 600);
     ok(await ev(p, t => cfg.target === t && $('infoSheet').hidden && $('listSheet').hidden, tid), 'Set as target on a phone closes and shows the map');
     await ev(p, () => showInfo(objById('M42'))); await wait(p);
@@ -142,9 +142,9 @@ const TESTS = {
     const n = await ev(p, () => obs.list.length);
     ok(n > 3, 'Plan tonight’s best objects fills the plan', n);
     ok(await ev(p, () => $('listBadge').textContent) === String(n), 'list button shows how many are planned');
-    await p.tap('#listBody .orow .omain'); await wait(p);
+    await p.tap('#listBody .orow .otgt'); await wait(p);
     const first = await ev(p, () => cfg.target);
-    ok(!!first && await ev(p, () => !$('hudNext').hidden), 'a planned row becomes the target, Next appears');
+    ok(!!first && await ev(p, () => !$('hudNext').hidden), '◎ makes a planned object the target, Next appears');
     await ev(p, () => showInfo(objById(cfg.target))); await wait(p, 500);
     await p.tap('#infoSeen'); await wait(p, 500);
     await p.tap('#seenSee button:nth-child(3)'); await p.tap('#seenTr button:nth-child(4)'); await p.fill('#seenNote', 'Core resolved.');
@@ -824,7 +824,7 @@ const TESTS = {
     await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 900);
     const rows = await ev(p, () => document.querySelectorAll('#tonightSheet .tn-row').length);
     ok(rows > 0, 'Tonight lists objects', rows);
-    await ev(p, () => { const r = [...document.querySelectorAll('#tonightSheet .tn-row')].find(b => b.onclick); r.scrollIntoView(); r.click(); }); await wait(p, 700);
+    await ev(p, () => { const r = document.querySelector('#tonightSheet .tn-item .oinfo'); r.scrollIntoView(); r.click(); }); await wait(p, 700);
     ok(await ev(p, () => !$('infoSheet').hidden && !$('infoBack').hidden && /Tonight/.test($('infoBack').getAttribute('aria-label'))), 'the details show a back button to Tonight');
     await p.tap('#infoBack'); await wait(p, 700);
     ok(await ev(p, () => !$('tonightSheet').hidden && $('tonightSheet').classList.contains('open') && $('infoSheet').hidden), 'back returns to Tonight', await openSheets(p));
@@ -1037,7 +1037,7 @@ const TESTS = {
     const planned = await ev(p, () => obs.list.length);
     ok(planned > before && planned - before <= 15, 'one tap plans the well placed ones (at most 15)', [before, planned]);
     // details from the programme and back
-    await ev(p, () => document.querySelector('#progBody .orow .omain').click()); await wait(p, 400);
+    await ev(p, () => document.querySelector('#progBody .orow .oinfo').click()); await wait(p, 400);
     ok(await ev(p, () => !$('infoSheet').hidden && $('infoBack').getAttribute('aria-label') === 'Back to the programme'), 'a row opens the details, with a way back');
     await p.click('#infoBack'); await wait(p, 400);
     ok(await ev(p, () => !$('progSheet').hidden && $('progTitleTxt').textContent === 'Messier'), 'back to the programme');
@@ -1703,8 +1703,8 @@ const TESTS = {
     const p = await page();
     await ev(p, () => { cfg.target = null; cfg.searchCats = []; save(); $('fabSearch').click(); }); await wait(p, 400);
     let r = await ev(p, () => { const row = $('results').querySelector('.rrow'); return { n: $('results').querySelectorAll('.rrow .racts').length, rows: $('results').querySelectorAll('.rrow').length,
-      btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'star'), id: row.querySelector('.otgt').dataset.id, name: row.querySelector('b').textContent }; });
-    ok(r.n > 3 && r.n === r.rows && r.btns.join(' ') === 'otgt omap oplan star', 'Find target: under each row ◎, map, plan and star', r);
+      rowBtn: row.querySelectorAll(':scope > button').length, btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'star'), id: row.querySelector('.otgt').dataset.id, name: row.querySelector('b').textContent }; });
+    ok(r.n > 3 && r.n === r.rows && r.btns.join(' ') === 'oinfo otgt omap oplan star' && r.rowBtn === 0, 'Find target: under each row details, ◎, map, plan and star; the row itself is no button', r);
     await shot(p, 'rowacts-search');
     const id = r.id;
     await ev(p, () => $('results').querySelector('.rrow .otgt').click()); await wait(p, 400);
@@ -1721,16 +1721,16 @@ const TESTS = {
     r = await ev(p, () => ({ az: st.mapView.az, open: $('searchSheet').classList.contains('open'), tgt: cfg.target, focus: st.focus && st.focus.id }));
     ok(Math.abs(((r.az - want.az + 540) % 360) - 180) < 1 && !r.open && r.tgt === null && r.focus === want.tid, 'map icon: the map turned to it, marked, not the target', { r, want });
     await ev(p, () => $('fabSearch').click()); await wait(p, 400);
-    await ev(p, () => $('results').querySelector('.rrow > button').click()); await wait(p, 400);
-    ok(await ev(p, () => !$('infoSheet').hidden), 'a tap on the row: the details');
+    await ev(p, () => $('results').querySelector('.rrow .oinfo').click()); await wait(p, 400);
+    ok(await ev(p, () => !$('infoSheet').hidden), 'ⓘ: the details');
     await ev(p, () => SHEETS.forEach(x => closeSheet(x.id, true))); await wait(p, 300);
     // the observing list: a tap on a planned row opens the details too
     await ev(p, () => { obs.list = ['M13', 'M31'].map(id => ({ id, name: id, added: 1 })); saveObs(); listTab.v = 'todo'; renderList(); openSheet('listSheet'); }); await wait(p, 400);
     r = await ev(p, () => { const row = $('listBody').querySelector('.orow'); return { btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'remove'), id: row.dataset.id }; });
-    ok(r.btns.join(' ') === 'otgt omap remove', 'Planned: ◎, map and ✕ under each row', r);
+    ok(r.btns.join(' ') === 'oinfo otgt omap remove', 'Planned: details, ◎, map and ✕ under each row', r);
     await shot(p, 'rowacts-list');
-    await ev(p, () => $('listBody').querySelector('.orow .omain').click()); await wait(p, 400);
-    ok(await ev(p, () => !$('infoSheet').hidden && cfg.target === null), 'Planned: a tap on the row opens the details (no longer sets the target)');
+    await ev(p, () => $('listBody').querySelector('.orow .oinfo').click()); await wait(p, 400);
+    ok(await ev(p, () => !$('infoSheet').hidden && cfg.target === null), 'Planned: ⓘ opens the details (no longer sets the target)');
     await ev(p, () => SHEETS.forEach(x => closeSheet(x.id, true))); await wait(p, 300);
     // Tonight and the programmes
     await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 600);
