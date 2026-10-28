@@ -409,6 +409,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .tn-item { display: flex; flex-direction: column; border-radius: 9px; }
 .tn-item.tgt { background: rgba(255,106,92,.06); }
 .tn-item + .tn-item { border-top: 1px solid var(--line); }
+.rowtap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) { .rowtap:hover { background: var(--raise); } }
+.rowtap:active { background: var(--raise); }
 .tn-item > .racts { margin-top: -6px; }
 .results .rrow:last-child { border-bottom: 0; }
 .results .rrow > button:first-child { flex: 1; min-width: 0; border-bottom: 0; }
@@ -1988,7 +1991,7 @@ if (!Array.isArray(cfg.sites) || !cfg.sites.length) {
   cfg = Object.assign({}, cfg, { sites: [{ id: posSiteId(la, lo), name: "My location", lat: la, lon: lo, loc: cfg.loc || null, sky: cfg.sky || null, u: 0, ...(fresh ? { fresh: true } : {}) }] });
   cfg.siteId = cfg.sites[0].id;
 }
-if (!cfg.sites.some(s => s.id === cfg.siteId)) cfg.siteId = cfg.sites[0].id;
+if (cfg.siteId !== "" && !cfg.sites.some(s => s.id === cfg.siteId)) cfg.siteId = cfg.sites[0].id;   // "": no location (just a position)
 // Kinds of instruments: what a new one starts with (mount, eyepiece view, finder) and common sizes [label, aperture,
 // focal length, name]. Binoculars: [magnification, aperture, field].
 const INST_TYPES = {
@@ -2656,7 +2659,7 @@ function showResults(sync) {
     // in the order of the categories: where an object is right now only counts with "Good now"
     list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
-    if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › Location)");
+    if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : !curSite() ? "No location chosen: free means above 10°" : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › Location)");
   } else if (!q) {
     list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => { const h = horiz(T.vec(t), t); return { T, alt: h.alt, az: h.az }; }).filter(x => inReach(x.alt, 15) && !hzBlocked(x.az, x.alt))
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
@@ -5428,8 +5431,14 @@ function rowActs(id, getObj, onDetails, ...extra) {
   mb.setAttribute("aria-label", "Show " + name() + " on the map");
   mb.onclick = e => { e.stopPropagation(); const o = getObj(); if (!o) return; const sh = mb.closest(".sheet"); showOnMap(o); if (sh) navToMap(sh.id); };
   box.append(ib, tb, mb, ...extra.filter(Boolean));
-  syncRowTarget(tb); queueMicrotask(() => syncRowTarget(tb));   // again once the row holds it (its tint)
+  syncRowTarget(tb); queueMicrotask(() => { syncRowTarget(tb); rowTap(box.parentElement, onDetails); });   // once the row holds it: its tint, and the row opens the details
   return box;
+}
+// a tap anywhere on a list row (not on its buttons) opens the details, like ⓘ (which is the control for keyboards and
+// screen readers)
+function rowTap(row, fn) {
+  if (!row || row._tap) return; row._tap = true; row.classList.add("rowtap");
+  row.addEventListener("click", e => { if (!e.target.closest("button, a, input, select, label")) fn(); });
 }
 function syncRowTarget(b) {
   const on = cfg.target === b.dataset.id, row = b.closest(".orow, .rrow, .tn-item");
@@ -6134,7 +6143,7 @@ function openSeen(o, entry, fromLog) {
   $("seenName").textContent = (entry ? "" : "") + (o ? o.name : entry.name) + (entry ? "" : " seen");
   const alt = entry ? entry.alt : o ? Math.round(horiz(o.vec(tNow), tNow).alt) : null;
   const il = A.Illumination(A.Body.Moon, tNow), moonUp = horiz(targetById("Moon").vec(tNow), tNow).alt > 0;
-  seenState.facts = entry ? { alt: entry.alt, moon: entry.moon, lat: entry.lat, lon: entry.lon, site: entry.site } : { alt, moon: Math.round(il.phase_fraction * 100) + " %, " + (moonUp ? "up" : "down"), lat: +cfg.lat, lon: +cfg.lon, site: curSite().name };
+  seenState.facts = entry ? { alt: entry.alt, moon: entry.moon, lat: entry.lat, lon: entry.lon, site: entry.site } : { alt, moon: Math.round(il.phase_fraction * 100) + " %, " + (moonUp ? "up" : "down"), lat: +cfg.lat, lon: +cfg.lon, ...(curSite() ? { site: curSite().name } : {}) };
   const f = $("seenFacts"); f.textContent = "";
   const add = (k, v) => { const s = document.createElement("span"); s.innerHTML = "<em></em><b></b>"; s.firstChild.textContent = k; s.lastChild.textContent = v; f.append(s); };
   add("When", now.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
@@ -6727,7 +6736,7 @@ function progRow(P, r) {
   else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
   row.append(main, alt);
   if (T) row.append(rowActs(id, () => objById(id), det, toggleButton("plan", id, () => ({ id, name: obsName(id) })), toggleButton("star", id, () => ({ id, name: obsName(id) }))));
-  else { const d = document.createElement("div"), g = document.createElement("button"); d.className = "racts"; g.className = "ostar oinfo"; g.innerHTML = ICON.info; g.setAttribute("aria-label", "Details of " + progName(P, id) + " (needs the extended catalogue)"); g.onclick = det; d.append(g); row.append(d); }   // only in the extended catalogue: ⓘ offers it
+  else { const d = document.createElement("div"), g = document.createElement("button"); d.className = "racts"; g.className = "ostar oinfo"; g.innerHTML = ICON.info; g.setAttribute("aria-label", "Details of " + progName(P, id) + " (needs the extended catalogue)"); g.onclick = det; d.append(g); row.append(d); rowTap(row, det); }   // only in the extended catalogue: ⓘ offers it
   return row;
 }
 // After a first sighting: the progress in the programmes it belongs to, and a word at 25, 50, 75 and 100 %
@@ -8623,13 +8632,19 @@ loadInst(curInst());
 // The records are in cfg.sites, the working copy of the one in use in cfg.lat, cfg.lon, cfg.loc and cfg.sky (see the
 // migration at the start); save() writes changes of the working copy back into its record (storeSite). Another
 // location is edited in its record directly (st.siteEdit). Free: one location; several, switching and the horizon: Pro.
+// No location (cfg.siteId ""): only a position (cfg.freePos, per device), no sky and no horizon, so nothing of a place
+// changes the search, Tonight or the map; anyone can switch to it and back.
 function siteById(id) { return (cfg.sites || []).find(s => s.id === id) || null; }
-function curSite() { return siteById(cfg.siteId) || cfg.sites[0]; }
+function curSite() { return cfg.siteId === "" ? null : siteById(cfg.siteId) || cfg.sites[0]; }
 function editSite() { return siteById(st.siteEdit) || curSite(); }
 function siteTouched(s) { s.u = Date.now(); delete s.fresh; }
-function loadSite(s) { cfg.lat = +s.lat; cfg.lon = +s.lon; cfg.loc = s.loc || null; cfg.sky = s.sky || null; }
+function loadSite(s) {
+  if (!s) { const f = cfg.freePos || {}; cfg.lat = f.lat ?? +cfg.lat; cfg.lon = f.lon ?? +cfg.lon; cfg.loc = f.loc || cfg.loc || null; cfg.sky = null; return; }
+  cfg.lat = +s.lat; cfg.lon = +s.lon; cfg.loc = s.loc || null; cfg.sky = s.sky || null;
+}
 function storeSite() {
-  const s = curSite(); if (!s) return;
+  const s = curSite();
+  if (!s) { if (cfg.siteId === "") { cfg.freePos = { lat: +cfg.lat, lon: +cfg.lon, loc: cfg.loc || null }; cfg.sky = null; } return; }
   const n = { lat: +cfg.lat, lon: +cfg.lon, loc: cfg.loc || null, sky: cfg.sky || null };
   if (["lat", "lon", "loc", "sky"].some(k => ZSync.stable(n[k]) !== ZSync.stable(s[k] ?? null))) { Object.assign(s, n); siteTouched(s); }
 }
@@ -8647,11 +8662,22 @@ function siteChanged() {
   if (!$("sheet").hidden) syncSettings(); if (!$("quickSheet").hidden) syncQuick();
   if (!$("searchSheet").hidden) showResults(); if (!$("listSheet").hidden) renderList();
 }
-function switchSite(s) { storeSite(); cfg.siteId = s.id; loadSite(s); st.siteEdit = null; save(); siteChanged(); }
+function switchSite(s) {
+  storeSite();
+  if (!s && !cfg.freePos) cfg.freePos = { lat: +cfg.lat, lon: +cfg.lon, loc: cfg.loc || null };   // first time: where it was
+  cfg.siteId = s ? s.id : ""; loadSite(s); st.siteEdit = null; save(); siteChanged();
+}
+// no location: the position stays, the sky and the horizon of a location are not used
+function useNoSite(quiet) {
+  if (!curSite()) return true;
+  cfg.freePos = { lat: +cfg.lat, lon: +cfg.lon, loc: cfg.loc || null }; switchSite(null); $("siteBar").hidden = true;
+  if (!quiet) hint("No location: only the position counts, no sky and no horizon.", 3500);
+  return true;
+}
 function useSite(id, quiet) {
   const s = siteById(id); if (!s) return false;
   if (s === curSite()) return true;
-  if (!pro.on) return proNeed("Switching between locations is part of Zenigo Pro. Without it, Zenigo uses one location: delete the others in Settings › Location, or keep using " + curSite().name + ".");
+  if (!pro.on && curSite()) return proNeed("Switching between locations is part of Zenigo Pro. Without it, Zenigo uses one location: delete the others in Settings › Location, or keep using " + curSite().name + ".");   // from no location back to it: always
   switchSite(s); $("siteBar").hidden = true;
   if (!quiet) hint("Now at " + s.name + "." + (hzOf(s) ? " Its horizon is in use." : ""), 3000);
   return true;
@@ -8677,7 +8703,7 @@ function delSite(s) {
 function siteAfterSync() {
   if (!Array.isArray(cfg.sites) || !cfg.sites.length) cfg.sites = [{ id: posSiteId(+cfg.lat || 0, +cfg.lon || 0), name: "My location", lat: +cfg.lat || 0, lon: +cfg.lon || 0, loc: cfg.loc || null, sky: cfg.sky || null, u: 0 }];
   if (cfg.sites.some(s => !s.fresh)) cfg.sites = cfg.sites.filter(s => !s.fresh);   // the placeholder of a new install
-  if (!siteById(cfg.siteId)) cfg.siteId = cfg.sites[0].id;
+  if (cfg.siteId !== "" && !siteById(cfg.siteId)) cfg.siteId = cfg.sites[0].id;
   loadSite(curSite()); hzCache.k = null; hzFreeCache.clear(); evCache.key = "";
 }
 // A position from GPS. From Quick settings (or at the start): at a saved location → use it; near the one in use → its
@@ -8686,6 +8712,7 @@ function siteAfterSync() {
 function gpsFix(p, from) {
   const pos = { lat: +p.coords.latitude.toFixed(4), lon: +p.coords.longitude.toFixed(4), loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } };
   const setTo = s => {
+    if (!s) { cfg.lat = pos.lat; cfg.lon = pos.lon; cfg.loc = pos.loc; save(); siteChanged(); return; }   // no location: the position
     const moved = siteDist(s, pos);
     if (s === curSite()) { cfg.lat = pos.lat; cfg.lon = pos.lon; cfg.loc = pos.loc; save(); siteChanged(); }
     else { Object.assign(s, pos); siteTouched(s); save(); syncSettings(); }
@@ -8700,7 +8727,7 @@ function gpsFix(p, from) {
     return siteBar("You’re at " + near.name + " (" + Math.round(nd) + " m away). Switch to it?", "Switch", () => useSite(near.id));
   }
   if (from === "start") return;   // a silent check at the start: only a saved location is suggested
-  if (!pro.on) return setTo(cur);
+  if (!pro.on || !cur) { setTo(cur); if (cur || !pro.on) return; return siteBar("New position set. Save this place as a location?", "New location", () => { addSite(pos); hint("New location here. Give it a name in Settings › Location.", 4000); }); }
   siteBar("You’re " + (nd >= 1000 ? (nd / 1000).toFixed(1) + " km" : Math.round(nd) + " m") + " from " + cur.name + ". A new location here?", "New location", () => { addSite(pos); hint("New location here. Give it a name in Settings › Location.", 4000); },
     "Move " + cur.name + " here", () => { setTo(cur); $("siteBar").hidden = true; });
 }
@@ -8727,6 +8754,11 @@ function renderSites() {
   const box = $("siteList"); if (!box) return;
   const many = cfg.sites.length > 1, ed = editSite();
   box.textContent = "";
+  // no location: only the position (below), no sky and no horizon
+  const none = document.createElement("div"); none.className = "eqcard" + (!curSite() ? " inuse" : "");
+  const nb = document.createElement("button"); nb.className = "eqmain"; nb.setAttribute("aria-label", "No location");
+  nb.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span><b>No location</b><small>only the position: no sky, no horizon</small></span>';
+  nb.onclick = () => { st.siteEdit = null; if (curSite()) useNoSite(); syncSettings(); };
   cfg.sites.forEach(s => {
     const cur = s === curSite(), d = document.createElement("div"); d.className = "eqcard" + (cur ? " inuse" : "") + (many && s === ed ? " editing" : "");
     const b = document.createElement("button"); b.className = "eqmain";
@@ -8739,6 +8771,19 @@ function renderSites() {
     else { const u = document.createElement("button"); u.className = "btn"; u.textContent = "Use"; u.setAttribute("aria-label", "Use " + s.name); u.onclick = () => { if (useSite(s.id)) syncSettings(); }; d.append(u); }
     box.append(d);
   });
+  if (!curSite()) none.append(Object.assign(document.createElement("span"), { className: "inuse", textContent: "in use" }));
+  else { const u = document.createElement("button"); u.className = "btn"; u.textContent = "Use"; u.setAttribute("aria-label", "Use no location"); u.onclick = () => { useNoSite(); syncSettings(); }; none.append(u); }
+  none.prepend(nb); box.append(none);
+  // without a location: the position alone
+  const free = !ed;
+  ["siteName", "skyQ"].forEach(i => { $(i).closest(".row").hidden = free; });
+  $("siteEdBox").querySelector(".note").hidden = free; $("hzBox").hidden = free;
+  if (free) {
+    $("siteOther").hidden = true; $("siteDel").hidden = true; $("siteEdLegend").textContent = "Position";
+    if (document.activeElement !== $("lat")) $("lat").value = cfg.lat;
+    if (document.activeElement !== $("lon")) $("lon").value = cfg.lon;
+    return;
+  }
   const other = ed !== curSite();
   $("siteOther").hidden = !other; $("siteOtherTxt").textContent = "Not in use on this device. Changes here apply to " + ed.name + ".";
   if (document.activeElement !== $("siteName") || $("siteName")._for !== ed.id) { $("siteName").value = ed.name; $("siteName")._for = ed.id; }
@@ -8756,12 +8801,14 @@ function renderSites() {
 // a change to the location being edited: its record, and the working copy if it is the one in use
 function setSite(patch) {
   const s = editSite();
+  if (!s) { if ("lat" in patch) cfg.lat = patch.lat; if ("lon" in patch) cfg.lon = patch.lon; if ("loc" in patch) cfg.loc = patch.loc; save(); siteChanged(); return; }   // no location: the position
   if (s === curSite()) { if ("lat" in patch) cfg.lat = patch.lat; if ("lon" in patch) cfg.lon = patch.lon; if ("loc" in patch) cfg.loc = patch.loc; if ("sky" in patch) cfg.sky = patch.sky;
     if ("name" in patch) { s.name = patch.name; siteTouched(s); } save(); siteChanged(); }
   else { Object.assign(s, patch); siteTouched(s); save(); syncSettings(); }
 }
 $("siteName").onchange = () => {
   const s = siteById($("siteName")._for) || editSite(), v = $("siteName").value.trim().slice(0, 40);
+  if (!s) return;
   if (!v || v === s.name) { $("siteName").value = s.name; return; }
   if (cfg.sites.some(x => x !== s && x.name === v)) { hint("You already have a location called " + v + ".", 3500); $("siteName").value = s.name; return; }
   st.siteEdit = s === curSite() ? null : s.id; setSite({ name: v });
@@ -8790,12 +8837,10 @@ $("hzClear").onclick = () => { const s = editSite(); armDelete($("hzClear"), "Re
 // Quick settings: the locations as chips (with more than one, or with Pro), "+ New" here
 function renderQuickSites() {
   const q = $("qSites"); if (!q) return;
-  q.textContent = ""; q.hidden = cfg.sites.length < 2 && !pro.on;
-  if (q.hidden) return;
-  cfg.sites.forEach(s => {
-    const b = document.createElement("button"); b.className = "chip cat" + (s === curSite() ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(s === curSite()));
-    b.textContent = s.name; b.onclick = () => { if (useSite(s.id)) syncQuick(); }; q.append(b);
-  });
+  q.textContent = ""; q.hidden = false;
+  const chip = (txt, on, run, label) => { const b = document.createElement("button"); b.className = "chip cat" + (on ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(on)); b.textContent = txt; if (label) b.setAttribute("aria-label", label); b.onclick = () => { if (run()) syncQuick(); }; q.append(b); };
+  cfg.sites.forEach(s => chip(s.name, s === curSite(), () => useSite(s.id)));
+  chip("None", !curSite(), () => useNoSite(), "No location: only the position, no sky and no horizon");
   const a = document.createElement("button"); a.className = "chip"; a.textContent = "+ Here"; a.setAttribute("aria-label", "New location here (GPS)");
   a.onclick = () => { if (!pro.on) return addSite(); if (!navigator.geolocation) return addSite(); navigator.geolocation.getCurrentPosition(p => { addSite({ lat: p.coords.latitude, lon: p.coords.longitude, loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } }); syncQuick(); hint("New location here. Give it a name in Settings › Location.", 4000); }, () => hint("Location not shared.", 3000), { timeout: 10000 }); };
   const mg = document.createElement("button"); mg.className = "lnk"; mg.textContent = "Manage ›"; mg.onclick = () => { syncSettings(); openSheet("sheet"); setSetTab("site"); };
@@ -9743,7 +9788,7 @@ function syncQuick() {
   if (document.activeElement !== $("qLat")) $("qLat").value = cfg.lat;
   if (document.activeElement !== $("qLon")) $("qLon").value = cfg.lon;
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
-  $("qLocName").textContent = cfg.sites.length > 1 || pro.on ? curSite().name : "Location"; $("qLocTxt").textContent = fmtLatLon(la, lo) + (hzCur() ? " · own horizon" : ""); renderQuickSites();
+  $("qLocName").textContent = !curSite() ? "Location: none" : cfg.sites.length > 1 || pro.on ? curSite().name : "Location"; $("qLocTxt").textContent = fmtLatLon(la, lo) + (hzCur() ? " · own horizon" : ""); renderQuickSites();
   $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qFigures").checked = figOn(); $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qReadout").checked = !!cfg.readout; $("qMirror").checked = !!cfg.mirror;
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";
