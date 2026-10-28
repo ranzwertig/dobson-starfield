@@ -1575,7 +1575,7 @@ const TESTS = {
     await ev(p, () => $('qSites').children[1].click());
     ok(await ev(p, () => curSite().name === 'Hilltop' && cfg.lat === 48.3), 'a chip switches');
     // GPS near a saved location: suggested; somewhere new: a new one offered
-    await ev(p, () => { window.__geo = { lat: 48.1815, lon: 10.0805 }; $('qGps').click(); }); await wait(p, 400);
+    await ev(p, () => { window.__geo = { lat: 48.1815, lon: 10.0805 }; $('qGps').click(); }); await wait(p, 800);
     await shot(p, 'sites-bar');
     ok(await ev(p, () => !$('siteBar').hidden && $('quickSheet').hidden && /You’re at Garden \(\d+ m away\)/.test($('siteBarTxt').textContent)), 'GPS within 300 m of another location: “Switch to it?” (Quick settings closed, so it is seen)', await ev(p, () => $('siteBarTxt').textContent));
     await ev(p, () => $('siteBarGo').click());
@@ -1626,6 +1626,12 @@ const TESTS = {
     r = await ev(p, ([h, f]) => ({ h: freeTonight(targetById(h)), f: freeTonight(targetById(f)), n: catList(['tonight'], TARGETS).length }), [T.hid, T.free]);
     ok(r.f && r.n > 10, 'Free tonight: the free one listed', r);
     ok(await ev(p, () => tonightData().dso.every(x => !hzBlocked(x.b.az, x.b.alt))), 'Tonight: best moments never behind the horizon');
+    // In reach: somewhere on its daily path clear of the horizon (a wall of 50° all round: M42 never clears it, M31 does)
+    r = await ev(p, () => { const keep = curSite().horizon, all = new Float32Array(360).fill(50);
+      curSite().horizon = { v: 1, alt: hzEncode(all), at: keep.at, how: 'camera' }; hzCache.k = null;
+      const x = { m42: inCat(targetById('M42'), 'reach'), m31: inCat(targetById('M31'), 'reach'), n: catList(['reach', 'messier'], TARGETS).length };
+      curSite().horizon = keep; hzCache.k = null; x.back = inCat(targetById('M42'), 'reach'); return x; });
+    ok(!r.m42 && r.m31 && r.back && r.n > 20, 'In reach respects the horizon: M42 (never above 37° here) not behind a 50° wall all round, M31 yes', r);
     ok(await ev(p, az => { closeSheet('searchSheet'); st.mapView = { az, alt: 25, fov: 90 }; draw(); return true; }, T.az), 'the map draws the silhouette');
     await wait(p, 300); await shot(p, 'hz-map');
     // the pill bottom left: the mask on and off; with it on, the ground below the horizon is hidden

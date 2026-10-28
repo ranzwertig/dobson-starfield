@@ -2510,10 +2510,27 @@ function inCat(T, c) {
 // Category "In reach": does the object ever come into the telescope's reach from here, at any time of night or year?
 // Its highest point is 90° − |latitude − declination|, its lowest |latitude + declination| − 90°. Without a set reach
 // that means: it rises here at all. (Planets move, but their declination changes slowly.)
+// With your own horizon (Pro): somewhere on its daily path it must also stand clear of it (the path in 3° steps of hour
+// angle; kept per object until the place, horizon or reach change).
+const reachMemo = { k: null, m: new Map() };
 function everInReach(T) {
   const R = reach();
   const v = T.vec(skyNow().t), dec = Math.asin(Math.max(-1, Math.min(1, v[2]))) * R2D, lat = +cfg.lat;
-  return 90 - Math.abs(lat - dec) >= R.lo && Math.abs(lat + dec) - 90 <= R.hi;
+  if (!(90 - Math.abs(lat - dec) >= R.lo && Math.abs(lat + dec) - 90 <= R.hi)) return false;
+  const hz = hzCur(); if (!hz) return true;
+  const k = hzCache.k + "|" + lat + "|" + R.lo + "|" + R.hi;
+  if (reachMemo.k !== k) { reachMemo.k = k; reachMemo.m.clear(); }
+  const mk = T.id + "|" + Math.round(dec * 10);   // planets move: their declination is part of the key
+  if (reachMemo.m.has(mk)) return reachMemo.m.get(mk);
+  const sp = Math.sin(lat * D2R), cp = Math.cos(lat * D2R), sd = Math.sin(dec * D2R), cd = Math.cos(dec * D2R);
+  let r = false;
+  for (let H = 0; H < 360 && !r; H += 3) {
+    const ch = Math.cos(H * D2R), sh = Math.sin(H * D2R), alt = Math.asin(Math.max(-1, Math.min(1, sp * sd + cp * cd * ch))) * R2D;
+    if (alt < Math.max(R.lo, 0) || alt > R.hi) continue;
+    const az = (Math.atan2(-cd * sh, sd * cp - cd * ch * sp) * R2D + 360) % 360;
+    r = !hzBlocked(az, alt);
+  }
+  reachMemo.m.set(mk, r); return r;
 }
 // "Free tonight": in reach above 20°, in darkness and (with your own horizon) not behind it, at some time of the night ahead.
 // Every third sample of the night plan (half-hourly); kept with the night plan.
@@ -2558,9 +2575,9 @@ function showResults() {
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
     if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › Location)");
   } else if (!q) {
-    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => inReach(x.alt, 15))
+    list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => { const h = horiz(T.vec(t), t); return { T, alt: h.alt, az: h.az }; }).filter(x => inReach(x.alt, 15) && !hzBlocked(x.az, x.alt))
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
-    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (" + (reach().limited ? Math.max(15, reach().lo) + "–" + reach().hi + "°, in your telescope’s reach" : "above 15°") + ")"; box.append(g);
+    const g = document.createElement("div"); g.className = "grp"; g.textContent = "Well placed " + (st.tOff ? "at " + fmtClock(skyDate()) : "now") + " (" + (reach().limited ? Math.max(15, reach().lo) + "–" + reach().hi + "°, in your telescope’s reach" : "above 15°") + (hzCur() ? ", not behind your horizon" : "") + ")"; box.append(g);
   } else {
     // exact names first, then names starting with the query, then matches anywhere (also in the description)
     // normalised names are kept on the target: normalising some 2000 names on every key press is what made typing slow
@@ -5268,8 +5285,8 @@ function togglePlan(o) {
   if (i >= 0) { obs.list.splice(i, 1); hint(o.name + " removed from tonight’s plan.", 2500); }
   else {
     obs.list.push({ id: o.id, name: o.name, added: Date.now() });
-    const T = targetById(o.id), t = A.MakeTime(new Date()), up = T ? inReach(horiz(vecNow(T), t).alt, 10) : true;
-    hint(o.name + " planned for tonight" + (sets().tonight.has(o.id) ? ", already under “Seen tonight”." : up ? "." : ", marked “later”: it is out of reach or below the horizon now."), 3500);
+    const T = targetById(o.id), t = A.MakeTime(new Date()), h = T && horiz(vecNow(T), t), up = T ? inReach(h.alt, 10) && !hzBlocked(h.az, h.alt) : true;
+    hint(o.name + " planned for tonight" + (sets().tonight.has(o.id) ? ", already under “Seen tonight”." : up ? "." : ", marked “later”: it is out of reach, behind your horizon or below the horizon now."), 3500);
   }
   saveObs();
 }
@@ -6102,7 +6119,7 @@ function renderLog() {
   $("logProg").onclick = () => { closeSheet("logSheet"); openProgs(null); };
   // suggestion: Messier objects not seen yet that are well placed tonight
   const tn = nightPlan(), have = sets().list;
-  const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => sm.dark && inReach(sm.alt(v)[0], Math.min(30, reach().hi - 5))); }) : [];
+  const sug = tn.dawn ? MESSIER.filter(r => !ids.has(r[0]) && !have.has(r[0]) && r[3] != null && r[3] <= 9).filter(r => { const v = Solver.radec2v(r[1], r[2]); return tn.samples.some(sm => { if (!sm.dark) return false; const [a, az] = sm.alt(v); return inReach(a, Math.min(30, reach().hi - 5)) && !hzBlocked(az, a); }); }) : [];
   const sb = $("logSuggest"); sb.hidden = !sug.length;
   if (sug.length) {
     sb.innerHTML = ICON.plan + "<span></span><b>Plan</b>"; sb.querySelector("span").textContent = sug.length + " Messier object" + (sug.length === 1 ? "" : "s") + " you haven’t seen " + (sug.length === 1 ? "is" : "are") + " well placed tonight";
