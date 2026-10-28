@@ -2231,17 +2231,22 @@ async function startCamera() {
     if (!a) return;                                       // ✕, Esc: don't start the camera
     if (a === true) setMirror(true, true); else { cfg.topPlain = true; storeCamProfile(); save(); }
   }
-  if (await cameraBlocked()) { showPermissionHelp("camera"); return; }
+  // no check of the permission first: Safari reports "denied" for the rest of the session after one refusal (also in an
+  // app on the Home Screen after reloading), and then the question would never be asked again. Asking is the check.
   try {
-    const stream = await openCamStream();
+    let stream = await openCamStream();
+    // some phones (iOS on the Home Screen) hand out a stream that shows no picture after the camera was stopped once:
+    // a second, fresh one usually does
+    if (!(await camShowsPicture(stream))) { stream.getTracks().forEach(t => t.stop()); video.srcObject = null; try { video.load(); } catch (e) {} await new Promise(r => setTimeout(r, 400)); stream = await openCamStream(); }
     st.stream = stream; st.track = stream.getVideoTracks()[0];
+    st.camWant = true; st.track.addEventListener("ended", () => camLost(stream));
     // A camera without facing mode is an external one (USB webcam, capture device): the phone's motion sensors don't apply to it
     st.extCam = !st.track.getSettings().facingMode && !!cfg.camId;
     if (st.extCam && st.sensor) setSensor(false);
     listCameras();
-    video.srcObject = stream;
     // play() can be interrupted (AbortError, seen on iPad) although the stream is fine: try once more, then rely on autoplay
-    try { await video.play(); } catch (e) { if (e && e.name === "AbortError") { await new Promise(r => setTimeout(r, 250)); try { await video.play(); } catch (x) {} } else throw e; }
+    if (video.srcObject !== stream) { video.srcObject = stream; try { await video.play(); } catch (e) { if (e && e.name === "AbortError") { await new Promise(r => setTimeout(r, 250)); try { await video.play(); } catch (x) {} } else throw e; } }
+    if (!(await camShowsPicture(stream))) hint("The camera shows no picture. Close Zenigo completely and open it again; if that doesn’t help, restart the phone.", 9000);
     photoExit(); st.source = "video"; st.stars = []; zoom.z = 1; zoom.x = 0; zoom.y = 0;
     if (!(st.sensor && st.base)) { st.sol = null; st.moved = false; }
     $("btnCam").classList.add("on");
@@ -2266,19 +2271,53 @@ async function openCamStream() {
   const size = { width: { ideal: 1920 }, height: { ideal: 1080 } }, tries = [];
   if (cfg.camId) tries.push({ deviceId: { exact: cfg.camId }, ...size });
   tries.push({ facingMode: { ideal: "environment" }, ...size }, { facingMode: { ideal: "environment" } }, true);
+  // busy (NotReadableError, AbortError: e.g. the page before a reload hasn't let it go yet): the plainest request
+  // once more after a longer pause
+  tries.push(true);
   let last = null;
-  for (const video of tries) {
+  for (let k = 0; k < tries.length; k++) {
+    const video = tries[k];
     try { return await navigator.mediaDevices.getUserMedia({ audio: false, video }); }
     catch (e) {
       last = e; const n = e && e.name;
       if (n === "NotAllowedError" || n === "SecurityError") throw e;
       if (video.deviceId && (n === "OverconstrainedError" || n === "NotFoundError")) hint("The selected camera is not connected. Using the back camera.", 5000);
-      await new Promise(r => setTimeout(r, 300));
+      if (k === tries.length - 1) break;
+      await new Promise(r => setTimeout(r, k === tries.length - 2 ? (n === "NotReadableError" || n === "AbortError" ? 1500 : 0) : 300));
+      if (k === tries.length - 2 && !(n === "NotReadableError" || n === "AbortError")) break;
     }
   }
   throw last;
 }
+// Does a fresh stream show a picture? Its size known and the video playing within 2.5 s (a stream without frames, as
+// iOS sometimes hands out after the camera was stopped, never gets there).
+async function camShowsPicture(stream) {
+  video.srcObject = stream;
+  try { await video.play(); } catch (e) { if (e && e.name === "AbortError") { await new Promise(r => setTimeout(r, 250)); try { await video.play(); } catch (x) {} } else throw e; }
+  const t0 = performance.now(), c0 = video.currentTime;
+  while (performance.now() - t0 < 2500) {
+    if (video.videoWidth > 0 && (video.currentTime > c0 || video.readyState >= 2)) return true;
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return false;
+}
+// The system stopped the camera (another app took it, a call, the screen locked, the app went to the background):
+// Zenigo shows that it's off and, if that happened while it was in the background, starts it again on return.
+function camLost(stream) {
+  if (st.stream !== stream) return;
+  const away = document.hidden;
+  stopCamera(); st.camWant = away;
+  if (!away) hint("The camera was stopped by the system (another app or a call may be using it). Tap the camera button to start it again.", 8000);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !st.camWant || st.stream) return;
+  st.camWant = false; setTimeout(() => { if (!document.hidden && !st.stream) startCamera(); }, 300);
+});
+// Leaving or reloading the page: the camera is let go at once, so the next page (or the app opened again) gets it
+addEventListener("pagehide", () => { if (st.stream) { const want = st.source === "video"; stopCamera(); st.camWant = want; } });
+addEventListener("pageshow", e => { if (e.persisted && st.camWant && !st.stream && !document.hidden) { st.camWant = false; startCamera(); } });
 function stopCamera() {
+  st.camWant = false;
   st.stream?.getTracks().forEach(t => t.stop()); st.stream = null; st.track = null; video.srcObject = null;
   $("btnCam").classList.remove("on"); setAuto(false);
   if (st.source === "video") showMap();
@@ -9482,7 +9521,7 @@ function showPermissionHelp(kind) {   // kind: "camera" | "motion"
     + "The access was declined earlier, and the browser won’t ask again by itself. Allow it like this:";
   const steps = {
     ios: cam
-      ? (app ? ["Open the iPhone <b>Settings</b> app → <b>Apps</b> → <b>Safari</b> → <b>Camera</b> and choose <b>Ask</b> or <b>Allow</b>.", "If Zenigo still can’t use the camera, remove the app from the home screen and add it again from Safari."]
+      ? (app ? ["Close Zenigo completely (swipe it up in the app switcher) and open it again: the iPhone keeps a refusal until then, reloading isn’t enough.", "Open the iPhone <b>Settings</b> app → <b>Apps</b> → <b>Safari</b> → <b>Camera</b> and choose <b>Ask</b> or <b>Allow</b>.", "If Zenigo still can’t use the camera, remove the app from the home screen and add it again from Safari."]
              : ["Tap <b>aA</b> (or the page icon) on the left of the address bar.", "Choose <b>Website Settings</b>.", "Set <b>Camera</b> to <b>Ask</b> or <b>Allow</b>."])
       : ["Close the Zenigo tab, or quit Safari completely, and open Zenigo again: iPhone remembers this refusal only until then.", "In the iPhone <b>Settings</b> app → <b>Apps</b> → <b>Safari</b>, make sure <b>Motion & Orientation Access</b> is on (if your iOS version shows it).", "Tap <b>Align</b> again and choose <b>Allow</b>."],
     android: app
@@ -9496,10 +9535,6 @@ function showPermissionHelp(kind) {   // kind: "camera" | "motion"
   openSheet("permSheet");
 }
 $("permReload").onclick = () => location.reload();
-// Ask the browser beforehand whether the camera is blocked (not every browser can tell)
-async function cameraBlocked() {
-  try { const p = await navigator.permissions.query({ name: "camera" }); return p.state === "denied"; } catch (e) { return false; }
-}
 
 // Deleting in place: the first tap turns the button into a red confirm button, with Cancel in place of the buttons
 // beside it and what will happen below; the second tap deletes. Cancel, a tap elsewhere or 8 seconds put it back.

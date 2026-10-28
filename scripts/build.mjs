@@ -103,6 +103,8 @@ const mainJs = page.slice(mi + mainOpen.length, me).replace('__JSQR_FILE__', fJs
 const hashOf = s => createHash('sha256').update(s).digest('hex').slice(0, 10);
 const jsFiles = {};
 const jsFile = (name, src) => { const f = `${name}.${hashOf(src)}.js`; jsFiles[f] = src; return f; };
+// a syntax error in the app code stops the build here (instead of a page that never starts)
+try { new vm.Script(mainJs, { filename: 'src/app.html (main script)' }); } catch (e) { throw new Error('app script: ' + e.message); }
 const fAstro = jsFile('astronomy', astronomy), fSat = jsFile('satellite', satjs), fCore = jsFile('core', core), fSync = jsFile('sync', syncJs), fMain = jsFile('app', mainJs);
 page = page.slice(0, mi) + `<script id="main" src="${fMain}" defer></script>` + page.slice(me + '</script>'.length);
 page = page.replace('<script>/*__ASTRONOMY__*/</script>', `<script src="${fAstro}" defer></script>`)

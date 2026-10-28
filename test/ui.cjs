@@ -734,6 +734,26 @@ const TESTS = {
     await done(p);
   },
 
+  // the camera: asked for even when the browser reports it as refused before (Safari keeps "denied" for the session);
+  // stopped by the system: shown as off, and it starts again; stop and start again works
+  async camlost() {
+    const p = await page({ perms: ['camera'] });
+    let r = await ev(p, async () => {
+      const q = navigator.permissions.query.bind(navigator.permissions);
+      navigator.permissions.query = d => d && d.name === 'camera' ? Promise.resolve({ state: 'denied' }) : q(d);
+      await startCamera(); navigator.permissions.query = q;
+      return { on: !!st.stream, src: st.source, help: !$('permSheet').hidden };
+    });
+    ok(r.on && r.src === 'video' && !r.help, 'a camera reported as refused is asked for anyway (and starts)', r);
+    r = await ev(p, async () => { st.track.dispatchEvent(new Event('ended')); await new Promise(r => setTimeout(r, 200));
+      return { stream: st.stream, btn: $('btnCam').classList.contains('on'), src: st.source, hint: $('hint').textContent }; });
+    ok(r.stream === null && !r.btn && r.src === 'map' && /stopped by the system/.test(r.hint), 'stopped by the system: off, with a word why', r);
+    for (let i = 0; i < 2; i++) {
+      r = await ev(p, async () => { await startCamera(); await new Promise(r => setTimeout(r, 300)); const a = !!st.stream && video.videoWidth > 0; stopCamera(); await new Promise(r => setTimeout(r, 200)); return { a, off: !st.stream }; });
+      ok(r.a && r.off, 'started again and stopped (' + (i + 1) + ')', r);
+    }
+    await done(p);
+  },
   async categories() {
     const p = await page();
     await ev(p, () => { setOptics({ scope: 1200, ap: 203 }); cfg.searchCats = []; }); await p.waitForFunction(() => LISTS.ok && NGC.length > 1000, null, { timeout: 10000 });
