@@ -2921,14 +2921,23 @@ function feedAbs(mAbs) {
   const M = mm3(mAbs, tr3(sens.rel));
   feedOff(Math.atan2(M[1][0], M[0][0]));
 }
-// iOS: webkitCompassHeading is the heading of the back camera while the phone is held upright
+// iOS: webkitCompassHeading is the heading of the back camera while the phone is held upright, and of the top edge
+// when it lies flat. Where iOS switches between the two depends on the tilt (and isn't documented): tilted back, the
+// top edge points away from where the camera looks, so the same reading can mean a heading 180° turned. Both
+// readings are worked out, and the one that fits the compass offset so far is used.
 function feedHeading(e) {
   if (!sens.rel || !(e.webkitCompassAccuracy >= 0)) return;
-  // upright: heading of the back camera; lying flat: heading of the top edge (only used to get a first value)
-  let v = Solver.mul(sens.rel, [0, 0, -1]);
-  if (Math.abs(v[2]) > 0.77) { if (sens.off) return; v = Solver.mul(sens.rel, [0, 1, 0]); if (Math.abs(v[2]) > 0.5) return; }
-  const azRel = Math.atan2(v[0], v[1]);                                                     // clockwise from the gyro's "north"
-  feedOff(azRel - e.webkitCompassHeading * D2R);
+  const hd = e.webkitCompassHeading * D2R, cand = [];
+  for (const [ax, steep] of [[[0, 0, -1], 0.77], [[0, 1, 0], 0.5]]) {          // back camera, top edge
+    const v = Solver.mul(sens.rel, ax); if (Math.abs(v[2]) > steep) continue;
+    cand.push(Math.atan2(v[0], v[1]) - hd);                                    // clockwise from the gyro's "north"
+  }
+  if (!cand.length) return;
+  if (!sens.off) { feedOff(cand[0]); return; }                                 // a first value: the camera if upright
+  // steep (camera more than 50° up): hold the offset, as feedOff does
+  if (Math.abs(Solver.mul(sens.rel, [0, 0, -1])[2]) > 0.77) return;
+  const cur = Math.atan2(sens.off[1], sens.off[0]), dist = o => Math.abs(((o - cur) * R2D + 540) % 360 - 180);
+  feedOff(cand.reduce((b, o) => dist(o) < dist(b) ? o : b));
 }
 function feedOff(off) {
   const now = performance.now();
@@ -2946,7 +2955,9 @@ function feedOff(off) {
   const settling = now - sens.offStart < 1200;
   if (Math.abs(d) > 20 && !settling) {
     if (!sens.outSince) sens.outSince = now;
-    if (now - sens.outSince < 2500) return;          // ignore short disturbances (metal, a quick jerk)
+    // ignore short disturbances (metal, a quick jerk). The offset between gyroscope and north hardly changes, so a
+    // reading turned round (more than 150°) is a compass mix-up, not a new heading: only taken after 20 s
+    if (now - sens.outSince < (Math.abs(d) > 150 ? 20000 : 2500)) return;
     sens.offStart = now;                              // lasting change: settle quickly to the new heading
   }
   sens.outSince = 0;

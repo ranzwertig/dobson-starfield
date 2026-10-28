@@ -1524,6 +1524,29 @@ const TESTS = {
     ok(b.errors.length === 0, 'no page errors (cold start)', b.errors);
     await done(a);
   },
+
+  // iOS compass: webkitCompassHeading changes its reference with the phone's tilt (back camera when upright, top edge
+  // when tilted back further), so the same heading can come in 180° turned. The map must not turn round with it.
+  async compassflip() {
+    const p = await page();
+    const run = (hdFlip, n) => ev(p, async ([hdFlip, n]) => {
+      const alpha = 70, beta = 48, gamma = 0, OFF = 30;   // camera about 42° up, gyro zero 70° off north
+      const v = Solver.mul(devMatrix(alpha, beta, gamma), [0, 0, -1]), azRel = Math.atan2(v[0], v[1]) * 180 / Math.PI;
+      for (let i = 0; i < n; i++) {
+        const hd = ((azRel - OFF + (hdFlip ? 180 : 0)) % 360 + 360) % 360;
+        onOrientation({ alpha: alpha + (i % 2) * 0.05, beta, gamma, webkitCompassHeading: hd, webkitCompassAccuracy: 10 }, false);
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return sens.off ? Math.round(Math.atan2(sens.off[1], sens.off[0]) * 180 / Math.PI) : null;
+    }, [hdFlip, n]);
+    const a = await run(false, 25);
+    ok(a != null && Math.abs(a - 30) <= 2, 'compass offset from the back camera heading', a);
+    const b = await run(true, 45);
+    ok(b != null && Math.abs(b - 30) <= 2, 'a heading turned by 180° (the top edge as reference) doesn’t turn the map', b);
+    const c = await run(false, 10);
+    ok(c != null && Math.abs(c - 30) <= 2, 'and back to the camera reference: unchanged', c);
+    await done(p);
+  },
 };
 
 (async () => {
