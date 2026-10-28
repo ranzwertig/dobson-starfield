@@ -204,6 +204,9 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip svg { width: 15px; height: 15px; flex: none; }
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
+/* back to the panel a target or "Show on map" came from (phones) */
+.calchip.navresume { font: inherit; font-size: 13px; color: var(--fg); border-color: var(--line); padding: 2px 12px 2px 6px; min-height: 34px; cursor: pointer; }
+.navresume svg { width: 16px; height: 16px; }
 /* the horizon of the location in use (Pro): shows or hides its mask on the map */
 .calchip.hzchip { font: inherit; font-size: 12.5px; color: #b7d39c; border-color: rgba(150,190,120,.55); padding: 2px 4px 2px 9px; min-height: 32px; cursor: pointer; }
 .hzchip .hzeye { display: grid; place-items: center; width: 26px; height: 26px; } .hzchip .hzeye svg { width: 17px; height: 17px; }
@@ -592,6 +595,15 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
   background: rgba(0,0,0,0); transition: background .3s ease;
 }
 .sheet.open { background: rgba(0,0,0,.5); }
+/* questions and offers above the panels */
+#confirmSheet, #sunSheet, #permSheet, #proSheet { z-index: 30; }
+/* one screen for another in a panel: no sliding, the new content comes in from the side (← from the other side) */
+.sheet.nav-instant, .sheet.nav-instant .inner { transition: none !important; }
+@keyframes navFwd { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes navBack { from { transform: translateX(-28px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet .inner.nav-fwd > * { animation: navFwd .22s cubic-bezier(.2, .7, .3, 1); }
+.sheet .inner.nav-back > * { animation: navBack .22s cubic-bezier(.2, .7, .3, 1); }
+.grab h2 .navback { margin-left: -8px; }
 .sheet .inner {
   width: 100%; max-width: 560px; max-height: 88%; overflow-y: auto; overscroll-behavior: contain;
   background: var(--panel); border: 1px solid var(--line); border-bottom: 0;
@@ -1084,6 +1096,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       <div class="calchip" id="liveChipL" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipLTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipLOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="calchip" id="liveFollowChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><button class="chiplabel" id="liveFollowTxt">Follow the telescope again</button></div>
       <button class="calchip hzchip" id="hzChip" aria-pressed="true" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 19h20M2 19v-5l4-1V9h5v4l3-3 4 3v-2h2v8"/></svg><span id="hzChipTxt"></span><i class="hzeye" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path class="off" d="M4 4l16 16"/></svg></i></button>
+      <button class="calchip navresume" id="navResume" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span id="navResumeTxt"></span></button>
       <div class="calchip tgtchip" id="tgtChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
         <button class="chiplabel" id="tgtChipTxt" aria-label="Target details"><b id="tgtChipName"></b> <span id="tgtChipState"></span></button>
@@ -2843,15 +2856,9 @@ function fillFitBox(box, o) {
 }
 // A search result opens its details; ← (or closing them) goes back to the search, same query and place.
 // "Set as target" in the details sets it and closes both.
-const searchState = { scroll: 0, fromList: false };
 function openFromSearch(T) {
   const o = objById(T.id) || { id: T.id, name: T.name, kind: T.kind, desig: T.sub, mag: T.mag, vec: T.vec };
-  searchState.scroll = scroller($("searchSheet")).scrollTop; searchState.fromList = st.fromList;
-  st.fromList = false; closeSheet("searchSheet"); showInfo(o, "search");
-}
-function backToSearch() {
-  st.fromList = searchState.fromList; showResults(); openSheet("searchSheet");
-  const inner = scroller($("searchSheet")); requestAnimationFrame(() => { inner.scrollTop = searchState.scroll; });
+  showInfo(o, "search");
 }
 // No target: the red ring, the arrow and the directions disappear
 function clearTarget() {
@@ -5414,12 +5421,12 @@ function rowActs(id, getObj, onDetails, ...extra) {
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
     selectTarget(o.id);
     if (cfg.target !== o.id) return;   // the Sun: first the solar filter question
-    if (sh && !sidePanels()) closeSheet(sh.id, true);
+    if (sh) navToMap(sh.id);
     hint(o.name + " is the target.", 2500);
   };
   const mb = document.createElement("button"); mb.className = "ostar omap"; mb.innerHTML = ICON.map; mb.hidden = !canShowOnMap();
   mb.setAttribute("aria-label", "Show " + name() + " on the map");
-  mb.onclick = e => { e.stopPropagation(); const o = getObj(); if (!o) return; const sh = mb.closest(".sheet"); showOnMap(o); if (sh && !sidePanels()) closeSheet(sh.id, true); };
+  mb.onclick = e => { e.stopPropagation(); const o = getObj(); if (!o) return; const sh = mb.closest(".sheet"); showOnMap(o); if (sh) navToMap(sh.id); };
   box.append(ib, tb, mb, ...extra.filter(Boolean));
   syncRowTarget(tb); queueMicrotask(() => syncRowTarget(tb));   // again once the row holds it (its tint)
   return box;
@@ -5445,7 +5452,7 @@ function syncInfoObs(o) {
   h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' + "<b>Seen " + es.length + "×</b>";
   const sp = document.createElement("span"); sp.className = "note"; sp.textContent = "· last on " + d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h1.append(sp); h.append(h1);
   if (last.note || last.ep) { const p = document.createElement("p"); p.textContent = (last.note ? "“" + last.note + "” " : "") + [last.ep, last.seeing ? "seeing " + last.seeing + "/5" : ""].filter(Boolean).join(" · "); h.append(p); }
-  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => { st.infoFromList = false; openLog(o.id); }; h.append(b);
+  const b = document.createElement("button"); b.textContent = "All entries for " + o.id.replace(/^SAT\d+$/, o.name); b.onclick = () => openLog(o.id); h.append(b);
 }
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
@@ -5797,7 +5804,6 @@ function fillTonight(box, p) {
 // The list opens on the tab used last (remembered across starts)
 const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
 // Back from details or the target panel that were opened from the list: same tab, same place
-function backToList() { renderList(); openSheet("listSheet"); const inner = scroller($("listSheet")); requestAnimationFrame(() => { inner.scrollTop = listState.scroll; }); }
 function todoItems() {
   const tn = nightPlan(), tonight = sets().tonight;
   const items = obs.list.filter(x => !tonight.has(x.id)).map(x => ({ x, p: rowPlan(x.id, tn) })).filter(r => r.p).sort((a, b) => a.p.sort - b.p.sort);
@@ -5963,8 +5969,7 @@ function renderList() {
 const tgtPanel = { at: 0 };
 function openTargetPanel(fromList) {
   if (!targetById(cfg.target)) { openSearch(); hint("No target yet: choose one.", 3000); return; }
-  st.tgtFromList = fromList === true; $("tgtBack").hidden = !st.tgtFromList;
-  syncTargetPanel(true); openSheet("targetSheet");
+  syncTargetPanel(true); openSheet("targetSheet", fromList === true ? "push" : undefined);
 }
 function syncTargetPanel(force) {
   const sh = $("targetSheet"); if (!force && (sh.hidden || Date.now() - tgtPanel.at < 500)) return;
@@ -6015,10 +6020,10 @@ function syncTargetPanel(force) {
   if (nx) { const nn = targetById(nx.x.id)?.name || nx.x.name; $("tgtNext").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg><span></span>'; $("tgtNext").querySelector("span").textContent = "Next: " + nn; $("tgtNext").setAttribute("aria-label", "Next on the plan: " + nn); }
   $("tgtStar").onclick = () => { toggleStar(o); syncTargetPanel(true); };
   $("tgtPlan").onclick = () => { togglePlan(o); syncTargetPanel(true); };
-  $("tgtSeen").onclick = () => { st.tgtFromList = false; openSeen(o); };
+  $("tgtSeen").onclick = () => openSeen(o);
   $("tgtNext").onclick = () => { if (nx) { goNext(nx); syncTargetPanel(true); } };
-  $("tgtChange").onclick = () => { st.tgtFromList = false; closeSheet("targetSheet"); openSearch(); };
-  $("tgtClear").onclick = () => { st.tgtFromList = false; if (sidePanels()) { clearTarget(); openSearch(); } else { closeSheet("targetSheet"); clearTarget(); } };
+  $("tgtChange").onclick = () => openSearch();
+  $("tgtClear").onclick = () => { if (sidePanels()) { clearTarget(); openSearch(); } else { closeSheet("targetSheet"); clearTarget(); } };
 }
 function tgtDetails(o, T, v, t) {
   const facts = [], rd = Solver.v2radec(v);
@@ -6046,7 +6051,7 @@ function tgtDetails(o, T, v, t) {
     h1.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b></b><span class="note"></span>';
     h1.querySelector("b").textContent = "Seen " + es.length + "×"; h1.querySelector(".note").textContent = "· last on " + new Date(last.t).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }); h.append(h1);
     if (last.note) { const p = document.createElement("p"); p.textContent = "“" + last.note + "”"; h.append(p); }
-    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => { st.tgtFromList = false; openLog(T.id); }; h.append(b);
+    const b = document.createElement("button"); b.textContent = "All entries"; b.onclick = () => openLog(T.id); h.append(b);
   }
   const lb = $("tgtLinks"); lb.textContent = "";
   (o.links || []).forEach(([label, url]) => { const a = document.createElement("a"); a.className = "btn"; a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = label + " ↗"; lb.append(a); });
@@ -6055,8 +6060,8 @@ function tgtDetails(o, T, v, t) {
 $("fabTarget").onclick = () => openTargetPanel(false);
 $("tgtChipTxt").onclick = () => openTargetPanel(false);
 $("btnTgtOff").onclick = () => clearTarget();
-$("infoBack").onclick = () => closeSheet("infoSheet");
-$("tgtBack").onclick = () => closeSheet("targetSheet");
+$("infoBack").onclick = () => navBack(navSideOf("infoSheet"));
+$("tgtBack").onclick = () => navBack(navSideOf("targetSheet"));
 function unseeTonight(id, name, btn) {
   const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
   if (!es.length) return;
@@ -6091,7 +6096,7 @@ function revealNew() {
   // stays on the last used tab; scrolls to the new object when it is in this tab
   setTimeout(() => { const row = [...document.querySelectorAll("#listBody .orow")].find(r => r.dataset.id === newest.id); row && row.scrollIntoView({ block: "center", behavior: "smooth" }); }, 380);
 }
-$("listAdd").onclick = () => { closeSheet("listSheet"); openSearch(); st.fromList = true; hint("Tap the list icon to plan an object for tonight, the star to keep it for some day.", 4000); };
+$("listAdd").onclick = () => { openSearch(); st.fromList = true; hint("Tap the list icon to plan an object for tonight, the star to keep it for some day.", 4000); };
 
 // "Seen": a log entry in a few taps. Date, eyepiece, altitude, Moon and site are filled in.
 const seenState = { o: null, entry: null, res: "easy", see: 0, tr: 0 };
@@ -6184,7 +6189,7 @@ function saveSeen(goOn) {
   const wasStar = e.result !== "miss" && obs.starred.some(x => x.id === e.obj);
   if (wasStar) obs.starred = obs.starred.filter(x => x.id !== e.obj);
   const fromLog = seenState.fromLog;
-  saveObs(); closeSheet("seenSheet");
+  saveObs(); seenDone();
   if (!$("logSheet").hidden) renderLog();
   if (sidePanels() && !fromLog && !(goOn && seenState.next)) setTimeout(() => { if (!sideBusy("infoSheet")) { if (cfg.target === e.obj) openTargetPanel(false); else { const ob = objById(e.obj); if (ob) showInfo(ob); } } }, 80);
   const pn = first ? progNote(e, wasSeen) : "";
@@ -6194,15 +6199,17 @@ function saveSeen(goOn) {
 }
 $("seenSave").onclick = () => saveSeen(false);
 $("seenInfo").onclick = () => { const o = seenState.o && (objById(seenState.o.id) || seenState.o); if (o) showInfo(o); };
-$("seenBack").onclick = () => closeSheet("seenSheet");
+$("seenBack").onclick = () => navBack(navSideOf("seenSheet"));
+// saved or deleted: back to where it was opened from (details, the logbook), else the panel closes
+function seenDone() { if (navDepth("seenSheet") && navCurrent(navSideOf("seenSheet")) === $("seenSheet")) navBack(navSideOf("seenSheet")); else closeSheet("seenSheet"); }
 $("seenPrev").onclick = () => stepEntry(seenState.prevE);
 $("seenNextE").onclick = () => stepEntry(seenState.nextE);
 $("seenSaveNext").onclick = () => saveSeen(true);
 $("seenDelete").onclick = () => {
   const e = seenState.entry; if (!e) return;
   armDelete($("seenDelete"), "Yes, delete", e.name + ", " + new Date(e.t).toLocaleString([], { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + ": the entry is deleted. This can’t be undone.", () => {
-    const fromLog = seenState.fromLog; seenState.fromLog = false;
-    obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); closeSheet("seenSheet"); if (fromLog) backToLog(); else if (!$("logSheet").hidden) renderLog();
+    seenState.fromLog = false; seenState.entry = null;
+    obs.log = obs.log.filter(x => x.uid !== e.uid); saveObs(); seenDone(); if (!$("logSheet").hidden) renderLog();
     hint("Entry deleted.", 2500);
   });
 };
@@ -6273,7 +6280,7 @@ function renderLog() {
     r.querySelector(".tm").textContent = HM.format(d);
     const b = r.querySelector("b"); b.textContent = obsName(e.obj, e.name); if (e.result === "miss") b.className = "miss";
     r.querySelector("small").textContent = [instKind(e) === "scope" ? e.ep : entryInst(e), e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
-    r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
+    r.onclick = () => openSeen(objById(e.obj), e, true);
     body.append(r);
   });
 }
@@ -6505,7 +6512,7 @@ function renderLogExport() {
   if ($("lxYearBtn")) $("lxYearBtn").onclick = () => { if (!pro.on) return proNeed("The year in review is part of Zenigo Pro."); lx.year = yr; renderLogExport(); };
 }
 $("logExport").onclick = () => openLogExport();
-$("lxBack").onclick = () => { if (lx.year) { lx.year = null; renderLogExport(); return; } closeSheet("logExpSheet"); backToLog(); };
+$("lxBack").onclick = () => { if (lx.year) { lx.year = null; renderLogExport(); return; } if (navDepth("logExpSheet")) return navBack(navSideOf("logExpSheet")); closeSheet("logExpSheet"); backToLog(); };
 // CSV: one row per entry, every field
 function logCsv(list) {
   const q = v => { const s = v == null ? "" : String(v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -6723,7 +6730,6 @@ function progRow(P, r) {
   else { const d = document.createElement("div"), g = document.createElement("button"); d.className = "racts"; g.className = "ostar oinfo"; g.innerHTML = ICON.info; g.setAttribute("aria-label", "Details of " + progName(P, id) + " (needs the extended catalogue)"); g.onclick = det; d.append(g); row.append(d); }   // only in the extended catalogue: ⓘ offers it
   return row;
 }
-function backToProg() { renderProgs(); openSheet("progSheet"); const b = scroller($("progSheet")); requestAnimationFrame(() => { b.scrollTop = progState.scroll; }); }
 // After a first sighting: the progress in the programmes it belongs to, and a word at 25, 50, 75 and 100 %
 // after a new entry: a first sighting for the plain programmes, a first one with binoculars for Binocular Messier
 function progNote(e, wasSeen) {
@@ -6765,8 +6771,8 @@ function progExport(P, kind) {
     + rows.map(r => "<tr>" + cols.map(c => "<td>" + esc(r[c[0]]) + "</td>").join("") + "</tr>").join("") + "</tbody></table></body></html>";
   download(file + ".html", html, "text/html");
 }
-$("btnProg").onclick = () => { closeSheet("menu"); openProgs(null); };
-$("progBack").onclick = () => openProgs(null);
+$("btnProg").onclick = () => openProgs(null);
+$("progBack").onclick = () => { if (progState.p) openProgs(null); else navBack(navSideOf("progSheet")); };
 /* ---------------- Backup (in the settings): lists, or everything including the settings ---------------- */
 function syncBackup() {
   const ago = obs.exportedAt ? Math.round((Date.now() - obs.exportedAt) / 86400e3) : null;
@@ -7242,7 +7248,7 @@ function stopScan() {
 $("syncScan").onclick = startScan;
 $("syncPasteGo").onclick = async () => { const code = ZSync.parseJoin($("syncPaste").value); if (!code) { hint("That is not a Zenigo sync link or code.", 4000); return; } stopScan(); closeSheet("syncSheet"); if (await joinSync(code)) showSyncSettings(); };
 $("syncPaste").onkeydown = e => { if (e.key === "Enter") $("syncPasteGo").click(); };
-$("syncBack").onclick = () => { stopScan(); showSyncSettings(); };
+$("syncBack").onclick = () => { stopScan(); if (navDepth("syncSheet")) navBack(navSideOf("syncSheet")); else showSyncSettings(); };
 // Menu: not set up yet → the Sync settings; set up → sync now (the line under it shows how it went)
 $("btnSync").onclick = async () => { if (!syncS.code) { showSyncSettings(); return; } if (await syncNow({ loud: true })) hint("Synced.", 2000); };
 $("syncSetup").onclick = async () => {
@@ -7692,7 +7698,7 @@ $("liveBackRole").onclick = () => { live.ui = "role"; renderLive(); };
 $("liveChangeRole").onclick = () => { live.ui = "role"; renderLive(); };
 $("liveConnect").onclick = () => liveRole() === "scope" ? liveStart() : liveJoin();
 $("liveEnd").onclick = () => { liveStop(); hint("Live connection ended.", 2500); };
-$("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); liveSettings("go"); };
+$("liveBack").onclick = () => { liveScanStop(); if (live.state !== "connected") liveStop(true); if (navDepth("liveSheet")) { if (live.state !== "connected") live.ui = "go"; navBack(navSideOf("liveSheet")); } else liveSettings("go"); };
 document.querySelectorAll('input[name="liveRole"]').forEach(r => r.onchange = () => {
   cfg.liveRole = r.value; save(); live.sent = null; live.paused = false; liveHello(); liveWantSync(); liveVideoSync(); lastSig = []; updateGuide(); renderLive();
 });
@@ -7700,7 +7706,7 @@ $("liveVideoOn").onchange = e => { cfg.liveVideo = e.target.checked; save(); liv
 function liveSetShowCam(on) { cfg.liveShowCam = !!on; save(); if (on && live.paused) liveResume(); liveWantSync(); lastSig = []; renderLive(); }
 $("liveShowCam").onchange = e => liveSetShowCam(e.target.checked);
 $("liveChipCam").onclick = () => liveSetShowCam(!cfg.liveShowCam);
-$("btnLive").onclick = () => { closeSheet("menu"); liveSettings(); };
+$("btnLive").onclick = () => liveSettings();
 $("liveChipLTxt").onclick = () => liveSettings();
 $("liveChipLOff").onclick = () => $("liveChipOff").click();
 $("liveFollowTxt").onclick = () => liveResume();
@@ -7718,8 +7724,9 @@ $("liveChipOff").onclick = async () => {
 };
 addEventListener("pagehide", () => { if (live.state === "connected") liveSendRaw({ t: "bye" }); });
 renderLive();
-$("btnLog").onclick = () => { closeSheet("menu"); openLog(null); };
-$("logMenu").onclick = $("setMenu").onclick = () => $("btnMenu").onclick();
+$("btnLog").onclick = () => openLog(null);
+$("logMenu").onclick = () => navBack(navSideOf("logSheet"));
+$("setMenu").onclick = () => navBack(navSideOf("sheet"));
 // right below the target line, wherever it ends (its height changes with the directions shown)
 const placeReadout = () => { const g = $("guide").getBoundingClientRect(), app = $("guide").offsetParent; if (!app) return; document.documentElement.style.setProperty("--rd-top", Math.round(g.bottom - app.getBoundingClientRect().top + 6) + "px"); };
 // The button column on the right must stay below the directions and the position box at the top: when it would reach
@@ -7775,7 +7782,7 @@ function syncTime() {
   if (document.activeElement !== $("tmRange")) $("tmRange").value = Math.max(-720, Math.min(1440, Math.round(st.tOff / 60000)));
   if (document.activeElement !== $("tmPick")) { const p = n => String(n).padStart(2, "0"); $("tmPick").value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 }
-$("btnTime").onclick = () => { closeSheet("menu"); openSheet("timeSheet"); syncTime(); };
+$("btnTime").onclick = () => { openSheet("timeSheet"); syncTime(); };
 $("timeChipTxt").onclick = () => { openSheet("timeSheet"); syncTime(); };
 $("btnTimeNow").onclick = () => setTimeOffset(0);
 $("tmRange").oninput = () => setTimeOffset(+$("tmRange").value * 60000);
@@ -7971,7 +7978,7 @@ function fillEpBox(box, o, keep) {
     const k = document.createElement("div"); k.className = "k"; k.textContent = "Which eyepiece";
     const d = document.createElement("div"); d.className = "course"; d.textContent = "Enter " + miss + " in the settings to see which eyepiece suits this object best.";
     const b = document.createElement("button"); b.className = "lnk"; b.textContent = "Equipment settings →";
-    b.onclick = () => { st.infoFromList = st.tgtFromList = false; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope");
+    b.onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope");
       setTimeout(() => $(aperture() ? "oEps" : "oAp").scrollIntoView({ block: "center", behavior: reduceMotion() ? "auto" : "smooth" }), 350); };
     box.append(k, d, b); box.hidden = false; return true;
   }
@@ -8588,7 +8595,9 @@ function aiFinish(use) {
   aiDone(true);
 }
 function aiDone(added) {
-  const from = ai.from; closeSheet("addInstSheet");
+  const from = ai.from;
+  if (navDepth("addInstSheet") && navCurrent(navSideOf("addInstSheet")) === $("addInstSheet")) { navBack(navSideOf("addInstSheet")); if (from === "settings") { st.editId = null; syncSettings(); setSetTab("scope"); } return; }
+  closeSheet("addInstSheet");
   if (from === "settings") setTimeout(() => { st.editId = null; syncSettings(); openSheet("sheet"); setSetTab("scope"); }, 60);
   else if (from === "quick" && !added) setTimeout(() => openSheet("quickSheet"), 60);
   else if (from === "switch") setTimeout(openInstSheet, 60);
@@ -8789,7 +8798,7 @@ function renderQuickSites() {
   });
   const a = document.createElement("button"); a.className = "chip"; a.textContent = "+ Here"; a.setAttribute("aria-label", "New location here (GPS)");
   a.onclick = () => { if (!pro.on) return addSite(); if (!navigator.geolocation) return addSite(); navigator.geolocation.getCurrentPosition(p => { addSite({ lat: p.coords.latitude, lon: p.coords.longitude, loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } }); syncQuick(); hint("New location here. Give it a name in Settings › Location.", 4000); }, () => hint("Location not shared.", 3000), { timeout: 10000 }); };
-  const mg = document.createElement("button"); mg.className = "lnk"; mg.textContent = "Manage ›"; mg.onclick = () => { closeSheet("quickSheet"); syncSettings(); openSheet("sheet"); setSetTab("site"); };
+  const mg = document.createElement("button"); mg.className = "lnk"; mg.textContent = "Manage ›"; mg.onclick = () => { syncSettings(); openSheet("sheet"); setSetTab("site"); };
   q.append(a, mg);
 }
 
@@ -9216,23 +9225,175 @@ function syncSettings() {
 // Like on iOS: slide in from the bottom, can be dragged down by the handle (or from the very top of the content).
 const SHEETS = [...document.querySelectorAll(".sheet")];
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-function openSheet(id) {
-  // with room for both (wide screens), the menu on the left and a panel on the right stay open side by side
-  SHEETS.forEach(x => { if (x.id !== id && !x.hidden && !(bothPanels() && sheetSide(x.id) !== sheetSide(id))) closeSheet(x.id); });
-  const sh = $(id); clearTimeout(sh._t);
-  sh.hidden = false; sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
-  sh.querySelector(".inner").scrollTop = 0; scroller(sh).scrollTop = 0;
+/* ---------------- Panels: one per side, its screens as a stack ---------------- */
+// A panel shows one screen. What is opened from inside it (a tap in that panel) comes on top of a stack and the content
+// changes in place; ← goes back to the screen below as it was (tab, chips, text, scroll). ✕, a tap beside it, swiping it
+// down or Esc on the first screen close the panel with its stack. Opened from the map, a map button or the other side's
+// panel: a new stack. Questions and offers (OVERLAY) open above the panel and leave it as it is. Phones and narrower
+// tablets have one panel; wide screens one on each side (LEFT), each with its own stack.
+const OVERLAY = new Set(["confirmSheet", "sunSheet", "permSheet", "proSheet"]);
+const NAV = { L: [], R: [], last: "R", resume: null, rt: 0 };
+const navSideOf = id => (bothPanels() ? sheetSide(id) : "R");
+let navTap = { sheet: null, t: 0 };   // the panel of the last tap (a click, also from the keyboard)
+document.addEventListener("click", e => { navTap = { sheet: e.target && e.target.closest ? e.target.closest(".sheet") : null, t: performance.now() }; }, true);
+const navCurrent = side => SHEETS.find(x => x._shown && !OVERLAY.has(x.id) && navSideOf(x.id) === side) || null;
+// the screen's name, for ← and the way back from the map
+function screenTitle(id) {
+  if (id === "menu") return "Menu";
+  if (id === "infoSheet") return $("infoName").textContent || "Details";
+  const h = $(id).querySelector(".grab h2"); if (!h) return "";
+  return [...h.childNodes].filter(n => n.nodeType === 3 || (n.tagName !== "BUTTON" && !n.classList.contains("navback"))).map(n => n.textContent).join("").trim();
+}
+// what a screen keeps when another comes on top, and how it comes back (its content is rendered again, fresh)
+const SCREEN = {
+  searchSheet: { save: () => ({ q: $("q").value }), restore: x => { $("q").value = x.q; renderChips(); showResults(); } },
+  listSheet: { restore: () => { renderList(); if (st.fromList) { st.fromList = false; revealNew(); return true; } } },
+  tonightSheet: { restore: () => showTonight() },
+  progSheet: { restore: () => renderProgs() },
+  logSheet: { restore: () => renderLog() },
+  infoSheet: { save: () => ({ o: st.picked }), restore: x => { if (x.o) showInfo(x.o); } },
+  targetSheet: { restore: () => syncTargetPanel(true) },
+  sheet: { restore: () => { syncSettings(); if (cfg.setTab === "live") renderLive(); } },
+  menu: { restore: () => { renderReadout(); renderProgMenu(); } },
+  quickSheet: { restore: () => syncQuick() },
+  logExpSheet: { restore: () => renderLogExport() },
+};
+function screenSave(id) { const sh = $(id), sc = SCREEN[id]; return { a: scroller(sh).scrollTop, b: sh.querySelector(".inner").scrollTop, x: sc && sc.save ? sc.save() : null }; }
+function screenRestore(id, s) {
+  const sh = $(id), sc = SCREEN[id], own = sc && sc.restore ? sc.restore(s.x) : false;
+  if (own) return;   // the screen scrolled itself (e.g. to what was just added)
+  const go = () => { scroller(sh).scrollTop = s.a; sh.querySelector(".inner").scrollTop = s.b; };
+  go(); requestAnimationFrame(go);
+}
+// what a screen stops when it is left (closed or covered)
+function screenLeave(id) {
+  if (id === "syncSheet") stopScan();
+  if (id === "liveSheet") { liveScanStop(); if (live.state === "offer" || live.state === "answer") liveStop(true); }
+  if (id === "seenSheet" && seenState.fromLog) keepSeenEdits();
+}
+function showSheet(sh) {
+  clearTimeout(sh._t); sh._shown = true;
+  sh.hidden = false; const inner = sh.querySelector(".inner"); inner.style.transform = ""; inner.style.minHeight = ""; sh.style.background = "";
+  inner.scrollTop = 0; scroller(sh).scrollTop = 0;
   const tok = sh._tok = (sh._tok || 0) + 1;   // closed again before it slid in: stays closed
   requestAnimationFrame(() => requestAnimationFrame(() => { if (sh._tok === tok && !sh.hidden) sh.classList.add("open"); }));
-  syncPanels(id);
 }
+function hideSheet(id) {
+  const sh = $(id); if (sh.hidden) return;
+  if (sh._shown) screenLeave(id);
+  sh._shown = false; sh._tok = (sh._tok || 0) + 1;
+  if (sh._res) { const r = sh._res; sh._res = null; r(false); }
+  const inner = sh.querySelector(".inner");
+  sh.classList.remove("open", "dragging"); inner.style.transform = ""; sh.style.background = "";
+  if (id === "infoSheet") st.picked = null;
+  syncPanels(null, id);
+  if (reduceMotion()) { sh.hidden = true; inner.style.minHeight = ""; return; }
+  clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) { sh.hidden = true; inner.style.minHeight = ""; } }, 360);
+}
+// one screen for another in the same panel: no sliding in and out, the new content comes in from the side
+function swapSheet(cur, next, dir) {
+  const ci = cur.querySelector(".inner"), ni = next.querySelector(".inner"), h = ci.offsetHeight;
+  screenLeave(cur.id);
+  next.classList.add("nav-instant"); cur.classList.add("nav-instant");
+  clearTimeout(next._t); clearTimeout(cur._t);
+  next.hidden = false; next._shown = true; next.style.background = ""; ni.style.transform = "";
+  ni.style.minHeight = sidePanels() ? "" : Math.round(h) + "px";   // phones: the panel keeps its height, no jump
+  if (dir > 0) { ni.scrollTop = 0; scroller(next).scrollTop = 0; }
+  next._tok = (next._tok || 0) + 1; next.classList.add("open");
+  cur._shown = false; cur._tok = (cur._tok || 0) + 1; cur.classList.remove("open", "dragging"); cur.hidden = true; ci.style.minHeight = ""; ci.style.transform = "";
+  if (cur.id === "infoSheet" && next.id !== "infoSheet") st.picked = null;
+  ni.classList.remove("nav-fwd", "nav-back"); void ni.offsetWidth;
+  if (!reduceMotion()) ni.classList.add(dir > 0 ? "nav-fwd" : "nav-back");
+  requestAnimationFrame(() => requestAnimationFrame(() => { next.classList.remove("nav-instant"); cur.classList.remove("nav-instant"); }));
+}
+// how: "push" (on top of the screen shown), "back" (the screen below again), "root" (a new stack); without: "push" when
+// the tap that led here was in the panel shown on that side, else "root"
+function openSheet(id, how) {
+  const sh = $(id);
+  if (OVERLAY.has(id)) { if (!sh._shown) showSheet(sh); histArm(); return; }
+  const side = navSideOf(id), cur = navCurrent(side);
+  if (cur === sh) { navSync(); return; }   // already shown: the caller renders the new content
+  const fromHere = !!cur && navTap.sheet === cur && performance.now() - navTap.t < 1500;
+  let mode = how || (fromHere ? "push" : "root");
+  if (!cur && mode === "push") mode = "root";
+  NAV.last = side; hideResume();
+  if (cur && mode !== "root") {
+    if (mode === "push") NAV[side].push({ id: cur.id, state: screenSave(cur.id) });
+    swapSheet(cur, sh, mode === "back" ? -1 : 1);
+  } else {
+    if (mode !== "back") NAV[side] = [];
+    // the other panels close: on wide screens only those of this side; questions above stay
+    SHEETS.forEach(x => { if (x !== sh && !x.hidden && !OVERLAY.has(x.id) && navSideOf(x.id) === side) hideSheet(x.id); });
+    if (!bothPanels()) SHEETS.forEach(x => { if (x !== sh && !x.hidden && !OVERLAY.has(x.id)) hideSheet(x.id); });
+    showSheet(sh);
+  }
+  histArm(); navSync(); syncPanels(id);
+}
+// ←: the screen below, as it was; on the first screen it closes the panel
+function navBack(side = NAV.last) {
+  const e = NAV[side].pop(), cur = navCurrent(side);
+  if (!e) { if (cur) closeSheet(cur.id); return; }
+  NAV.last = side; openSheet(e.id, "back"); screenRestore(e.id, e.state); navSync();
+}
+const navDepth = id => NAV[navSideOf(id)].length;
+// the ← in each panel: shown when there is a screen below (its own back buttons, or one added to the title)
+const NAVBACK = { infoSheet: "infoBack", targetSheet: "tgtBack", seenSheet: "seenBack", sheet: "setMenu", logSheet: "logMenu" };
+const NAVBACK_FALLBACK = { syncSheet: "syncBack", liveSheet: "liveBack", logExpSheet: "lxBack" };   // shown always: without a screen below they go where they always went
+SHEETS.forEach(sh => {
+  if (OVERLAY.has(sh.id) || NAVBACK[sh.id] || NAVBACK_FALLBACK[sh.id] || sh.id === "progSheet" || sh.id === "addInstSheet") return;
+  const h = sh.querySelector(".grab h2"); if (!h) return;
+  const b = document.createElement("button"); b.className = "iconbtn navback"; b.hidden = true; b.setAttribute("aria-label", "Back");
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+  b.onclick = () => navBack(navSideOf(sh.id)); h.prepend(b); NAVBACK[sh.id] = b;
+});
+function navSync() {
+  ["L", "R"].forEach(side => {
+    const cur = navCurrent(side), below = NAV[side][NAV[side].length - 1];
+    if (!cur) return;
+    const label = below ? "Back to " + screenTitle(below.id) : "";
+    const b = typeof NAVBACK[cur.id] === "string" ? $(NAVBACK[cur.id]) : NAVBACK[cur.id];
+    if (b) { b.hidden = !below; if (below) b.setAttribute("aria-label", label); }
+    const fb = NAVBACK_FALLBACK[cur.id] && $(NAVBACK_FALLBACK[cur.id]); if (fb && below) fb.setAttribute("aria-label", label);
+    if (cur.id === "progSheet") { $("progBack").hidden = !(progState.p || below); }
+  });
+}
+// Showing something on the map from a panel (◎, Show on map, Set as target): on a phone the panel goes so the map is
+// seen; a chip "‹ <screen>" on the map brings it back exactly as it was (for a while)
+function navToMap(fromId) {
+  if (sidePanels()) return;
+  const side = navSideOf(fromId), cur = navCurrent(side); if (!cur) return;
+  const stack = NAV[side].concat([{ id: cur.id, state: screenSave(cur.id) }]), title = screenTitle(cur.id);
+  closeSheet(cur.id);
+  NAV.resume = { side, stack }; $("navResumeTxt").textContent = title; $("navResume").setAttribute("aria-label", "Back to " + title); $("navResume").hidden = false;
+  clearTimeout(NAV.rt); NAV.rt = setTimeout(hideResume, 30000);
+}
+function hideResume() { NAV.resume = null; clearTimeout(NAV.rt); const c = $("navResume"); if (c) c.hidden = true; }
+$("navResume").onclick = () => {
+  const r = NAV.resume; if (!r) return; hideResume();
+  const top = r.stack.pop(); openSheet(top.id, "root"); NAV[r.side] = r.stack; screenRestore(top.id, top.state); navSync();
+};
+// The system's back (Android, the browser's back button, swiping back): ← in the open panel. One history entry stands
+// for "a panel can be open"; a back consumes it and, while something is still open, a new one is set. It is never taken
+// out from code (a history.back() racing a panel opened right after could leave the app): when a back arrives with no
+// panel open, it is passed on.
+const hist = { on: false };
+function histArm() { if (hist.on) return; try { history.pushState({ zenigoPanel: true }, ""); hist.on = true; } catch (e) {} }
+const anyShown = () => SHEETS.some(x => x._shown);
+addEventListener("popstate", e => {
+  if (!hist.on || (e.state && e.state.zenigoPanel)) return;
+  hist.on = false;
+  if (!anyShown()) { try { history.back(); } catch (x) {} return; }
+  const ov = SHEETS.find(x => x._shown && OVERLAY.has(x.id));
+  if (ov) closeSheet(ov.id); else navBack(navCurrent(NAV.last) ? NAV.last : NAV.last === "L" ? "R" : "L");
+  if (anyShown()) histArm();
+});
 // Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
 // avoid the buttons, so their position is re-read while they slide.
 const sidePanels = () => matchMedia("(min-width: 900px) and (min-height: 500px)").matches;
 // After choosing a target in a panel: on tablet and desktop the panel stays open and shows the target, on phones it closes
 function afterPick(fromSheet, id) {
   if (id && cfg.target !== id) return;   // e.g. the Sun asks about the filter first
-  if (sidePanels()) { if (cfg.target) openTargetPanel(false); } else closeSheet(fromSheet);
+  if (sidePanels()) { if (cfg.target) openTargetPanel(false); } else navToMap(fromSheet);
 }
 const bothPanels = () => sidePanels() && innerWidth >= 1000;
 // tablet and desktop: the menu and everything about the logbook and the settings open on the left, the rest on the right
@@ -9327,36 +9488,13 @@ function askConfirm(title, text, okLabel, altLabel) {
 }
 // final: closed with ✕ (or a tap beside it): the panel closes, nothing opens again. Back buttons (and swiping it
 // down on a phone) go back to where it was opened from.
+// Closes a panel with its stack (on wide screens that side's); a question above closes alone. (final: kept for the
+// callers that said so; ✕, a tap beside the panel, swiping it down and closing from code all do the same now)
 function closeSheet(id, final) {
   const sh = $(id); if (sh.hidden) return;
-  if (final) {
-    if (id === "infoSheet" || id === "targetSheet") { st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true; }
-    if (id === "seenSheet" && seenState.fromLog) { keepSeenEdits(); seenState.fromLog = false; }
-    if (id === "searchSheet") st.fromList = false;
-  }
-  if (id === "syncSheet") stopScan();
-  if (id === "liveSheet") { liveScanStop(); if (live.state === "offer" || live.state === "answer") { liveStop(true); } }
-  sh._tok = (sh._tok || 0) + 1;
-  // Find target opened with "Add" in the list: closing it goes back to the list, with the new objects marked
-  if ((id === "infoSheet" && st.infoFromList) || (id === "targetSheet" && st.tgtFromList)) {   // opened from the list or the search: back to it
-    const back = id === "infoSheet" && st.infoFromList === "search" ? backToSearch : id === "infoSheet" && st.infoFromList === "tonight" ? backToTonight : id === "infoSheet" && st.infoFromList === "prog" ? backToProg : backToList;
-    st.infoFromList = st.tgtFromList = false; $("infoBack").hidden = $("tgtBack").hidden = true;
-    setTimeout(() => { if (!sideBusy(id)) back(); }, 60);
-  }
-  if (id === "seenSheet" && seenState.fromLog) {   // an entry opened from the logbook: changes are kept, back to the logbook
-    keepSeenEdits(); seenState.fromLog = false;
-    setTimeout(() => { if (!sideBusy(id)) backToLog(); }, 60);
-  }
-  if (id === "searchSheet" && st.fromList) {
-    st.fromList = false;
-    setTimeout(() => { if (!sideBusy(id)) { renderList(); openSheet("listSheet"); revealNew(); } }, 60);
-  }
-  if (sh._res) { const r = sh._res; sh._res = null; r(false); }
-  sh.classList.remove("open", "dragging"); sh.querySelector(".inner").style.transform = ""; sh.style.background = "";
-  if (id === "infoSheet") st.picked = null;
-  syncPanels(null, id);
-  if (reduceMotion()) { sh.hidden = true; return; }
-  clearTimeout(sh._t); sh._t = setTimeout(() => { if (!sh.classList.contains("open")) sh.hidden = true; }, 360);
+  if (!OVERLAY.has(id)) { const side = navSideOf(id); if (navCurrent(side) === sh) NAV[side] = []; }
+  if (id === "searchSheet") st.fromList = false;
+  hideSheet(id); navSync();
 }
 // the element that scrolls: a body of its own (details: title and buttons stay put) or the whole panel
 function scroller(sh) { return sh.querySelector(".sbody") || sh.querySelector(".inner"); }
@@ -9397,7 +9535,11 @@ SHEETS.forEach(sh => {
   inner.addEventListener("touchend", e => { if (!e.target.closest(".grab")) end(); });
   inner.addEventListener("touchcancel", end);
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") SHEETS.forEach(x => closeSheet(x.id)); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const ov = SHEETS.find(x => x._shown && OVERLAY.has(x.id));
+  if (ov) closeSheet(ov.id); else if (anyShown()) navBack(navCurrent(NAV.last) ? NAV.last : NAV.last === "L" ? "R" : "L");
+});
 
 /* ---------------- Tap objects in the image ---------------- */
 const GREEK = { "α": "Alpha", "β": "Beta", "γ": "Gamma", "δ": "Delta", "ε": "Epsilon", "ζ": "Zeta", "η": "Eta", "θ": "Theta", "ι": "Iota", "κ": "Kappa", "λ": "Lambda", "μ": "Mu",
@@ -9512,14 +9654,12 @@ function showOnMap(o) {
   livePause();
   mv.az = h.az; mv.alt = Math.max(-90, Math.min(90, h.alt)); mv.fov = Math.max(20, Math.min(40, mv.fov || 40));
   st.focus = o; st.sol = mapSol(); st.solMode = "map"; lastSig = []; updateGuide();
-  if (!sidePanels()) { st.infoFromList = false; closeSheet("infoSheet"); }
+  navToMap("infoSheet");
   hint(o.name + (h.alt < 0 ? " is below the horizon " + (st.tOff ? "at that time" : "now") + "." : " · " + fmtDeg(h.alt, 0) + " high, towards " + compass(h.az) + "."), 3500);
 }
 // the details again after a change in them (tablet, desktop), at the same scroll position
 function reshowInfo(o, fromList) { const inner = scroller($("infoSheet")), sc = inner.scrollTop; showInfo(o, fromList); inner.scrollTop = sc; }
 function showInfo(o, fromList) {
-  st.infoFromList = fromList === "search" || fromList === "tonight" || fromList === "prog" ? fromList : !!fromList; $("infoBack").hidden = !fromList;
-  $("infoBack").setAttribute("aria-label", fromList === "search" ? "Back to the search" : fromList === "tonight" ? "Back to Tonight" : fromList === "prog" ? "Back to the programme" : "Back to the list");
   const t = skyNow().t, v = o.vec(t), rd = Solver.v2radec(v), h = horiz(v, t);
   const con = A.Constellation(rd.ra / 15, rd.dec);
   st.picked = o; st.focus = null;
@@ -9564,27 +9704,27 @@ function showInfo(o, fromList) {
   // In compass mode: the user aims at this object -> correct the compass by the azimuth difference
   $("infoSync").hidden = !(st.sensor && st.solMode === "compass" && sens.off);
   $("infoSync").onclick = () => {
-    st.infoFromList = false;
     if (st.tOff) setTimeOffset(0, null);
     const t = skyNow().t, tv = teleVec(); if (!tv) return;
     const want = horiz(o.vec(t), t), have = horiz(tv, t);
     const d = ((want.az - have.az) + 540) % 360 - 180;
     // the compass correction rotates the view clockwise in azimuth for negative values (east of north is positive az)
     setCompassCal(+((((+cfg.compassCal || 0) - d) + 540) % 360 - 180).toFixed(1));
-    if (!sidePanels()) closeSheet("infoSheet");
+    navToMap("infoSheet");
     hint("Aligned on " + o.name + ": compass corrected by " + fmtSigned(-d) + (Math.abs(want.alt - have.alt) > 3 ? ". Altitude differs by " + fmtDeg(Math.abs(want.alt - have.alt)) + ": aim more carefully or check the location." : "."), 6000);
   };
   syncInfoObs(o);
   $("infoStar").onclick = () => { toggleStar(o); syncInfoObs(o); };
   $("infoPlan").onclick = () => { togglePlan(o); syncInfoObs(o); };
-  $("infoSeen").onclick = () => { st.infoFromList = false; openSeen(o); };
+  $("infoSeen").onclick = () => openSeen(o);
   $("infoTarget").onclick = () => {
-    st.infoFromList = false;
-    if (isTarget) { clearTarget(); if (sidePanels()) reshowInfo(o, fromList); else closeSheet("infoSheet"); return; }
+    if (isTarget) { clearTarget(); reshowInfo(o, fromList); return; }
     if (!targetById(o.id)) TARGETS.push({ id: o.id, name: o.name, sub: o.desig || "", kind: o.kind, mag: o.mag, vec: o.vec });
-    selectTarget(o.id); if (sidePanels()) { if (cfg.target === o.id) reshowInfo(o, fromList); } else closeSheet("infoSheet");
+    selectTarget(o.id); if (cfg.target !== o.id) return;   // the Sun asks about the filter first
+    if (sidePanels()) reshowInfo(o, fromList); else navToMap("infoSheet");
   };
-  openSheet("infoSheet");
+  // opened from a list (a row's ⓘ): on top of it, so ← goes back there
+  openSheet("infoSheet", fromList ? "push" : undefined);
 }
 
 $("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); renderProgMenu(); openSheet("menu"); };
@@ -9750,7 +9890,6 @@ function fillComingUp(sec, el, esc) {
 // Details opened from Tonight: ← (or closing them) goes back to Tonight, at the same place
 const tonightState = { scroll: 0 };
 function infoFromTonight(o) { tonightState.scroll = scroller($("tonightSheet")).scrollTop; showInfo(o, "tonight"); }
-function backToTonight() { showTonight(); openSheet("tonightSheet"); const b = scroller($("tonightSheet")); requestAnimationFrame(() => { b.scrollTop = tonightState.scroll; }); }
 function showTonight() {
   const t = tonightData(), box = $("tonightBody"); box.textContent = "";
   const fmt = d => d ? HM.format(d) : "–";

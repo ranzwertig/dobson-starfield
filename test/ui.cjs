@@ -1038,7 +1038,7 @@ const TESTS = {
     ok(planned > before && planned - before <= 15, 'one tap plans the well placed ones (at most 15)', [before, planned]);
     // details from the programme and back
     await ev(p, () => document.querySelector('#progBody .orow .oinfo').click()); await wait(p, 400);
-    ok(await ev(p, () => !$('infoSheet').hidden && $('infoBack').getAttribute('aria-label') === 'Back to the programme'), 'a row opens the details, with a way back');
+    ok(await ev(p, () => !$('infoSheet').hidden && !$('infoBack').hidden && /^Back to Messier/.test($('infoBack').getAttribute('aria-label'))), 'a row opens the details, with a way back', await ev(p, () => $('infoBack').getAttribute('aria-label')));
     await p.click('#infoBack'); await wait(p, 400);
     ok(await ev(p, () => !$('progSheet').hidden && $('progTitleTxt').textContent === 'Messier'), 'back to the programme');
     // a first sighting: the progress in the hint
@@ -1293,6 +1293,8 @@ const TESTS = {
     await ev(p, () => [...document.querySelectorAll('#aiBtns .btn')].pop().click()); await wait(p, 600);
     const d = await ev(p, () => ({ n: cfg.instruments.length, name: curInst().name, eps: opt().eps.length, scope: opt().scope, sel: [...$('qInst').children].map(b => b.getAttribute('aria-checked')).join() }));
     ok(d.n === 2 && d.name === 'Dobson 10″' && d.eps === 4 && d.scope === 1250, 'added and in use', d);
+    ok(await ev(p, () => !$('quickSheet').hidden && $('addInstSheet').hidden), 'and back in Quick settings, where adding started');
+    await ev(p, () => closeSheet('quickSheet')); await wait(p, 400);
     // each instrument keeps its eyepiece choice and eyepiece point
     await ev(p, () => { setOptics({ ep: 3 }); cfg.tele = { x: 0.02, y: 0.03 }; save(); useInst(cfg.instruments[0].id); });
     let s = await ev(p, () => ({ name: curInst().name, eps: opt().eps.length, ep: opt().ep, tele: cfg.tele, view: !$('epInst').hidden }));
@@ -1768,6 +1770,88 @@ const TESTS = {
     ok(c1.sel && c2.n > 0 && c2.n2 === c2.n && !c2.busy, 'Good now: the chip at once, the results after the search, the same again from the memory', { c1, c2 });
     ok(await ev(p, () => nowFit(targetById('M31')).why.length > 0 && typeof nowFit(targetById('M31')).why[0] === 'string'), 'the reasons are still there when read');
     await done(p); extOn = false;
+  },
+  // Panels as stacks: what is opened inside a panel comes on top, the content changes in place, ← (and the system's
+  // back, Esc) returns to the screen below exactly as it was; ✕ closes the stack; ◎ / map leave a way back on the map
+  async navstack() {
+    const p = await page();
+    const shown = () => ev(p, () => SHEETS.filter(x => x._shown).map(x => x.id).join('+'));
+    // Find target → ⓘ → details → ←
+    await ev(p, () => { cfg.searchCats = ['messier']; save(); }); await p.tap('#fabSearch'); await wait(p, 500);
+    await p.fill('#q', 'm1'); await wait(p, 300);
+    await ev(p, () => { scroller($('searchSheet')).scrollTop = 120; }); await wait(p, 100);
+    const sc0 = await ev(p, () => scroller($('searchSheet')).scrollTop);
+    await p.tap('#results .rrow .oinfo'); await wait(p, 120);
+    let r = await ev(p, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), searchHidden: $('searchSheet').hidden, back: !$('infoBack').hidden && $('infoBack').getAttribute('aria-label'), depth: NAV.R.length }));
+    ok(r.s === 'infoSheet' && r.searchHidden && r.back === 'Back to Choose target' && r.depth === 1, 'ⓘ: the details replace the search in the same panel at once (no closing), with ←', r);
+    await shot(p, 'nav-details');
+    await p.tap('#infoBack'); await wait(p, 300);
+    r = await ev(p, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), q: $('q').value, cats: (cfg.searchCats || []).join(), sc: scroller($('searchSheet')).scrollTop, depth: NAV.R.length, rows: $('results').querySelectorAll('.rrow').length }));
+    ok(r.s === 'searchSheet' && r.q === 'm1' && r.cats === 'messier' && Math.abs(r.sc - sc0) < 2 && r.depth === 0 && r.rows > 0, '←: the search as it was (text, chips, scroll)', { r, sc0 });
+    // details → Seen → ← → ← ; the system back and Esc do the same
+    await p.tap('#results .rrow .oinfo'); await wait(p, 300);
+    await p.tap('#infoSeen'); await wait(p, 300);
+    r = await ev(p, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), back: !$('seenBack').hidden, depth: NAV.R.length }));
+    ok(r.s === 'seenSheet' && r.back && r.depth === 2, 'Seen from the details: on top, with ←', r);
+    await ev(p, () => history.back()); await wait(p, 500);
+    ok(await shown() === 'infoSheet', 'the system back: to the details');
+    await p.keyboard.press('Escape'); await wait(p, 400);
+    ok(await shown() === 'searchSheet', 'Esc: to the search');
+    await p.keyboard.press('Escape'); await wait(p, 500);
+    ok(await shown() === '' && await ev(p, () => typeof $ === 'function' && location.pathname.endsWith('/app/')), 'Esc on the first screen closes the panel; the app stays');
+    // ✕ closes the whole stack
+    await p.tap('#fabSearch'); await wait(p, 400); await p.tap('#results .rrow .oinfo'); await wait(p, 300);
+    await p.tap('#infoSheet [data-close]'); await wait(p, 500);
+    ok(await ev(p, () => SHEETS.every(x => !x._shown) && !NAV.R.length), '✕ closes the panel with everything below');
+    // a question above keeps the panel
+    await p.tap('#fabSearch'); await wait(p, 400); await p.tap('#results .rrow .oinfo'); await wait(p, 300);
+    await ev(p, () => proNeed('A test')); await wait(p, 400);
+    r = await ev(p, () => ({ pro: !$('proSheet').hidden, info: $('infoSheet')._shown, depth: NAV.R.length }));
+    ok(r.pro && r.info && r.depth === 1, 'the Pro offer opens above the details, which stay', r);
+    await ev(p, () => closeSheet('proSheet')); await wait(p, 400);
+    ok(await shown() === 'infoSheet' && await ev(p, () => NAV.R.length === 1), 'closed: the details with their ← again');
+    // Set as target (phone): the map, and a chip back to where it was
+    await ev(p, () => { cfg.target = null; save(); });
+    await p.tap('#infoTarget'); await wait(p, 500);
+    r = await ev(p, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), chip: !$('navResume').hidden && $('navResumeTxt').textContent, tgt: cfg.target }));
+    ok(r.s === '' && r.tgt && r.chip === r.tgt.replace(/^(M\d+).*/, '$1') || (r.s === '' && r.chip), 'Set as target: the map, with a chip back to the details', r);
+    await shot(p, 'nav-resume');
+    await p.tap('#navResume'); await wait(p, 500);
+    r = await ev(p, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), depth: NAV.R.length, chip: $('navResume').hidden, q: $('q').value }));
+    ok(r.s === 'infoSheet' && r.depth === 1 && r.chip, 'the chip: the details again, with ← to the search', r);
+    await p.tap('#infoBack'); await wait(p, 300);
+    r = await ev(p, () => ({ sh: SHEETS.filter(x => x._shown).map(x => x.id).join('+'), q: $('q').value, hidden: $('searchSheet').hidden }));
+    ok(r.sh === 'searchSheet', 'and ← to the search', r);
+    await ev(p, () => closeSheet('searchSheet')); await wait(p, 400);
+    // the observing list, the menu and its screens, Quick settings → All settings
+    await ev(p, () => { obs.list = ['M13', 'M31'].map(id => ({ id, name: id, added: 1 })); saveObs(); listTab.v = 'todo'; });
+    await p.tap('#fabList'); await wait(p, 400); await p.tap('[data-ltab="starred"]'); await wait(p, 200); await p.tap('[data-ltab="todo"]'); await wait(p, 200);
+    await p.tap('#listBody .orow .oinfo'); await wait(p, 300); await p.tap('#infoBack'); await wait(p, 300);
+    ok(await shown() === 'listSheet' && await ev(p, () => listTab.v === 'todo'), 'list → details → ←: the list in its tab');
+    await ev(p, () => closeSheet('listSheet')); await wait(p, 400);
+    await p.tap('#btnMenu'); await wait(p, 400); await p.tap('#btnLog'); await wait(p, 400);
+    ok(await shown() === 'logSheet' && await ev(p, () => !$('logMenu').hidden && $('logMenu').getAttribute('aria-label') === 'Back to Menu'), 'Menu → Logbook: ← back to the menu');
+    await p.tap('#logMenu'); await wait(p, 300);
+    ok(await shown() === 'menu', '← : the menu');
+    await ev(p, () => closeSheet('menu')); await wait(p, 400);
+    await ev(p, () => { syncSettings(); openSheet('sheet'); }); await wait(p, 400);
+    ok(await ev(p, () => $('setMenu').hidden), 'Settings opened on their own: no ← (nothing below)');
+    await ev(p, () => closeSheet('sheet')); await wait(p, 400);
+    await p.tap('#fabQuick'); await wait(p, 400); await p.tap('#qAll'); await wait(p, 400);
+    ok(await shown() === 'sheet' && await ev(p, () => !$('setMenu').hidden && $('setMenu').getAttribute('aria-label') === 'Back to Quick settings'), 'Quick settings → All settings: ← back to Quick settings');
+    await p.tap('#setMenu'); await wait(p, 300);
+    ok(await shown() === 'quickSheet', '← : Quick settings');
+    await done(p);
+    // tablet and desktop: a stack per side
+    const w = await page({ w: 1280, h: 800, mobile: false });
+    await ev(w, () => { $('btnMenu').click(); }); await wait(w, 400);
+    await ev(w, () => { $('fabSearch').click(); }); await wait(w, 400);
+    await ev(w, () => $('results').querySelector('.rrow .oinfo').click()); await wait(w, 400);
+    r = await ev(w, () => ({ s: SHEETS.filter(x => x._shown).map(x => x.id).sort().join('+'), L: NAV.L.length, R: NAV.R.length, back: !$('infoBack').hidden }));
+    ok(r.s === 'infoSheet+menu' && r.L === 0 && r.R === 1 && r.back, 'wide: the menu left, search → details right with ←', r);
+    await ev(w, () => $('infoBack').click()); await wait(w, 400);
+    ok(await ev(w, () => $('searchSheet')._shown && $('menu')._shown), '← on the right leaves the left panel');
+    await done(w);
   },
   async compassflip() {
     const p = await page();
