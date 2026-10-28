@@ -1596,6 +1596,19 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 <div class="sheet" id="quickSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="quickTitle">
     <div class="grab"><h2 id="quickTitle"><span>Quick settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="qrow" id="qLocRow">
+      <div class="qlabel qlabrow"><span>Location <span class="qsub" id="qLocName"></span></span><button class="lnk" id="qSiteManage">Manage ›</button></div>
+      <div class="chips" id="qSites" role="radiogroup" aria-label="Location"></div>
+      <div class="qline" style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
+        <span class="qsub" id="qLocTxt"></span>
+        <button class="btn" id="qGps">GPS</button>
+        <button class="btn" id="qLocEdit" aria-expanded="false">Edit</button>
+      </div>
+      <div class="qloc" id="qLocFields" hidden>
+        <input type="number" id="qLat" step="0.01" aria-label="Latitude (°N)" placeholder="Latitude">
+        <input type="number" id="qLon" step="0.01" aria-label="Longitude (°E)" placeholder="Longitude">
+      </div>
+    </div>
     <div class="qrow">
       <div class="qlabel qlabrow"><span>Instrument <span class="qsub" id="qInstSub">what you observe with</span></span><button class="lnk" id="qInstManage">Manage ›</button></div>
       <div class="chips qinst" id="qInst" role="radiogroup" aria-label="Instrument in use"></div>
@@ -1677,18 +1690,6 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
     <div class="qrow qline">
       <div class="qlabel">Button labels</div>
       <label class="switch"><input type="checkbox" id="qLabels" aria-label="Button labels"><i></i></label>
-    </div>
-    <div class="qrow" id="qLocRow">
-      <div class="qline" style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center">
-        <div class="qlabel"><span id="qLocName">Location</span> <span class="qsub" id="qLocTxt"></span></div>
-        <button class="btn" id="qGps">GPS</button>
-        <button class="btn" id="qLocEdit" aria-expanded="false">Edit</button>
-      </div>
-      <div class="chips" id="qSites" role="radiogroup" aria-label="Location"></div>
-      <div class="qloc" id="qLocFields" hidden>
-        <input type="number" id="qLat" step="0.01" aria-label="Latitude (°N)" placeholder="Latitude">
-        <input type="number" id="qLon" step="0.01" aria-label="Longitude (°E)" placeholder="Longitude">
-      </div>
     </div>
     <button class="btn" id="qAll">All settings</button>
   </div>
@@ -8445,6 +8446,7 @@ function renderInstSheet() {
   $("instEpLabel").textContent = "Eyepiece of " + curInst().name;
 }
 $("instAdd").onclick = () => addInst("switch");
+$("qSiteManage").onclick = () => { st.siteEdit = null; syncSettings(); openSheet("sheet"); setSetTab("site"); };
 $("qInstManage").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); };
 $("instManage").onclick = () => { st.editId = null; syncSettings(); listCameras(); openSheet("sheet"); setSetTab("scope"); };
 
@@ -8773,7 +8775,7 @@ function renderSites() {
   });
   if (!curSite()) none.append(Object.assign(document.createElement("span"), { className: "inuse", textContent: "in use" }));
   else { const u = document.createElement("button"); u.className = "btn"; u.textContent = "Use"; u.setAttribute("aria-label", "Use no location"); u.onclick = () => { useNoSite(); syncSettings(); }; none.append(u); }
-  none.prepend(nb); box.append(none);
+  none.prepend(nb); box.prepend(none);
   // without a location: the position alone
   const free = !ed;
   ["siteName", "skyQ"].forEach(i => { $(i).closest(".row").hidden = free; });
@@ -8839,12 +8841,11 @@ function renderQuickSites() {
   const q = $("qSites"); if (!q) return;
   q.textContent = ""; q.hidden = false;
   const chip = (txt, on, run, label) => { const b = document.createElement("button"); b.className = "chip cat" + (on ? " sel" : ""); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(on)); b.textContent = txt; if (label) b.setAttribute("aria-label", label); b.onclick = () => { if (run()) syncQuick(); }; q.append(b); };
-  cfg.sites.forEach(s => chip(s.name, s === curSite(), () => useSite(s.id)));
   chip("None", !curSite(), () => useNoSite(), "No location: only the position, no sky and no horizon");
+  cfg.sites.forEach(s => chip(s.name, s === curSite(), () => useSite(s.id)));
   const a = document.createElement("button"); a.className = "chip"; a.textContent = "+ Here"; a.setAttribute("aria-label", "New location here (GPS)");
   a.onclick = () => { if (!pro.on) return addSite(); if (!navigator.geolocation) return addSite(); navigator.geolocation.getCurrentPosition(p => { addSite({ lat: p.coords.latitude, lon: p.coords.longitude, loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } }); syncQuick(); hint("New location here. Give it a name in Settings › Location.", 4000); }, () => hint("Location not shared.", 3000), { timeout: 10000 }); };
-  const mg = document.createElement("button"); mg.className = "lnk"; mg.textContent = "Manage ›"; mg.onclick = () => { syncSettings(); openSheet("sheet"); setSetTab("site"); };
-  q.append(a, mg);
+  q.append(a);
 }
 
 /* ---------------- The horizon of a location: what houses and trees hide (Zenigo Pro) ---------------- */
@@ -9419,18 +9420,23 @@ $("navResume").onclick = () => {
 };
 // The system's back (Android, the browser's back button, swiping back): ← in the open panel. One history entry stands
 // for "a panel can be open"; a back consumes it and, while something is still open, a new one is set. It is never taken
-// out from code (a history.back() racing a panel opened right after could leave the app): when a back arrives with no
-// panel open, it is passed on.
-const hist = { on: false };
+// out from code (a history.back() racing a panel opened right after could leave the app), so after a panel was closed
+// the first system back does nothing. Links into the app (#go=…, #pro=…) change the hash: their popstate is not a back.
+const hist = { on: false, hash: 0 };
 function histArm() { if (hist.on) return; try { history.pushState({ zenigoPanel: true }, ""); hist.on = true; } catch (e) {} }
 const anyShown = () => SHEETS.some(x => x._shown);
+addEventListener("hashchange", () => { hist.hash = performance.now(); });
 addEventListener("popstate", e => {
   if (!hist.on || (e.state && e.state.zenigoPanel)) return;
-  hist.on = false;
-  if (!anyShown()) { try { history.back(); } catch (x) {} return; }
-  const ov = SHEETS.find(x => x._shown && OVERLAY.has(x.id));
-  if (ov) closeSheet(ov.id); else navBack(navCurrent(NAV.last) ? NAV.last : NAV.last === "L" ? "R" : "L");
-  if (anyShown()) histArm();
+  const t = performance.now();
+  setTimeout(() => {   // a hash change comes right after its popstate
+    if (hist.hash >= t) return;
+    hist.on = false;
+    if (!anyShown()) return;
+    const ov = SHEETS.find(x => x._shown && OVERLAY.has(x.id));
+    if (ov) closeSheet(ov.id); else navBack(navCurrent(NAV.last) ? NAV.last : NAV.last === "L" ? "R" : "L");
+    if (anyShown()) histArm();
+  }, 0);
 });
 // Side panel layout (wide screens): the panel floats over the map, only the buttons move. Labels on the map
 // avoid the buttons, so their position is re-read while they slide.
@@ -9788,7 +9794,7 @@ function syncQuick() {
   if (document.activeElement !== $("qLat")) $("qLat").value = cfg.lat;
   if (document.activeElement !== $("qLon")) $("qLon").value = cfg.lon;
   const la = +cfg.lat || 0, lo = +cfg.lon || 0;
-  $("qLocName").textContent = !curSite() ? "Location: none" : cfg.sites.length > 1 || pro.on ? curSite().name : "Location"; $("qLocTxt").textContent = fmtLatLon(la, lo) + (hzCur() ? " · own horizon" : ""); renderQuickSites();
+  $("qLocName").textContent = curSite() ? curSite().name : "none"; $("qLocTxt").textContent = fmtLatLon(la, lo) + (hzCur() ? " · own horizon" : ""); renderQuickSites();
   $("qRed").checked = !!cfg.red; $("qLabels").checked = !!cfg.fabLabels; $("qObjLabels").checked = cfg.objLabels !== false; $("qConLines").checked = cfg.conLines !== false; $("qFigures").checked = figOn(); $("qStarNames").checked = cfg.starNames !== false; $("qConNames").checked = !!cfg.conNames; $("qListMarks").checked = cfg.listMarks !== false; $("qReadout").checked = !!cfg.readout; $("qMirror").checked = !!cfg.mirror;
   const tx = +curTele().x || 0, ty = +curTele().y || 0, off = Math.atan(Math.hypot(tx, ty)) * R2D;
   $("qTeleTxt").textContent = off < 0.01 ? "image centre" : fmtDeg(off) + " from the image centre";

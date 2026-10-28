@@ -10,12 +10,13 @@
     "test:photo": "node test/photo.cjs",
     "test:sync": "node test/sync.cjs",
     "test:pro": "node test/pro-config.mjs && node --no-warnings test/licence.mjs",
-    "test:ui": "PRO_TEST_KEY=1 SKY_DRAFTS=1 node scripts/build.mjs && node test/ui.cjs",
+    "test:ui": "PRO_TEST_KEY=1 SKY_DRAFTS=1 node scripts/build.mjs && node test/ui-par.cjs",
     "test:sky": "node --no-warnings test/sky.mjs",
     "sky:validate": "node scripts/sky.mjs validate",
     "sky:candidates": "node scripts/sky.mjs candidates",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test:ui:serial": "PRO_TEST_KEY=1 SKY_DRAFTS=1 node scripts/build.mjs && node test/ui.cjs"
   },
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "^5.1.0",

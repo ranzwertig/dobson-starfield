@@ -1538,17 +1538,17 @@ const TESTS = {
     const m = await ev(F, () => ({ n: cfg.sites.length, s: cfg.sites[0], cur: curSite().id === cfg.siteId, lat: cfg.lat, sky: cfg.sky }));
     ok(m.n === 1 && m.s.name === 'My location' && m.s.lat === 48.18 && m.s.lon === 10.08 && m.s.sky === 'rural' && m.s.loc.src === 'gps' && !m.s.fresh && m.cur && m.lat === 48.18, 'the place of an earlier version becomes the first location, with its sky', m);
     await ev(F, () => { $('btnSettings').click(); setSetTab('site'); }); await wait(F, 300);
-    ok(await ev(F, () => $('siteList').children.length === 2 && /No location/.test($('siteList').lastChild.textContent) && $('siteDel').hidden && $('siteName').value === 'My location' && $('lat').value === '48.18'), 'Settings › Location: its card and “No location”, its name and position, no Delete');
+    ok(await ev(F, () => $('siteList').children.length === 2 && /No location/.test($('siteList').firstChild.textContent) && $('siteDel').hidden && $('siteName').value === 'My location' && $('lat').value === '48.18'), 'Settings › Location: its card and “No location”, its name and position, no Delete');
     await ev(F, () => { $('siteName').value = 'Garden'; $('siteName').onchange(); });
-    ok(await ev(F, () => curSite().name === 'Garden' && $('siteList').querySelector('b').textContent === 'Garden'), 'renamed');
+    ok(await ev(F, () => curSite().name === 'Garden' && $('siteList').children[1].querySelector('b').textContent === 'Garden'), 'renamed');
     await ev(F, () => $('siteAdd').click()); await wait(F, 300);
     ok(await ev(F, () => cfg.sites.length === 1 && !$('proSheet').hidden), 'without Pro: a second location offers Zenigo Pro');
     await ev(F, () => { closeSheet('proSheet'); closeSheet('sheet'); syncQuick(); });
-    ok(await ev(F, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'Garden|None|+ Here|Manage ›' && $('qLocName').textContent === 'Location'), 'without Pro: its location and None as chips in Quick settings');
+    ok(await ev(F, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'None|Garden|+ Here' && $('qLocName').textContent === 'Garden'), 'without Pro: its location and None as chips in Quick settings');
     // without Pro too: no location and back
     await ev(F, () => [...$('qSites').children].find(b => b.textContent === 'None').click()); await wait(F, 200);
     r = await ev(F, () => ({ cur: curSite(), id: cfg.siteId, sky: cfg.sky, lat: cfg.lat, name: $('qLocName').textContent, pro: !!$('proSheet')._shown }));
-    ok(r.cur === null && r.id === '' && r.sky === null && r.lat === 48.18 && r.name === 'Location: none' && !r.pro, 'None: no location, the position kept, no sky (also without Pro)', r);
+    ok(r.cur === null && r.id === '' && r.sky === null && r.lat === 48.18 && r.name === 'none' && !r.pro, 'None: no location, the position kept, no sky (also without Pro)', r);
     await ev(F, () => [...$('qSites').children].find(b => b.textContent === 'Garden').click()); await wait(F, 200);
     ok(await ev(F, () => curSite() && curSite().name === 'Garden' && cfg.sky === 'rural' && !$('proSheet')._shown), 'and back to its location without asking for Pro');
     // GPS from Quick settings, far away: without Pro the one location moves
@@ -1569,7 +1569,7 @@ const TESTS = {
     r = await ev(p, () => ({ s: curSite(), lat: cfg.lat, sky: cfg.sky, g: siteById(cfg.sites[0].id) }));
     ok(r.s.name === 'Hilltop' && r.s.lat === 48.3 && r.s.lon === 10.2 && r.s.sky === 'dark' && r.lat === 48.3 && r.sky === 'dark' && r.g.lat === 48.18, 'edited: name, position and sky of the one in use, the other unchanged', r);
     // the other one, edited in its card without switching
-    await ev(p, () => $('siteList').children[0].querySelector('.eqmain').click()); await wait(p, 100);
+    await ev(p, () => $('siteList').children[1].querySelector('.eqmain').click()); await wait(p, 100);
     await shot(p, 'sites-settings');
     ok(await ev(p, () => !$('siteOther').hidden && $('siteName').value === 'Garden' && $('lat').value === '48.18'), 'a tap on the other card opens it, marked as not in use');
     await ev(p, () => { $('skyQ').value = 'suburb'; $('skyQ').onchange(); });
@@ -1579,8 +1579,8 @@ const TESTS = {
     // Quick settings: chips switch
     await ev(p, () => { closeSheet('sheet'); syncQuick(); });
     await ev(p, () => openSheet('quickSheet')); await wait(p, 300); await shot(p, 'sites-quick');
-    ok(await ev(p, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'Garden|Hilltop|None|+ Here|Manage ›' && $('qLocName').textContent === 'Garden'), 'Quick settings: a chip per location, None and “+ Here”');
-    await ev(p, () => $('qSites').children[1].click());
+    ok(await ev(p, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'None|Garden|Hilltop|+ Here' && $('qLocName').textContent === 'Garden'), 'Quick settings: a chip per location, None and “+ Here”');
+    await ev(p, () => $('qSites').children[2].click());
     ok(await ev(p, () => curSite().name === 'Hilltop' && cfg.lat === 48.3), 'a chip switches');
     // no location: the horizon and the sky of a location don't count; the position alone is edited in Settings
     await ev(p, () => { const a = new Float32Array(360).fill(50); curSite().horizon = { v: 1, alt: hzEncode(a), at: new Date().toISOString(), how: 'camera' }; save(); siteChanged(); });
@@ -1905,8 +1905,20 @@ const TESTS = {
   },
 };
 
+// Shards for running in parallel (test/ui-par.cjs): --shard=i/n takes about 1/n of the time, by the seconds each test
+// took (tests not listed count 5 s); the longest go first so that the shards end together.
+const SECONDS = { live: 28, horizon: 21, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
+  sound: 10, photo: 10, compassflip: 10, logstats: 9, milkyway: 9, sites: 9, programs: 8, assistant: 8, proapp: 8, diagnostics: 7, panels: 7, camera: 6 };
+function shardOf(names, i, n) {
+  const load = Array(n).fill(0), pick = Array.from({ length: n }, () => []);
+  [...names].sort((a, b) => (SECONDS[b] || 5) - (SECONDS[a] || 5)).forEach(t => { const k = load.indexOf(Math.min(...load)); load[k] += SECONDS[t] || 5; pick[k].push(t); });
+  return new Set(pick[i - 1]);
+}
 (async () => {
-  const only = process.argv.slice(2);
+  const args = process.argv.slice(2), sh = args.find(a => a.startsWith('--shard='));
+  if (args.includes('--list')) { console.log(Object.keys(TESTS).join(' ')); process.exit(0); }
+  let only = args.filter(a => !a.startsWith('--'));
+  if (sh) { const [i, n] = sh.slice(8).split('/').map(Number); const set = shardOf(Object.keys(TESTS), i, n); only = Object.keys(TESTS).filter(t => set.has(t) && (!only.length || only.includes(t))); if (!only.length) { console.log('\nAll 0 checks passed'); process.exit(0); } }
   const srv = await serve(); base = 'http://localhost:' + srv.address().port;
   PRO_KEY = await proKey('2026-01-01T00:00:00.000Z', '2027-12-31T00:00:00.000Z');
   browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
