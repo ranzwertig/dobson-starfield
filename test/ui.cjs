@@ -1697,6 +1697,54 @@ const TESTS = {
     ok(await ev(q, () => !curSite().horizon && $('hzPrevBox').hidden), 'Remove: the horizon is gone');
     await done(q);
   },
+  // Every list row: a tap opens the details; ◎ sets the target (again: clears it) and the map icon turns the map to it,
+  // both closing the panel on a phone; the map icon only while the map is free
+  async rowacts() {
+    const p = await page();
+    await ev(p, () => { cfg.target = null; cfg.searchCats = []; save(); $('fabSearch').click(); }); await wait(p, 400);
+    let r = await ev(p, () => { const row = $('results').querySelector('.rrow'); return { n: $('results').querySelectorAll('.rrow .racts').length, rows: $('results').querySelectorAll('.rrow').length,
+      btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'star'), id: row.querySelector('.otgt').dataset.id, name: row.querySelector('b').textContent }; });
+    ok(r.n > 3 && r.n === r.rows && r.btns.join(' ') === 'otgt omap oplan star', 'Find target: under each row ◎, map, plan and star', r);
+    await shot(p, 'rowacts-search');
+    const id = r.id;
+    await ev(p, () => $('results').querySelector('.rrow .otgt').click()); await wait(p, 400);
+    r = await ev(p, () => ({ t: cfg.target, s: !$('searchSheet').classList.contains('open'), i: $('infoSheet').hidden, sun: !$('sunSheet').hidden }));
+    ok(r.t === id && r.s && r.i, '◎: the target, the panel closed, no details', { id, r });
+    await ev(p, () => $('fabSearch').click()); await wait(p, 400);
+    r = await ev(p, id => { const b = $('results').querySelector('.otgt[data-id="' + id + '"]'); return { pr: b.getAttribute('aria-pressed'), tint: b.closest('.rrow').classList.contains('tgt') }; }, id);
+    ok(r.pr === 'true' && r.tint, 'the target’s row: ◎ filled, the row tinted', r);
+    await wait(p, 300);
+    await ev(p, id => $('results').querySelector('.otgt[data-id="' + id + '"]').click(), id); await wait(p, 200);
+    ok(await ev(p, id => cfg.target === null && $('results').querySelector('.otgt[data-id="' + id + '"]').getAttribute('aria-pressed') === 'false' && !$('searchSheet').hidden, id), '◎ again: target cleared, the list stays open');
+    const want = await ev(p, () => { const b = $('results').querySelectorAll('.rrow')[1], tid = b.querySelector('.otgt').dataset.id, T = targetById(tid), h = horiz(T.vec(skyNow().t), skyNow().t); b.querySelector('.omap').click(); return { tid, az: h.az }; });
+    await wait(p, 500);
+    r = await ev(p, () => ({ az: st.mapView.az, open: $('searchSheet').classList.contains('open'), tgt: cfg.target, focus: st.focus && st.focus.id }));
+    ok(Math.abs(((r.az - want.az + 540) % 360) - 180) < 1 && !r.open && r.tgt === null && r.focus === want.tid, 'map icon: the map turned to it, marked, not the target', { r, want });
+    await ev(p, () => $('fabSearch').click()); await wait(p, 400);
+    await ev(p, () => $('results').querySelector('.rrow > button').click()); await wait(p, 400);
+    ok(await ev(p, () => !$('infoSheet').hidden), 'a tap on the row: the details');
+    await ev(p, () => SHEETS.forEach(x => closeSheet(x.id, true))); await wait(p, 300);
+    // the observing list: a tap on a planned row opens the details too
+    await ev(p, () => { obs.list = ['M13', 'M31'].map(id => ({ id, name: id, added: 1 })); saveObs(); listTab.v = 'todo'; renderList(); openSheet('listSheet'); }); await wait(p, 400);
+    r = await ev(p, () => { const row = $('listBody').querySelector('.orow'); return { btns: [...row.querySelectorAll('.racts button')].map(b => b.className.replace('ostar', '').trim() || 'remove'), id: row.dataset.id }; });
+    ok(r.btns.join(' ') === 'otgt omap remove', 'Planned: ◎, map and ✕ under each row', r);
+    await shot(p, 'rowacts-list');
+    await ev(p, () => $('listBody').querySelector('.orow .omain').click()); await wait(p, 400);
+    ok(await ev(p, () => !$('infoSheet').hidden && cfg.target === null), 'Planned: a tap on the row opens the details (no longer sets the target)');
+    await ev(p, () => SHEETS.forEach(x => closeSheet(x.id, true))); await wait(p, 300);
+    // Tonight and the programmes
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 600);
+    r = await ev(p, () => ({ items: $('tonightSheet').querySelectorAll('.tn-item').length, acts: $('tonightSheet').querySelectorAll('.tn-item .racts .otgt').length }));
+    ok(r.items > 3 && r.acts === r.items, 'Tonight: the same buttons under planets and picks', r);
+    await shot(p, 'rowacts-tonight');
+    await ev(p, () => { closeSheet('tonightSheet', true); openProgs('messier'); }); await wait(p, 400);
+    ok(await ev(p, () => [...document.querySelectorAll('#progBody .orow')].slice(0, 5).every(r => r.querySelector('.racts .otgt') && r.querySelector('.racts .omap'))), 'programmes: the same buttons');
+    // with Align on the map follows the phone: no map icon
+    await ev(p, () => { closeSheet('progSheet', true); st.sensor = true; $('fabSearch').click(); }); await wait(p, 400);
+    ok(await ev(p, () => [...$('results').querySelectorAll('.omap')].every(b => b.hidden) && $('results').querySelectorAll('.otgt').length > 3), 'with Align on: ◎ only');
+    await ev(p, () => { st.sensor = false; });
+    await done(p);
+  },
   async compassflip() {
     const p = await page();
     const run = (hdFlip, n) => ev(p, async ([hdFlip, n]) => {
