@@ -146,6 +146,40 @@ const noScope = p => ev(p, () => {
   cfg.optics = JSON.parse(JSON.stringify(OPT_DEF)); cfg.optics.ring = false; cfg.fabLabels = false; cfg.conNames = true;
   setShow(withExtras(PRESETS.eye.show)); clearTarget(); save(); syncSettings(); updateGuide(); lastSig = [];
 });
+
+// Pro: the extended catalogue is downloaded by itself with a licence; wait for it (and its message)
+const extReady = p => p.waitForFunction(() => !ext.busy && ext.loaded, null, { timeout: 60000 }).catch(() => console.log('  extended catalogue not loaded')).then(() => ev(p, () => hint(null)));
+// Pro: a location "Garden" with a recorded horizon: houses to the east, trees elsewhere
+const garden = (p, mask = true) => ev(p, mask => {
+  const s = addSite(); s.name = 'Garden'; cfg.sky = 'suburb';
+  const a = new Float32Array(360);
+  for (let i = 0; i < 360; i++) a[i] = 7 + 4 * Math.abs(Math.sin(i / 9)) + 3 * Math.abs(Math.sin(i / 3.1));
+  for (let i = 55; i <= 125; i++) a[i] = i < 62 || i > 118 ? 14 : (i > 78 && i < 96 ? 31 : 24);   // the neighbours' roofs
+  for (let i = 200; i <= 235; i++) a[i] = Math.max(a[i], 20 + 6 * Math.sin((i - 200) / 35 * Math.PI));   // a tree
+  s.horizon = { v: 1, alt: hzEncode(a), at: new Date().toISOString(), how: 'camera' };
+  cfg.hzMask = mask; storeSite(); save(); siteChanged(); hint(null);
+}, mask);
+// Pro: a year of logbook entries with two instruments
+const seedLog = p => ev(p, () => {
+  const ids = ['M31', 'M57', 'M27', 'M13', 'M92', 'M15', 'M2', 'M33', 'NGC 869', 'NGC 884', 'M45', 'M42', 'M1', 'M35', 'M36', 'M37', 'M38', 'M44', 'M81', 'M82', 'M51', 'M101', 'M3', 'M5', 'M8', 'M20', 'M17', 'M11', 'M22', 'M71', 'NGC 7662', 'NGC 6826', 'NGC 457', 'M52', 'M103', 'NGC 7789', 'M29', 'M39', 'Jupiter', 'Saturn', 'NGC 6543', 'M97', 'M108', 'M65', 'M66'];
+  const nights = ['2025-11-14', '2025-11-22', '2025-12-19', '2026-01-17', '2026-02-13', '2026-03-14', '2026-03-21', '2026-04-18', '2026-05-16', '2026-06-12', '2026-07-17', '2026-08-08', '2026-08-15', '2026-09-11', '2026-09-19', '2026-10-09'];
+  const insts = ['Dobson 8″', 'Dobson 8″', 'Dobson 8″', 'Binoculars 10×50'];
+  let k = 0; obs.log = [];
+  nights.forEach((n, ni) => {
+    const many = 3 + (ni * 7) % 6;
+    for (let j = 0; j < many; j++) {
+      const id = ids[(k * 7 + ni) % ids.length], o = targetById(id); k++; if (!o) continue;
+      const inst = insts[(ni + j) % insts.length];
+      obs.log.push({ uid: 'e' + k, obj: id, name: o.name, t: n + 'T' + String(20 + Math.floor(j / 2)).padStart(2, '0') + ':' + String((j * 23) % 60).padStart(2, '0') + ':00.000Z', inst, ...(inst.startsWith('Bino') ? { ik: 'bino' } : {}),
+        seeing: 2 + (ni + j) % 4, result: j % 9 === 8 ? 'miss' : j % 4 === 3 ? 'hard' : 'easy', moon: (ni * 13) % 100 });
+    }
+  });
+  saveObs();
+  cfg.instruments = [{ id: 'd8', name: 'Dobson 8″', type: 'dob', mount: 'altaz', o: { ...cfg.optics }, u: 1 },
+    { id: 'b1', name: 'Binoculars 10×50', type: 'bino', bino: { mag: 10, ap: 50, fov: 6.5, hold: 'hand' }, u: 1 },
+    { id: 'r4', name: 'Refractor 102', type: 'refr', mount: 'altaz', o: { ...cfg.optics, scope: 660, ap: 102, eps: [{ f: 24, a: 68 }, { f: 8, a: 60 }], finder: 0, finderType: 'none' }, u: 1 }];
+  cfg.instrumentId = 'd8'; save(); afterSyncedSettings();
+});
 const SHOTS = {
   // Help: the screen, with numbered parts
   async screen() {
@@ -289,6 +323,82 @@ const SHOTS = {
     await ev(p, () => { showOnMap(targetById('M27')); showInfo(targetById('M27')); });
     await wait(p, 800);
     await snap(p, 'tablet', [1600, 800]);
+    await p.context().close();
+  },
+  // Pro page: each Pro feature
+  async prohorizon() {
+    const p = await page();
+    await extReady(p);
+    await garden(p);
+    const h = await targetHoriz(p, 'M45');
+    await ev(p, h => { cfg.fabLabels = false; save(); syncSettings(); selectTarget('M45', true); st.mapView = { az: h.az + 8, alt: 26, fov: 95 }; st.sol = mapSol(); lastSig = []; hint(null); }, h);
+    await wait(p, 600);
+    await snap(p, 'pro-horizon', [780, 390]);
+    await p.context().close();
+  },
+  async profree() {
+    const p = await page();
+    await extReady(p);
+    await garden(p);
+    await ev(p, () => { cfg.searchCats = ['scope', 'tonight']; save(); $('fabSearch').click(); $('q').blur(); });
+    await p.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 60000 });
+    await wait(p, 400);
+    await snap(p, 'pro-free', [780, 390]);
+    await p.context().close();
+  },
+  async procoming() {
+    const p = await page();
+    await extReady(p);
+    await ev(p, () => $('btnTonight').click());
+    await wait(p, 2500);
+    await ev(p, () => { const h = [...document.querySelectorAll('#tonightSheet h3, .tn-sec h3')].find(e => /Coming up/.test(e.textContent)); if (h) { const sc = scroller($('tonightSheet')); sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 84; } });
+    await snap(p, 'pro-coming', [780, 390]);
+    await p.context().close();
+  },
+  async probest() {
+    const p = await page();
+    await extReady(p);
+    await ev(p, () => { showInfo(targetById('M27')); });
+    await wait(p, 600);
+    await ev(p, () => { const b = $('infoEp'); if (b) b.scrollIntoView({ block: 'center' }); });
+    await snap(p, 'pro-best', [780, 390]);
+    await p.context().close();
+  },
+  async proext() {
+    const p = await page();
+    await extReady(p);
+    const h = await targetHoriz(p, 'NGC 1275');
+    await ev(p, ([h, f]) => { clearTarget(); cfg.fabLabels = false; save(); syncSettings(); st.mapView = { az: h.az, alt: h.alt, fov: f }; st.sol = mapSol(); lastSig = []; hint(null); }, [h, 1.6]);
+    await wait(p, 900);
+    await ev(p, () => { clearTarget(); lastSig = []; });   // the galaxy cluster in Perseus in the 32 mm field
+    await snap(p, 'pro-extended', [780, 390]);
+    await p.context().close();
+  },
+  async proprog() {
+    const p = await page();
+    await extReady(p);
+    await seedLog(p);
+    await ev(p, () => openProgs('h400'));
+    await wait(p, 900);
+    await snap(p, 'pro-programmes', [780, 390]);
+    await p.context().close();
+  },
+  async proinst() {
+    const p = await page();
+    await extReady(p);
+    await seedLog(p);
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('scope'); });
+    await wait(p, 600);
+    await snap(p, 'pro-instruments', [780, 390]);
+    await p.context().close();
+  },
+  async prostats() {
+    const p = await page();
+    await extReady(p);
+    await seedLog(p);
+    await ev(p, () => { openLog(null); setLogTab('stats'); });
+    await wait(p, 900);
+    await snap(p, 'pro-stats', [780, 390]);
     await p.context().close();
   },
 };

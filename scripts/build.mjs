@@ -209,9 +209,29 @@ function faqLd(html) {
 // home page's structured data gets the Pro offer from the same file. The page shows that base price (EU, VAT included)
 // until Paddle's price for the visitor's country has loaded, so the price is there without Paddle too.
 const proPrice = new Intl.NumberFormat('en', { style: 'currency', currency: PRO.structuredData.currency }).format(Number(PRO.structuredData.price));
+// The tour on /pro/: each feature with its show (pro.json) as a section with screenshots, alternating sides like /features/
+const shotImg = (x, sizes) => { const wide = /^(tablet|live-follow)$/.test(x.img), [a, b] = wide ? [800, 1600] : [390, 780];
+  return `<img src="/img/screens/${x.img}-${b}.webp" srcset="/img/screens/${x.img}-${a}.webp ${a}w, /img/screens/${x.img}-${b}.webp ${b}w" sizes="${sizes}" width="${wide ? 1180 : 390}" height="${wide ? 820 : 844}" alt="${esc(x.alt)}" loading="lazy" decoding="async">`; };
+const proTour = PRO.features.filter(f => f.show && !f.coming).map((f, i) => {
+  const S = f.show, shots = S.shots || [], cap = x => x.caption ? `<figcaption>${esc(x.caption)}</figcaption>` : '';
+  const text = `    <div class="feat-text">
+      <p class="kicker">${esc(S.kicker || f.title)}</p>
+      <h3>${esc(S.heading)}</h3>
+${(S.text || []).map(t => `      <p>${esc(t)}</p>\n`).join('')}${S.points ? `      <ul>\n${S.points.map(t => `        <li>${esc(t)}</li>`).join('\n')}\n      </ul>\n` : ''}${f.href ? `      <p class="more"><a href="${esc(f.href)}">More in the help</a></p>\n` : ''}    </div>`;
+  let fig = '', cls = 'feat';
+  if (S.pair) { cls += ' wide'; fig = `    <div class="feat-pair">\n${shots.map((x, j) => `      <figure class="${j ? 'tab' : 'ph'}">${shotImg(x, j ? '(max-width: 760px) 62vw, 720px' : '(max-width: 760px) 32vw, 220px')}${cap(x)}</figure>`).join('\n')}\n    </div>`; }
+  else if (shots.length > 1) fig = `    <div class="feat-fig two">\n${shots.map(x => `      <figure>${shotImg(x, '240px')}${cap(x)}</figure>`).join('\n')}\n    </div>`;
+  else if (shots.length && S.wide) fig = `    <figure class="feat-fig tabimg">${shotImg(shots[0], '(max-width: 760px) 92vw, 560px')}</figure>`;
+  else if (shots.length) fig = `    <figure class="feat-fig">${shotImg(shots[0], '280px')}</figure>`;
+  else cls += ' wide';
+  const side = PRO.features.filter(g => g.show && !g.coming).slice(0, i).filter(g => !g.show.pair && (g.show.shots || []).length).length % 2;
+  if (fig && !S.pair && side) cls += ' rev';
+  return `  <section class="${cls}" id="pro-${esc(S.id)}">\n${text}${fig ? '\n' + fig : ''}\n  </section>`;
+}).join('\n\n');
 const proHtml = html => html.replaceAll('<!--PRO-NAME-->', esc(PRO.name)).replaceAll('<!--PRO-TAGLINE-->', esc(PRO.tagline)).replaceAll('<!--PRO-TERMS-->', esc(PRO.terms)).replaceAll('<!--PRO-PRICE-->', esc(proPrice))
   .replace('<!--PRO-COMING-NOTE-->', () => proSoon.length ? '    <p class="muted">Features marked “coming” are planned and not part of what you buy today. If they arrive during your 12 months, they are included.</p>' : '')
-  .replace('<!--PRO-FEATURES-->', PRO.features.map(f => `      <dt${f.coming ? ' class="coming"' : ''}>${f.href ? `<a href="${esc(f.href)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`).join('\n'))
+  .replace('<!--PRO-FEATURES-->', PRO.features.map(f => { const h = f.show ? '#pro-' + f.show.id : f.href; return `      <dt${f.coming ? ' class="coming"' : ''}>${h ? `<a href="${esc(h)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`; }).join('\n'))
+  .replace('<!--PRO-TOUR-->', () => proTour)
   .replace('<!--PRO-FREE-->', PRO.freeFeatures.map(f => `      <li>${esc(f)}</li>`).join('\n'));
 const proLd = JSON.stringify([{ '@type': 'Offer', name: 'Zenigo', price: '0', priceCurrency: 'EUR' },
   { '@type': 'Offer', name: PRO.name + ' – ' + PRO.terms, price: PRO.structuredData.price, priceCurrency: PRO.structuredData.currency, url: SITE + '/pro/' }]);

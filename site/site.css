@@ -292,8 +292,17 @@ footer a:hover { color: var(--amber); }
 .feat-fig.two { display: flex; gap: 18px; }
 .feat-fig.two figure { margin: 0; }
 .feat-fig.two img { width: 240px; border-radius: 22px; }
-#sync .feat-fig > img { width: min(560px, 46vw); border-radius: 14px; }
-@media (max-width: 960px) { #sync .feat-fig > img { width: 100%; } }
+#sync .feat-fig > img, .feat-fig.tabimg > img { width: min(560px, 46vw); border-radius: 14px; }
+@media (max-width: 960px) { #sync .feat-fig > img, .feat-fig.tabimg > img { width: 100%; } }
+.feat-text h3 { font-size: clamp(26px, 3vw, 34px); line-height: 1.15; margin: 0 0 16px; }
+.feat-fig.two figcaption { color: var(--mist); font-size: 15px; margin-top: 8px; }
+/* Pro page: the tour between the summary and the terms */
+.proshow > h2 { font-size: clamp(30px, 4vw, 42px); margin: 10px 0 0; scroll-margin-top: 20px; }
+.proshow .feat { padding: 44px 0; border-bottom: 1px solid var(--line); }
+.proshow .feat:last-of-type { border-bottom: 0; }
+.proshow .tourbuy { margin: 10px 0 0; }
+.pro-rest { padding-top: 0; }
+.pro-rest > h2:first-child { margin-top: 30px; }
 .feat.wide { grid-template-columns: 1fr; gap: 28px; }
 .feat.wide .feat-text { max-width: 820px; }
 .feat-pair { display: flex; gap: 22px; align-items: flex-end; }

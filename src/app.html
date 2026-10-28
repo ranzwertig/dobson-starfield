@@ -9968,9 +9968,10 @@ function fillComingUp(sec, el, esc) {
   let list = []; try { list = upcomingEvents(); } catch (e) {}
   if (!list.length) { sec.append(el("p", "tn-note", "Nothing special in the coming weeks.")); return; }
   list.slice(0, 10).forEach(x => {
-    const b = el(x.body ? "button" : "div", "tn-row", "<b>" + esc(x.txt) + "</b><small>" + esc(x.sub) + "</small>");
-    if (x.body) b.onclick = () => infoFromTonight(planetObj(x.body, x.body));
-    sec.append(b);
+    const b = el("div", "tn-row", "<b>" + esc(x.txt) + "</b><small>" + esc(x.sub) + "</small>");
+    if (!x.body) { sec.append(b); return; }
+    const it = el("div", "tn-item"), o = () => planetObj(x.body, x.body);   // a planet: its details, target and map, like the rows above
+    it.append(b, rowActs(x.body, o, () => infoFromTonight(o()))); sec.append(it);
   });
 }
 // Details opened from Tonight: ← (or closing them) goes back to Tonight, at the same place

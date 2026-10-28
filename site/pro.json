@@ -1,20 +1,271 @@
 {
-  "_comment": "Zenigo Pro as shown on /pro/ (scripts/build.mjs puts it into site/pro.html). Edit here. The price itself comes from Paddle; structuredData is the base price for search engines (schema.org Offer on the home page) and the price shown on /pro/ until Paddle's price for the visitor's country has loaded, so it must match the Paddle base price.",
+  "_comment": "Zenigo Pro as shown on /pro/ (scripts/build.mjs puts it into site/pro.html). Edit here. The price itself comes from Paddle; structuredData is the base price for search engines (schema.org Offer on the home page) and the price shown on /pro/ until Paddle's price for the visitor's country has loaded, so it must match the Paddle base price. Each feature's show is its section in the tour on /pro/: shots are screenshots from scripts/screenshots.cjs (public/img/screens/<img>-<width>.webp).",
   "name": "Zenigo Pro",
   "tagline": "Zenigo is free, and everything you need to find objects with your telescope stays free. Pro adds more for planning, for observing with a second device and for using Zenigo on all your devices.",
   "terms": "12-month licence, paid once, no automatic renewal",
   "features": [
-    { "title": "Sync between devices", "text": "Your observing list, logbook and telescope settings on your phone, tablet and computer, end-to-end encrypted.", "href": "/features/#sync" },
-    { "title": "Live connection", "text": "A second phone or tablet follows the telescope: where it points, the way to the target and, if you like, the telescope’s camera image. Only the device on the telescope needs Pro; anyone can follow it.", "href": "/features/#live" },
-    { "title": "Coming up", "text": "Eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon will disturb them.", "href": "/help/#coming-up" },
-    { "title": "Satellites", "text": "The ISS and bright satellites on the map, and their next visible passes.", "href": "/help/#satellites" },
-    { "title": "Eyepiece view and best eyepiece", "text": "The target as it looks in your eyepiece, and which of your eyepieces suits each object, with the reason.", "href": "/help/#optics" },
-    { "title": "Short route", "text": "Your planned objects in the order with the least turning for your mount, starting where the telescope points now.", "href": "/help/#short-route" },
-    { "title": "Extended catalogue", "text": "The whole NGC and IC catalogues: about 10,000 more galaxies, nebulae and clusters, and about 790,000 more stars down to magnitude 11, on the map, in the search and in the eyepiece view. Downloaded once (6 MB), then it works offline.", "href": "/help/#extended" },
-    { "title": "Observing programmes", "text": "Binocular Messier, Caldwell, Herschel 400, Herschel II and the 110 Best of the NGC, with your progress from the logbook, what is well placed tonight, one tap to plan it, and the programme’s logbook to print or export. Messier stays free.", "href": "/help/#programmes" },
-    { "title": "Several instruments", "text": "Each telescope with its own eyepieces, finder, Barlow and eyepiece point, and binoculars with their own field. Switch with one tap; the logbook notes what you used.", "href": "/help/#instruments" },
-    { "title": "Your own horizon", "text": "Record the houses and trees around where you observe once, holding the phone at the telescope. Find target, the map, Tonight and the plan then show what is really free, and when something comes out from behind the roof. With several named locations, each with its own sky and horizon.", "href": "/help/#locations" },
-    { "title": "Logbook statistics", "text": "What you have seen by month, kind of object, instrument and constellation, with records, seeing and the Moon; a tap shows those entries. Export as OpenAstronomyLog for other observing software, and your year in review as an image to share.", "href": "/help/#statistics" }
+    {
+      "title": "Sync between devices",
+      "text": "Your observing list, logbook and telescope settings on your phone, tablet and computer, end-to-end encrypted.",
+      "href": "/features/#sync",
+      "show": {
+        "id": "sync",
+        "kicker": "Sync",
+        "heading": "Plan on the sofa, observe in the garden",
+        "text": [
+          "Pick targets on the tablet in the afternoon, and they are on the phone at the telescope in the evening. The observing list, starred objects, the logbook and the telescope settings stay the same on your phone, tablet and computer."
+        ],
+        "points": [
+          "End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server.",
+          "Set it up once with a QR code or a link; no account, no email address.",
+          "Two different telescope settings? Zenigo asks which to keep. Lists and logbook are always combined."
+        ],
+        "shots": [
+          {
+            "img": "tablet",
+            "alt": "Zenigo on a tablet: the sky map with M27 in the middle and its details panel beside it."
+          }
+        ],
+        "wide": true
+      }
+    },
+    {
+      "title": "Live connection",
+      "text": "A second phone or tablet follows the telescope: where it points, the way to the target and, if you like, the telescope’s camera image. Only the device on the telescope needs Pro; anyone can follow it.",
+      "href": "/features/#live",
+      "show": {
+        "id": "live",
+        "kicker": "Live connection",
+        "heading": "Phone on the tube, tablet in your hand",
+        "text": [
+          "A phone in its holder near the top of the tube is hard to read. A second phone or tablet follows it: the crosshair, the arrow to the target and how far to turn and tilt. A target chosen on either device is the target on both, and if you like, the tablet shows the telescope’s camera image too."
+        ],
+        "points": [
+          "The devices pair with a QR code and talk directly over Wi-Fi or a phone’s hotspot: no server, no internet, so it works at a dark site.",
+          "Only the device on the telescope needs Pro. Anyone can follow it, also at a public observing night."
+        ],
+        "shots": [
+          {
+            "img": "live-scope",
+            "alt": "The phone on the telescope, located, with the pill “Live · another device follows”.",
+            "caption": "On the telescope"
+          },
+          {
+            "img": "live-follow",
+            "alt": "A tablet following the telescope: its camera image with crosshair, arrow to M31 and the directions.",
+            "caption": "In your hand"
+          }
+        ],
+        "pair": true
+      }
+    },
+    {
+      "title": "Coming up",
+      "text": "Eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon will disturb them.",
+      "href": "/help/#coming-up",
+      "show": {
+        "id": "coming-up",
+        "kicker": "Coming up",
+        "heading": "Don’t miss the nights that matter",
+        "text": [
+          "Tonight ends with what is special in the next weeks, calculated on the phone for where you are."
+        ],
+        "points": [
+          "Lunar and solar eclipses visible from your site.",
+          "The Moon close to a planet, or two planets close together, with how high they are and whether it is dark.",
+          "Oppositions of the outer planets and the greatest elongations of Mercury and Venus.",
+          "The big meteor showers, with the peak night and how much the Moon will wash out."
+        ],
+        "shots": [
+          {
+            "img": "pro-coming",
+            "alt": "Tonight › Coming up: the Orionids, Moon and Venus 1.7° apart, Mars and Jupiter 1.2° apart, the Leonids with the Moon 46 % lit, Uranus at opposition."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Satellites",
+      "text": "The ISS and bright satellites on the map, and their next visible passes.",
+      "href": "/help/#satellites",
+      "show": {
+        "id": "satellites",
+        "kicker": "Satellites",
+        "heading": "The ISS and its next pass",
+        "text": [
+          "Switched on in the filter, the map shows the ISS, Tiangong and about 150 other bright satellites. Lit ones are bright dots with a short tail, those in Earth’s shadow grey rings. Make one your target and the directions follow it; below the horizon, the target line tells you when it comes up next, from where, how high and whether you will see it. The orbits change quickly, so they are loaded fresh from CelesTrak: satellites need a connection."
+        ]
+      }
+    },
+    {
+      "title": "Eyepiece view and best eyepiece",
+      "text": "The target as it looks in your eyepiece, and which of your eyepieces suits each object, with the reason.",
+      "href": "/help/#optics",
+      "show": {
+        "id": "eyepiece",
+        "kicker": "Eyepiece view and best eyepiece",
+        "heading": "See it before you look",
+        "text": [
+          "The eyepiece view shows the target the way your eyepiece frames it: the real field, the stars you can expect with your aperture, turned and mirrored like the view through a Dobson or a star diagonal."
+        ],
+        "points": [
+          "Which eyepiece: for each object, which of your eyepieces suits it, with the reason, from its size, brightness, the exit pupil and tonight’s seeing.",
+          "How to find it: aim with the finder, find it with the widest field, then switch. “Use it” makes it the eyepiece in use."
+        ],
+        "shots": [
+          {
+            "img": "eyepiece",
+            "alt": "The eyepiece view at the bottom left: M31 in the 15 mm eyepiece, beside the map with the eyepiece ring.",
+            "caption": "In the eyepiece"
+          },
+          {
+            "img": "pro-best",
+            "alt": "Details of M27: Which eyepiece, best the 15 mm at 80× because more magnification makes the small disc easier to see.",
+            "caption": "Which eyepiece"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Short route",
+      "text": "Your planned objects in the order with the least turning for your mount, starting where the telescope points now.",
+      "href": "/help/#short-route",
+      "show": {
+        "id": "short-route",
+        "kicker": "Short route",
+        "heading": "Less pushing, more looking",
+        "text": [
+          "With three or more planned objects, Short route orders them the shortest way for your mount, starting where the telescope points now. Objects that get low soon stay first, those that come up later stay at the end, and the note says how far the telescope moves in total. For a Dobson the way is measured in turning and tilting, so a short step near the zenith isn’t mistaken for a short push."
+        ],
+        "shots": [
+          {
+            "img": "list",
+            "alt": "The planned list in Short route order, with the night bars and the total way for the telescope."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Extended catalogue",
+      "text": "The whole NGC and IC catalogues: about 10,000 more galaxies, nebulae and clusters, and about 790,000 more stars down to magnitude 11, on the map, in the search and in the eyepiece view. Downloaded once (6 MB), then it works offline.",
+      "href": "/help/#extended",
+      "show": {
+        "id": "extended",
+        "kicker": "Extended catalogue",
+        "heading": "The whole NGC and IC",
+        "text": [
+          "About 10,000 more galaxies, nebulae and clusters down to magnitude 15, and about 790,000 more stars down to magnitude 11, on the map, in the search and in the eyepiece view. They appear as you zoom in: here the galaxy cluster around NGC 1275 in Perseus, in the field of a 32 mm eyepiece in an 8″ Dobson."
+        ],
+        "points": [
+          "Galaxy groups like Stephan’s Quintet, and star hopping at higher magnification.",
+          "Downloaded once per device (6 MB), then it works offline."
+        ],
+        "shots": [
+          {
+            "img": "pro-extended",
+            "alt": "The map zoomed in on Perseus: NGC 1275, NGC 1272, NGC 1265 and more galaxies inside the 32 mm eyepiece ring."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Observing programmes",
+      "text": "Binocular Messier, Caldwell, Herschel 400, Herschel II and the 110 Best of the NGC, with your progress from the logbook, what is well placed tonight, one tap to plan it, and the programme’s logbook to print or export. Messier stays free.",
+      "href": "/help/#programmes",
+      "show": {
+        "id": "programmes",
+        "kicker": "Observing programmes",
+        "heading": "Lists to work through, night by night",
+        "text": [
+          "Binocular Messier, Caldwell, Herschel 400, Herschel II and the 110 Best of the NGC. Your progress comes from the logbook, so it syncs and is in your backups. Open shows what you haven’t seen, the well placed objects of tonight first."
+        ],
+        "points": [
+          "Plan … well placed tonight puts up to 15 of them on your list, in the order they get low.",
+          "Programme logbook (CSV) and a printable list with each first sighting, for example for an observing award.",
+          "Messier stays free."
+        ],
+        "shots": [
+          {
+            "img": "pro-programmes",
+            "alt": "Herschel 400: 11 of 400 seen, Plan 15 well placed tonight, and the open objects with their night bars."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Several instruments",
+      "text": "Each telescope with its own eyepieces, finder, Barlow and eyepiece point, and binoculars with their own field. Switch with one tap; the logbook notes what you used.",
+      "href": "/help/#instruments",
+      "show": {
+        "id": "instruments",
+        "kicker": "Several instruments",
+        "heading": "The Dobson, the refractor and the binoculars",
+        "text": [
+          "Each telescope keeps its own eyepieces, finder, Barlow, reach and eyepiece point; binoculars have their own magnification and field. Switch with one tap in Quick settings, and the rings, the eyepiece view, the advice, My telescope and the short route follow. The logbook notes what you used."
+        ],
+        "shots": [
+          {
+            "img": "pro-instruments",
+            "alt": "Settings › Equipment: Dobson 8″ in use, Binoculars 10×50 and Refractor 102 with Use buttons, and Add an instrument."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Your own horizon",
+      "text": "Record the houses and trees around where you observe once, holding the phone at the telescope. Find target, the map, Tonight and the plan then show what is really free, and when something comes out from behind the roof. With several named locations, each with its own sky and horizon.",
+      "href": "/help/#locations",
+      "show": {
+        "id": "horizon",
+        "kicker": "Your own horizon",
+        "heading": "What is really free from where you stand",
+        "text": [
+          "The house next door, a hedge, a tree: record the horizon once, standing at the telescope and following the roofs and trees with the phone. From then on Zenigo knows what is free."
+        ],
+        "points": [
+          "Free now and Free tonight in Find target show only what clears your horizon.",
+          "The map shows the silhouette (the pill at the bottom left turns it on and off); the target line says “behind your horizon, free in 90 min”.",
+          "The night bars, Tonight’s picks and the planned list use it too.",
+          "Several named locations, each with its own sky and horizon: garden, club field, holiday house."
+        ],
+        "shots": [
+          {
+            "img": "pro-horizon",
+            "alt": "The map with the recorded horizon of the location Garden as a silhouette; M45 just behind a roof, “behind your horizon, free in 90 min”.",
+            "caption": "On the map"
+          },
+          {
+            "img": "pro-free",
+            "alt": "Find target with Free tonight: only objects not behind the horizon at Garden.",
+            "caption": "Free tonight"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Logbook statistics",
+      "text": "What you have seen by month, kind of object, instrument and constellation, with records, seeing and the Moon; a tap shows those entries. Export as OpenAstronomyLog for other observing software, and your year in review as an image to share.",
+      "href": "/help/#statistics",
+      "show": {
+        "id": "statistics",
+        "kicker": "Logbook statistics",
+        "heading": "Your observing year at a glance",
+        "text": [
+          "What you have seen by month, by kind of object (against how many Zenigo has), by instrument and by constellation, with records, seeing and the Moon. A tap on a bar shows those entries."
+        ],
+        "points": [
+          "All time, the last 12 months or one year.",
+          "Export as OpenAstronomyLog for other observing software.",
+          "Your year in review as an image to share."
+        ],
+        "shots": [
+          {
+            "img": "pro-stats",
+            "alt": "Logbook › Statistics: 43 objects, 16 nights, 41 hours, and bars by month and by kind of object."
+          }
+        ]
+      }
+    }
   ],
   "freeFeatures": [
     "Locate and push-to: the crosshair, the arrow, how far to turn and tilt, Continuous and Align",
@@ -26,5 +277,8 @@
     "Following a Pro device over the live connection",
     "Red light, the Sun warning, backup and restore"
   ],
-  "structuredData": { "price": "9.99", "currency": "EUR" }
+  "structuredData": {
+    "price": "9.99",
+    "currency": "EUR"
+  }
 }

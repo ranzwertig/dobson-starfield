@@ -1162,6 +1162,11 @@ const TESTS = {
     ok(await ev(p, () => pro.on && /active until/i.test($('proKeyMsg').textContent) && /until/.test($('proMenuState').textContent)), 'a pasted key (with a line break) turns Pro on', await ev(p, () => $('proKeyMsg').textContent));
     ok((await pills()).every(Boolean), 'with Pro: a “Pro” on every logo (menu button, menu, update notice)', await pills());
     ok(await ev(p, () => $('proIncl').hidden), 'with Pro running the list of what Pro adds is hidden');
+    await ev(p, () => { closeSheet('proSheet'); showTonight(); openSheet('tonightSheet'); });
+    await p.waitForFunction(() => !/Calculating/.test($('tonightBody').textContent), null, { timeout: 15000 }).catch(() => {});
+    ok(await ev(p, () => { const sec = [...document.querySelectorAll('#tonightBody .tn-sec')].find(x => /Coming up/.test(x.querySelector('h3').textContent)), its = sec ? [...sec.querySelectorAll('.tn-item')] : [];
+      return !!sec && !sec.querySelector('button.tn-row') && its.length > 0 && its.every(i => i.querySelector('.racts .oinfo') && i.querySelector('.racts .otgt') && i.classList.contains('rowtap')); }), 'with Pro, Coming up: planet events are rows with ⓘ ◎ map, the row opens the details');
+    await ev(p, () => closeSheet('tonightSheet'));
     ok(await ev(p, () => { const l = document.querySelector('#btnMenu img').getBoundingClientRect(), t = document.querySelector('#btnMenu .propill').getBoundingClientRect(), b = $('btnMenu').getBoundingClientRect();
       return t.left + t.width / 2 > l.left + l.width / 2 && t.top + t.height / 2 > l.top + l.height / 2 && t.right <= b.right && t.bottom <= b.bottom; }), 'the “Pro” sits at the logo’s lower right, inside the menu button');
     ok(await ev(p, () => satsOn !== undefined && (setShow({ ...cfg.show, sats: true }), cfg.show.sats)), 'satellites can be switched on now');
@@ -1230,6 +1235,11 @@ const TESTS = {
     ok(await p.textContent('#proPrice') === new Intl.NumberFormat('en', { style: 'currency', currency: proJson.currency }).format(Number(proJson.price)) && /in the EU, including VAT/i.test(await p.textContent('#proTax')), 'without Paddle the EU base price from pro.json is shown, with its tax note');
     ok(await ev(p, () => ['.menumeta', 'footer nav'].every(s => !!document.querySelector(s + ' a[href="/licence/"]') && !!document.querySelector(s + ' a[href="/pro/#refunds"]') && !!document.querySelector(s + ' a[href="/privacy/"]'))), 'licence terms, refund policy and privacy in the menu and the footer');
     ok(await ev(p, PROSOON => document.querySelectorAll('.profeat dt').length >= 6 && document.querySelectorAll('.profeat .ptag.soon').length === PROSOON && (PROSOON > 0) === /marked “coming”/.test(document.body.textContent) && /Labelling your night photos/.test(document.querySelector('.freelist').textContent), JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).features.filter(f => f.coming).length), 'features from pro.json, planned ones marked coming (with the note only then), night photos listed as free');
+    ok(await ev(p, n => { const secs = [...document.querySelectorAll('.proshow section.feat')]; return secs.length === n && secs.every(x => x.querySelector('h3') && x.id.startsWith('pro-'))
+      && [...document.querySelectorAll('.profeat dt a')].every(a => !a.getAttribute('href').startsWith('#') || !!document.querySelector(a.getAttribute('href')))
+      && [...document.querySelectorAll('.proshow img')].length >= 12 && [...document.querySelectorAll('.proshow img')].every(i => i.alt && /^\/img\/screens\/[a-z-]+-\d+\.webp$/.test(i.getAttribute('src'))); },
+      JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site', 'pro.json'), 'utf8')).features.filter(f => f.show && !f.coming).length), 'the tour: a section per feature with its screenshots, linked from the summary');
+    ok(await ev(p, () => Promise.all([...document.querySelectorAll('.proshow img')].map(i => fetch(i.getAttribute('src')).then(r => r.ok))).then(a => a.every(Boolean))), 'every tour screenshot exists');
     ok(await ev(p, () => [...document.querySelectorAll('.buybox, #proBuy')].every(e => /12-month licence, paid once, no automatic renewal/.test(e.textContent)) && !!document.querySelector('.buybox a[href="/licence/"]') && !!document.querySelector('.buybox a[href="#refunds"]')), 'the terms beside the price and on the button; licence and refunds linked');
     ok(await ev(p, () => document.documentElement.scrollWidth <= innerWidth), 'no sideways scrolling on a phone');
     await done(p);
