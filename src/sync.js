@@ -13,7 +13,7 @@
 //  - Missing fields always mean their default: an entry without a change time "u" counts as 0 (older than any change).
 //  - Backups keep their old top-level shape (list, starred, log, settings), so older app versions can still import them.
 const ZSync = (() => {
-  const SCHEMA = { major: 1, minor: 1 };   // 1.1: instruments (each telescope with its eyepieces) instead of one telescope
+  const SCHEMA = { major: 1, minor: 2 };   // 1.1: instruments instead of one telescope; 1.2: named locations (sites) instead of one place
   const ENV_V = 1;                // envelope: [version][compression][12 bytes IV][AES-GCM ciphertext]
   const OBS_V = 2;                // local lists: 1 = no change times, 2 = change times "u" and deletion marks "del"
   const BACKUP_V = 4;             // backup file: 3 = lists and settings, 4 = adds change times, deletion marks and setting times
@@ -21,16 +21,18 @@ const ZSync = (() => {
   // instrument it uses and its selected eyepiece, the eyepiece point and pointing (they depend on how the phone sits on
   // the telescope), camera and field of view, compass correction, red light, display and layout.
   // Schema 1.0 synced one telescope ("mount", "optics.scope", "optics.eps", …). Since 1.1 the instruments carry these;
-  // the old paths stay in the shared copy untouched for apps that still use them.
-  const SETTINGS = ["lat", "lon", "loc", "sky", "show", "optics.ring", "instruments"];
-  // Settings that only make sense together: when they collide, all of them come from the same device
-  const GROUPS = [["lat", "lon", "loc", "sky"]];   // the sky belongs to the place
+  // the old paths stay in the shared copy untouched for apps that still use them. Likewise since 1.2 the locations
+  // ("sites") carry the place ("lat", "lon", "loc", "sky"), and which one a device uses is its own choice.
+  const SETTINGS = ["show", "optics.ring", "instruments", "sites"];
+  // Settings that only make sense together: when they collide, all of them come from the same device (none since 1.2:
+  // the place and its sky travel together inside each location)
+  const GROUPS = [];
   // Lists inside a setting that are merged item by item by content (none at the moment)
   const SETS = [];
-  // Lists of records with an "id" that are merged record by record: an instrument added on each of two devices keeps
-  // both, one changed on both devices takes the newer change ("u"), one deleted on one device goes unless the other
+  // Lists of records with an "id" that are merged record by record (instruments, locations): an instrument added on each
+  // of two devices keeps both, one changed on both devices takes the newer change ("u"), one deleted on one device goes unless the other
   // device changed it since
-  const IDSETS = ["instruments"];
+  const IDSETS = ["instruments", "sites"];
   const KINDS = { list: x => "l:" + x.id, starred: x => "s:" + x.id, log: x => "g:" + x.uid };
   const KNOWN = new Set(["app", "schema", "list", "starred", "log", "del", "settings", "devices"]);
 

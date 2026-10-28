@@ -1527,6 +1527,150 @@ const TESTS = {
 
   // iOS compass: webkitCompassHeading changes its reference with the phone's tilt (back camera when upright, top edge
   // when tilted back further), so the same heading can come in 180° turned. The map must not turn round with it.
+  // Locations: the place of earlier versions becomes the first one; name, edit, add, switch, GPS suggestions, delete;
+  // logbook entries keep the name; without Pro one location
+  async sites() {
+    const old = { lat: 48.18, lon: 10.08, loc: { src: 'gps', acc: 12, at: '2026-09-01T20:00:00Z' }, sky: 'rural' };
+    const geo = `window.__geo = { lat: 48.18, lon: 10.08 }; Object.defineProperty(navigator, 'geolocation', { value: { getCurrentPosition: (ok) => setTimeout(() => ok({ coords: { latitude: window.__geo.lat, longitude: window.__geo.lon, accuracy: 8 } }), 10) } });`;
+    const F = await page({ pro: false, init: `if (!localStorage.getItem('dobson-lotse')) localStorage.setItem('dobson-lotse', ${JSON.stringify(JSON.stringify(old))}); ` + geo });
+    const m = await ev(F, () => ({ n: cfg.sites.length, s: cfg.sites[0], cur: curSite().id === cfg.siteId, lat: cfg.lat, sky: cfg.sky }));
+    ok(m.n === 1 && m.s.name === 'My location' && m.s.lat === 48.18 && m.s.lon === 10.08 && m.s.sky === 'rural' && m.s.loc.src === 'gps' && !m.s.fresh && m.cur && m.lat === 48.18, 'the place of an earlier version becomes the first location, with its sky', m);
+    await ev(F, () => { $('btnSettings').click(); }); await wait(F, 300);
+    ok(await ev(F, () => $('siteList').children.length === 1 && $('siteDel').hidden && $('siteName').value === 'My location' && $('lat').value === '48.18'), 'Settings › General: one card, its name and position, no Delete');
+    await ev(F, () => { $('siteName').value = 'Garden'; $('siteName').onchange(); });
+    ok(await ev(F, () => curSite().name === 'Garden' && $('siteList').querySelector('b').textContent === 'Garden'), 'renamed');
+    await ev(F, () => $('siteAdd').click()); await wait(F, 300);
+    ok(await ev(F, () => cfg.sites.length === 1 && !$('proSheet').hidden), 'without Pro: a second location offers Zenigo Pro');
+    await ev(F, () => { closeSheet('proSheet'); closeSheet('sheet'); syncQuick(); });
+    ok(await ev(F, () => $('qSites').hidden && $('qLocName').textContent === 'Location'), 'without Pro: no location chips in Quick settings');
+    // GPS from Quick settings, far away: without Pro the one location moves
+    await ev(F, () => { window.__geo = { lat: 50.1, lon: 8.7 }; $('qGps').click(); }); await wait(F, 200);
+    ok(await ev(F, () => cfg.sites.length === 1 && Math.abs(cfg.lat - 50.1) < 1e-6 && curSite().lat === 50.1 && $('siteBar').hidden), 'without Pro: GPS moves the one location', await ev(F, () => [cfg.lat, curSite().lat]));
+    await done(F);
+
+    const p = await page({ init: geo });
+    await ev(p, () => { curSite().name = 'Garden'; cfg.lat = 48.18; cfg.lon = 10.08; save(); $('btnSettings').click(); }); await wait(p, 300);
+    await ev(p, () => $('siteAdd').click()); await wait(p, 300);
+    let r = await ev(p, () => ({ n: cfg.sites.length, cur: curSite().name, focus: document.activeElement.id }));
+    ok(r.n === 2 && r.cur === 'New location' && r.focus === 'siteName', 'with Pro: added, in use, its name field focused', r);
+    await ev(p, () => { $('siteName').value = 'Hilltop'; $('siteName').onchange(); $('lat').value = '48.3'; $('lat').onchange(); $('lon').value = '10.2'; $('lon').onchange(); $('skyQ').value = 'dark'; $('skyQ').onchange(); });
+    r = await ev(p, () => ({ s: curSite(), lat: cfg.lat, sky: cfg.sky, g: siteById(cfg.sites[0].id) }));
+    ok(r.s.name === 'Hilltop' && r.s.lat === 48.3 && r.s.lon === 10.2 && r.s.sky === 'dark' && r.lat === 48.3 && r.sky === 'dark' && r.g.lat === 48.18, 'edited: name, position and sky of the one in use, the other unchanged', r);
+    // the other one, edited in its card without switching
+    await ev(p, () => $('siteList').children[0].querySelector('.eqmain').click()); await wait(p, 100);
+    await shot(p, 'sites-settings');
+    ok(await ev(p, () => !$('siteOther').hidden && $('siteName').value === 'Garden' && $('lat').value === '48.18'), 'a tap on the other card opens it, marked as not in use');
+    await ev(p, () => { $('skyQ').value = 'suburb'; $('skyQ').onchange(); });
+    ok(await ev(p, () => cfg.sites[0].sky === 'suburb' && cfg.sky === 'dark' && curSite().name === 'Hilltop'), 'its sky changed, the one in use unchanged');
+    await ev(p, () => $('siteUse').click());
+    ok(await ev(p, () => curSite().name === 'Garden' && cfg.lat === 48.18 && cfg.sky === 'suburb' && $('siteOther').hidden), 'Use: switched, the position and sky follow');
+    // Quick settings: chips switch
+    await ev(p, () => { closeSheet('sheet'); syncQuick(); });
+    await ev(p, () => openSheet('quickSheet')); await wait(p, 300); await shot(p, 'sites-quick');
+    ok(await ev(p, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'Garden|Hilltop|+ Here' && $('qLocName').textContent === 'Garden'), 'Quick settings: a chip per location and “+ Here”');
+    await ev(p, () => $('qSites').children[1].click());
+    ok(await ev(p, () => curSite().name === 'Hilltop' && cfg.lat === 48.3), 'a chip switches');
+    // GPS near a saved location: suggested; somewhere new: a new one offered
+    await ev(p, () => { window.__geo = { lat: 48.1815, lon: 10.0805 }; $('qGps').click(); }); await wait(p, 400);
+    await shot(p, 'sites-bar');
+    ok(await ev(p, () => !$('siteBar').hidden && $('quickSheet').hidden && /You’re at Garden \(\d+ m away\)/.test($('siteBarTxt').textContent)), 'GPS within 300 m of another location: “Switch to it?” (Quick settings closed, so it is seen)', await ev(p, () => $('siteBarTxt').textContent));
+    await ev(p, () => $('siteBarGo').click());
+    ok(await ev(p, () => curSite().name === 'Garden' && $('siteBar').hidden && cfg.lat === 48.18), 'switched from the bar (the saved position kept)');
+    await ev(p, () => { window.__geo = { lat: 47.5, lon: 11.1 }; $('qGps').click(); }); await wait(p, 200);
+    ok(await ev(p, () => !$('siteBar').hidden && /A new location here\?/.test($('siteBarTxt').textContent) && !$('siteBarAlt').hidden), 'GPS far from all: a new location offered, or moving this one');
+    await ev(p, () => $('siteBarGo').click());
+    ok(await ev(p, () => cfg.sites.length === 3 && curSite().lat === 47.5 && curSite().loc.src === 'gps' && curSite().name === 'New location'), 'a new location from GPS');
+    // the logbook keeps the name
+    await ev(p, () => { curSite().name = 'Holiday'; save(); openSeen(objById('M13')); seenState.res = 'easy'; }); await wait(p, 300);
+    await ev(p, () => $('seenSave').click()); await wait(p, 300);
+    ok(await ev(p, () => obs.log[obs.log.length - 1].site === 'Holiday'), 'a logbook entry stores the name of the location');
+    // delete (armed button: two taps)
+    await ev(p, () => { $('btnSettings').click(); }); await wait(p, 300);
+    await ev(p, () => { $('siteDel').click(); $('siteDel').click(); }); await wait(p, 100);
+    ok(await ev(p, () => cfg.sites.length === 2 && !cfg.sites.some(s => s.name === 'Holiday') && curSite().name === 'Garden' && cfg.lat === 48.18), 'deleted: the first one in use again');
+    await done(p);
+  },
+
+  // Your own horizon (Pro): what it hides is not free now (Good now, Free now, the pill), the night bar shows it,
+  // Tonight skips it; recorded with the camera crosshair; after Pro ends it stays stored without effect
+  async horizon() {
+    const p = await page();
+    // a wall in the east: 40° from azimuth 40° to 140°
+    await ev(p, () => { const a = new Float32Array(360); for (let i = 40; i <= 140; i++) a[i] = 40; curSite().horizon = { v: 1, alt: hzEncode(a), at: new Date().toISOString(), how: 'camera' }; save(); siteChanged(); });
+    const T = await ev(p, () => {
+      const t = skyNow().t, R = reach();
+      const hid = TARGETS.filter(T => T.kind === 'dso' && /^M\d+$/.test(T.id)).map(T => ({ T, h: horiz(T.vec(t), t) })).find(x => x.h.alt > 20 && x.h.alt < 35 && x.h.az > 60 && x.h.az < 120);
+      const free = TARGETS.filter(T => T.kind === 'dso' && /^M\d+$/.test(T.id)).map(T => ({ T, h: horiz(T.vec(t), t) })).find(x => x.h.alt > 30 && x.h.alt < R.hi && (x.h.az > 180 && x.h.az < 300));
+      return { hid: hid && hid.T.id, free: free && free.T.id, az: hid && hid.h.az };
+    });
+    ok(T.hid && T.free, 'test objects: one low in the east, one free in the south-west', T);
+    let r = await ev(p, ([h, f]) => { const H = targetById(h), F = targetById(f), n = nowFit(H); return { blk: hzBlocked(horiz(H.vec(skyNow().t), skyNow().t).az, horiz(H.vec(skyNow().t), skyNow().t).alt), ok: n.ok, why: n.why.join(' '), free: inCat(H, 'free'), freeF: inCat(F, 'free') }; }, [T.hid, T.free]);
+    ok(r.blk && !r.ok && /Behind your horizon now: the edge in the [\w-]+ is 40° high\. (Free (in|from)|Not free)/.test(r.why) && !r.free && r.freeF, 'behind the wall: not “Good now”, not “Free now”, with the reason; the other one free', r);
+    r = await ev(p, h => { const pl = planFor(targetById(h), nightPlan()); return { sub: pl.sub, later: pl.later, hid: pl.bar.includes(BAR_HID) }; }, T.hid);
+    ok(/^behind your horizon, (free from \d\d?:\d\d( [AP]M)?|not free again tonight)$/.test(r.sub) && r.later && r.hid, 'night bar: grey while behind it, “behind your horizon, free from …”', r);
+    await ev(p, h => { cfg.target = h; save(); tgtPill.k = null; updateGuide(); }, T.hid);
+    ok(await ev(p, () => /^· behind your horizon, (free (in \d+ min|from \d\d?:\d\d( [AP]M)?)|not free again tonight)$/.test($('tgtChipState').textContent) && $('tgtChip').classList.contains('warn')), 'the target pill says so', await ev(p, () => $('tgtChipState').textContent));
+    // the search: Free now / Free tonight
+    await ev(p, () => { cfg.searchCats = []; $('fabSearch').click(); }); await wait(p, 300);
+    const chips = await ev(p, () => [...$('chips').querySelectorAll('.chip')].map(b => b.textContent));
+    ok(chips.includes('Free nowPro') && chips.includes('Free tonightPro'), 'search: “Free now” and “Free tonight” chips', chips);
+    await ev(p, () => [...$('chips').querySelectorAll('.chip')].find(b => /^Free now/.test(b.textContent)).click()); await wait(p, 300);
+    r = await ev(p, h => { const ids = [...$('results').querySelectorAll('.rrow b')].map(b => b.textContent); const t = skyNow().t;
+      return { n: ids.length, has: ids.includes(h), bad: catList(['free'], TARGETS).filter(T => { const x = horiz(T.vec(t), t); return hzBlocked(x.az, x.alt); }).length, note: $('results').querySelectorAll('.grp')[1]?.textContent }; }, T.hid);
+    await shot(p, 'hz-search');
+    ok(r.n > 5 && !r.has && r.bad === 0 && /not behind your horizon at Garden|My location/.test(r.note), 'Free now: nothing behind the horizon', r);
+    r = await ev(p, ([h, f]) => ({ h: freeTonight(targetById(h)), f: freeTonight(targetById(f)), n: catList(['tonight'], TARGETS).length }), [T.hid, T.free]);
+    ok(r.f && r.n > 10, 'Free tonight: the free one listed', r);
+    ok(await ev(p, () => tonightData().dso.every(x => !hzBlocked(x.b.az, x.b.alt))), 'Tonight: best moments never behind the horizon');
+    ok(await ev(p, az => { closeSheet('searchSheet'); st.mapView = { az, alt: 25, fov: 90 }; draw(); return true; }, T.az), 'the map draws the silhouette');
+    await wait(p, 300); await shot(p, 'hz-map');
+    // after Pro ends: kept, without effect
+    await ev(p, () => { pro.on = false; hzCache.k = null; siteChanged(); });
+    r = await ev(p, h => { const H = targetById(h), x = horiz(H.vec(skyNow().t), skyNow().t); return { kept: !!hzOf(curSite()), cur: hzCur(), blk: hzBlocked(x.az, x.alt) }; }, T.hid);
+    ok(r.kept && r.cur === null && !r.blk, 'without Pro: the horizon stays stored but isn’t used', r);
+    await ev(p, () => { pro.on = true; hzCache.k = null; siteChanged(); closeSheet('searchSheet'); });
+    await done(p);
+
+    // recording: the compass, the camera crosshair held across 100°–140° at 20° up
+    const q = await page();
+    await ev(q, () => { delete curSite().horizon; save(); $('btnSettings').click(); }); await wait(q, 300);
+    await ev(q, () => $('hzRecord').click()); await wait(q, 1200);
+    ok(await ev(q, () => !$('hzRec').hidden && document.documentElement.classList.contains('hzrec-on') && st.sensor), 'Record: the overlay opens, Align on');
+    const feed = (hd0, hd1, hold) => ev(q, async ([hd0, hd1, hold]) => {
+      const beta = 110, gamma = 0, OFF = 30, n = 30;   // the back camera 20° up
+      for (let i = 0; i <= n; i++) {
+        const hd = hd0 + (hd1 - hd0) * i / n;
+        // the alpha that turns the camera to this heading: relative azimuth = heading + OFF
+        let alpha = 0, best = 1e9; for (let a = 0; a < 360; a += 0.5) { const v = Solver.mul(devMatrix(a, beta, gamma), [0, 0, -1]), az = (Math.atan2(v[0], v[1]) * 180 / Math.PI + 360) % 360, d = Math.abs(((az - (hd + OFF)) % 360 + 540) % 360 - 180); if (d < best) { best = d; alpha = a; } }
+        if (hold && i === 3) $('hzRecBtn').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, bubbles: true }));
+        onOrientation({ alpha, beta, gamma, webkitCompassHeading: (hd + 360) % 360, webkitCompassAccuracy: 10 }, false);
+        await new Promise(r => setTimeout(r, 60));
+      }
+      if (hold) $('hzRecBtn').dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, bubbles: true }));
+      const pnt = hzPointing(); return pnt && { az: Math.round(pnt.az), alt: Math.round(pnt.alt) };
+    }, [hd0, hd1, hold]);
+    const settle = await feed(95, 95, false);
+    ok(settle && Math.abs(settle.az - 95) <= 3 && Math.abs(settle.alt - 20) <= 3, 'pointing from the compass: heading and height of the camera', settle);
+    await feed(95, 145, true);
+    r = await ev(q, () => { let n = 0; for (let i = 0; i < 360; i++) n += hzRec.touched[i] ? 1 : 0; return { n, src: $('hzRecSrc').textContent, done: $('hzRecDone').textContent }; });
+    await shot(q, 'hz-rec');
+    ok(r.n >= 35 && /compass/.test(r.src) && /Recorded: \d+° of 360°/.test(r.done), 'held: the degrees passed are recorded', r);
+    await ev(q, () => $('hzRecSave').click()); await wait(q, 300);
+    r = await ev(q, () => { const a = hzDecode(curSite().horizon); return a && { at120: a[120], at200: a[200], at10: a[10], how: curSite().horizon.how, on: document.documentElement.classList.contains('hzrec-on'), sensor: st.sensor }; });
+    ok(r && Math.abs(r.at120 - 20) <= 3 && r.at200 === 0 && r.at10 === 0 && r.how === 'camera' && !r.on && !r.sensor, 'Done: saved with the location (20° in the east, free elsewhere), Align back off', r);
+    await wait(q, 300); await shot(q, 'hz-settings');
+    ok(await ev(q, () => !$('hzPrevBox').hidden && !$('hzClear').hidden && /^recorded /.test($('hzInfo').textContent)), 'Settings: the horizon shown, with Remove');
+    // ✕ with something recorded asks once more
+    await ev(q, () => $('hzRecord').click()); await wait(q, 800);
+    await feed(200, 230, true);
+    await ev(q, () => $('hzRecClose').click());
+    ok(await ev(q, () => !$('hzRec').hidden && /Tap ✕ again/.test($('hzRecTip').textContent)), '✕ after recording: a second tap needed');
+    await ev(q, () => $('hzRecClose').click()); await wait(q, 200);
+    ok(await ev(q, () => $('hzRec').hidden && hzDecode(curSite().horizon)[215] === 0), 'discarded: the saved horizon unchanged');
+    await ev(q, () => { $('hzClear').click(); $('hzClear').click(); });
+    ok(await ev(q, () => !curSite().horizon && $('hzPrevBox').hidden), 'Remove: the horizon is gone');
+    await done(q);
+  },
   async compassflip() {
     const p = await page();
     const run = (hdFlip, n) => ev(p, async ([hdFlip, n]) => {

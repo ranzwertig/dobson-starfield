@@ -121,7 +121,7 @@
           <li><b>Pointing</b>: <b>Camera</b> or <a href="#top-edge"><b>Top edge</b></a>.</li>
           <li><b>On the map</b>: constellation lines, constellation names, <a href="#figures">constellation figures</a>, star names, object names, list marks and <b>Position numbers</b>: a small box at the top right, below the target line (off by default). It shows one short line, the field of view and, after a locate, its accuracy and how many stars matched; tap it for the full list: your location and where it comes from (GPS with its accuracy and time, entered by hand, or still the default), the field of view, and after a locate its accuracy, the matched stars and where the telescope points (RA/Dec, altitude, azimuth).</li>
           <li><b>Button labels</b>.</li>
-          <li><b>Location</b> in one line, with <b>GPS</b> and an <b>Edit</b> button that shows the latitude and longitude fields.</li>
+          <li><b>Location</b> in one line (its name with several <a href="#locations">locations</a>), with <b>GPS</b> and an <b>Edit</b> button that shows the latitude and longitude fields; with Pro, a chip per location to switch and <b>+ Here</b> for a new one at your GPS position.</li>
         </ul>
         <b>All settings</b> at the bottom opens the full <a href="#settings">settings</a>.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg>Target</dt>
@@ -278,7 +278,7 @@
     <dl class="ref">
       <dt>My telescope</dt><dd>Objects your telescope shows well: bright enough for its aperture (for galaxies and nebulae the brightness spread over their area counts, which is what makes a large faint galaxy hard to see) and not far larger than your widest eyepiece’s field: those are better in binoculars. Its details name the eyepiece that frames it best. Needs the aperture in <a href="#settings-telescope">Settings → Equipment</a>; for galaxies and nebulae it also counts <a href="#settings-location">the sky at your place</a> (a dark sky until you set it).</dd>
       <dt>In reach</dt><dd>Objects that come into <a href="#reach">your telescope’s reach</a> from your location at some time of night or year: they climb at least as high as its lowest altitude and don’t always stay above its highest. Without a set range, all objects that rise at your location at all. It doesn’t depend on the time; for what you can reach right now use Good now.</dd>
-      <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°), within <a href="#reach">your telescope’s reach</a> and still high in an hour, the sky dark enough, the sky dark enough, and galaxies and nebulae not washed out by the Moon. With another <a href="#time">time</a> set, it reads “Good at …”. The order also counts what you haven’t seen yet and the programmes you have started; the details say more under <b>Suits you?</b>:
+      <dt>Good now</dt><dd>Objects well placed at the shown time: at least 25° high (planets 15°), within <a href="#reach">your telescope’s reach</a> and still high in an hour, not behind <a href="#locations">your horizon</a>, the sky dark enough, and galaxies and nebulae not washed out by the Moon. With another <a href="#time">time</a> set, it reads “Good at …”. The order also counts what you haven’t seen yet and the programmes you have started; the details say more under <b>Suits you?</b>:
         <ul>
           <li><b>The Moon</b> by its light, its height and its distance: faint galaxies and nebulae suffer most, planetary nebulae and globulars less, open clusters and planets hardly (“A good target with the Moon up”).</li>
           <li><b>Tonight’s air</b>: with <a href="#seeing">seeing</a> 4 or 5 planets, small planetary nebulae and globulars move up, with 1 or 2 down; a logbook entry with transparency 1 or 2 makes faint galaxies and nebulae count less (“Hazy tonight”).</li>
@@ -289,8 +289,12 @@
       <dt>Messier, Caldwell, Herschel 400</dt><dd>The classic observing lists: Messier’s 110 objects; Patrick Moore’s Caldwell list of 109 more for amateur telescopes; and the Herschel 400, 400 of William Herschel’s objects chosen for telescopes from about 15 cm.</dd>
       <dt>Solar system, Galaxies, Clusters, Nebulae</dt><dd>The kind of object.</dd>
     </dl>
-    <p>Only <b>Good now</b> depends on the time: the other categories list objects whether they are up or not, and the altitude on the right says where each one is now (“too low” or “too high” when it is out of <a href="#reach">your telescope’s reach</a>).</p>
-    <p><b>Combining:</b> My telescope, In reach, Good now and Popular all have to apply (My telescope and In reach together: everything your telescope shows well and can point at from here), so together they show the popular objects that suit your telescope and are well placed now. Among the lists and among the kinds one is enough: Messier and Caldwell show both lists; add Galaxies to see only their galaxies. The best matches come first.</p>
+    <dl class="ref">
+      <dt>Free now <a class="ptag pro" href="/pro/">Pro</a></dt><dd>Objects you can see from where you stand at the shown time: at least 10° high, within your telescope’s reach and not behind <a href="#locations">your horizon</a> (houses, trees). Without a recorded horizon, everything above 10°.</dd>
+      <dt>Free tonight <a class="ptag pro" href="/pro/">Pro</a></dt><dd>Objects that are free at some time of the night ahead: above 20°, in reach, in darkness and not behind your horizon. The <a href="#night-bar">night bar</a> shows when: grey while it is behind your horizon.</dd>
+    </dl>
+    <p>Only <b>Good now</b> and <b>Free now</b> depend on the time: the other categories list objects whether they are up or not, and the altitude on the right says where each one is now (“too low” or “too high” when it is out of <a href="#reach">your telescope’s reach</a>).</p>
+    <p><b>Combining:</b> My telescope, In reach, Good now, Free now, Free tonight and Popular all have to apply (My telescope and In reach together: everything your telescope shows well and can point at from here), so together they show the popular objects that suit your telescope and are well placed now. Among the lists and among the kinds one is enough: Messier and Caldwell show both lists; add Galaxies to see only their galaxies. The best matches come first.</p>
     <p>Why an object suits you or not is in its details, under <b>Suits you?</b>: the lists it is on, how bright it is for your telescope and which eyepiece frames it, and where it stands at the shown time.</p>
 
     <h2 id="targets">Targets and object details</h2>
@@ -466,8 +470,8 @@
 
     <h3 id="settings-general">General</h3>
     <dl class="ref">
-      <dt id="settings-location">Location</dt>
-      <dd>Latitude and longitude of your observing site; <b>GPS</b> fills them in. Needed for every direction the app shows. Quick settings shows the location in one line, with <b>GPS</b> and <b>Edit</b>. <b>Sky at this place</b>: from dark (no light domes) through rural, suburban and bright suburb to city. It lowers what counts as visible in your telescope for galaxies and nebulae (<b>My telescope</b>, Tonight); not set, the sky counts as dark. It syncs with the location.</dd>
+      <dt id="settings-location">Locations</dt>
+      <dd>Your observing location: its <b>Name</b>, latitude and longitude (<b>GPS</b> fills them in). Needed for every direction the app shows. Quick settings shows it in one line, with <b>GPS</b> and <b>Edit</b>. <b>Sky at this place</b>: from dark (no light domes) through rural, suburban and bright suburb to city. It lowers what counts as visible in your telescope for galaxies and nebulae (<b>My telescope</b>, Tonight); not set, the sky counts as dark. Below: its <a href="#locations">horizon</a>. With Pro you keep several locations, each with its own position, sky and horizon.</dd>
       <dt id="settings-display">Display</dt>
       <dd>How the image and the map look:
         <ul>
@@ -520,6 +524,24 @@
       <dd>Tap it in Settings › Equipment: its settings show below, marked “Not in use on this device”, and changes go to it. <b>Use it</b> switches to it.</dd>
       <dt>With sync</dt>
       <dd>Your instruments are the same on all your devices; which one a device uses, and its eyepiece point, stay with that device.</dd>
+    </dl>
+
+    <h3 id="locations">Locations and your own horizon <a class="ptag pro" href="/pro/">Pro</a></h3>
+    <p>Where you observe decides more than the directions: a house, a hedge or a tree can hide half the sky. Each location keeps its name, position, sky and horizon. Without Pro you have one location: give it a name and change its position. With <a href="/pro/">Zenigo Pro</a> you keep several (garden, club field, holiday house) and record the horizon of each.</p>
+    <dl class="ref">
+      <dt>Adding one</dt>
+      <dd>Settings › General › <b>Add a location</b> (it starts at the position in use; type a name, then <b>GPS</b> or the coordinates), or <b>+ Here</b> in Quick settings for a new location at your GPS position.</dd>
+      <dt>Switching</dt>
+      <dd>The chips in Quick settings, or <b>Use</b> in Settings › General. When you tap <b>GPS</b> in Quick settings and you are within 300 m of another of your locations, Zenigo asks “You’re at … Switch to it?”; somewhere new, it offers a new location there or to move the one in use. With several locations, and the position already allowed, Zenigo asks the same at the start. It never switches by itself.</dd>
+      <dt>Recording the horizon</dt>
+      <dd>Settings › General › <b>Record the horizon</b>. Stand where the telescope stands and hold the phone in your hand. Put the crosshair of the camera image on the edge of roofs and trees (with <a href="#top-edge">Top edge</a>: point the top edge along it), hold the round button and follow the edge slowly; let go to pause. Where there is open sky, hold <b>Hold: free</b> while you sweep over it. What you don’t record counts as free. <b>Done</b> saves it; ✕ discards it (after recording, tap it twice). The strip at the bottom shows what you have; recording a part again replaces only that part.</dd>
+      <dd>The direction comes from the compass, without the <a href="#compass">compass correction</a> (that corrects the metal of the telescope, which the phone in your hand doesn’t feel). After a <a href="#solving">Locate</a> with Align on, it comes from the stars and is exact. Small gaps are closed and the line smoothed; objects count as free from 2° above the edge.</dd>
+      <dt>What uses it</dt>
+      <dd><b>Free now</b> and <b>Free tonight</b> in <a href="#categories">Find target</a>, <b>Good now</b> and <b>Suits you?</b> (“Behind your horizon now … Free from 23:10”), the map (the silhouette, over the camera image only its edge), the target line (“behind your horizon, free in 25 min”), the night bars (grey while it is behind your horizon), Tonight’s best times and picks, the planned list and Next. Without Pro the horizon stays stored but isn’t used.</dd>
+      <dt>Trees grown, something new</dt>
+      <dd>Record that part again. <b>Remove</b> deletes the horizon of the location. Moving a location by GPS by more than 300 m keeps its horizon but tells you to record it again there.</dd>
+      <dt>In the logbook</dt>
+      <dd>Each entry keeps the name of the location with its position; the OpenAstronomyLog export names the site after it.</dd>
     </dl>
 
     <h3 id="settings-cam">Camera</h3>
@@ -576,9 +598,9 @@
           <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
           <li>On the next device: Menu → Sync with other devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
           <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
-          <li><b>What syncs:</b> list, starred, logbook (including deletions), location, mount, map filter, focal length, aperture, lowest and highest altitude, eyepieces, Barlow, finder, the rings on the map, eyepiece view orientation and turn. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
+          <li><b>What syncs:</b> list, starred, logbook (including deletions), your locations (name, position, sky and horizon; which one a device uses stays with it), mount, map filter, focal length, aperture, lowest and highest altitude, eyepieces, Barlow, finder, the rings on the map, eyepiece view orientation and turn. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
           <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online.</li>
-          <li><b>Changed on two devices before they synced:</b> different entries and settings are simply combined. A logbook entry edited on both keeps both edits, field by field (note on one, seeing on the other); only a field changed on both takes the later edit. Eyepieces added or removed on each device are combined too. Location (latitude, longitude, where it came from) always comes from one device, the one that changed it last. Deleted on one device and changed on the other: the later of the two counts.</li>
+          <li><b>Changed on two devices before they synced:</b> different entries and settings are simply combined. A logbook entry edited on both keeps both edits, field by field (note on one, seeing on the other); only a field changed on both takes the later edit. Eyepieces added or removed on each device are combined too, and so are locations and instruments added on different devices; a location changed on both takes the later change. Deleted on one device and changed on the other: the later of the two counts.</li>
           <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
           <li>Keep the code somewhere safe: <b>Add a device</b> → <b>Save as image</b> (the QR code with a short explanation, to print or keep in your photos) or <b>Save as text</b> (link and code, for a password manager). Anyone with it can read and change your synced data, and if all your devices are lost it is the only way back to it.</li>
           <li>If a device runs an older version of Zenigo than the others, it keeps syncing as long as the data is compatible; otherwise it says so and waits for an update instead of overwriting newer data.</li>
