@@ -1903,6 +1903,9 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 <script id="main">
 "use strict";
 const $ = id => document.getElementById(id);
+// hours and minutes in the phone's format: one formatter, created once (toLocaleTimeString builds one per call, which
+// made formatting thousands of times in the search slow)
+const HM = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" });
 // Installed on the iPhone home screen: mark it, so the top controls keep clear of the blurred band below the status bar
 // iPhone in landscape: iOS reports the same side inset on both sides, but only the side with the camera cut-out needs
 // it. The buttons on the free side go close to the edge (window.orientation 90: turned anticlockwise, cut-out on the left).
@@ -2457,8 +2460,13 @@ function setAuto(on) {
 /* ---------------- Sky / targets ---------------- */
 // where the sky is seen from: the location set, or where a photo in photo mode was taken (if it says so)
 function observer() { const L = ph.on && ph.loc; return new A.Observer(L ? L.lat : +cfg.lat || 0, L ? L.lon : +cfg.lon || 0, 400); }
+// The rotation to the horizon (precession, nutation, the Earth's turn) is the same for every object at one time and
+// place: worked out once and kept for the last few times
+const rotMemo = new Map();
 function horiz(vec, t) {
-  const R = A.Rotation_EQJ_HOR(t, observer());
+  const L = ph.on && ph.loc, k = t.ut + "|" + (L ? L.lat + "," + L.lon : (+cfg.lat || 0) + "," + (+cfg.lon || 0));
+  let R = rotMemo.get(k);
+  if (!R) { if (rotMemo.size > 24) rotMemo.clear(); R = A.Rotation_EQJ_HOR(t, observer()); rotMemo.set(k, R); }
   const v = A.RotateVector(R, new A.Vector(vec[0], vec[1], vec[2], t));
   const s = A.HorizonFromVector(v, "normal"); return { alt: s.lat, az: s.lon };
 }
@@ -2475,8 +2483,14 @@ const CATS = [
   { id: "scope", g: "cond", label: "My telescope" }, { id: "reach", g: "cond", label: "In reach" }, { id: "now", g: "cond", label: "Good now" }, { id: "free", g: "cond", label: "Free now", pro: true }, { id: "tonight", g: "cond", label: "Free tonight", pro: true }, { id: "pop", g: "cond", label: "Popular" },
   { id: "messier", g: "list", label: "Messier" }, { id: "caldwell", g: "list", label: "Caldwell" }, { id: "h400", g: "list", label: "Herschel 400" },
   { id: "solar", g: "kind", label: "Solar system" }, { id: "gal", g: "kind", label: "Galaxies" }, { id: "clusters", g: "kind", label: "Clusters" }, { id: "neb", g: "kind", label: "Nebulae" }];
+// the search targets by id: a map kept up to date with TARGETS (only added to, except satellites and the extended
+// catalogue, which reset it when they take theirs out)
+const TIDX = { n: 0, m: new Map() };
+function tidxReset() { TIDX.n = 0; TIDX.m.clear(); }
 function targetById(id) {
-  let T = TARGETS.find(t => t.id === id);
+  if (TIDX.n > TARGETS.length) tidxReset();
+  for (; TIDX.n < TARGETS.length; TIDX.n++) { const x = TARGETS[TIDX.n]; if (!TIDX.m.has(x.id)) TIDX.m.set(x.id, x); }
+  let T = TIDX.m.get(id);
   if (!T && /^S\d+$/.test(id) && typeof starObj === "function") { const o = starObj(+id.slice(1)); T = { id, name: o.name, sub: o.desig, kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); }
   if (!T && /^D\d/.test(id) && typeof deepStarById === "function") { const o = deepStarById(id); if (o) { T = { id, name: o.name, sub: "Star · " + o.mag.toFixed(1) + " mag", kind: "star", mag: o.mag, vec: o.vec }; TARGETS.push(T); } }
   return T;
@@ -2505,7 +2519,7 @@ function catKind(T) {
   if (T.kind !== "dso") return null;
   const c = dsoCls(T.id); return c === "gal" ? "gal" : c === "glob" || c === "open" ? "clusters" : "neb";
 }
-function dsoCls(id) { const m = MSV.find(x => x.id === id); if (m) return m.cls; const n = NGC.find(x => x.id === id); return n ? n.cls : "neb"; }
+function dsoCls(id) { const m = msvOf(id); if (m) return m.cls; const n = ngcRow(id); return n ? n.cls : "neb"; }
 function inCat(T, c) {
   switch (c) {
     case "pop": return LISTS.pop.has(T.id);
@@ -2561,29 +2575,71 @@ function freeTonight(T) {
   }
   freeMemo.m.set(T.id, r); return r;
 }
-function catList(cats, pool) {
+// The search as a job that can run in parts (catRun with a time limit), so the panel stays responsive while thousands
+// of objects are checked; catList runs it in one go. Lists and kinds are checked first (cheap), then the conditions,
+// the costly ones (where it stands now, tonight) last.
+const COND_COST = { pop: 0, scope: 1, reach: 2, free: 3, tonight: 4, now: 5 };
+function catJob(cats, pool) {
   if (!pro.on) cats = cats.filter(c => !CATS.find(x => x.id === c).pro);   // after Pro ended: those chips do nothing
   const has = g => cats.filter(c => CATS.find(x => x.id === c).g === g);
-  const cond = has("cond"), lists = has("list"), kinds = has("kind");
+  const cond = has("cond").sort((a, b) => COND_COST[a] - COND_COST[b]), lists = has("list"), kinds = has("kind");
   const listed = T => /^M\d+$/.test(T.id) || LISTS.pop.has(T.id) || LISTS.caldwell.has(T.id) || LISTS.h400.has(T.id);
-  const out = pool.filter(T => (T.kind === "planet" || T.kind === "dso") && T.id !== "Sun" && (listed(T) || !/^(PGC|LDN|B|Ced) /.test(T.id))
-    && cond.every(c => inCat(T, c)) && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))));
-  // what you haven't seen yet, and what belongs to a programme you have started, comes first
-  const S = sets(), act = activeProgIds();
-  const score = T => (cats.includes("scope") ? (scopeFit(T)?.score || 0) : 0) + (cats.includes("now") ? nowFit(T).score : 0) + (LISTS.pop.has(T.id) ? 0.3 : 0) + (listed(T) ? 0.3 : 0) - (T.mag ?? 10) / 50
-    + (S.seen.has(T.id) ? 0 : 0.25) + (act.has(T.id) ? 0.2 : 0);
-  return out.map(T => [T, score(T)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  const test = T => (T.kind === "planet" || T.kind === "dso") && T.id !== "Sun" && (listed(T) || !/^(PGC|LDN|B|Ced) /.test(T.id))
+    && (!lists.length || lists.some(c => inCat(T, c))) && (!kinds.length || kinds.includes(catKind(T))) && cond.every(c => inCat(T, c));
+  return { pool, i: 0, out: [], test, finish() {
+    // what you haven't seen yet, and what belongs to a programme you have started, comes first
+    const S = sets(), act = activeProgIds();
+    const score = T => (cats.includes("scope") ? (scopeFit(T)?.score || 0) : 0) + (cats.includes("now") ? nowFit(T).score : 0) + (LISTS.pop.has(T.id) ? 0.3 : 0) + (listed(T) ? 0.3 : 0) - (T.mag ?? 10) / 50
+      + (S.seen.has(T.id) ? 0 : 0.25) + (act.has(T.id) ? 0.2 : 0);
+    return this.out.map(T => [T, score(T)]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  } };
 }
-function showResults() {
+// checks objects until the time (performance.now()) is up; true when all are checked
+function catRun(job, until) {
+  const P = job.pool;
+  while (job.i < P.length) { const T = P[job.i++]; if (job.test(T)) job.out.push(T); if ((job.i & 31) === 0 && performance.now() > until) return job.i >= P.length; }
+  return true;
+}
+function catList(cats, pool) { const j = catJob(cats, pool); catRun(j, Infinity); return j.finish(); }
+// Results kept per chips, text and 5-minute window, until the place, horizon, instrument, logbook or lists change
+const catMemo = new Map();
+let searchJob = { key: null, job: null };
+function catKey(cats, q) {
+  const R = reach(), sk = skyNow();
+  return [cats.join(","), q, Math.floor(skyDate().getTime() / 300e3), sk.key, st.opticsVer || 0, st.obsVer || 0, hzCur() ? hzCache.k : "", pro.on, TARGETS.length, LISTS.pop.size, LISTS.caldwell.size, LISTS.h400.size, R.lo, R.hi, !!aperture()].join("|");
+}
+// sync: the whole search at once (for tests and callers that read the rows right away)
+function showResults(sync) {
   const q = norm($("q").value), box = $("results"), t = skyNow().t, cats = cfg.searchCats || [];
-  box.textContent = "";
+  box.textContent = ""; box.removeAttribute("aria-busy");
   let list;
   const note = txt => { const g = document.createElement("div"); g.className = "grp"; g.textContent = txt; box.append(g); };
   if (cats.length) {
     // categories: the text narrows them down further
     const nall = T => T._na ?? (T._na = norm(T.name + T.sub)), nid = T => T._ni ?? (T._ni = norm(T.id));
     if (cats.includes("scope") && !aperture()) { note("Enter your telescope’s aperture in the settings for “My telescope”"); return; }
-    const all = catList(cats, q ? TARGETS.filter(T => nall(T).includes(q) || nid(T) === q) : TARGETS);
+    const key = catKey(cats, q);
+    let all = catMemo.get(key);
+    if (!all) {
+      let job = searchJob.key === key ? searchJob.job : null;
+      if (!job) { job = catJob(cats, q ? TARGETS.filter(T => nall(T).includes(q) || nid(T) === q) : TARGETS); searchJob = { key, job }; }
+      // more than a moment's work: the rest in small steps, so the chip changes at once and the panel stays responsive;
+      // another chip or text starts a new job and this one stops
+      if (!catRun(job, sync === true ? Infinity : performance.now() + 30)) {
+        note("Searching …"); box.setAttribute("aria-busy", "true");
+        if (!job.running) {
+          job.running = true;
+          const step = () => {
+            if (searchJob.job !== job || $("searchSheet").hidden) { job.running = false; return; }
+            if (!catRun(job, performance.now() + 12)) return void setTimeout(step, 0);
+            job.running = false; if (catMemo.size > 40) catMemo.clear(); catMemo.set(key, job.finish()); searchJob = { key: null, job: null }; showResults();
+          };
+          setTimeout(step, 0);
+        }
+        return;
+      }
+      all = job.finish(); if (catMemo.size > 40) catMemo.clear(); catMemo.set(key, all); searchJob = { key: null, job: null };
+    }
     // in the order of the categories: where an object is right now only counts with "Good now"
     list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
@@ -2649,7 +2705,7 @@ function scopeFitCalc(T, D) {
     return { ok: !small || D >= 100, score: small ? 0.35 : 0.9, why: [small ? "A small disc: shows as a tiny coloured dot." : "Shows detail in any telescope."] };
   }
   if (T.kind !== "dso") return { ok: false, score: 0, why: [] };
-  const m = MESSIER.find(r => r[0] === T.id), n = !m && NGC.find(x => x.id === T.id);
+  const m = mesRow(T.id), n = !m && ngcRow(T.id);
   const cls = m ? dsoClass(m[5]) : n ? n.cls : "neb", mag = m ? m[3] : n ? n.mag : null, size = m ? m[7] : n ? n.size : null;
   let score = 0.6, ok = true;
   if (mag == null) { ok = false; score = 0.25; why.push("No reliable brightness: a faint, spread-out nebula that usually needs a dark sky and a nebula filter."); }
@@ -2681,19 +2737,22 @@ function scopeFitCalc(T, D) {
 // How well placed it is at the shown time: high enough now and in an hour, dark enough, and for faint deep-sky objects
 // not next to a bright Moon. Kept for a minute (and per shown time).
 function nowFit(T) {
-  const sk = skyNow(), key = sk.key + "|" + Math.floor(skyDate().getTime() / 60e3) + "|" + (st.opticsVer || 0) + "|" + (st.obsVer || 0) + "|" + !!hzCur();
+  // kept for 5 minutes: the sky turns by about 1° in that time, which doesn't change "well placed"
+  const sk = skyNow(), key = sk.key + "|" + Math.floor(skyDate().getTime() / 300e3) + "|" + (st.opticsVer || 0) + "|" + (st.obsVer || 0) + "|" + !!hzCur();
   if (fitCache.nk !== key) { fitCache.now.clear(); fitCache.nk = key; fitCache.env = null; }
   if (fitCache.now.has(T.id)) return fitCache.now.get(T.id);
-  const t = sk.t, t1 = A.MakeTime(new Date(skyDate().getTime() + 3600e3)), t2 = A.MakeTime(new Date(skyDate().getTime() + 2 * 3600e3));
   if (!fitCache.env) {
-    const sun = horiz(targetById("Sun").vec(t), t).alt, mv = targetById("Moon").vec(t), moonAlt = horiz(mv, t).alt;
+    const t = sk.t, sun = horiz(targetById("Sun").vec(t), t).alt, mv = targetById("Moon").vec(t), moonAlt = horiz(mv, t).alt;
     let ill = 0; try { ill = A.Illumination(A.Body.Moon, t).phase_fraction; } catch (e) {}
     // tonight's seeing and transparency, and the objects tried but never found (with their last try)
     const k = nightKey(new Date()), tr = obs.log.filter(e => +e.transp >= 1 && nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
     const okIds = new Set(obs.log.filter(e => e.result !== "miss").map(e => e.obj)), nf = new Map();
     obs.log.forEach(e => { if (e.result === "miss" && !okIds.has(e.obj) && (!nf.has(e.obj) || nf.get(e.obj).t < e.t)) nf.set(e.obj, e); });
-    fitCache.env = { sun, mv, moonAlt, ill, see: seeingTonight(), tr: tr ? +tr.transp : null, nf };
+    // in an hour and in two: the same moments for every object (so the horizon rotation is worked out once for each)
+    fitCache.env = { sun, mv, moonAlt, ill, see: seeingTonight(), tr: tr ? +tr.transp : null, nf, t,
+      t1: A.MakeTime(new Date(t.date.getTime() + 3600e3)), t2: A.MakeTime(new Date(t.date.getTime() + 2 * 3600e3)) };
   }
+  const { t, t1, t2 } = fitCache.env;
   const E = fitCache.env, v = T.vec(t), h = horiz(v, t), h1 = horiz(T.vec(t1), t1), why = [];
   const deep = T.kind === "dso", R = reach(), minAlt = Math.max(deep ? 25 : 15, R.lo), cls = deep ? dsoCls(T.id) : T.kind === "planet" ? "planet" : null;
   let ok = h.alt >= minAlt && h1.alt >= minAlt - 5 && h.alt <= R.hi, score = Math.max(0, Math.min(1, (h.alt - 10) / 50));
@@ -2702,7 +2761,8 @@ function nowFit(T) {
   else if (h.alt >= 0 && h.alt < R.lo) why.push("Too low for your telescope (it points down to " + R.lo + "°).");
   else if (h.alt >= minAlt && h1.alt > R.hi) why.push("Out of reach within the hour: it climbs above " + R.hi + "°.");
   // your own horizon (Pro): behind houses or trees now, or soon
-  if (h.alt > 0 && h.alt <= R.hi && hzBlocked(h.az, h.alt)) { ok = false; score *= 0.3; why.push("Behind your horizon " + (st.tOff ? "then" : "now") + ": the edge in the " + compass(h.az) + " is " + Math.round(hzAlt(h.az)) + "° high. " + (hzFreeWhen(T) ? "Free " + hzFreeWhen(T) : "Not free again tonight") + "."); }
+  if (h.alt > 0 && h.alt <= R.hi && hzBlocked(h.az, h.alt)) { ok = false; score *= 0.3; const head = "Behind your horizon " + (st.tOff ? "then" : "now") + ": the edge in the " + compass(h.az) + " is " + Math.round(hzAlt(h.az)) + "° high. ";
+    why.push(() => { const w = hzFreeWhen(T); return head + (w ? "Free " + w + "." : "Not free again tonight."); }); }
   else if (ok && h1.alt > 0 && hzBlocked(h1.az, h1.alt)) { score *= 0.85; why.push("Goes behind your horizon within the hour: observe it soon."); }
   // the best time: much higher later, or getting low soon
   if (h.alt > 0 && h.alt < 50 && h.alt <= R.hi) {
@@ -2741,7 +2801,11 @@ function nowFit(T) {
     if (better.length && h.alt > 0) { score += 0.15; why.push("Not found on " + when + "; " + (st.tOff ? "then " : "now ") + better.join(" and ") + ": try again."); }
     else why.push("Not found on " + when + " yet.");
   }
-  const f = { ok, score: Math.max(0, score), why }; fitCache.now.set(T.id, f); return f;
+  // the reasons are read only by the details and "Suits you?": parts that take a search (when it comes out from behind
+  // your horizon) are worked out then
+  let wt = null;
+  const f = { ok, score: Math.max(0, score), get why() { return wt || (wt = why.map(x => typeof x === "function" ? x() : x)); } };
+  fitCache.now.set(T.id, f); return f;
 }
 // How much a bright Moon spoils an object, 0 (not at all) to 1: its light, its height and its distance, weighted by
 // the kind (faint, spread-out galaxies and nebulae most, open clusters little, planets not)
@@ -2969,7 +3033,7 @@ function renderReadout() {
   // where you are: the coordinates and where they come from (GPS with its accuracy, typed in, or the default)
   const la = +cfg.lat, lo = +cfg.lon, L = cfg.loc || {};
   add("Location", Math.abs(la).toFixed(3) + "° " + (la >= 0 ? "N" : "S") + ", " + Math.abs(lo).toFixed(3) + "° " + (lo >= 0 ? "E" : "W"));
-  const when = L.at ? new Date(L.at) : null, ago = when ? (Date.now() - when < 864e5 && when.getDate() === new Date().getDate() ? "today " + when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : when.toLocaleDateString([], { day: "numeric", month: "short" })) : "";
+  const when = L.at ? new Date(L.at) : null, ago = when ? (Date.now() - when < 864e5 && when.getDate() === new Date().getDate() ? "today " + HM.format(when) : when.toLocaleDateString([], { day: "numeric", month: "short" })) : "";
   add("From", L.src === "gps" ? "GPS" + (L.acc ? " ±" + (L.acc >= 1000 ? (L.acc / 1000).toFixed(1) + " km" : Math.round(L.acc) + " m") : "") + (ago ? " · " + ago : "")
     : L.src === "manual" ? "entered" + (ago ? " · " + ago : "") : la === DEF.lat && lo === DEF.lon ? "default, not set yet" : "saved");
   if (st.sol) { add("Field of view", fmtDeg(longFromSol(st.sol)) + " × " + fmtDeg(Math.min(st.sol.fov, st.sol.fovV) === st.sol.fov ? st.sol.fov : st.sol.fovV)); if (!st.sol.approx) { add("Accuracy", "±" + (st.sol.rms * 60).toFixed(1) + "′"); add("Stars matched", String(st.sol.nMatch)); } }
@@ -3314,6 +3378,13 @@ const MSV = MESSIER.map(([id, ra, dec, mag, , type, , size]) => ({ id, mag, cls:
 const magLim = show => show.mag >= 9 ? 99 : show.mag;
 const DEEP = { n: 0, v: null, m: null }, DEEP_BASE = { n: 0, v: null, m: null };
 let NGC = [];
+// Catalogue rows by id: maps instead of searching the arrays (the search asked thousands of times per tap; with the
+// extended catalogue that was some 150 million comparisons for "Galaxies"). NGC is replaced when the extended
+// catalogue comes or goes: its map follows.
+const IDX = { mes: null, msv: null, ngcOf: null, ngc: null };
+const mesRow = id => (IDX.mes || (IDX.mes = new Map(MESSIER.map(r => [r[0], r])))).get(id);
+const msvOf = id => (IDX.msv || (IDX.msv = new Map(MSV.map(m => [m.id, m])))).get(id);
+function ngcRow(id) { if (IDX.ngcOf !== NGC) { IDX.ngcOf = NGC; IDX.ngc = new Map(); NGC.forEach(o => { if (!IDX.ngc.has(o.id)) IDX.ngc.set(o.id, o); }); } return IDX.ngc.get(id); }
 var deepLoaded = null;   // loadDeep(): the free deep catalogue; the extended one (Zenigo Pro) is added on top of it
 // Observing lists (lists.json): Caldwell number by id, Herschel 400 and a curated list of popular showpieces
 const LISTS = { ok: false, caldwell: new Map(), h400: new Set(), pop: new Set() };
@@ -3373,6 +3444,7 @@ async function loadSats(force) {
     if (!list.length) throw new Error("empty");
     SAT.list = list; SAT.ok = true; SAT.at = Date.now(); SAT.posAt = 0;
     for (let i = TARGETS.length - 1; i >= 0; i--) if (TARGETS[i].kind === "sat" && !list.some(x => "SAT" + x.norad === TARGETS[i].id)) TARGETS.splice(i, 1);
+    tidxReset();
     list.forEach(x => { if (!TARGETS.some(T => T.id === "SAT" + x.norad)) TARGETS.push({ id: "SAT" + x.norad, name: x.name, sub: "Satellite" + (x.name !== x.full ? " · " + x.full : "") + " · moves fast", kind: "sat", vec: t => satVec(x, t.date) }); });
   } catch (e) { SAT.ok = false; }
   SAT.loading = false; syncSatState(); st.filterVer++; lastSig = []; updateGuide();
@@ -3650,6 +3722,7 @@ function extUnload() {
   const gone = new Set(NGC.filter(o => o.ext).map(o => o.id));
   NGC = NGC.filter(o => !o.ext);
   for (let t = TARGETS.length - 1; t >= 0; t--) if (TARGETS[t].ext) TARGETS.splice(t, 1);
+  tidxReset();
   if (LISTS.shapes) gone.forEach(id => LISTS.shapes.delete(id));
   ext.loaded = false; st.filterVer++; lastSig = []; ph.objs = null; syncFilter(); updateGuide(); renderExt();
 }
@@ -5271,14 +5344,14 @@ function sets() {
 }
 // Long name for lists: "M13 · Great Hercules Cluster", "NGC 869 · h Persei"
 function obsName(id, fallback) {
-  const m = MESSIER.find(r => r[0] === id); if (m) return m[4] ? id + " · " + m[4] : id;
-  const n = NGC.find(o => o.id === id); if (n) return n.name ? id + " · " + n.name : id;
+  const m = mesRow(id); if (m) return m[4] ? id + " · " + m[4] : id;
+  const n = ngcRow(id); if (n) return n.name ? id + " · " + n.name : id;
   const T = targetById(id); return T ? T.name : fallback || id;
 }
 // Full object (details, links) from an id
 function objById(id) {
-  const m = MESSIER.find(r => r[0] === id); if (m) return messierObj(m);
-  const n = NGC.find(o => o.id === id); if (n) return ngcObj(n);
+  const m = mesRow(id); if (m) return messierObj(m);
+  const n = ngcRow(id); if (n) return ngcObj(n);
   const p = PLANETS.find(([, en]) => en === id); if (p) return planetObj(p[0], p[1]);
   if (/^S\d+$/.test(id)) return starObj(+id.slice(1));
   const ds = deepStarById(id); if (ds) return ds;
@@ -5388,7 +5461,7 @@ function memoPlan(T) {
 const BAR_UP = "#7a5a2c", BAR_GOOD = "#4c9466", BAR_HID = "#3a4350";   // up but behind your horizon: grey
 function rowPlan(id, tn) { const T = targetById(id); return T ? planFor(T, tn) : null; }
 function planFor(T, tn) {
-  const now = new Date(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const now = new Date(), fmt = d => HM.format(d);
   const tNow = A.MakeTime(now), hNow = horiz(T.kind === "planet" || T.kind === "sun" ? T.vec(tNow) : vecNow(T), tNow), altNow = hNow.alt;
   const planet = T.kind === "planet";
   const ok = a => inReach(a, 20);   // well placed: above 20° and in the telescope's reach
@@ -5417,7 +5490,7 @@ const PLANET_R = { Mercury: 2439.7, Venus: 6051.8, Mars: 3396.2, Jupiter: 71492,
 const JUP_MOONS = [["io", "Io"], ["europa", "Europa"], ["ganymede", "Ganymede"], ["callisto", "Callisto"]];
 const fmtDay = d => d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
 const fmtDayYear = d => d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
-const fmtHM = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const fmtHM = d => HM.format(d);
 const fmtArcsec = s => s >= 60 ? (s / 60).toFixed(1) + "′" : s.toFixed(1) + "″";
 const v3 = v => [v.x, v.y, v.z], dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const unit3 = a => { const n = Math.hypot(...a) || 1; return [a[0] / n, a[1] / n, a[2] / n]; };
@@ -5598,7 +5671,7 @@ function fillMoonPhase(box) {
   if (box._key === key && !box.hidden) return;   // the target panel refreshes often: once a minute is plenty
   box._key = key;
   const t = A.MakeTime(d), ph = A.MoonPhase(t), k = A.Illumination(A.Body.Moon, t).phase_fraction;
-  const day = x => x ? x.date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }) + ", " + x.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  const day = x => x ? x.date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" }) + ", " + HM.format(x.date) : "–";
   const next = lon => { try { return A.SearchMoonPhase(lon, t, 40); } catch (e) { return null; } };
   const age = ph / 360 * 29.53;
   box.innerHTML = moonPhaseSvg(ph, k) + '<div><b></b><small></small><small></small><small></small></div><p class="mterm" hidden></p>';
@@ -5625,7 +5698,7 @@ function fillMoonPhase(box) {
 const SUN_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 3v7M9 7.5l3 3 3-3"/></svg>';
 const SUN_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 10V3M9 6l3-3 3 3"/></svg>';
 function nightBar(p, detail) {
-  const tn = nightPlan(), fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const tn = nightPlan(), fmt = d => HM.format(d);
   if (!tn.endsTxt) tn.endsTxt = [fmt(tn.start), fmt(tn.end)];   // formatting times is slow: once per night plan
   const w = document.createElement("div"); w.className = "obarw";
   const a = document.createElement("span"); a.className = "oend"; a.innerHTML = tn.sunset ? SUN_DOWN : ""; a.append(tn.endsTxt[0]);
@@ -5642,7 +5715,7 @@ function nightBar(p, detail) {
 // the telescope's reach (lowest/highest altitude in Settings › Telescope); no marks when it stays in reach all night.
 function nightDetail(bar, w, p) {
   const tn = nightPlan(), span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
-  const fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), pts = p.pts || [];
+  const fmt = d => HM.format(d), pts = p.pts || [];
   const label = (row, at, txt, cls) => {
     if (row.some(x => Math.abs(x - at) < 0.5)) return; row.push(at);
     const e = document.createElement("span"); e.className = cls; e.textContent = txt; e.style.left = at + "%"; e.dataset.at = at; bar.append(e);
@@ -5699,7 +5772,7 @@ function nightLegend(p) {
 }
 // Rising, highest point and setting during the night (from the 10-minute samples)
 function nightCourse(p) {
-  const fmt = d => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), pts = p.pts;
+  const fmt = d => HM.format(d), pts = p.pts;
   if (!pts || !pts.length) return "";
   let hi = pts[0]; pts.forEach(q => { if (q.a > hi.a) hi = q; });
   if (hi.a < 0) return "Below the horizon all night.";
@@ -5799,7 +5872,7 @@ function syncHudNext() {
 }
 function goNext(nx) { selectTarget(nx.x.id); hint("Next on your list: " + obsName(nx.x.id, nx.x.name) + ".", 3000); }
 function renderList() {
-  const tn = nightPlan(), body = $("listBody"), k = nightKey(new Date()), fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  const tn = nightPlan(), body = $("listBody"), k = nightKey(new Date()), fmt = d => d ? HM.format(d) : "–";
   $("listSub").textContent = (tn.dusk ? "Dark " + fmt(tn.dusk) + "–" + fmt(tn.dawn) : "No full darkness tonight") + " · Moon " + (tn.moonSet && tn.moonSet > new Date() ? "sets " + fmt(tn.moonSet) : tn.moonRise && tn.moonRise > new Date() ? "rises " + fmt(tn.moonRise) : Math.round(tn.illum * 100) + " %");
   const todo = todoItems(), seenT = obs.log.filter(e => nightKey(new Date(e.t)) === k && e.result !== "miss");
   const seenIds = [...new Set(seenT.map(e => e.obj))];
@@ -5828,7 +5901,7 @@ function renderList() {
     if (mode === "starred" && sets().list.has(id)) tag("Planned", "new");
     b.append(obsName(id, name));
     const sm = document.createElement("small"), T = p && p.T || targetById(id);
-    const mrow = MESSIER.find(r => r[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+    const mrow = mesRow(id), nrow = !mrow && ngcRow(id);
     const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : mrow ? mrow[5] : nrow ? nrow.type : "") : "";
     const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
     const lastSeen = mode === "starred" && sets().seen.has(id) ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort().pop() : null;
@@ -5875,7 +5948,7 @@ function renderList() {
     todo.forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "todo")));
   } else if (listTab.v === "seen") {
     if (!seenIds.length) note("Nothing logged tonight yet. Tap “Seen” in an object’s details.");
-    seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, "seen", new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))); });
+    seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, "seen", HM.format(new Date(e.t)))); });
     if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the plan"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
   } else {
     if (!obs.starred.length) note("Star objects you want to see some day: the star in their details or in Find target. Then plan them for a night here with the list icon.");
@@ -5957,7 +6030,7 @@ function tgtDetails(o, T, v, t) {
     } catch (e) {}
   }
   if (mag != null) facts.unshift(["Magnitude", (+mag).toFixed(1)]);
-  const ms = MSV.find(m => m.id === T.id), ng = !ms && NGC.find(n => n.id === T.id), size = ms ? ms.size : ng ? ng.size : null;
+  const ms = msvOf(T.id), ng = !ms && ngcRow(T.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
   if (T.kind === "sat") { const sx = SAT.list.find(x => "SAT" + x.norad === T.id), ss = sx && satState(sx, skyDate()); if (ss) facts.push(["Height", Math.round(ss.height) + " km"], ["Distance", Math.round(ss.range) + " km"]); }
   fillFitBox($("tgtFit"), o);
@@ -5987,7 +6060,7 @@ $("tgtBack").onclick = () => closeSheet("targetSheet");
 function unseeTonight(id, name, btn) {
   const k = nightKey(new Date()), es = obs.log.filter(e => e.obj === id && e.result !== "miss" && nightKey(new Date(e.t)) === k);
   if (!es.length) return;
-  const nm = obsName(id, name), times = es.map(e => new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })).join(", ");
+  const nm = obsName(id, name), times = es.map(e => HM.format(new Date(e.t))).join(", ");
   const back = sets().list.has(id) ? " It goes back to “Planned”." : "";
   armDelete(btn, "Remove", "Tap Remove again to delete the logbook " + (es.length === 1 ? "entry from " + times : "entries from " + times) + "." + back, () => {
     const del = new Set(es.map(e => e.uid)); obs.log = obs.log.filter(e => !del.has(e.uid)); saveObs(); hint(nm + " removed from seen tonight.", 3000); renderList();
@@ -6197,7 +6270,7 @@ function renderLog() {
     const r = document.createElement("button"); r.className = "lrow";
     const [lbl, colr, path] = RES_ICON[e.result] || RES_ICON.easy;
     r.innerHTML = '<span class="tm"></span><b></b><svg viewBox="0 0 24 24" fill="none" stroke="' + colr + '" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="' + lbl + '">' + path + "</svg><small></small>";
-    r.querySelector(".tm").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    r.querySelector(".tm").textContent = HM.format(d);
     const b = r.querySelector("b"); b.textContent = obsName(e.obj, e.name); if (e.result === "miss") b.className = "miss";
     r.querySelector("small").textContent = [instKind(e) === "scope" ? e.ep : entryInst(e), e.note ? "“" + e.note + "”" : e.result === "miss" ? "not found" : ""].filter(Boolean).join(" · ");
     r.onclick = () => { logState.scroll = $("logSheet").querySelector(".inner").scrollTop; closeSheet("logSheet"); openSeen(objById(e.obj), e, true); };
@@ -6212,7 +6285,7 @@ const PLANET_IDS = ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "
 function objInfo(id) {
   if (objInfoC.n !== NGC.length) { objInfoC.n = NGC.length; objInfoC.m.clear(); }
   let r = objInfoC.m.get(id); if (r) return r;
-  const ms = MESSIER.find(x => x[0] === id), ng = !ms && NGC.find(x => x.id === id);
+  const ms = mesRow(id), ng = !ms && ngcRow(id);
   if (ms) r = { cls: dsoClass(ms[5]), mag: ms[3], size: ms[7], ra: ms[1], dec: ms[2], name: ms[4] };
   else if (ng) r = { cls: ng.cls, mag: ng.mag, size: ng.size, ra: ng.ra, dec: ng.dec, name: ng.name };
   else if (id === "Moon") r = { cls: "moon" };
@@ -6635,7 +6708,7 @@ function progRow(P, r) {
   const main = document.createElement("div"); main.className = "omain";
   const b = document.createElement("b"); b.textContent = progName(P, id);
   const sm = document.createElement("small");
-  const mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+  const mrow = mesRow(id), nrow = !mrow && ngcRow(id);
   const firstSeen = r.seen ? progEntries(P).filter(e => e.obj === id).map(e => e.t).sort()[0] : null;
   sm.textContent = !T ? "in the extended catalogue" : [mrow ? mrow[5] : nrow ? nrow.type : "", T.mag != null ? (+T.mag).toFixed(1) + " mag" : "",
     firstSeen ? "seen " + new Date(firstSeen).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) : p ? p.sub : ""].filter(Boolean).join(" · ");
@@ -6669,7 +6742,7 @@ function progExport(P, kind) {
   const scope = aperture() ? Math.round(aperture()) + " mm" + (opt.scope ? ", " + Math.round(opt.scope) + " mm focal length" : "") : "";
   const rows = P.ids().filter(id => seen.has(id)).map(id => {
     const e = progEntries(P).filter(x => x.obj === id).sort((a, b) => a.t.localeCompare(b.t))[0], d = new Date(e.t);
-    const T = targetById(id), mrow = MESSIER.find(x => x[0] === id), nrow = !mrow && NGC.find(o => o.id === id);
+    const T = targetById(id), mrow = mesRow(id), nrow = !mrow && ngcRow(id);
     return { label: P.label ? P.label(id) : "", id, name: obsName(id).replace(/^[^·]*· /, ""), type: mrow ? mrow[5] : nrow ? nrow.type : T ? T.kind : "",
       date: d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), time: pad2(d.getHours()) + ":" + pad2(d.getMinutes()),
       place: e.lat != null ? (+e.lat).toFixed(2) + ", " + (+e.lon).toFixed(2) : "", inst: entryInst(e), ep: instKind(e) === "scope" ? e.ep || "" : "", seeing: e.seeing || "", transp: e.transp || "",
@@ -7675,7 +7748,7 @@ $("rdHead").onclick = () => { cfg.readoutOpen = !cfg.readoutOpen; save(); syncSe
 
 /* ---------------- Time: show the sky at another time ---------------- */
 function skyDate() { return new Date(Date.now() + st.tOff); }
-function fmtClock(d) { return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+function fmtClock(d) { return HM.format(d); }
 function fmtOffset(ms) {
   const m = Math.round(Math.abs(ms) / 60000), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
   const txt = (d ? d + " d " : "") + (h ? h + " h " : "") + (mm || (!d && !h) ? mm + " min" : "");
@@ -7845,7 +7918,7 @@ function epAdvice(o, t) {
     best = pick(rows);
   } else {
     kind = "dso";
-    const ms = MESSIER.find(r => r[0] === o.id), ng = !ms && NGC.find(n => n.id === o.id);
+    const ms = mesRow(o.id), ng = !ms && ngcRow(o.id);
     const cls = ms ? dsoClass(ms[5]) : ng ? ng.cls : "neb", sz = ms ? ms[7] : ng ? ng.size : null, size = sz > 0 ? sz / 60 : null;
     const [fillT, pupT0, wF, wP] = EP_DSO[cls] || EP_DSO.neb;
     // surface brightness (magnitude spread over the object's area, mag per square arcminute): faint, spread-out galaxies
@@ -8751,10 +8824,9 @@ function hzFreeAt(T) {
   if (hzFreeCache.has(k)) return hzFreeCache.get(k);
   if (hzFreeCache.size > 400) hzFreeCache.clear();
   let r = null;
-  for (let m = 5; m <= 720; m += 5) {
-    const d = new Date(now.getTime() + m * 60e3), t = A.MakeTime(d), h = horiz(T.vec(t), t);
-    if (inReach(h.alt) && !hzBlocked(h.az, h.alt)) { r = d; break; }
-  }
+  // in 15-minute steps, then the 5 minutes within the step where it came free
+  const free = m => { const d = new Date(now.getTime() + m * 60e3), t = A.MakeTime(d), h = horiz(T.vec(t), t); return inReach(h.alt) && !hzBlocked(h.az, h.alt) ? d : null; };
+  for (let m = 15; m <= 720 && !r; m += 15) if (free(m)) { for (let k = m - 10; k <= m && !r; k += 5) r = free(k); }
   hzFreeCache.set(k, r); return r;
 }
 // "in 25 min", "from 23:10", or null when it doesn't come free within 12 hours
@@ -9464,7 +9536,7 @@ function showInfo(o, fromList) {
   }
   if (mag != null) facts.unshift(["Magnitude", (+mag).toFixed(1)]);
   facts.push(["Altitude", h.alt < 0 ? "below horizon" : fmtDeg(h.alt)], ["Azimuth", fmtDeg(h.az) + " " + ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(h.az / 45) % 8]]);
-  const ms = MSV.find(m => m.id === o.id), ng = !ms && NGC.find(n => n.id === o.id), size = ms ? ms.size : ng ? ng.size : null;
+  const ms = msvOf(o.id), ng = !ms && ngcRow(o.id), size = ms ? ms.size : ng ? ng.size : null;
   if (size) facts.push(["Size", size >= 60 ? (size / 60).toFixed(1) + "°" : Math.round(size) + "′"]);
   fillFitBox($("infoFit"), o);
   const ep = curEp(); if (!fillEpBox($("infoEp"), o) && ep && o.kind !== "sat") facts.push(["Eyepiece", Math.round(epData(ep).mag) + "× · " + fmtField(epData(ep).fov)]);
@@ -9681,7 +9753,7 @@ function infoFromTonight(o) { tonightState.scroll = scroller($("tonightSheet")).
 function backToTonight() { showTonight(); openSheet("tonightSheet"); const b = scroller($("tonightSheet")); requestAnimationFrame(() => { b.scrollTop = tonightState.scroll; }); }
 function showTonight() {
   const t = tonightData(), box = $("tonightBody"); box.textContent = "";
-  const fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "–";
+  const fmt = d => d ? HM.format(d) : "–";
   const dir = az => compass(az).replace("north", "N").replace("south", "S").replace("east", "E").replace("west", "W").replace(/-/g, "");
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = x => String(x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

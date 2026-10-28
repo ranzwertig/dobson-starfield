@@ -553,9 +553,9 @@ const TESTS = {
     ok(r.shown.length > 0 && r.shown.every(a => a >= 30 && a <= 60) && /30–60°/.test(r.grp), 'Find target: well placed now = within the range', [r.shown, r.grp]);
     // categories: My telescope doesn't depend on the time (the altitude says where an object is now), Good now does
     const c = await ev(p, () => {
-      setOptics({ ap: 200 }); cfg.searchCats = ['scope']; $('q').value = ''; showResults();
+      setOptics({ ap: 200 }); cfg.searchCats = ['scope']; $('q').value = ''; showResults(true);
       const rows = [...document.querySelectorAll('#results .alt')].map(a => a.textContent);
-      cfg.searchCats = ['scope', 'now']; showResults();
+      cfg.searchCats = ['scope', 'now']; showResults(true);
       const good = [...document.querySelectorAll('#results .alt')].map(a => parseFloat(a.textContent));
       setOptics({ altMin: 60, altMax: 90 }); reachChanged();
       const southIn = n => catList(n, TARGETS).filter(T => { const v = T.vec(skyNow().t); return Math.asin(v[2]) * R2D < 10; }).length;
@@ -1746,6 +1746,28 @@ const TESTS = {
     ok(await ev(p, () => [...$('results').querySelectorAll('.omap')].every(b => b.hidden) && $('results').querySelectorAll('.otgt').length > 3), 'with Align on: ◎ only');
     await ev(p, () => { st.sensor = false; });
     await done(p);
+  },
+  // Search speed with the extended catalogue (some 12,000 objects): catalogue lookups by map, the horizon rotation once
+  // per moment, results kept per 5 minutes; a slow search runs in parts and the chip changes at once
+  async searchspeed() {
+    extOn = true;
+    const p = await page();
+    await p.waitForFunction(() => ext.loaded, null, { timeout: 30000 }).catch(() => {});
+    await ev(p, () => { const a = new Float32Array(360); for (let i = 40; i <= 140; i++) a[i] = 30; curSite().horizon = { v: 1, alt: hzEncode(a), at: new Date().toISOString(), how: 'camera' }; save(); siteChanged(); });
+    const r = await ev(p, () => { const out = { n: TARGETS.length };
+      for (const c of ['gal', 'now', 'free', 'tonight', 'reach']) { fitCache.now.clear(); fitCache.nk = ''; reachMemo.k = null; freeMemo.k = null; rotMemo.clear(); catMemo.clear();
+        const t0 = performance.now(); catList([c], TARGETS); out[c] = Math.round(performance.now() - t0); }
+      return out; });
+    ok(r.n > 10000 && r.gal < 400 && r.now < 1500 && r.free < 600 && r.tonight < 1500 && r.reach < 800, 'filters over the extended catalogue in time (ms)', r);
+    // a chip: selected at once, results after a moment, then kept
+    await ev(p, () => { cfg.searchCats = []; $('fabSearch').click(); }); await wait(p, 300);
+    const c1 = await ev(p, () => { catMemo.clear(); fitCache.now.clear(); fitCache.nk = ''; const b = [...$('chips').querySelectorAll('.chip')].find(x => x.textContent === 'Good now'); b.click();
+      const b2 = [...$('chips').querySelectorAll('.chip')].find(x => x.textContent === 'Good now'); return { sel: b2.classList.contains('sel'), busy: $('results').hasAttribute('aria-busy') }; });
+    await p.waitForFunction(() => !$('results').hasAttribute('aria-busy'), null, { timeout: 15000 });
+    const c2 = await ev(p, () => { const n = $('results').querySelectorAll('.rrow').length, t0 = performance.now(); showResults(); return { n, again: performance.now() - t0, n2: $('results').querySelectorAll('.rrow').length, busy: $('results').hasAttribute('aria-busy') }; });
+    ok(c1.sel && c2.n > 0 && c2.n2 === c2.n && !c2.busy, 'Good now: the chip at once, the results after the search, the same again from the memory', { c1, c2 });
+    ok(await ev(p, () => nowFit(targetById('M31')).why.length > 0 && typeof nowFit(targetById('M31')).why[0] === 'string'), 'the reasons are still there when read');
+    await done(p); extOn = false;
   },
   async compassflip() {
     const p = await page();
