@@ -314,9 +314,9 @@ const TESTS = {
     // the sky at the place
     const sky = await ev(p, () => { const T = targetById('M101'); cfg.sky = 'dark'; st.opticsVer++; const a = scopeFit(T); cfg.sky = 'city'; st.opticsVer++; const b = scopeFit(T); cfg.sky = null; st.opticsVer++; return { a: a.ok, b: b.ok, why: b.why.join(' ') }; });
     ok(sky.a && !sky.b && /under your city sky/.test(sky.why), 'the sky at the place: M101 in a dark sky yes, under a city sky no', sky);
-    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(p, 400);
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('site'); }); await wait(p, 400);
     await p.selectOption('#skyQ', 'suburb'); await wait(p, 200);
-    ok(await ev(p, () => cfg.sky === 'suburb'), 'Settings › General: the sky at this place');
+    ok(await ev(p, () => cfg.sky === 'suburb'), 'Settings › Location: the sky at this place');
     await done(p);
   },
 
@@ -1535,7 +1535,7 @@ const TESTS = {
     const F = await page({ pro: false, init: `if (!localStorage.getItem('dobson-lotse')) localStorage.setItem('dobson-lotse', ${JSON.stringify(JSON.stringify(old))}); ` + geo });
     const m = await ev(F, () => ({ n: cfg.sites.length, s: cfg.sites[0], cur: curSite().id === cfg.siteId, lat: cfg.lat, sky: cfg.sky }));
     ok(m.n === 1 && m.s.name === 'My location' && m.s.lat === 48.18 && m.s.lon === 10.08 && m.s.sky === 'rural' && m.s.loc.src === 'gps' && !m.s.fresh && m.cur && m.lat === 48.18, 'the place of an earlier version becomes the first location, with its sky', m);
-    await ev(F, () => { $('btnSettings').click(); }); await wait(F, 300);
+    await ev(F, () => { $('btnSettings').click(); setSetTab('site'); }); await wait(F, 300);
     ok(await ev(F, () => $('siteList').children.length === 1 && $('siteDel').hidden && $('siteName').value === 'My location' && $('lat').value === '48.18'), 'Settings › General: one card, its name and position, no Delete');
     await ev(F, () => { $('siteName').value = 'Garden'; $('siteName').onchange(); });
     ok(await ev(F, () => curSite().name === 'Garden' && $('siteList').querySelector('b').textContent === 'Garden'), 'renamed');
@@ -1548,10 +1548,14 @@ const TESTS = {
     ok(await ev(F, () => cfg.sites.length === 1 && Math.abs(cfg.lat - 50.1) < 1e-6 && curSite().lat === 50.1 && $('siteBar').hidden), 'without Pro: GPS moves the one location', await ev(F, () => [cfg.lat, curSite().lat]));
     await done(F);
 
-    const p = await page({ init: geo });
-    await ev(p, () => { curSite().name = 'Garden'; cfg.lat = 48.18; cfg.lon = 10.08; save(); $('btnSettings').click(); }); await wait(p, 300);
+    const p = await page({ init: geo }); let r;
+    await ev(p, () => { curSite().name = 'Garden'; cfg.lat = 48.18; cfg.lon = 10.08; save(); $('btnSettings').click(); setSetTab('site'); }); await wait(p, 300);
+    // six tabs on a phone: two rows of three in the same control
+    r = await ev(p, () => { const el = document.querySelector('#sheet .settabs'), tops = new Set([...el.children].filter(b => !b.hidden).map(b => b.offsetTop)); return { two: el.classList.contains('two'), rows: tops.size, n: [...el.children].filter(b => !b.hidden).length, over: el.scrollWidth > el.clientWidth + 1, sel: el.querySelector('.sel').textContent }; });
+    ok(r.two && r.rows === 2 && !r.over && r.sel === 'Location', 'Settings tabs: Location has its own tab; on a phone they wrap into two rows', r);
+    await shot(p, 'sites-tabs');
     await ev(p, () => $('siteAdd').click()); await wait(p, 300);
-    let r = await ev(p, () => ({ n: cfg.sites.length, cur: curSite().name, focus: document.activeElement.id }));
+    r = await ev(p, () => ({ n: cfg.sites.length, cur: curSite().name, focus: document.activeElement.id }));
     ok(r.n === 2 && r.cur === 'New location' && r.focus === 'siteName', 'with Pro: added, in use, its name field focused', r);
     await ev(p, () => { $('siteName').value = 'Hilltop'; $('siteName').onchange(); $('lat').value = '48.3'; $('lat').onchange(); $('lon').value = '10.2'; $('lon').onchange(); $('skyQ').value = 'dark'; $('skyQ').onchange(); });
     r = await ev(p, () => ({ s: curSite(), lat: cfg.lat, sky: cfg.sky, g: siteById(cfg.sites[0].id) }));
@@ -1567,7 +1571,7 @@ const TESTS = {
     // Quick settings: chips switch
     await ev(p, () => { closeSheet('sheet'); syncQuick(); });
     await ev(p, () => openSheet('quickSheet')); await wait(p, 300); await shot(p, 'sites-quick');
-    ok(await ev(p, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'Garden|Hilltop|+ Here' && $('qLocName').textContent === 'Garden'), 'Quick settings: a chip per location and “+ Here”');
+    ok(await ev(p, () => !$('qSites').hidden && [...$('qSites').children].map(b => b.textContent).join('|') === 'Garden|Hilltop|+ Here|Manage ›' && $('qLocName').textContent === 'Garden'), 'Quick settings: a chip per location and “+ Here”');
     await ev(p, () => $('qSites').children[1].click());
     ok(await ev(p, () => curSite().name === 'Hilltop' && cfg.lat === 48.3), 'a chip switches');
     // GPS near a saved location: suggested; somewhere new: a new one offered
@@ -1624,10 +1628,26 @@ const TESTS = {
     ok(await ev(p, () => tonightData().dso.every(x => !hzBlocked(x.b.az, x.b.alt))), 'Tonight: best moments never behind the horizon');
     ok(await ev(p, az => { closeSheet('searchSheet'); st.mapView = { az, alt: 25, fov: 90 }; draw(); return true; }, T.az), 'the map draws the silhouette');
     await wait(p, 300); await shot(p, 'hz-map');
+    // the pill bottom left: the mask on and off; with it on, the ground below the horizon is hidden
+    r = await ev(p, () => ({ vis: !$('hzChip').hidden, txt: $('hzChipTxt').textContent, pr: $('hzChip').getAttribute('aria-pressed') }));
+    ok(r.vis && /^Horizon · /.test(r.txt) && r.pr === 'true', 'a pill bottom left for the horizon, mask on', r);
+    const lit = () => ev(p, async () => { st.mapView = { az: 200, alt: -35, fov: 60 }; lastSig = []; await new Promise(r => setTimeout(r, 250));
+      const v = document.getElementById('view'), g = v.getContext('2d').getImageData(0, Math.round(v.height * 0.6), v.width, Math.round(v.height * 0.3)).data; let n = 0; for (let i = 0; i < g.length; i += 4) if (g[i] + g[i + 1] + g[i + 2] > 300) n++; return n; });
+    const withMask = await lit();
+    await ev(p, () => $('hzChip').click()); await wait(p, 200);
+    r = await ev(p, () => ({ m: cfg.hzMask, pr: $('hzChip').getAttribute('aria-pressed'), blk: hzBlocked(90, 20) }));
+    const noMask = await lit();
+    ok(r.m === false && r.pr === 'false' && r.blk, 'tapped: mask off (the horizon still counts)', r);
+    ok(noMask > 50 && withMask < noMask / 5, 'with the mask the stars below the horizon are hidden', { withMask, noMask });
+    await shot(p, 'hz-nomask');
+    await ev(p, () => $('hzChip').click()); await wait(p, 200);
+    ok(await ev(p, () => cfg.hzMask === true && $('hzChip').getAttribute('aria-pressed') === 'true'), 'tapped again: on');
     // after Pro ends: kept, without effect
     await ev(p, () => { pro.on = false; hzCache.k = null; siteChanged(); });
     r = await ev(p, h => { const H = targetById(h), x = horiz(H.vec(skyNow().t), skyNow().t); return { kept: !!hzOf(curSite()), cur: hzCur(), blk: hzBlocked(x.az, x.alt) }; }, T.hid);
     ok(r.kept && r.cur === null && !r.blk, 'without Pro: the horizon stays stored but isn’t used', r);
+    await wait(p, 300);
+    ok(await ev(p, () => $('hzChip').hidden), 'without Pro: no horizon pill');
     await ev(p, () => { pro.on = true; hzCache.k = null; siteChanged(); closeSheet('searchSheet'); });
     await done(p);
 

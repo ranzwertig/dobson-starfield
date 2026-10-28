@@ -204,6 +204,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .calchip svg { width: 15px; height: 15px; flex: none; }
 .calchip .iconbtn { width: 28px; height: 28px; color: var(--fg); }
 .calchip .iconbtn svg { width: 16px; height: 16px; }
+/* the horizon of the location in use (Pro): shows or hides its mask on the map */
+.calchip.hzchip { font: inherit; font-size: 12.5px; color: #b7d39c; border-color: rgba(150,190,120,.55); padding: 2px 4px 2px 9px; min-height: 32px; cursor: pointer; }
+.hzchip .hzeye { display: grid; place-items: center; width: 26px; height: 26px; } .hzchip .hzeye svg { width: 17px; height: 17px; }
+.hzchip .hzeye .off { display: none; }
+.hzchip[aria-pressed="false"] { color: var(--muted); border-color: var(--line); }
+.hzchip[aria-pressed="false"] .hzeye .off { display: inline; }
 .calchip.tgtchip { color: var(--fg); border-color: rgba(255,106,92,.55); } .tgtchip > svg { color: var(--target); }
 .tgtchip .chiplabel { max-width: 62vw; overflow: hidden; text-overflow: ellipsis; }
 .tgtchip .chiplabel b { font-weight: 600; } .tgtchip #tgtChipState { color: var(--muted); }
@@ -588,7 +594,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet input, .sheet select, .sheet textarea { min-width: 0; max-width: 100%; }
 .sheet select { text-overflow: ellipsis; }
 .settabs { margin-top: 2px; }
-.segtabs.settabs > .chip { padding: 0 6px; font-size: 14.5px; }   /* five tabs fit a phone, also with two Pro tags */
+.segtabs.settabs > .chip { padding: 0 6px; font-size: 14.5px; }
+/* Too many tabs for one row (six on a phone): two rows of equal cells in the same segmented control, the second row
+   sharing its width among what is left (3 + 3, or 3 + 2 without Sync) */
+.segtabs.settabs.fitm > .chip { padding: 0 12px; }
+.segtabs.settabs.two { flex-wrap: wrap; gap: 3px; overflow: visible; }
+.segtabs.settabs.two > .chip { flex: 1 1 30%; min-width: 0; }
 
 .sheet [data-stab].off { display: none; }
 .sheet.dragging .inner { transition: none; }
@@ -826,9 +837,8 @@ a.btn { text-decoration: none; color: var(--fg); }
 .eqcard .inuse { font-size: 12.5px; color: var(--accent); padding-right: 4px; }
 .eqcard .btn { min-height: 36px; padding: 0 14px; }
 .eqadd { justify-content: center; border-style: dashed; }
-/* Locations (Settings › General): cards with a small picture of the horizon; the horizon box */
+/* Locations (Settings › Location): cards with a small picture of the horizon; the horizon */
 .sitehz { display: block; width: 100%; height: 22px; border-radius: 4px; margin-top: 4px; }
-.hzbox { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise); margin-top: 6px; }
 .hzhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .hzhead b { font-weight: 600; font-size: 16px; }
 .hzhead small { color: var(--muted); font-size: 13px; flex: 1 1 auto; text-align: right; }
@@ -1059,6 +1069,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       </div>
       <div class="calchip" id="liveChipL" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipLTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipLOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="calchip" id="liveFollowChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg><button class="chiplabel" id="liveFollowTxt">Follow the telescope again</button></div>
+      <button class="calchip hzchip" id="hzChip" aria-pressed="true" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2 19h20M2 19v-5l4-1V9h5v4l3-3 4 3v-2h2v8"/></svg><span id="hzChipTxt"></span><i class="hzeye" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path class="off" d="M4 4l16 16"/></svg></i></button>
       <div class="calchip tgtchip" id="tgtChip" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
         <button class="chiplabel" id="tgtChipTxt" aria-label="Target details"><b id="tgtChipName"></b> <span id="tgtChipState"></span></button>
@@ -1655,12 +1666,15 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 
 <div class="sheet tall" id="sheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="segtabs settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="scope">Equipment</button><button class="chip" role="tab" data-stab="cam">Camera</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live<i class="protag">Pro</i></button></div></div>
+    <div class="grab"><h2 id="setTitle"><button class="iconbtn" id="setMenu" aria-label="Back to the menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1">Settings</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2><div class="segtabs settabs" role="tablist" aria-label="Settings sections"><button class="chip" role="tab" data-stab="general">General</button><button class="chip" role="tab" data-stab="site">Location</button><button class="chip" role="tab" data-stab="scope">Equipment</button><button class="chip" role="tab" data-stab="cam">Camera</button><button class="chip" role="tab" data-stab="sync" id="setTabSync" hidden>Sync<i class="protag">Pro</i></button><button class="chip" role="tab" data-stab="live">Live<i class="protag">Pro</i></button></div></div>
     <p class="note"><a href="/help/#settings" target="_blank" rel="noopener">What the settings do</a></p>
-    <fieldset data-stab="general" id="siteBox">
+    <fieldset data-stab="site" id="siteBox">
       <legend>Locations</legend>
       <div class="eqlist" id="siteList"></div>
       <button class="btn eqadd" id="siteAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add a location<i class="protag">Pro</i></button>
+    </fieldset>
+    <fieldset data-stab="site" id="siteEdBox">
+      <legend id="siteEdLegend">This location</legend>
       <div class="eqother" id="siteOther" hidden><span id="siteOtherTxt">Not in use on this device.</span><button class="btn" id="siteUse">Use it</button></div>
       <div class="row"><label style="flex-basis:100%">Name<input type="text" id="siteName" maxlength="40" autocomplete="off" spellcheck="false"></label></div>
       <div class="row">
@@ -1670,14 +1684,16 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       </div>
       <div class="row"><label style="flex-basis:100%">Sky at this place<select id="skyQ"><option value="">Not set (counted as dark)</option><option value="dark">Dark: no light domes, the Milky Way casts shadows</option><option value="rural">Rural: a few light domes on the horizon</option><option value="suburb">Suburban: the Milky Way faint overhead</option><option value="bright">Bright suburb: no Milky Way</option><option value="city">City</option></select></label></div>
       <p class="note">How much artificial light brightens your sky. It decides which galaxies and nebulae Zenigo counts as visible in your telescope.</p>
-      <div class="hzbox" id="hzBox">
-        <div class="hzhead"><b>Horizon</b><i class="protag">Pro</i><small id="hzInfo"></small></div>
-        <div class="hzprev" id="hzPrevBox"><canvas id="hzPrev" role="img" aria-label="Your horizon"></canvas><div class="hzdirs" aria-hidden="true"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span><span>N</span></div></div>
-        <div class="row"><button class="btn primary" id="hzRecord">Record the horizon<i class="protag">Pro</i></button><button class="btn" id="hzClear">Remove</button></div>
-        <p class="note">Houses, trees and hedges around this place, recorded once with the phone: Zenigo then shows what is really free tonight. Stand where the telescope stands, best at dusk or by day.</p>
-      </div>
-      <div class="row"><button class="btn" id="siteDel">Delete this location</button></div>
     </fieldset>
+    <fieldset data-stab="site" id="hzBox">
+      <legend>Horizon<i class="protag">Pro</i></legend>
+      <div class="hzhead"><b id="hzFor"></b><small id="hzInfo"></small></div>
+      <div class="hzprev" id="hzPrevBox"><canvas id="hzPrev" role="img" aria-label="Your horizon"></canvas><div class="hzdirs" aria-hidden="true"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span><span>N</span></div></div>
+      <label class="check" id="hzMaskRow"><input type="checkbox" id="optHzMask"> Show it on the map (also the bottom-left pill)</label>
+      <div class="row"><button class="btn primary" id="hzRecord">Record the horizon<i class="protag">Pro</i></button><button class="btn" id="hzClear">Remove</button></div>
+      <p class="note">Houses, trees and hedges around this place, recorded once with the phone: Zenigo then shows what is really free tonight. Stand where the telescope stands, best at dusk or by day.</p>
+    </fieldset>
+    <div class="row" data-stab="site"><button class="btn" id="siteDel">Delete this location</button></div>
     <fieldset data-stab="general">
       <legend>Display</legend>
       <div class="row">
@@ -1928,7 +1944,7 @@ if (!Array.isArray(cfg.instruments) || !cfg.instruments.length) {
   cfg.instrumentId = cfg.instruments[0].id;
 }
 if (!cfg.instruments.some(i => i.id === cfg.instrumentId)) cfg.instrumentId = cfg.instruments[0].id;
-// Locations (Settings › General): named places, each with its position, the sky there and its own horizon (Pro).
+// Locations (Settings › Location): named places, each with its position, the sky there and its own horizon (Pro).
 // cfg.sites holds them (synced), cfg.siteId which one this device uses; cfg.lat, cfg.lon, cfg.loc and cfg.sky are a
 // working copy of it, so everything that works out the sky keeps reading them. A site: { id, name, lat, lon, loc,
 // sky, horizon: { v, alt (base64, one byte per degree of azimuth, half degrees), at, how }, u: change time }.
@@ -2540,7 +2556,7 @@ function showResults() {
     // in the order of the categories: where an object is right now only counts with "Good now"
     list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
-    if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › General)");
+    if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › Location)");
   } else if (!q) {
     list = TARGETS.filter(T => T.kind === "planet" || T.kind === "sun" || (T.kind === "dso" && !T.ngc && T.mag != null && T.mag < 8)).map(T => ({ T, alt: horiz(T.vec(t), t).alt })).filter(x => inReach(x.alt, 15))
       .sort((a, b) => (a.T.kind !== "dso" ? -10 : a.T.mag) - (b.T.kind !== "dso" ? -10 : b.T.mag)).slice(0, 25);
@@ -2613,7 +2629,7 @@ function scopeFitCalc(T, D) {
     ok = mg >= 0 && mag <= lim - 2.5; score = Math.max(0, Math.min(1, 0.55 + mg * 0.3));
     why.push((mg >= 1 ? "Bright enough for your " : mg >= 0 ? "Visible in your " : "Probably too faint for your ") + D + " mm: " + mag.toFixed(1) + " mag spread over " + (a >= 60 ? (a / 60).toFixed(1) + "°" : Math.round(a) + "′")
       + " (" + sb.toFixed(1) + " mag per square arcminute; it shows down to about " + sbLim.toFixed(1) + (sq ? " under your " + sq[3] + " sky" : "") + ")." + (mg < 1 && mg >= 0 ? (sq ? " Only on a clear night." : " Needs a dark sky.") : "")
-      + (!sq && mg < 1.5 ? " Counted for a dark sky: set yours in Settings › General." : ""));
+      + (!sq && mg < 1.5 ? " Counted for a dark sky: set yours in Settings › Location." : ""));
   } else {
     const need = cls === "pn" ? lim - 2.5 : lim - 4, mg = need - mag;
     ok = mg >= 0; score = Math.max(0, Math.min(1, 0.55 + mg * 0.12)) + (cls === "glob" && D >= 150 ? 0.1 : 0);
@@ -2703,7 +2719,7 @@ function moonSpoil(cls, ill, moonAlt, sep) {
   const near = sep < 25 ? 1 : sep < 90 ? 1 - (sep - 25) / 65 * 0.6 : 0.4;
   return Math.min(1, w * ill * near * Math.min(1, 0.4 + moonAlt / 30));
 }
-// The sky at your site (Settings › General): how much it lowers the faintest surface brightness and stars a telescope shows
+// The sky at your site (Settings › Location): how much it lowers the faintest surface brightness and stars a telescope shows
 const SKY = { dark: ["Dark", 0, 0, "dark"], rural: ["Rural", 0.6, 0.4, "rural"], suburb: ["Suburban", 1.3, 1.0, "suburban"], bright: ["Bright suburb", 2.0, 1.6, "bright suburban"], city: ["City", 2.8, 2.3, "city"] };
 // Objects of the observing programmes you have started (and not finished), with the programme's name
 const progAct = { k: "", ids: new Map() };
@@ -3737,18 +3753,38 @@ function mapZoom(factor) { if (photoSky()) return photoZoom(factor); st.mapView.
 function drawHorizon(c, sol, dpr, t, col) {
   const M = skyNow().M, W = view.width, H = view.height;
   const toPix = (az, alt) => { const p = Solver.skyToPix(sol, Solver.mul(M, hv(az, alt))); return p && p.z > 0.05 ? P(p.x, p.y) : null; };
-  // your own horizon (Pro): houses and trees as a dark silhouette on the map (over a camera image only their edge)
+  // your own horizon (Pro). With its mask on (the pill bottom left) on the sky map: the ground below the horizon hidden,
+  // houses and trees as a see-through silhouette (stars behind it stay visible), its edge green. Mask off, or over the
+  // camera image or a photo: only the edge, thinner.
   const hz = hzCur();
   if (hz) {
-    const fill = st.source !== "video";
-    c.save(); c.fillStyle = "rgba(5,7,10,.86)";
-    if (fill) for (let az = 0; az < 360; az += 1) {
-      const a1 = hz[az], a2 = hz[(az + 1) % 360]; if (a1 <= 0.2 && a2 <= 0.2) continue;
-      const p1 = toPix(az, 0), p2 = toPix(az + 1, 0), p3 = toPix(az + 1, a2), p4 = toPix(az, a1); if (!p1 || !p2 || !p3 || !p4) continue;
-      c.beginPath(); c.moveTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]); c.lineTo(p3[0], p3[1]); c.lineTo(p4[0], p4[1]); c.closePath(); c.fill();
-      c.strokeStyle = c.fillStyle; c.lineWidth = 0.8 * dpr; c.stroke();   // no hairline seams between the quads
+    const mask = st.source === "map" && cfg.hzMask !== false;
+    // quads between two altitudes, all in one path, so that one fill has no seams between them. Each is cut off in front
+    // of the eye first (the map is a plain pinhole view), so that wide views have no gaps at their edges.
+    const cam = (az, alt) => Solver.mulT(sol.R, Solver.mul(M, hv(az, alt))), NEAR = 0.02;
+    const quad = (az0, az1, a00, a01, a10, a11) => {   // a00/a01: lower/upper at az0, a10/a11 at az1
+      const v = [cam(az0, a00), cam(az1, a10), cam(az1, a11), cam(az0, a01)];
+      if (v.every(q => q[2] < NEAR)) return;
+      const out = [];
+      for (let i = 0; i < 4; i++) {
+        const A = v[i], B = v[(i + 1) % 4], ia = A[2] >= NEAR, ib = B[2] >= NEAR;
+        if (ia) out.push(A);
+        if (ia !== ib) { const t = (NEAR - A[2]) / (B[2] - A[2]); out.push([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, NEAR]); }
+      }
+      out.forEach((q, i) => { const [x, y] = P(sol.cx + sol.f * q[0] / q[2], sol.cy + sol.f * q[1] / q[2]); i ? c.lineTo(x, y) : c.moveTo(x, y); });
+      c.closePath();
+    };
+    c.save();
+    if (mask) {
+      c.fillStyle = "rgba(4,6,9,.93)"; c.beginPath();
+      const bands = [0, -4, -10, -20, -35, -55, -75, -89.5];
+      for (let az = 0; az < 360; az += 2) for (let i = 0; i + 1 < bands.length; i++) quad(az, az + 2, bands[i + 1], bands[i], bands[i + 1], bands[i]);
+      c.fill();
+      c.fillStyle = "rgba(10,14,20,.6)"; c.beginPath();
+      for (let az = 0; az < 360; az++) { const a1 = hz[az], a2 = hz[(az + 1) % 360]; if (a1 > 0.2 || a2 > 0.2) quad(az, az + 1, 0, a1, 0, a2); }
+      c.fill();
     }
-    c.strokeStyle = "rgba(150,190,120,.85)"; c.lineWidth = 1.6 * dpr; c.beginPath(); let pe = null;
+    c.strokeStyle = mask ? "rgba(150,190,120,.85)" : "rgba(150,190,120,.6)"; c.lineWidth = (mask ? 1.6 : 1.2) * dpr; c.beginPath(); let pe = null;
     for (let az = 0; az <= 360; az += 1) { const q = toPix(az, hz[az % 360]); if (q && pe) { c.moveTo(pe[0], pe[1]); c.lineTo(q[0], q[1]); } pe = q; }
     c.stroke(); c.restore();
   }
@@ -4735,7 +4771,7 @@ function draw() {
   skyNow();
   if (rc) { st.sol = rc.sol; st.solMode = "remote"; }
   else if (st.source === "map" && (!st.sensor || !st.sol || st.solMode === "remote")) { st.sol = mapSol(); st.solMode = "map"; st.moved = true; }
-  if (draw.tag) { draw.tag = false; updateTag(); }
+  if (draw.tag) { draw.tag = false; updateTag(); syncHzChip(); }
   const sig = frameSig(W, H);
   if (!liveVideo && sig.length === lastSig.length && sig.every((v, i) => v === lastSig[i])) return;
   lastSig = sig;
@@ -6609,7 +6645,7 @@ function exportBackup(all) {
 try { if (sessionStorage.getItem("zenigo-restored")) { sessionStorage.removeItem("zenigo-restored"); setTimeout(() => hint("Settings and lists restored from the backup.", 4000), 800); } } catch (e) {}
 /* Settings sections as tabs; the last one is kept */
 function setSetTab(t) {
-  if (!["general", "scope", "cam", "sync", "live"].includes(t) || (t === "sync" && $("setTabSync").hidden)) t = "general";
+  if (!["general", "site", "scope", "cam", "sync", "live"].includes(t) || (t === "sync" && $("setTabSync").hidden)) t = "general";
   cfg.setTab = t; save();
   document.querySelectorAll("#sheet [data-stab]").forEach(el => {
     if (el.classList.contains("chip")) { const on = el.dataset.stab === t; el.classList.toggle("sel", on); el.setAttribute("aria-selected", on); }
@@ -6618,6 +6654,13 @@ function setSetTab(t) {
   $("sheet").querySelector(".inner").scrollTop = 0;
 }
 document.querySelectorAll("#sheet .settabs .chip").forEach(b => b.onclick = () => setSetTab(b.dataset.stab));
+// one row while the tabs fit, otherwise two (measured whenever the sheet's width or the visible tabs change)
+function fitSetTabs() {
+  const el = document.querySelector("#sheet .settabs"); if (!el || !el.clientWidth) return;
+  // measured with some room in each tab: squeezed to their text, six tabs would just fit and look cramped
+  el.classList.remove("two"); el.classList.add("fitm"); const two = el.scrollWidth > el.clientWidth + 1; el.classList.remove("fitm"); el.classList.toggle("two", two);
+}
+try { new ResizeObserver(() => fitSetTabs()).observe(document.querySelector("#sheet .settabs")); } catch (e) {}
 setSetTab(cfg.setTab);
 $("bkLists").onclick = () => exportBackup(false);
 $("bkAll").onclick = () => exportBackup(true);
@@ -8461,7 +8504,7 @@ function switchSite(s) { storeSite(); cfg.siteId = s.id; loadSite(s); st.siteEdi
 function useSite(id, quiet) {
   const s = siteById(id); if (!s) return false;
   if (s === curSite()) return true;
-  if (!pro.on) return proNeed("Switching between locations is part of Zenigo Pro. Without it, Zenigo uses one location: delete the others in Settings › General, or keep using " + curSite().name + ".");
+  if (!pro.on) return proNeed("Switching between locations is part of Zenigo Pro. Without it, Zenigo uses one location: delete the others in Settings › Location, or keep using " + curSite().name + ".");
   switchSite(s); $("siteBar").hidden = true;
   if (!quiet) hint("Now at " + s.name + "." + (hzOf(s) ? " Its horizon is in use." : ""), 3000);
   return true;
@@ -8469,7 +8512,7 @@ function useSite(id, quiet) {
 const uniqueSiteName = n => { let x = n, i = 2; while (cfg.sites.some(s => s.name === x)) x = n + " " + i++; return x; };
 // A new location (here, from GPS, or a copy of the place in use), used at once and opened for naming
 function addSite(pos) {
-  if (!pro.on && cfg.sites.length >= 1) return proNeed("More than one location is part of Zenigo Pro. Without it you have one location: change its position in Settings › General.");
+  if (!pro.on && cfg.sites.length >= 1) return proNeed("More than one location is part of Zenigo Pro. Without it you have one location: change its position in Settings › Location.");
   const p = pos || { lat: +cfg.lat, lon: +cfg.lon, loc: { src: "manual", at: new Date().toISOString() } };
   const s = { id: newSiteId(), name: uniqueSiteName("New location"), lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), loc: p.loc || null, sky: null, u: Date.now() };
   cfg.sites.push(s); switchSite(s); $("siteBar").hidden = true;
@@ -8511,7 +8554,7 @@ function gpsFix(p, from) {
   }
   if (from === "start") return;   // a silent check at the start: only a saved location is suggested
   if (!pro.on) return setTo(cur);
-  siteBar("You’re " + (nd >= 1000 ? (nd / 1000).toFixed(1) + " km" : Math.round(nd) + " m") + " from " + cur.name + ". A new location here?", "New location", () => { addSite(pos); hint("New location here. Give it a name in Settings › General.", 4000); },
+  siteBar("You’re " + (nd >= 1000 ? (nd / 1000).toFixed(1) + " km" : Math.round(nd) + " m") + " from " + cur.name + ". A new location here?", "New location", () => { addSite(pos); hint("New location here. Give it a name in Settings › Location.", 4000); },
     "Move " + cur.name + " here", () => { setTo(cur); $("siteBar").hidden = true; });
 }
 function siteBar(txt, go, run, alt, runAlt) {
@@ -8531,7 +8574,7 @@ setTimeout(async () => {
   try { if ((await navigator.permissions.query({ name: "geolocation" })).state === "granted") askGps("start"); } catch (e) {}
 }, 4000);
 
-// Settings › General: the locations as cards, and the one being edited below them
+// Settings › Location: the locations as cards, and the one being edited below them
 function siteSummary(s) { return fmtLatLon(s.lat, s.lon) + (SKY[s.sky] ? " · " + SKY[s.sky][3] + " sky" : "") + (hzOf(s) ? " · horizon" : ""); }
 function renderSites() {
   const box = $("siteList"); if (!box) return;
@@ -8555,7 +8598,8 @@ function renderSites() {
   if (document.activeElement !== $("lat")) $("lat").value = ed.lat;
   if (document.activeElement !== $("lon")) $("lon").value = ed.lon;
   $("skyQ").value = SKY[ed.sky] ? ed.sky : "";
-  $("siteDel").hidden = !many;
+  $("siteDel").hidden = !many; $("siteEdLegend").textContent = many ? ed.name : "This location";
+  $("hzMaskRow").hidden = !hzOf(ed); $("optHzMask").checked = cfg.hzMask !== false; $("hzFor").textContent = many ? ed.name : "";
   const hz = hzOf(ed), at = ed.horizon && ed.horizon.at ? new Date(ed.horizon.at) : null;
   $("hzInfo").textContent = hz ? "recorded " + at.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) + (pro.on ? "" : " · in use with Pro") : "not recorded yet";
   $("hzPrevBox").hidden = !hz; $("hzClear").hidden = !hz;
@@ -8583,6 +8627,18 @@ $("siteAdd").onclick = () => { if (addSite()) { syncSettings(); setTimeout(() =>
 $("siteUse").onclick = () => { const s = editSite(); if (useSite(s.id)) syncSettings(); };
 $("siteDel").onclick = () => { const s = editSite(); armDelete($("siteDel"), "Delete " + s.name, "Its position, sky and horizon are deleted on this device" + (syncS.code ? " and your synced devices" : "") + ". Logbook entries keep their place.", () => delSite(s)); };
 $("hzRecord").onclick = () => hzRecOpen(editSite());
+$("optHzMask").onchange = () => setHzMask($("optHzMask").checked);
+// The mask on the map (houses and trees, and the ground below the horizon): on or off per device, with the pill
+// bottom left (shown on the sky map while the location in use has a horizon and Pro runs) or in Settings › Location
+function setHzMask(on) { cfg.hzMask = !!on; save(); syncHzChip(); if (!$("sheet").hidden) renderSites(); hint(on ? "Horizon of " + curSite().name + " shown on the map." : "Horizon hidden on the map. Search, Tonight and the night bars still use it.", 3000); }
+function syncHzChip() {
+  const on = !!hzCur() && st.source === "map", m = cfg.hzMask !== false, k = on + "|" + m + "|" + (on ? curSite().name : "");
+  if (syncHzChip.k === k) return; syncHzChip.k = k;
+  const c = $("hzChip"); c.hidden = !on; if (!on) return;
+  $("hzChipTxt").textContent = "Horizon · " + curSite().name; c.setAttribute("aria-pressed", String(m));
+  c.setAttribute("aria-label", "Horizon of " + curSite().name + ": " + (m ? "shown" : "hidden") + " on the map. Tap to " + (m ? "hide" : "show") + " it.");
+}
+$("hzChip").onclick = () => setHzMask(cfg.hzMask === false);
 $("hzClear").onclick = () => { const s = editSite(); armDelete($("hzClear"), "Remove the horizon", "Zenigo then counts the sky at " + s.name + " as free down to the horizon.", () => { delete s.horizon; siteTouched(s); save(); siteChanged(); syncSettings(); }, true); };
 // Quick settings: the locations as chips (with more than one, or with Pro), "+ New" here
 function renderQuickSites() {
@@ -8594,8 +8650,9 @@ function renderQuickSites() {
     b.textContent = s.name; b.onclick = () => { if (useSite(s.id)) syncQuick(); }; q.append(b);
   });
   const a = document.createElement("button"); a.className = "chip"; a.textContent = "+ Here"; a.setAttribute("aria-label", "New location here (GPS)");
-  a.onclick = () => { if (!pro.on) return addSite(); if (!navigator.geolocation) return addSite(); navigator.geolocation.getCurrentPosition(p => { addSite({ lat: p.coords.latitude, lon: p.coords.longitude, loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } }); syncQuick(); hint("New location here. Give it a name in Settings › General.", 4000); }, () => hint("Location not shared.", 3000), { timeout: 10000 }); };
-  q.append(a);
+  a.onclick = () => { if (!pro.on) return addSite(); if (!navigator.geolocation) return addSite(); navigator.geolocation.getCurrentPosition(p => { addSite({ lat: p.coords.latitude, lon: p.coords.longitude, loc: { src: "gps", acc: Math.round(p.coords.accuracy), at: new Date().toISOString() } }); syncQuick(); hint("New location here. Give it a name in Settings › Location.", 4000); }, () => hint("Location not shared.", 3000), { timeout: 10000 }); };
+  const mg = document.createElement("button"); mg.className = "lnk"; mg.textContent = "Manage ›"; mg.onclick = () => { closeSheet("quickSheet"); syncSettings(); openSheet("sheet"); setSetTab("site"); };
+  q.append(a, mg);
 }
 
 /* ---------------- The horizon of a location: what houses and trees hide (Zenigo Pro) ---------------- */
@@ -8999,7 +9056,7 @@ function setTeleMode(on) {
 
 /* ---------------- Settings UI ---------------- */
 function syncSettings() {
-  syncBackup();
+  syncBackup(); fitSetTabs();
   renderSites();
   const k = fovKey(); $("fov").value = cfg.fov[k] ?? ""; $("fov").placeholder = "unknown";
   $("fovRange").value = cfg.fovRange;

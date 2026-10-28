@@ -99,7 +99,7 @@
       <dt>Menu (top left)</dt>
       <dd>The button with the Z logo (top left) opens the menu: <a href="#logbook">logbook</a>, <a href="#photos">label a night photo</a>, <a href="#time">time</a>, settings, <a href="#sync">sync with other devices</a> (when the server offers it), <a href="#live">live connection</a>, <a href="#pro">Zenigo Pro</a>, <a href="#tonight">Tonight</a> for your location and links to this help. Links marked with an arrow open another website in a new tab. On phones, menus and panels slide up from the bottom and can be swiped down to close. On tablets and computers the menu, the logbook (with its entries and “Seen”) and the settings open on the left, everything about the sky and objects (details, target, search, list, filter, quick settings) on the right; they float over the map, the buttons move next to them, and the map glides along so that its middle, the crosshair and an object shown with <b>Show on map</b> stay in the middle of the free part. From 1000 pixels width the menu and a panel on the right can be open at the same time. A panel on the right stays open while you work in it: setting a target shows the target panel, Seen returns to the details or the target, and tapping the map shows the next object’s details. Close it with ✕ or the Esc key. Panels opened from another one (details from the list, the search or Tonight; an entry from the logbook) have a back arrow: it goes back there, ✕ closes them altogether.</dd>
       <dt>Hiding the pills bottom left</dt>
-      <dd>The small ‹ above the pills at the bottom left (target, corrections, filter, status) pushes them out to the left, for a freer view of the map. A small tab at the left edge brings them back; a red dot on it means a target is set. The app remembers it. Messages below the menu button close with their ✕ or go by themselves. Settings → General → Display → <b>Info messages</b> turns off the ones that only confirm something (a mode switched, “Compass mode: rough alignment …”, the switch of the direction boxes); warnings, errors and steps you have to do are always shown.</dd>
+      <dd>The small ‹ above the pills at the bottom left (target, horizon, corrections, filter, status) pushes them out to the left, for a freer view of the map. A small tab at the left edge brings them back; a red dot on it means a target is set. The app remembers it. Messages below the menu button close with their ✕ or go by themselves. Settings → General → Display → <b>Info messages</b> turns off the ones that only confirm something (a mode switched, “Compass mode: rough alignment …”, the switch of the direction boxes); warnings, errors and steps you have to do are always shown.</dd>
       <dt>Status (bottom left)</dt>
       <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a>, a <a href="#filter">filter</a> or <a href="#time">another time</a>. Their ✕ switches them off. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
       <dt>Gestures</dt>
@@ -466,12 +466,10 @@
     <p class="part" id="reference">Reference</p>
 
     <h2 id="settings">Settings</h2>
-    <p>Open them with Menu → <b>Settings</b> or Quick settings → <b>All settings</b>. They are grouped in tabs: General, Equipment, Camera, Sync (when the server offers it) and Live; the app opens the tab you used last.</p>
+    <p>Open them with Menu → <b>Settings</b> or Quick settings → <b>All settings</b>. They are grouped in tabs: General, Location, Equipment, Camera, Sync (when the server offers it) and Live; the app opens the tab you used last. On a phone the tabs take two rows.</p>
 
     <h3 id="settings-general">General</h3>
     <dl class="ref">
-      <dt id="settings-location">Locations</dt>
-      <dd>Your observing location: its <b>Name</b>, latitude and longitude (<b>GPS</b> fills them in). Needed for every direction the app shows. Quick settings shows it in one line, with <b>GPS</b> and <b>Edit</b>. <b>Sky at this place</b>: from dark (no light domes) through rural, suburban and bright suburb to city. It lowers what counts as visible in your telescope for galaxies and nebulae (<b>My telescope</b>, Tonight); not set, the sky counts as dark. Below: its <a href="#locations">horizon</a>. With Pro you keep several locations, each with its own position, sky and horizon.</dd>
       <dt id="settings-display">Display</dt>
       <dd>How the image and the map look:
         <ul>
@@ -490,6 +488,28 @@
           <li><b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar.</li>
         </ul>
       </dd>
+    </dl>
+
+    <h3 id="settings-location">Location</h3>
+    <p>Your observing location: its <b>Name</b>, latitude and longitude (<b>GPS</b> fills them in). Needed for every direction the app shows. Quick settings shows it in one line, with <b>GPS</b> and <b>Edit</b>. <b>Sky at this place</b>: from dark (no light domes) through rural, suburban and bright suburb to city. It lowers what counts as visible in your telescope for galaxies and nebulae (<b>My telescope</b>, Tonight); not set, the sky counts as dark.</p>
+    <h3 id="locations">Several locations and your own horizon <a class="ptag pro" href="/pro/">Pro</a></h3>
+    <p>Where you observe decides more than the directions: a house, a hedge or a tree can hide half the sky. Each location keeps its name, position, sky and horizon. Without Pro you have one location: give it a name and change its position. With <a href="/pro/">Zenigo Pro</a> you keep several (garden, club field, holiday house) and record the horizon of each.</p>
+    <dl class="ref">
+      <dt>Adding one</dt>
+      <dd>Settings › Location › <b>Add a location</b> (it starts at the position in use; type a name, then <b>GPS</b> or the coordinates), or <b>+ Here</b> in Quick settings for a new location at your GPS position.</dd>
+      <dt>Switching</dt>
+      <dd>The chips in Quick settings, or <b>Use</b> in Settings › Location (<b>Manage ›</b> in Quick settings opens it). When you tap <b>GPS</b> in Quick settings and you are within 300 m of another of your locations, Zenigo asks “You’re at … Switch to it?”; somewhere new, it offers a new location there or to move the one in use. With several locations, and the position already allowed, Zenigo asks the same at the start. It never switches by itself.</dd>
+      <dt>Recording the horizon</dt>
+      <dd>Settings › Location › <b>Record the horizon</b>. Stand where the telescope stands and hold the phone in your hand. Put the crosshair of the camera image on the edge of roofs and trees (with <a href="#top-edge">Top edge</a>: point the top edge along it), hold the round button and follow the edge slowly; let go to pause. Where there is open sky, hold <b>Hold: free</b> while you sweep over it. What you don’t record counts as free. <b>Done</b> saves it; ✕ discards it (after recording, tap it twice). The strip at the bottom shows what you have; recording a part again replaces only that part.</dd>
+      <dd>The direction comes from the compass, without the <a href="#compass">compass correction</a> (that corrects the metal of the telescope, which the phone in your hand doesn’t feel). After a <a href="#solving">Locate</a> with Align on, it comes from the stars and is exact. Small gaps are closed and the line smoothed; objects count as free from 2° above the edge.</dd>
+      <dt>What uses it</dt>
+      <dd><b>Free now</b> and <b>Free tonight</b> in <a href="#categories">Find target</a>, <b>Good now</b> and <b>Suits you?</b> (“Behind your horizon now … Free from 23:10”), the map (the silhouette, over the camera image only its edge), the target line (“behind your horizon, free in 25 min”), the night bars (grey while it is behind your horizon), Tonight’s best times and picks, the planned list and Next. Without Pro the horizon stays stored but isn’t used.</dd>
+      <dt>The mask on the map</dt>
+      <dd>On the sky map, while the location in use has a horizon, a pill at the bottom left (<b>Horizon · Garden</b>, with an eye) shows or hides its mask: with it on, the ground below the horizon is hidden and houses and trees are a see-through silhouette, so the stars behind them stay visible; with it off, only the green edge is drawn. Over the camera image only the edge is drawn. The same switch is in Settings › Location under Horizon (<b>Show it on the map</b>). Search, Tonight and the night bars use the horizon either way.</dd>
+      <dt>Trees grown, something new</dt>
+      <dd>Record that part again. <b>Remove</b> deletes the horizon of the location. Moving a location by GPS by more than 300 m keeps its horizon but tells you to record it again there.</dd>
+      <dt>In the logbook</dt>
+      <dd>Each entry keeps the name of the location with its position; the OpenAstronomyLog export names the site after it.</dd>
     </dl>
 
     <h3 id="settings-scope">Equipment</h3>
@@ -524,24 +544,6 @@
       <dd>Tap it in Settings › Equipment: its settings show below, marked “Not in use on this device”, and changes go to it. <b>Use it</b> switches to it.</dd>
       <dt>With sync</dt>
       <dd>Your instruments are the same on all your devices; which one a device uses, and its eyepiece point, stay with that device.</dd>
-    </dl>
-
-    <h3 id="locations">Locations and your own horizon <a class="ptag pro" href="/pro/">Pro</a></h3>
-    <p>Where you observe decides more than the directions: a house, a hedge or a tree can hide half the sky. Each location keeps its name, position, sky and horizon. Without Pro you have one location: give it a name and change its position. With <a href="/pro/">Zenigo Pro</a> you keep several (garden, club field, holiday house) and record the horizon of each.</p>
-    <dl class="ref">
-      <dt>Adding one</dt>
-      <dd>Settings › General › <b>Add a location</b> (it starts at the position in use; type a name, then <b>GPS</b> or the coordinates), or <b>+ Here</b> in Quick settings for a new location at your GPS position.</dd>
-      <dt>Switching</dt>
-      <dd>The chips in Quick settings, or <b>Use</b> in Settings › General. When you tap <b>GPS</b> in Quick settings and you are within 300 m of another of your locations, Zenigo asks “You’re at … Switch to it?”; somewhere new, it offers a new location there or to move the one in use. With several locations, and the position already allowed, Zenigo asks the same at the start. It never switches by itself.</dd>
-      <dt>Recording the horizon</dt>
-      <dd>Settings › General › <b>Record the horizon</b>. Stand where the telescope stands and hold the phone in your hand. Put the crosshair of the camera image on the edge of roofs and trees (with <a href="#top-edge">Top edge</a>: point the top edge along it), hold the round button and follow the edge slowly; let go to pause. Where there is open sky, hold <b>Hold: free</b> while you sweep over it. What you don’t record counts as free. <b>Done</b> saves it; ✕ discards it (after recording, tap it twice). The strip at the bottom shows what you have; recording a part again replaces only that part.</dd>
-      <dd>The direction comes from the compass, without the <a href="#compass">compass correction</a> (that corrects the metal of the telescope, which the phone in your hand doesn’t feel). After a <a href="#solving">Locate</a> with Align on, it comes from the stars and is exact. Small gaps are closed and the line smoothed; objects count as free from 2° above the edge.</dd>
-      <dt>What uses it</dt>
-      <dd><b>Free now</b> and <b>Free tonight</b> in <a href="#categories">Find target</a>, <b>Good now</b> and <b>Suits you?</b> (“Behind your horizon now … Free from 23:10”), the map (the silhouette, over the camera image only its edge), the target line (“behind your horizon, free in 25 min”), the night bars (grey while it is behind your horizon), Tonight’s best times and picks, the planned list and Next. Without Pro the horizon stays stored but isn’t used.</dd>
-      <dt>Trees grown, something new</dt>
-      <dd>Record that part again. <b>Remove</b> deletes the horizon of the location. Moving a location by GPS by more than 300 m keeps its horizon but tells you to record it again there.</dd>
-      <dt>In the logbook</dt>
-      <dd>Each entry keeps the name of the location with its position; the OpenAstronomyLog export names the site after it.</dd>
     </dl>
 
     <h3 id="settings-cam">Camera</h3>
@@ -668,7 +670,7 @@
       <dt>“Field of view not found” or “No match”</dt>
       <dd>If the camera looks through a mirror or prism, switch on <a href="#mirror">Mirrored image</a>. Otherwise get more open sky into the image. If you changed camera or zoom, tap <b>Measure again</b> in <a href="#field-of-view">Settings → Camera → Camera field of view</a>. A wrong search range there can also prevent the first measurement.</dd>
       <dt>The directions are off although the map looks right</dt>
-      <dd>Check the location in <a href="#settings-location">Settings → General → Location</a>, and set the <a href="#eyepiece">eyepiece point</a> again. It is wrong as soon as the holder has moved.</dd>
+      <dd>Check the location in <a href="#settings-location">Settings → Location</a>, and set the <a href="#eyepiece">eyepiece point</a> again. It is wrong as soon as the holder has moved.</dd>
       <dt>Compass mode is far off</dt>
       <dd>Normal near a metal tube. Accept the <a href="#compass">compass correction</a> after a locate, or move the phone away from metal. Locating makes it exact anyway.</dd>
       <dt>The view flips or rotates when pointing high</dt>
