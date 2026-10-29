@@ -441,6 +441,10 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
 .ttonight .course { color: var(--muted); font-size: 13px; }
+/* Visible again (details): the next night it can be seen */
+.ttonight .vsep { height: 1px; background: var(--line); margin: 4px 0; }
+.ttonight .vfrom { font-size: 16px; } .ttonight .vfrom b { color: #f6d39c; font-weight: 600; }
+.ttonight .btn.vgo { justify-self: start; border-color: var(--accent); color: #f6d39c; background: rgba(240,168,69,.1); font-size: 14px; }
 /* ISS transits: the tag on each row, the time, the disc and the strip */
 .trtag { grid-row: 1 / span 2; grid-column: 2; font-size: 12.5px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; white-space: nowrap; color: var(--fg); }
 .trtag.here { border-color: var(--accent); color: var(--accent); }
@@ -496,10 +500,52 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .otarget .chev svg { width: 18px; height: 18px; color: var(--muted); }
 /* Time sheet */
 .tm-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 2px 0 10px; }
+/* Time: the month's nights (Moon, the target visible), the day from noon to noon, the bar on the map and in panels */
+.tmcal { border: 1px solid var(--line); border-radius: 12px; padding: 4px 8px 8px; display: grid; gap: 4px; margin-bottom: 10px; }
+.tmcalh { display: flex; align-items: center; } .tmcalh b { flex: 1; text-align: center; font-weight: 600; }
+.tmwd, .tmdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.tmwd span { text-align: center; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tmd { height: 42px; border-radius: 8px; border: 1px solid transparent; background: var(--raise); color: var(--fg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; font: 500 13px var(--font-num); cursor: pointer; }
+.tmd.sel { border-color: var(--accent); background: rgba(240,168,69,.14); color: #f6d39c; }
+.tmd.today span { text-decoration: underline; text-underline-offset: 3px; }
+.tmd > span { line-height: 1; }
+.tmd .dots { display: flex; gap: 3px; height: 7px; }
+.tmcal i.mo { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px #3a4350; background: var(--panel); display: inline-block; }
+.tmcal i.mo.full { background: #e8e3c8; } .tmcal i.mo.half { background: #8a8676; }
+.tmcal i.tv { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.tmcal i.tv.on { background: var(--target); }
+.tmleg { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); } .tmleg span { display: inline-flex; align-items: center; gap: 5px; }
+.tmday { position: relative; height: 34px; }
+.tmtrack { position: absolute; left: 9px; right: 9px; top: 13px; height: 8px; border-radius: 4px; border: 1px solid var(--line); }
+.tmtrack i { position: absolute; top: 0; bottom: 0; background: var(--target); opacity: .85; }
+.tmday #tmRange { position: absolute; inset: 0; margin: 0; height: 34px; background: transparent; }
+.tmtgt { border-color: rgba(255,106,92,.6); }
+.btn.tmnow { width: 100%; justify-content: center; padding-block: 12px; margin: 4px 0 6px; font-size: 16px; }
+.tbar { position: absolute; z-index: 4; top: calc(max(8px, var(--safe-top)) + 56px); left: calc(max(8px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px));
+  right: calc(max(8px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); max-width: 520px; box-sizing: border-box;
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 12px; background: rgba(36,26,10,.92); border: 1px solid var(--accent); }
+.tbar[hidden] { display: none; }
+.tbar > svg { width: 22px; height: 22px; color: var(--accent); flex: none; }
+.tbar .tbtxt { flex: 1; min-width: 0; display: grid; text-align: left; background: none; border: 0; padding: 0; color: var(--fg); cursor: pointer; font: inherit; }
+.tbar .tbtxt b { font-family: var(--font-num); font-weight: 500; font-size: 17px; color: #f6d39c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbar .tbtxt span { font-size: 12.5px; color: #c9b48f; }
+.tbar .btn, .tstrip .btn { flex: none; justify-content: center; }
+.app.tshift .hint { top: calc(max(8px, var(--safe-top)) + 118px); }
+.app.trnear .tbar { top: calc(max(8px, var(--safe-top)) + 114px); }
+.app.trnear.tshift .hint { top: calc(max(8px, var(--safe-top)) + 176px); }
+.tstrip { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 10px; border-radius: 10px; background: rgba(36,26,10,.92); border: 1px solid var(--accent); font-size: 14px; color: #f6d39c; }
+.tstrip[hidden] { display: none; }
+.tstrip > svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.tstrip > span { flex: 1; min-width: 0; } .tstrip b { font-family: var(--font-num); font-weight: 500; }
+.tstrip .btn { padding: 6px 12px; }
 .tm-head b { font-family: var(--font-num); font-size: 30px; font-weight: 500; }
 .tm-head span { font-size: 15px; }
 .tm-head small { color: var(--accent); font-size: 13.5px; }
-#tmRange { width: 100%; accent-color: var(--accent); margin: 4px 0 0; }
+#tmRange { width: 100%; accent-color: var(--accent); margin: 4px 0 0; -webkit-appearance: none; appearance: none; background: transparent; }
+#tmRange::-webkit-slider-runnable-track { background: transparent; height: 34px; }
+#tmRange::-moz-range-track { background: transparent; }
+#tmRange::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--panel); cursor: pointer; }
+#tmRange::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--panel); cursor: pointer; }
 .tm-scale { position: relative; height: 16px; font-size: 11.5px; color: var(--muted); margin: 0 9px 10px; }
 .tm-scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 #timeChip { color: var(--accent); }
@@ -977,7 +1023,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 /* Photo mode: a photo from the gallery fills the screen, labelled; a bar at the top, three tools at the bottom.
    The map's own controls step aside meanwhile. */
 .app.photo-mode #guide, .app.photo-mode #readout, .app.photo-mode #corner, .app.photo-mode #cornerTab, .app.photo-mode #fabs,
-.app.photo-mode #btnMenu, .app.photo-mode #liveChip, .app.photo-mode #wiz { display: none !important; }
+.app.photo-mode #btnMenu, .app.photo-mode #liveChip, .app.photo-mode #wiz, .app.photo-mode #timeBar { display: none !important; }
 .phbar, .phtime, .phfoot { position: absolute; z-index: 3; left: calc(max(10px, var(--safe-l, env(safe-area-inset-left, 0px))) + var(--pl, 0px)); right: calc(max(10px, var(--safe-r, env(safe-area-inset-right, 0px))) + var(--pr, 0px)); }
 .phbar { top: max(8px, var(--safe-top)); display: flex; gap: 8px; align-items: center; }
 .phbtn { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 0; cursor: pointer; flex: none; }
@@ -1141,6 +1187,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       <i aria-hidden="true"></i>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
+    <div class="tbar" id="timeBar" role="status" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><button class="tbtxt" id="timeBarTxt" aria-label="Change the time"><b id="timeBarClock"></b><span id="timeBarRel"></span></button><button class="btn primary" id="timeBarNow">Now</button></div>
 
     <div class="calchip livechip" id="liveChip" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="7" height="12" rx="1.6"/><rect x="14.5" y="4" width="7" height="16" rx="1.6"/><path d="M10.5 10.5h3M10.5 13.5h3"/></svg><button class="chiplabel" id="liveChipTxt" aria-label="Live connection"></button><button class="iconbtn" id="liveChipCam" aria-label="Show the telescope’s camera image" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1.5-2h7.6l1.5 2h2.2A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button class="iconbtn" id="liveChipOff" aria-label="End the live connection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="fabs" id="fabs">
@@ -1341,7 +1388,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 
 <div class="sheet tall" id="tonightSheet" hidden>
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="tonightTitle">
-    <div class="grab"><h2 id="tonightTitle"><span>Tonight</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="grab"><h2 id="tonightTitle"><span id="tonightTxt">Tonight</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div id="tonightBody"></div>
   </div>
 </div>
@@ -1559,14 +1606,22 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="timeTitle">
     <div class="grab"><h2 id="timeTitle"><span>Time</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="tm-head"><b id="tmClock"></b><span id="tmDate"></span><small id="tmOff"></small></div>
-    <input type="range" id="tmRange" min="-720" max="1440" step="5" aria-label="Time shown on the map, minutes from now">
-    <div class="tm-scale"><span>−12 h</span><span style="left:33.33%">now</span><span style="left:66.67%">+12 h</span><span style="left:100%">+24 h</span></div>
+    <div class="tmcal">
+      <div class="tmcalh"><button class="iconbtn" id="tmPrevM" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><b id="tmMonth"></b><button class="iconbtn" id="tmNextM" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div>
+      <div class="tmwd" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+      <div class="tmdays" id="tmDays" role="group" aria-label="Nights of the month"></div>
+      <div class="tmleg" id="tmLeg"></div>
+    </div>
+    <div class="tmday"><div class="tmtrack" id="tmTrack" aria-hidden="true"><i hidden></i></div><input type="range" id="tmRange" min="0" max="1435" step="5" aria-label="Time of day, noon to noon"></div>
+    <div class="tm-scale" id="tmScale"></div>
     <div class="chips" id="tmChips">
-      <button class="chip" data-tm="now">Now</button><button class="chip" data-tm="-60">−1 h</button><button class="chip" data-tm="60">+1 h</button>
-      <button class="chip" data-tm="dark">Dark tonight</button><button class="chip" data-tm="midnight">Midnight</button><button class="chip" data-tm="dawn">End of darkness</button>
+      <button class="chip" data-tm="-1440">−1 day</button><button class="chip" data-tm="-60">−1 h</button><button class="chip" data-tm="60">+1 h</button><button class="chip" data-tm="1440">+1 day</button>
+      <button class="chip" data-tm="dark">Dark</button><button class="chip" data-tm="midnight">Midnight</button><button class="chip" data-tm="dawn">End of darkness</button>
+      <button class="chip tmtgt" data-tm="target" id="tmTgt" hidden></button>
     </div>
     <div class="row"><label>Date and time<input type="datetime-local" id="tmPick"></label></div>
-    <p class="note">The map, the directions at the top, target search and object details show the sky at this time. It keeps running from there. Locate, the eyepiece point and aligning on a star need the sky as it is now and switch back to the current time.</p>
+    <button class="btn primary tmnow" data-tm="now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4.5h4.5"/></svg>Back to now</button>
+    <p class="note">The map, the directions at the top, Tonight, the lists, target search and object details show the sky at this time: a bar at the top of the map and the panels says so. It keeps running from there. Locate, the eyepiece point and aligning on a star need the sky as it is now and switch back to the current time. Logbook entries always get the real time.</p>
   </div>
 </div>
 
@@ -2989,6 +3044,7 @@ function belowTxt(T) {
 function tgtPill(txt, cls) {
   tgtPill.base = [txt, cls];
   const tr = trPill(); if (tr) txt = txt ? txt + " · " + tr : tr;   // an ISS transit coming up for the target
+  if (st.tOff && skyDate().toDateString() !== new Date().toDateString()) txt = (txt ? txt + " · " : "") + visShort(skyDate().getTime());   // another day shown
   const k = txt + "|" + (cls || ""); if (tgtPill.k === k) return; tgtPill.k = k;
   $("tgtChipState").textContent = txt ? "· " + txt : ""; const c = $("tgtChip"); c.classList.toggle("hit", cls === "hit"); c.classList.toggle("warn", cls === "warn");
 }
@@ -3822,8 +3878,9 @@ function trPill() {
 }
 function trTick() {
   const cell = $("hudTr"), e = trNext(cfg.target);
-  if (!e) { if (!cell.hidden) { cell.hidden = true; TR.beep = null; if (tgtPill.base) tgtPill(...tgtPill.base); } return; }
+  if (!e) { if (!cell.hidden) { cell.hidden = true; TR.beep = null; document.querySelector(".app").classList.remove("trnear"); if (tgtPill.base) tgtPill(...tgtPill.base); } return; }
   const now = skyDate().getTime(), t1 = e.t1 || e.t, t2 = e.t2 || e.t, rem = t1 - now, w = trWords(e);
+  if (cell.hidden) document.querySelector(".app").classList.add("trnear");
   cell.hidden = false;
   const v = rem > 0 ? pad2(Math.floor(rem / 60e3)) + ":" + pad2(Math.floor(rem / 1000) % 60) + "." + Math.floor(rem / 100) % 10 : now <= t2 + 300 ? "now" : "passed";
   if ($("trV").textContent !== v) $("trV").textContent = v;
@@ -5802,7 +5859,12 @@ function syncInfoObs(o) {
 }
 // Tonight's plan for one object: altitude now, when it is well placed (above 20° in darkness), warnings
 const planCache = { at: 0, t: null };
-function nightPlan() { if (!planCache.t || Date.now() - planCache.at > 10 * 60e3) { planCache.t = tonightData(); planCache.at = Date.now(); } return planCache.t; }
+// for the time shown (Time): a later night has its own plan
+function nightPlan() {
+  const k = Math.floor(skyDate().getTime() / (10 * 60e3)) + "|" + cfg.lat + "|" + cfg.lon;
+  if (!planCache.t || Date.now() - planCache.at > 10 * 60e3 || planCache.k !== k) { planCache.t = tonightData(); planCache.at = Date.now(); planCache.k = k; }
+  return planCache.t;
+}
 // Night plans for search results: kept per object until the night plan is refreshed (typing would recompute them)
 const planMemo = { tn: null, m: new Map() };
 function memoPlan(T) {
@@ -5814,28 +5876,206 @@ function memoPlan(T) {
 const BAR_UP = "#7a5a2c", BAR_GOOD = "#4c9466", BAR_HID = "#3a4350";   // up but behind your horizon: grey
 function rowPlan(id, tn) { const T = targetById(id); return T ? planFor(T, tn) : null; }
 function planFor(T, tn) {
-  const now = new Date(), fmt = d => HM.format(d);
+  const now = skyDate(), fmt = d => HM.format(d);
   const tNow = A.MakeTime(now), hNow = horiz(T.kind === "planet" || T.kind === "sun" ? T.vec(tNow) : vecNow(T), tNow), altNow = hNow.alt;
   const planet = T.kind === "planet";
   const ok = a => inReach(a, 20);   // well placed: above 20° and in the telescope's reach
   // with your own horizon (Pro): not behind houses and trees either
-  const pts = tn.samples.map(sm => { const [a, az] = sm.alt(T.vec(A.MakeTime(sm.d))), hid = hzBlocked(az, a); return { d: sm.d, a, az, hid, good: ok(a) && !hid && sm.sun < (planet ? -6 : -12) }; });
+  const pts = tn.samples.map(sm => { const [a, az] = sm.alt(T.vec(A.MakeTime(sm.d))), hid = hzBlocked(az, a); return { d: sm.d, a, az, hid, sun: sm.sun, good: ok(a) && !hid && sm.sun < (planet ? -6 : -12) }; });
   let best = null; pts.forEach(p => { if (p.good && (!best || p.a > best.a)) best = p; });
   const hidNow = hzBlocked(hNow.az, altNow), okNow = ok(altNow) && !hidNow;
   const fut = pts.filter(p => p.d > now), leave = okNow ? fut.find(p => !ok(p.a) || p.hid) : null, rise = !okNow ? fut.find(p => p.good) : null;
   const span = tn.end - tn.start, pct = d => Math.max(0, Math.min(100, (d - tn.start) / span * 100));
   const stops = []; pts.forEach((p, i) => { const a = pct(p.d), b = i + 1 < pts.length ? pct(pts[i + 1].d) : 100; stops.push((p.good ? BAR_GOOD : p.a > 0 && p.hid ? BAR_HID : p.a > 0 ? BAR_UP : "transparent") + " " + a.toFixed(1) + "% " + b.toFixed(1) + "%"); });
-  const R = reach(), high = altNow > R.hi, later = !inReach(altNow, 10) || (hidNow && altNow <= R.hi);
-  let sub;
+  const R = reach(), high = altNow > R.hi;
+  let later = !inReach(altNow, 10) || (hidNow && altNow <= R.hi), sub;
   if (hidNow && !high && altNow > 0) sub = "behind your horizon, " + (rise ? "free from " + fmt(rise.d) : "not free again tonight");
   else if (high && rise) sub = "too high now, in reach from " + fmt(rise.d);
   else if (high) sub = "too high for your telescope tonight";
   else if (later && rise) sub = "well placed from " + fmt(rise.d) + (best && +best.d !== +rise.d ? ", best " + fmt(best.d) : "");
   else if (later) sub = best ? "best " + fmt(best.d) : "not well placed tonight";
   else sub = !best ? "low tonight" : best.d < now ? "past its best" : "best " + fmt(best.d) + ", " + compass(best.az);
+  // not visible tonight (from now on, half an hour or more): when it is visible again; visible but never well placed
+  // tonight: when it is well placed (Visible again)
+  let vis = null;
+  if (T.kind !== "sat" && T.kind !== "sun") {
+    const thr = planet ? -6 : -12, min = visMinAlt(); let run = 0, most = 0;
+    for (const q of pts) { if (q.d > now && q.a >= min && !q.hid && q.sun < thr) most = Math.max(most, ++run); else run = 0; }
+    if (most < VIS_RUN) { const v = visInfo(T); if (v && (v.never || v.first.n > 0)) { vis = v; sub = visTxt(v); later = true; } }
+    else if (!best) { const v = visInfo(T); if (v) sub += v.well ? (v.well.n > 0 ? " · well placed from " + visShort(v.well.s) : "") : " · never well placed here"; }
+  }
   const warn = !later && leave && leave.d - now < 3 * 3600e3 ? (leave.hid && ok(leave.a) ? "behind your horizon from " : leave.a > R.hi ? "too high after " : "low after ") + fmt(leave.d) : "";
-  const sort = later ? 1e15 + (rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
-  return { T, pts, best, altNow, sub, warn, later, sort, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
+  const sort = later ? 1e15 + (vis ? (vis.first ? vis.first.s : 9e12 + 1) : rise ? +rise.d : 9e12) : leave ? +leave.d : 9e14;
+  return { T, pts, best, altNow, sub, warn, later, sort, vis, bar: "linear-gradient(to right," + stops.join(",") + ")", now: now > tn.start && now < tn.end ? pct(now) : null };
+}
+/* ---------------- Visible again: the next night an object can be seen, and when it is well placed ---------------- */
+// Visible: at least 10° high and in the telescope's reach (Settings › Equipment), not behind your own horizon, for half
+// an hour or more while it is dark (Sun below −12°; for planets and the Moon −6°). Well placed: as in Tonight, 20° and
+// in reach. The Moon's light doesn't count. Worked out night by night from the night shown (Time), every 10 minutes from
+// noon to noon: the Sun with a short formula (good to about a minute), planets once a night and the Moon twice from
+// Astronomy Engine, the rest from their fixed place. Kept per object until the place, the reach, the horizon or the
+// night shown changes.
+const VIS = { sun: new Map(), sk: "", res: new Map(), rk: "" };
+const visMinAlt = () => Math.max(10, reach().lo);
+const VIS_STEP = 10 * 60e3, VIS_N = 144, VIS_RUN = 3;
+// local noon before the night a moment belongs to (a moment before noon belongs to the night before)
+function nightNoon(ms) { const d = new Date(ms); if (d.getHours() < 12) d.setDate(d.getDate() - 1); d.setHours(12, 0, 0, 0); return d.getTime(); }
+const addNights = (t0, n) => { const d = new Date(t0); d.setDate(d.getDate() + n); d.setHours(12, 0, 0, 0); return d.getTime(); };
+// the Sun's altitude and the local sidereal time for the 144 moments of a night
+function visSun(t0) {
+  const lat = +cfg.lat * D2R, lon = +cfg.lon, k = lat + "|" + lon;
+  if (VIS.sk !== k) { VIS.sk = k; VIS.sun.clear(); }
+  let s = VIS.sun.get(t0); if (s) return s;
+  if (VIS.sun.size > 900) VIS.sun.clear();
+  const sun = new Float32Array(VIS_N), lst = new Float32Array(VIS_N);
+  for (let i = 0; i < VIS_N; i++) {
+    const d = (t0 + i * VIS_STEP - 946728000000) / 864e5;   // days from J2000.0
+    const g = (357.529 + 0.98560028 * d) * D2R, L = (280.459 + 0.98564736 * d + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * D2R, e = (23.439 - 3.6e-7 * d) * D2R;
+    const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+    const ls = ((280.46061837 + 360.98564736629 * d + lon) % 360 + 360) % 360; lst[i] = ls;
+    sun[i] = Math.asin(Math.sin(lat) * Math.sin(dec) + Math.cos(lat) * Math.cos(dec) * Math.cos(ls * D2R - ra)) * R2D;
+  }
+  s = { sun, lst }; VIS.sun.set(t0, s); return s;
+}
+// altitude and azimuth of a place in the sky (degrees) at a local sidereal time
+function visAltAz(ra, dec, lst) {
+  const lat = +cfg.lat * D2R, H = (lst - ra) * D2R, d = dec * D2R;
+  const alt = Math.asin(Math.sin(lat) * Math.sin(d) + Math.cos(lat) * Math.cos(d) * Math.cos(H)) * R2D;
+  const az = (Math.atan2(-Math.sin(H) * Math.cos(d), Math.cos(lat) * Math.sin(d) - Math.sin(lat) * Math.cos(d) * Math.cos(H)) * R2D + 360) % 360;
+  return [alt, az];
+}
+// where the object is during one night: fixed objects from their place, planets from their place at midnight, the Moon
+// between its places at 18:00 and 06:00
+function visPos(T, t0) {
+  if (T.kind !== "planet") { const r = Solver.v2radec(T.vec(skyNow().t)); return () => r; }
+  const at = ms => Solver.v2radec(T.vec(A.MakeTime(new Date(ms))));
+  if (T.id !== "Moon") { const r = at(t0 + 12 * 3600e3); return () => r; }
+  const a = at(t0 + 6 * 3600e3), b = at(t0 + 18 * 3600e3), dra = ((b.ra - a.ra + 540) % 360) - 180;
+  return i => { const f = Math.max(0, Math.min(1, (i * VIS_STEP / 3600e3 - 6) / 12)); return { ra: a.ra + dra * f, dec: a.dec + (b.dec - a.dec) * f }; };
+}
+// one night: the longest stretch it is visible and the one it is well placed ({ i, j, alt, az, top }: sample indices,
+// highest altitude and its azimuth, the time of that), the highest altitude while dark; from sample `from` on
+function visNight(T, t0, from = 0) {
+  const S = visSun(t0), pos = visPos(T, t0), dark = T.kind === "planet" ? -6 : -12, min = visMinAlt();
+  let v = null, w = null, rv = null, rw = null, top = -90;
+  const close = (r, best) => r && r.j - r.i + 1 >= VIS_RUN && (!best || r.j - r.i > best.j - best.i) ? r : best;
+  for (let i = from; i < VIS_N; i++) {
+    let okV = false, okW = false;
+    if (S.sun[i] < dark) {
+      const p = pos(i), [alt, az] = visAltAz(p.ra, p.dec, S.lst[i]), hid = hzBlocked(az, alt);
+      if (alt > top) top = alt;
+      okV = alt >= min && !hid; okW = okV && inReach(alt, 20);
+      if (okV) { if (!rv) rv = { i, j: i, alt, az, top: i }; else { rv.j = i; if (alt > rv.alt) { rv.alt = alt; rv.az = az; rv.top = i; } } }
+      if (okW) { if (!rw) rw = { i, j: i, alt, az, top: i }; else { rw.j = i; if (alt > rw.alt) { rw.alt = alt; rw.az = az; rw.top = i; } } }
+    }
+    if (!okV) { v = close(rv, v); rv = null; }
+    if (!okW) { w = close(rw, w); rw = null; }
+  }
+  v = close(rv, v); w = close(rw, w);
+  const ms = r => r && Object.assign(r, { s: t0 + r.i * VIS_STEP, e: t0 + r.j * VIS_STEP, at: t0 + r.top * VIS_STEP });
+  return { v: ms(v), w: ms(w), top, t0 };
+}
+// evening, around midnight or morning, from the middle of a stretch
+const visPart = r => { const h = new Date((r.s + r.e) / 2).getHours(); return h >= 16 && h < 22 ? "evening" : h >= 22 || h < 2 ? "midnight" : "morning"; };
+// the next night it is visible (from the night shown on), the next night it is well placed, and why never
+function visInfo(T) {
+  if (!T || T.kind === "sat" || T.kind === "sun" || T.id === "Sun") return null;
+  const k = [(+cfg.lat).toFixed(3), (+cfg.lon).toFixed(3), reach().lo, reach().hi, hzCache.k, nightNoon(skyDate().getTime())].join("|");
+  if (VIS.rk !== k) { VIS.rk = k; VIS.res.clear(); }
+  if (VIS.res.has(T.id)) return VIS.res.get(T.id);
+  const now = skyDate().getTime(), base = nightNoon(now), from0 = Math.max(0, Math.ceil((now - base) / VIS_STEP));
+  const fixed = T.kind !== "planet", r = fixed ? Solver.v2radec(T.vec(skyNow().t)) : null;
+  const culm = fixed ? 90 - Math.abs(+cfg.lat - r.dec) : null;
+  let first = null, well = null, top = -90;
+  if (!fixed || culm >= visMinAlt()) {
+    for (let n = 0; n < 400 && !(first && well); n++) {
+      const t0 = addNights(base, n), N = visNight(T, t0, n ? 0 : from0); top = Math.max(top, N.top);
+      if (!first && N.v) first = Object.assign(N.v, { n, t0 });
+      if (!well && N.w) well = Object.assign(N.w, { n, t0 });
+      if (fixed && n > 370) break;
+    }
+  }
+  const res = { first, well, top: fixed ? culm : top, never: null };
+  if (!first) res.never = res.top <= 0 ? "below" : res.top < visMinAlt() ? (reach().lo > 10 && res.top >= 10 ? "reach" : "low") : "hidden";
+  VIS.res.set(T.id, res);
+  return res;
+}
+// months in which it is visible in the evening, at night or in the morning for an hour or more (for the details)
+function visSeason(T) {
+  const base = nightNoon(skyDate().getTime()), months = new Array(12).fill(0), parts = new Array(12).fill(null);
+  for (let n = 0; n < 365; n += 3) {
+    const t0 = addNights(base, n), N = visNight(T, t0); if (!N.v || N.v.j - N.v.i < 5) continue;
+    const m = new Date(t0).getMonth(); months[m]++; if (!parts[m]) parts[m] = visPart(N.v);
+  }
+  const on = months.map(c => c >= 3); if (!on.some(Boolean)) return null;
+  if (on.every(Boolean)) return { all: true };
+  let best = null;   // the longest run of months (round the year end)
+  for (let a = 0; a < 12; a++) { if (!on[a] || on[(a + 11) % 12]) continue; let l = 0; while (l < 12 && on[(a + l) % 12]) l++; if (!best || l > best.l) best = { a, l }; }
+  const mid = (best.a + Math.floor(best.l / 2)) % 12, M = m => new Date(2026, m, 1).toLocaleDateString([], { month: "long" });
+  return { from: M(best.a), to: M((best.a + best.l - 1) % 12), one: best.l === 1, part: parts[mid] };
+}
+const VIS_PART = { evening: "in the evening", midnight: "around midnight", morning: "in the morning" }, VIS_PARTS = { evening: "evenings", midnight: "around midnight", morning: "mornings" };
+// "visible from Wed 9 Dec, mornings · well placed from 4 Jan" and the like (lists); later than six weeks: the month
+function visFromTxt(ms) {
+  const d = new Date(ms), days = (ms - skyDate().getTime()) / 864e5;
+  return days > 42 ? d.toLocaleDateString([], { month: "long", year: d.getFullYear() !== skyDate().getFullYear() && days > 300 ? "numeric" : undefined }) : fmtDay(d);
+}
+const visShort = ms => new Date(ms).toLocaleDateString([], { day: "numeric", month: "short" });
+function visNeverTxt(v) {
+  return v.never === "below" ? "never visible here: always below the horizon"
+    : v.never === "reach" ? "never in your telescope’s reach here: at most " + Math.round(v.top) + "° high"
+    : v.never === "low" ? "never visible here: at most " + Math.max(0, Math.round(v.top)) + "° high"
+    : "not visible here in the next year: behind your horizon or too low in the dark";
+}
+function visTxt(v) {
+  if (v.never) return visNeverTxt(v);
+  const f = v.first, low = f.alt < 20;
+  return "visible from " + visFromTxt(f.s) + ", " + VIS_PARTS[visPart(f)] + (low ? ", low" : "")
+    + (v.well ? (v.well.n > f.n ? " · well placed from " + visShort(v.well.s) : "") : " · never well placed here");
+}
+// with Visible again in the details: the bar of that night (sunset to sunrise), amber where visible, green where well placed
+function visBar(T, f) {
+  const S = visSun(f.t0), N = visNight(T, f.t0);
+  let a = 0, b = VIS_N - 1; while (a < VIS_N && S.sun[a] >= 0) a++; while (b > a && S.sun[b] >= 0) b--;
+  const span = Math.max(1, b - a), pct = i => ((i - a) / span * 100).toFixed(1), stops = [];
+  for (let i = a; i < b; i++) {
+    const inW = N.w && i >= N.w.i && i <= N.w.j, inV = N.v && i >= N.v.i && i <= N.v.j;
+    stops.push((inW ? BAR_GOOD : inV ? BAR_UP : "transparent") + " " + pct(i) + "% " + pct(i + 1) + "%");
+  }
+  const w = document.createElement("div"); w.className = "obarw";
+  const e1 = document.createElement("span"); e1.className = "oend"; e1.innerHTML = SUN_DOWN; e1.append(visShort(f.t0) + " · " + HM.format(new Date(f.t0 + a * VIS_STEP)));
+  const bar = document.createElement("div"); bar.className = "obar"; bar.style.backgroundImage = "linear-gradient(to right," + stops.join(",") + ")"; bar.setAttribute("aria-hidden", "true");
+  const e2 = document.createElement("span"); e2.className = "oend"; e2.append(HM.format(new Date(f.t0 + b * VIS_STEP))); e2.insertAdjacentHTML("beforeend", SUN_UP);
+  w.append(e1, bar, e2); return w;
+}
+// the block in the details' Tonight box when it can't be seen tonight
+function fillVisAgain(box, T, v) {
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  box.append(el("div", "vsep"), el("div", "k", "Visible again"));
+  if (v.never) { box.append(el("div", "", trUp(visNeverTxt(v)) + ".")); return; }
+  const f = v.first, low = f.alt < 20, l1 = el("div", "vfrom");
+  const b = el("b", "", "from " + fmtDay(new Date(f.s))); l1.append(b, " · " + VIS_PART[visPart(f)] + (low ? ", low" : ""));
+  box.append(l1);
+  let moon = ""; try { moon = " The Moon is " + Math.round(A.Illumination(A.Body.Moon, A.MakeTime(new Date(f.at))).phase_fraction * 100) + " % lit."; } catch (e) {}
+  const R = reach();
+  box.append(el("div", "course", "That night " + HM.format(new Date(f.s)) + "–" + HM.format(new Date(f.e)) + " in the " + compass(f.az) + ", up to " + Math.round(f.alt) + "° high" + (R.lo > 10 ? " (your telescope reaches from " + Math.round(R.lo) + "°)" : "") + "." + moon));
+  box.append(visBar(T, f));
+  if (v.well) { if (v.well.n > f.n) box.append(el("div", "", "Well placed from " + fmtDay(new Date(v.well.s)) + ".")); }
+  else {
+    const s = visSeason(T), l = el("div", ""); l.append(el("b", "", "Never well placed here"));
+    l.append(" (at most " + Math.round(v.top) + "° high" + (s && !s.all ? "; visible " + (s.one ? "in " + s.from : "from " + s.from + " to " + s.to) : "") + ").");
+    box.append(l);
+  }
+  const go = el("button", "btn vgo"); go.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Show the sky then</span>';
+  go.onclick = () => showSkyAt(f.at, T);
+  box.append(go);
+}
+// the time set to a moment, the object shown on the map there
+function showSkyAt(ms, T) {
+  setTimeOffset(ms - Date.now());
+  const o = objById(T.id) || T;
+  if (canShowOnMap()) showOnMap(o);
+  hint("The sky on " + fmtDay(new Date(ms)) + " at " + HM.format(new Date(ms)) + ". “Now” at the top brings back the current time.", 5000);
 }
 /* ---------------- Solar system details (all calculated on the phone with Astronomy Engine) ---------------- */
 const AU_KM = 149597870.7, LIGHT_KMS = 299792.458;
@@ -6142,10 +6382,11 @@ function nightCourse(p) {
 // "Tonight" box: when it is well placed, the course of the night and the night bar
 function fillTonight(box, p) {
   const k = document.createElement("div"); k.className = "k"; k.textContent = "Tonight"; box.append(k);
-  const d = document.createElement("div"); d.textContent = p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
+  const d = document.createElement("div"); d.textContent = p.vis && !p.vis.never ? "not visible tonight" : p.sub; if (p.warn) { d.append(" · "); const ws = document.createElement("span"); ws.className = "warn2"; ws.textContent = p.warn; d.append(ws); } box.append(d);
   const c = nightCourse(p); if (c) { const cd = document.createElement("div"); cd.className = "course"; cd.textContent = c; box.append(cd); }
   box.append(nightBar(p, true));
   box.append(nightLegend(p));
+  if (p.vis && !p.vis.never) fillVisAgain(box, p.T, p.vis);
 }
 // The list opens on the tab used last (remembered across starts)
 const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
@@ -6304,8 +6545,18 @@ function renderList() {
     if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the plan"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
   } else {
     if (!obs.starred.length) note("Star objects you want to see some day: the star in their details or in Find target. Then plan them for a night here with the list icon.");
-    // well placed tonight first (in the order they get low), then the rest
-    obs.starred.map(x => ({ x, p: rowPlan(x.id, tn) })).sort((a, b) => (a.p ? a.p.sort : 2e15) - (b.p ? b.p.sort : 2e15))
+    // when visible: well placed tonight first (in the order they get low), then by the night they are visible again; or by name
+    const byName = cfg.starOrder === "name";
+    if (obs.starred.length > 2) {
+      const ob = document.createElement("div"); ob.className = "oorder";
+      ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the starred objects"><button role="radio" data-sorder="visible">When visible</button><button role="radio" data-sorder="name">By name</button></div>';
+      ob.querySelectorAll("[data-sorder]").forEach(b => { const on = (b.dataset.sorder === "name") === byName; b.setAttribute("aria-checked", on); b.classList.toggle("on", on);
+        b.onclick = () => { cfg.starOrder = b.dataset.sorder; save(); renderList(); }; });
+      body.append(ob);
+    }
+    const nm = id => obsName(id, (obs.starred.find(x => x.id === id) || {}).name || id);
+    obs.starred.map(x => ({ x, p: rowPlan(x.id, tn) }))
+      .sort(byName ? (a, b) => nm(a.x.id).localeCompare(nm(b.x.id), undefined, { numeric: true }) : (a, b) => (a.p ? a.p.sort : 2e15) - (b.p ? b.p.sort : 2e15))
       .forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "starred")));
   }
   const nx = nextItem(); $("listNext").hidden = !nx;
@@ -6472,7 +6723,12 @@ function seenInstChanged() {
   opts.forEach(x => { const op = document.createElement("option"); op.textContent = x; sel.append(op); });
   sel.value = opts.includes(keep) ? keep : opts[0]; sel._inst = t;
 }
-function openSeen(o, entry, fromLog) {
+function openSeen(o, entry, fromLog, sure) {
+  // another time shown: the entry still gets the real time, so ask first
+  if (!entry && !sure && Math.abs(st.tOff) > 30 * 60e3) {
+    askConfirm("Another time is shown", "The map shows the sky of " + fmtShown(skyDate()) + ". A logbook entry always gets the real time: now, " + fmtClock(new Date()) + ".", "Log it now").then(ok => { if (ok === true) openSeen(o, entry, fromLog, true); });
+    return;
+  }
   const now = entry ? new Date(entry.t) : new Date(), tNow = A.MakeTime(now), k = nightKey(new Date());
   const lastTonight = obs.log.filter(e => nightKey(new Date(e.t)) === k).sort((a, b) => a.t.localeCompare(b.t)).pop();
   seenState.fromLog = !!(entry && fromLog);
@@ -8105,42 +8361,118 @@ function skyDate() { return new Date(Date.now() + st.tOff); }
 function fmtClock(d) { return HM.format(d); }
 function fmtOffset(ms) {
   const m = Math.round(Math.abs(ms) / 60000), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  if (d >= 2) return ms >= 0 ? "in " + Math.round(m / 1440) + " days" : Math.round(m / 1440) + " days ago";
   const txt = (d ? d + " d " : "") + (h ? h + " h " : "") + (mm || (!d && !h) ? mm + " min" : "");
   return ms >= 0 ? "in " + txt.trim() : txt.trim() + " ago";
 }
 function setTimeOffset(ms, msg) {
+  const was = st.tOff;
   st.tOff = Math.abs(ms) < 30000 ? 0 : Math.round(ms); sky.at = 0; lastSig = [];
   syncTime(); updateGuide(); renderReadout();
   if (!$("searchSheet").hidden) { renderChips(); showResults(); }
+  if (was !== st.tOff) refreshTimeViews();
   if (msg) hint(msg, 4000);
   // photo mode: the time shown is when the photo was taken (planets, Moon); changed here, it was set by hand
   if (ph.on) { if (!ph.applying) ph.timeSet = true; ph.objs = null; ph.ver++; photoUi(); }
 }
+// the panels that show the night: drawn again for the time now shown (soon after the last change, while sliding)
+function refreshTimeViews() {
+  clearTimeout(refreshTimeViews.t);
+  refreshTimeViews.t = setTimeout(() => {
+    const keep = id => { const sc = scroller($(id)); return sc ? sc.scrollTop : 0; }, back = (id, y) => { const sc = scroller($(id)); if (sc) sc.scrollTop = y; };
+    if (!$("tonightSheet").hidden) { const y = keep("tonightSheet"); showTonight(); back("tonightSheet", y); }
+    if (!$("listSheet").hidden) { const y = keep("listSheet"); renderList(); back("listSheet", y); }
+    if (!$("progSheet").hidden) { const y = keep("progSheet"); renderProgs(); back("progSheet", y); }
+    if (!$("infoSheet").hidden && st.picked) reshowInfo(st.picked);
+    if (!$("targetSheet").hidden) syncTargetPanel(true);
+  }, 150);
+}
+const timeNow = () => setTimeOffset(0);
+// a strip at the top of the panels that show the sky at a time: which time, and back to now
+const TSTRIP = ["searchSheet", "infoSheet", "tonightSheet", "listSheet", "progSheet", "targetSheet", "transitSheet"].map(id => {
+  const g = $(id) && $(id).querySelector(".grab"); if (!g) return null;
+  const d = document.createElement("div"); d.className = "tstrip"; d.hidden = true; d.setAttribute("role", "status");
+  d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span></span><button class="btn primary">Now</button>';
+  d.querySelector("button").onclick = timeNow; g.append(d); return d;
+}).filter(Boolean);
+const fmtShown = d => fmtClock(d) + " · " + d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: d.getFullYear() !== new Date().getFullYear() || Math.abs(st.tOff) > 60 * 864e5 ? "numeric" : undefined });
 function syncTime() {
   const d = skyDate(), on = !!st.tOff;
   const sameDay = d.toDateString() === new Date().toDateString();
   const chip = on ? fmtClock(d) + (sameDay ? "" : " · " + d.toLocaleDateString([], { day: "numeric", month: "short" })) : "";
-  $("timeChip").hidden = !on; if ($("timeChipTxt").textContent !== chip) $("timeChipTxt").textContent = chip;
+  $("timeChip").hidden = true; if ($("timeChipTxt").textContent !== chip) $("timeChipTxt").textContent = chip;
   $("timeState").textContent = on ? chip : "now";
+  // the bar on the map and the strips in the panels
+  const when = on ? fmtShown(d) : "";
+  $("timeBar").hidden = !on; document.querySelector(".app").classList.toggle("tshift", on);
+  if (on) { if ($("timeBarClock").textContent !== when) $("timeBarClock").textContent = when; const rel = "The sky " + fmtOffset(st.tOff) + ", not now"; if ($("timeBarRel").textContent !== rel) $("timeBarRel").textContent = rel; }
+  TSTRIP.forEach(x => { x.hidden = !on; if (on) { const sp = x.querySelector("span"), h = "The sky at <b>" + H(when) + "</b>"; if (sp.innerHTML !== h) sp.innerHTML = h; } });
   if ($("timeSheet").hidden) return;
   $("tmClock").textContent = fmtClock(d);
   $("tmDate").textContent = d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: sameDay ? undefined : "numeric" });
   $("tmOff").textContent = on ? fmtOffset(st.tOff) : "now";
-  if (document.activeElement !== $("tmRange")) $("tmRange").value = Math.max(-720, Math.min(1440, Math.round(st.tOff / 60000)));
   if (document.activeElement !== $("tmPick")) { const p = n => String(n).padStart(2, "0"); $("tmPick").value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
+  renderTimeDay();
+  const t0 = nightNoon(d.getTime());
+  if (tmCal.t0 !== t0 || tmCal.tgt !== cfg.target) { if (!tmCal.nav) { const n = new Date(t0); tmCal.m = new Date(n.getFullYear(), n.getMonth(), 1).getTime(); } renderTimeCal(); }
 }
-$("btnTime").onclick = () => { openSheet("timeSheet"); syncTime(); };
-$("timeChipTxt").onclick = () => { openSheet("timeSheet"); syncTime(); };
-$("btnTimeNow").onclick = () => setTimeOffset(0);
-$("tmRange").oninput = () => setTimeOffset(+$("tmRange").value * 60000);
+// the month's nights: the Moon (at midnight) and, with a target, whether it is visible that night
+const tmCal = { m: null, t0: null, tgt: null, nav: false };
+const tmTarget = () => { const T = targetById(cfg.target); return T && T.kind !== "sat" && T.kind !== "sun" && T.id !== "Sun" ? T : null; };
+function renderTimeCal() {
+  const t0 = nightNoon(skyDate().getTime()), today = nightNoon(Date.now()), T = tmTarget();
+  tmCal.t0 = t0; tmCal.tgt = cfg.target;
+  const m0 = new Date(tmCal.m), y = m0.getFullYear(), mo = m0.getMonth();
+  $("tmMonth").textContent = m0.toLocaleDateString([], { month: "long", year: "numeric" });
+  const box = $("tmDays"); box.textContent = "";
+  for (let i = (m0.getDay() + 6) % 7; i > 0; i--) box.append(document.createElement("span"));
+  const days = new Date(y, mo + 1, 0).getDate();
+  for (let dd = 1; dd <= days; dd++) {
+    const n0 = new Date(y, mo, dd, 12).getTime(), b = document.createElement("button"); b.className = "tmd";
+    let k = 0; try { k = A.Illumination(A.Body.Moon, A.MakeTime(new Date(n0 + 12 * 3600e3))).phase_fraction; } catch (e) {}
+    const vis = T ? !!visNight(T, n0).v : false;
+    b.innerHTML = "<span>" + dd + '</span><span class="dots"><i class="mo ' + (k > 0.6 ? "full" : k > 0.25 ? "half" : "new") + '"></i>' + (T ? '<i class="tv' + (vis ? " on" : "") + '"></i>' : "") + "</span>";
+    b.classList.toggle("sel", n0 === t0); b.classList.toggle("today", n0 === today);
+    b.setAttribute("aria-label", new Date(n0).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + ", Moon " + Math.round(k * 100) + " % lit" + (T ? ", " + T.name + (vis ? " visible" : " not visible") : ""));
+    b.setAttribute("aria-pressed", String(n0 === t0));
+    b.onclick = () => { tmCal.nav = false; setTimeOffset(n0 + (skyDate().getTime() - nightNoon(skyDate().getTime())) - Date.now()); };
+    box.append(b);
+  }
+  $("tmLeg").innerHTML = '<span><i class="mo full"></i>Moon bright</span><span><i class="mo new"></i>Moon dark</span>' + (T ? '<span><i class="tv on"></i>' + H(T.name) + " visible</span>" : "");
+}
+// the day from noon to noon: daylight, twilight and darkness, the time the target is visible, and the times
+function renderTimeDay() {
+  const t0 = nightNoon(skyDate().getTime()), S = visSun(t0), T = tmTarget(), N = T ? visNight(T, t0) : null;
+  const pct = i => (i / VIS_N * 100).toFixed(2), stops = [];
+  for (let i = 0; i < VIS_N; i++) { const a = S.sun[i]; stops.push((a > 0 ? "#3d4a60" : a > -6 ? "#26324a" : a > -12 ? "#151d30" : "#05070d") + " " + pct(i) + "% " + pct(i + 1) + "%"); }
+  const tr = $("tmTrack"); tr.style.backgroundImage = "linear-gradient(to right," + stops.join(",") + ")";
+  const w = tr.querySelector("i"); w.hidden = !(N && N.v);
+  if (N && N.v) { w.style.left = pct(N.v.i) + "%"; w.style.width = ((N.v.j - N.v.i + 1) / VIS_N * 100).toFixed(2) + "%"; }
+  let a = 0; while (a < VIS_N && S.sun[a] >= 0) a++; let b = VIS_N - 1; while (b > a && S.sun[b] >= 0) b--;
+  const lab = (i, txt) => '<span style="left:' + pct(i) + '%">' + txt + "</span>";
+  const sc = lab(0, "12:00") + (a > 12 && a < 66 ? lab(a, HM.format(new Date(t0 + a * VIS_STEP))) : "") + lab(72, "00:00") + (b > 78 && b < 132 ? lab(b + 1, HM.format(new Date(t0 + (b + 1) * VIS_STEP))) : "") + lab(VIS_N, "12:00");
+  if ($("tmScale").innerHTML !== sc) $("tmScale").innerHTML = sc;
+  if (document.activeElement !== $("tmRange")) $("tmRange").value = Math.round((skyDate().getTime() - t0) / 60000);
+  // the target: its best moment that night, or the next night it is visible
+  const tb = $("tmTgt"), v = T && !(N && N.v) ? visInfo(T) : null;
+  tb.hidden = !T || (!(N && N.v) && !(v && v.first));
+  if (!tb.hidden) { tb.textContent = N && N.v ? T.name + ": best that night" : T.name + ": next visible night"; tb.dataset.at = N && N.v ? N.v.at : v.first.at; }
+}
+$("btnTime").onclick = () => { tmCal.nav = false; tmCal.t0 = null; openSheet("timeSheet"); syncTime(); };
+$("timeChipTxt").onclick = $("timeBarTxt").onclick = () => { tmCal.nav = false; tmCal.t0 = null; openSheet("timeSheet"); syncTime(); };
+$("btnTimeNow").onclick = timeNow; $("timeBarNow").onclick = timeNow;
+$("tmPrevM").onclick = () => { const m = new Date(tmCal.m); tmCal.m = new Date(m.getFullYear(), m.getMonth() - 1, 1).getTime(); tmCal.nav = true; renderTimeCal(); };
+$("tmNextM").onclick = () => { const m = new Date(tmCal.m); tmCal.m = new Date(m.getFullYear(), m.getMonth() + 1, 1).getTime(); tmCal.nav = true; renderTimeCal(); };
+$("tmRange").oninput = () => setTimeOffset(nightNoon(skyDate().getTime()) + +$("tmRange").value * 60000 - Date.now());
 $("tmPick").onchange = () => { const d = new Date($("tmPick").value); if (!isNaN(d)) setTimeOffset(d - Date.now()); };
 document.querySelectorAll("[data-tm]").forEach(b => b.onclick = () => {
   const k = b.dataset.tm;
   if (k === "now") return setTimeOffset(0);
+  if (k === "target") return setTimeOffset(+b.dataset.at - Date.now());
   if (/^-?\d+$/.test(k)) return setTimeOffset(st.tOff + +k * 60000);
   if (k === "midnight") { const d = skyDate(); if (d.getHours() >= 12) d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); return setTimeOffset(d - Date.now()); }
   const t = tonightData(), at = k === "dark" ? t.dusk : t.dawn;
-  if (at) setTimeOffset(at - Date.now()); else hint("It doesn’t get properly dark tonight.", 4000);
+  if (at) setTimeOffset(at - Date.now()); else hint("It doesn’t get properly dark that night.", 4000);
 });
 
 /* ---------------- Telescope optics: rings on the map, eyepiece view ---------------- */
@@ -10159,15 +10491,16 @@ function syncWeatherLinks() {
 
 /* ---------------- Tonight: darkness, Moon, planets, best deep-sky objects (computed locally) ---------------- */
 function tonightData() {
-  const obs = observer(), now = new Date(), T = d => A.MakeTime(d);
+  const obs = observer(), now = skyDate(), T = d => A.MakeTime(d);
   const sunAlt = d => horiz(targetById("Sun").vec(T(d)), T(d)).alt;
   const dateOf = t => t ? t.date : null;
   // the night ahead (or the current one if it is already dark)
   let darkLimit = -18, dusk, dawn;
   const before = new Date(now.getTime() - 18 * 3600e3);   // already dark: look back for the start of this night
+  const noon = st.tOff ? new Date(nightNoon(now.getTime())) : null;   // another time shown: the night it belongs to
   const findWindow = lim => {
     const alt = sunAlt(now);
-    const d1 = dateOf(A.SearchAltitude(A.Body.Sun, obs, -1, T(alt > lim ? now : before), 1.2, lim));
+    const d1 = dateOf(A.SearchAltitude(A.Body.Sun, obs, -1, T(noon || (alt > lim ? now : before)), 1.2, lim));
     const d2 = d1 && dateOf(A.SearchAltitude(A.Body.Sun, obs, +1, T(d1), 1, lim));
     return d1 && d2 ? [d1, d2] : null;
   };
@@ -10175,7 +10508,7 @@ function tonightData() {
   if (!w) { darkLimit = -12; w = findWindow(-12); }
   if (w) { dusk = w[0]; dawn = w[1]; }
   const ref = dusk || now;
-  const sunset = dateOf(A.SearchRiseSet(A.Body.Sun, obs, -1, T(sunAlt(now) > 0 ? now : before), 1.2));
+  const sunset = dateOf(A.SearchRiseSet(A.Body.Sun, obs, -1, T(noon || (dusk ? new Date(dusk.getTime() - 8 * 3600e3) : sunAlt(now) > 0 ? now : before)), 1.2));
   const sunrise = dateOf(A.SearchRiseSet(A.Body.Sun, obs, +1, T(dawn || ref), 1.2));
   const start = sunset || now, end = sunrise || new Date(start.getTime() + 12 * 3600e3);
   // samples every 10 minutes from sunset (or now) to sunrise
@@ -10277,8 +10610,36 @@ function fillComingUp(sec, el, esc) {
 // Details opened from Tonight: ← (or closing them) goes back to Tonight, at the same place
 const tonightState = { scroll: 0 };
 function infoFromTonight(o) { tonightState.scroll = scroller($("tonightSheet")).scrollTop; showInfo(o, "tonight"); }
+// Tonight › Coming back: Messier, your planned and starred objects and the planets (for your telescope) that can't be
+// seen the night before the one shown and are visible again within four weeks, by date
+function fillComingBack(sec, el) {
+  sec.append(el("h3", "", "Coming back"));
+  const base = nightNoon(skyDate().getTime()), prev = addNights(base, -1), ids = new Set();
+  MESSIER.forEach(r => ids.add(r[0])); obs.list.forEach(x => ids.add(x.id)); obs.starred.forEach(x => ids.add(x.id));
+  ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"].forEach(id => ids.add(id));
+  const D = aperture(), rows = [];
+  ids.forEach(id => {
+    const T = targetById(id); if (!T || T.kind === "sat" || T.kind === "sun") return;
+    if (D ? !(scopeFit(T) || {}).ok : (T.mag ?? 99) > 7) return;
+    let v, here; try { v = visInfo(T); here = visNight(T, base).v; } catch (e) { return; }
+    if (here) { if (!visNight(T, prev).v) rows.push({ T, f: Object.assign(here, { n: 0, t0: base }) }); return; }   // this night, not the one before
+    if (v && v.first && v.first.n <= 28) rows.push({ T, f: v.first });
+  });
+  rows.sort((a, b) => a.f.s - b.f.s);
+  if (!rows.length) return;
+  sec.append(el("p", "tn-note", "Visible again in the next four weeks: Messier, your planned and starred objects and the planets, for your telescope."));
+  const mine = new Set([...obs.list, ...obs.starred].map(x => x.id));
+  rows.slice(0, 10).forEach(({ T, f }) => {
+    const when = f.n === 0 ? "this night" : visShort(f.s);
+    const b = el("div", "tn-row", "<b>" + H(obsName(T.id, T.name)) + '</b><span class="tn-alt">' + H(when) + "</span><small>" + H([VIS_PARTS[visPart(f)] + (f.alt < 20 ? ", low" : ""), mine.has(T.id) ? "in your list" : ""].filter(Boolean).join(" · ")) + "</small>");
+    const it = el("div", "tn-item"), o = () => objById(T.id) || T;
+    it.append(b, rowActs(T.id, o, () => { const x = o(); if (x) infoFromTonight(x); })); sec.append(it);
+  });
+}
 function showTonight() {
   const t = tonightData(), box = $("tonightBody"); box.textContent = "";
+  const other = nightKey(skyDate()) !== nightKey(new Date());   // another night shown (Time)
+  $("tonightTxt").textContent = other ? "Night of " + fmtDay(new Date(nightNoon(skyDate().getTime()))) : "Tonight";
   const fmt = d => d ? HM.format(d) : "–";
   const dir = az => compass(az).replace("north", "N").replace("south", "S").replace("east", "E").replace("west", "W").replace(/-/g, "");
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -10317,6 +10678,9 @@ function showTonight() {
   });
   box.append(s3);
   // deep sky
+  // coming back: not visible this night, visible again within four weeks (or first visible this night)
+  const sCb = el("section", "tn-sec"); sCb.hidden = true; box.append(sCb);
+  setTimeout(() => { try { fillComingBack(sCb, el); } catch (e) {} sCb.hidden = sCb.childElementCount < 2; }, 30);   // a moment after the panel is shown
   const s4 = el("section", "tn-sec"); s4.append(el("h3", "", "Best deep-sky objects for you"));
   if (!t.dso.length) s4.append(el("p", "tn-note", t.dawn ? "No deep-sky object for your telescope climbs above 30° in darkness tonight." : "Not dark enough tonight for deep-sky objects."));
   t.dso.forEach(({ id, T: TT, cls, mag, b: bb, why }) => {

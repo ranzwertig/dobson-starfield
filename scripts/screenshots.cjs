@@ -413,6 +413,20 @@ const SHOTS = {
     await snap(p, 'pro-transit-countdown', [780, 390]);
     await p.context().close();
   },
+  // Visible again: M8 at the end of October (and the time panel at its next visible night)
+  async visible() {
+    const p = await page(PHONE, { time: new Date('2026-10-29T23:30:00+01:00') });
+    await ev(p, () => { Object.assign(cfg.optics, { altMin: 12 }); st.opticsVer++; save(); showInfo(targetById('M8')); });
+    await wait(p, 600);
+    await ev(p, () => { const b = $('infoTonight'), sc = scroller($('infoSheet')); sc.scrollTop += b.getBoundingClientRect().top - sc.getBoundingClientRect().top - 70; });
+    await snap(p, 'visible-details', [780, 390]);
+    await ev(p, () => { selectTarget('M8', true); const v = visInfo(targetById('M8')); showSkyAt(v.first.at, targetById('M8')); hint(null); });
+    await wait(p, 600);
+    await ev(p, () => { $('btnTime').click(); });
+    await wait(p, 700);
+    await snap(p, 'visible-time', [780, 390]);
+    await p.context().close();
+  },
   async prostats() {
     const p = await page();
     await extReady(p);

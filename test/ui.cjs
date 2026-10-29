@@ -1650,6 +1650,57 @@ const TESTS = {
 
   // Your own horizon (Pro): what it hides is not free now (Good now, Free now, the pill), the night bar shows it,
   // Tonight skips it; recorded with the camera crosshair; after Pro ends it stays stored without effect
+  // Visible again: when an object that can't be seen tonight is visible next; another time shown clearly
+  async visible() {
+    const p = await page({ time: new Date('2026-10-29T23:30:00+01:00') });
+    await ev(p, () => { Object.assign(cfg.optics, { altMin: 12, scope: 1200, ap: 200 }); st.opticsVer++; save(); obs.starred = ['M42', 'M8', 'M31', 'M104'].map(id => ({ id, name: id, added: Date.now() })); saveObs(); });
+    const subs = await ev(p, () => { const oc = TARGETS.find(t => /5139/.test(t.id + ' ' + t.name)); return { m8: planFor(targetById('M8'), nightPlan()).sub, m7: planFor(targetById('M7'), nightPlan()).sub, m104: planFor(targetById('M104'), nightPlan()).sub, m31: planFor(targetById('M31'), nightPlan()).sub, oc: oc ? planFor(oc, nightPlan()).sub : '' }; });
+    ok(/^visible from March, mornings, low · never well placed here$/.test(subs.m8), 'M8 in late October: visible from March, low, never well placed (at most 17°)', subs.m8);
+    ok(/^visible from .*12.* mornings, low · well placed from .*/.test(subs.m104), 'M104: the date, and when it is well placed', subs.m104);
+    ok(/^never visible here: at most 7° high$/.test(subs.m7) && /always below the horizon/.test(subs.oc), 'M7 never high enough, Omega Centauri never above the horizon', [subs.m7, subs.oc]);
+    ok(!/visible from/.test(subs.m31), 'what can be seen tonight keeps its usual line', subs.m31);
+    // the details
+    await ev(p, () => showInfo(targetById('M8'))); await wait(p, 400);
+    const d = await ev(p, () => { const b = $('infoTonight'); return { txt: b.textContent, bar: b.querySelectorAll('.obarw').length, go: !!b.querySelector('.vgo') }; });
+    ok(/not visible tonight/.test(d.txt) && /Visible again/.test(d.txt) && /from \w{3},? (7 Mar|Mar 7)/.test(d.txt) && /up to 1\d° high \(your telescope reaches from 12°\)/.test(d.txt) && /The Moon is \d+ % lit/.test(d.txt), 'details: visible again from that night, with times, height and the Moon', d.txt.slice(0, 300));
+    ok(/Never well placed here \(at most 17° high; visible from \w+ to \w+\)/.test(d.txt) && d.bar === 2 && d.go, 'never well placed, with the season; the bar of that night; “Show the sky then”', d);
+    await shot(p, 'visible-details');
+    // show the sky then: the time moves, a bar at the top says so, the target pill has the date
+    await ev(p, () => { selectTarget('M8', true); }); await ev(p, () => showInfo(targetById('M8'))); await wait(p, 300);
+    await p.tap('#infoTonight .vgo'); await wait(p, 600);
+    const m = await ev(p, () => ({ off: st.tOff, bar: !$('timeBar').hidden, clock: $('timeBarClock').textContent, rel: $('timeBarRel').textContent, pill: $('tgtChipState').textContent, chip: $('timeChip').hidden, tshift: document.querySelector('.app').classList.contains('tshift') }));
+    ok(m.off > 100 * 864e5 && m.bar && /Mar 2027|2027/.test(m.clock) && /in 12\d days, not now/.test(m.rel) && m.chip && m.tshift, 'Show the sky then: the time of that night, the bar at the top of the map', m);
+    ok(/Mar/.test(m.pill), 'the target pill has the date', m.pill);
+    await shot(p, 'visible-map');
+    // Tonight is that night, with a strip; Coming back has M8
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 400);
+    const tn = await ev(p, () => ({ title: $('tonightTxt').textContent, strip: !$('tonightSheet').querySelector('.tstrip').hidden, cb: [...$('tonightBody').querySelectorAll('.tn-sec')].map(x => x.textContent).find(x => /Coming back/.test(x)) || '' }));
+    ok(/^Night of \w{3},? (6 Mar|Mar 6)$/.test(tn.title) && tn.strip, 'Tonight shows that night, with the strip at the top', tn.title);
+    ok(/M8 · Lagoon Nebulathis night/.test(tn.cb), 'Coming back: M8 this night', tn.cb.slice(0, 200));
+    await shot(p, 'visible-tonight');
+    // the time panel: the month with Moon and target dots, a day further, back to now
+    await ev(p, () => { closeSheet('tonightSheet'); $('btnTime').click(); }); await wait(p, 400);
+    const tp = await ev(p, () => ({ days: $('tmDays').querySelectorAll('.tmd').length, sel: ($('tmDays').querySelector('.tmd.sel') || {}).textContent, dots: $('tmDays').querySelectorAll('.tv.on').length, month: $('tmMonth').textContent, tgt: $('tmTgt').hidden ? '' : $('tmTgt').textContent }));
+    ok(tp.days === 31 && /^March 2027$/.test(tp.month) && /^6/.test(tp.sel) && tp.dots >= 20 && /M8: best that night/.test(tp.tgt), 'Time: the month, the night shown, the nights M8 is visible, its best moment', tp);
+    await shot(p, 'visible-time');
+    const before = await ev(p, () => st.tOff);
+    await p.tap('#tmDays .tmd:nth-of-type(20)'); await wait(p, 300);
+    ok(await ev(p, b => st.tOff !== b && nightKey(skyDate()) !== nightKey(new Date(Date.now() + b)), before), 'a day in the calendar moves to that night');
+    // logging at another time asks first
+    await ev(p, () => { closeSheet('timeSheet'); openSeen(targetById('M8')); }); await wait(p, 300);
+    ok(await ev(p, () => !$('confirmSheet').hidden && /real time/.test($('confirmSheet').textContent) && $('seenSheet').hidden), '“Seen” at another time asks first (the entry gets the real time)');
+    await ev(p, () => closeSheet('confirmSheet')); await wait(p, 300);
+    await p.tap('#timeBarNow'); await wait(p, 300);
+    ok(await ev(p, () => st.tOff === 0 && $('timeBar').hidden && !document.querySelector('.app').classList.contains('tshift') && !/Mar/.test($('tgtChipState').textContent)), 'Now: back to the current time, the bar goes');
+    // starred: when visible or by name
+    await ev(p, () => { listTab.v = 'starred'; renderList(); openSheet('listSheet'); }); await wait(p, 300);
+    const order = () => ev(p, () => [...$('listBody').querySelectorAll('.orow')].map(r => r.dataset.id).join(','));
+    const o1 = await order();
+    await p.tap('[data-sorder="name"]'); await wait(p, 200);
+    const o2 = await order();
+    ok(/^M(31|42),M(31|42),M104,M8$/.test(o1) && o2 === 'M8,M31,M42,M104', 'Starred: when visible (tonight first, then by the date), or by name', [o1, o2]);
+    await done(p);
+  },
   // ISS transits (Pro): an ISS-like orbit that crosses the Moon over Balzheim at 20:47:20 local time on 17 Oct 2026
   async transits() {
     const TLE = [{ name: 'ISS (ZARYA)', l1: '1 25544U 98067A   26290.50000000  .00016717  00000-0  10270-3 0  9001', l2: '2 25544  51.6400 276.0000 0003000  90.0000 180.0000 15.50000000 10001' }];
@@ -1996,7 +2047,7 @@ const TESTS = {
 
 // Shards for running in parallel (test/ui-par.cjs): --shard=i/n takes about 1/n of the time, by the seconds each test
 // took (tests not listed count 5 s); the longest go first so that the shards end together.
-const SECONDS = { live: 28, horizon: 21, transits: 14, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
+const SECONDS = { live: 28, horizon: 21, transits: 14, visible: 10, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
   sound: 10, photo: 10, compassflip: 10, logstats: 9, milkyway: 9, sites: 9, programs: 8, assistant: 8, proapp: 8, diagnostics: 7, panels: 7, camera: 6 };
 function shardOf(names, i, n) {
   const load = Array(n).fill(0), pick = Array.from({ length: n }, () => []);

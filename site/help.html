@@ -48,7 +48,8 @@
     <a href="#tonight">Tonight</a>
     <a class="sub" href="#coming-up">Coming up</a>
     <a class="sub" href="#night-bar">Reading the night bar</a>
-    <a href="#time">Time: the sky later</a>
+    <a class="sub" href="#visible-again">Visible again</a>
+    <a href="#time">Time: the sky at another time</a>
     <a href="#satellites">ISS and satellites</a>
     <a class="sub" href="#transits">ISS transits</a>
     <span class="grp">Reference</span>
@@ -104,7 +105,7 @@
       <dt>Hiding the pills bottom left</dt>
       <dd>The small ‹ above the pills at the bottom left (target, horizon, corrections, filter, status) pushes them out to the left, for a freer view of the map. A small tab at the left edge brings them back; a red dot on it means a target is set. The app remembers it. Messages below the menu button close with their ✕ or go by themselves. Settings → General → Display → <b>Info messages</b> turns off the ones that only confirm something (a mode switched, “Compass mode: rough alignment …”, the switch of the direction boxes); warnings, errors and steps you have to do are always shown.</dd>
       <dt>Status (bottom left)</dt>
-      <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a>, a <a href="#filter">filter</a> or <a href="#time">another time</a>. Their ✕ switches them off. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
+      <dd>What the app is doing or has done, for example “Solved · 42 stars · 0.8 s”, and below it the source: live camera, photo or sky map, and whether it follows the compass or the motion sensor. Active extras appear here too: a <a href="#compass">compass correction</a> or a <a href="#filter">filter</a>. Their ✕ switches them off. <a href="#time">Another time</a> shows as a bar at the top of the map, with <b>Now</b>. Above them the round <a href="#optics">eyepiece view</a> appears when it is switched on.</dd>
       <dt>Gestures</dt>
       <dd>Pinch, double-tap or the mouse wheel to zoom (the map goes from 140° across down to half a degree, close enough to separate Jupiter’s moons), drag to pan or, on the free sky map and around a solved photo, to look around. Tap a star, planet, deep-sky object or satellite for its details. On the free map you can look all the way up to the zenith and down to the point below your feet. With a mouse the pointer is a normal arrow, a closed hand while you drag, and a crosshair while you set the eyepiece point.</dd>
     </dl>
@@ -377,7 +378,7 @@
       <dt>Seen tonight</dt>
       <dd>What you logged tonight. Marked one by mistake? Its ✕ removes it: tonight’s logbook entry for it is deleted, and it goes back to Planned.</dd>
       <dt>Starred</dt>
-      <dd>Your wish list, the objects that are well placed tonight first. The list icon plans one for tonight.</dd>
+      <dd>Your wish list. <b>When visible</b> (the order at first): the objects that are well placed tonight first, then the others by the night they can be seen again (<a href="#visible-again">Visible again</a>); or <b>By name</b>. The list icon plans one for tonight.</dd>
     </dl>
     <ul>
       <li>Every list (Find target, the observing list, Tonight, the programmes) has the same buttons below each row, on the right; a tap anywhere else on the row opens the details too: <b>ⓘ</b> opens the object’s details in the same panel, and ← brings you back to the list where you were (<a href="#panels">how panels work</a>); <b>◎</b> makes it your target (filled red on the current target; tap it again to clear the target), the <b>map</b> icon turns the map to it without making it the target (not while Align or the camera follow the telescope), then the list icon (plan) and the star, both showing their state; in Seen tonight also ✕. ◎ and the map icon close the list on a phone.</li>
@@ -428,6 +429,7 @@
       <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
       <li><b>Moon:</b> phase, how much is lit, rise and set.</li>
       <li><b>Planets</b> that are well placed tonight, with their highest point after dusk.</li>
+      <li><b>Coming back:</b> what becomes visible again within the next four weeks, by date (<a href="#visible-again">Visible again</a>).</li>
       <li><b>ISS transits</b> (<a href="/pro/">Pro</a>): when the ISS or Tiangong crosses the Moon or the Sun near you in the next 3 days, see <a href="#transits">ISS transits</a>.</li>
       <li><b>Best deep-sky objects for you:</b> objects that climb above 30° in darkness (or as high as <a href="#reach">your telescope reaches</a>), with the best time within its reach, from Messier, Caldwell and the popular objects (with <a href="/pro/">Zenigo Pro</a> also the Herschel 400). Without an aperture the bright ones; with it those your telescope shows, the best first. What you haven’t seen yet comes first (“new for you”, or “not found yet: try again”), then objects of programmes you have started, how high they get, the Moon at their best moment and tonight’s air; and the list is mixed, not ten objects of one kind. Tap any of them for details or to make it your target.</li>
     </ul>
@@ -464,9 +466,27 @@
     <div class="shots"><figure class="ph"><img src="/img/screens/details-780.webp" srcset="/img/screens/details-390.webp 390w, /img/screens/details-780.webp 780w" sizes="230px" width="390" height="844" alt="Details of M57 with the larger night bar: the times when the green part starts and ends, an “out” mark when it leaves the telescope’s reach, and the legend." loading="lazy" decoding="async"><figcaption>In the details: start and end of the green part, and when the object leaves the telescope’s reach</figcaption></figure></div>
     <p><b>In the details and the target panel</b> the bar is larger: under it are the times when the green part starts and ends, and a small legend explains the colours. If you set <a href="#reach">how low and how high your telescope points</a>, dotted marks above the bar show when the object comes into reach (<b>in</b>) and when it leaves it (<b>out</b>), for example “in 22:40” when it sinks below your highest altitude. When it stays in reach the whole night, there are no marks.</p>
 
-    <h2 id="time">Time: the sky later</h2>
-    <p>To plan, look at the sky at another time: <b>Menu → Time</b>. Drag the slider (12 hours back to 24 hours ahead), use the buttons <b>Now</b>, <b>±1 h</b>, <b>Dark tonight</b>, <b>Midnight</b> and <b>End of darkness</b>, or pick any date and time. The map, the directions at the top, the target search (“well placed”) and the object details then show the sky at that time, and the time keeps running from there.</p>
-    <p>While another time is shown, it appears at the bottom left; tap it to change it, ✕ returns to now. With Align on, the map shows what will be in the direction of the phone at that time. <b>Locate</b>, the <b>eyepiece point</b> and aligning on a star need the sky as it is now, so they switch back to the current time.</p>
+    <h3 id="visible-again">Visible again</h3>
+    <div class="shots"><figure class="ph"><img src="/img/screens/visible-details-780.webp" srcset="/img/screens/visible-details-390.webp 390w, /img/screens/visible-details-780.webp 780w" sizes="230px" width="390" height="844" alt="Details of M8 at the end of October: not visible tonight; visible again from 7 March in the morning, low, with that night's bar; never well placed here; Show the sky then." loading="lazy" decoding="async"><figcaption>Not tonight: from when</figcaption></figure><figure class="ph"><img src="/img/screens/visible-time-780.webp" srcset="/img/screens/visible-time-390.webp 390w, /img/screens/visible-time-780.webp 780w" sizes="230px" width="390" height="844" alt="The time panel at 05:40 on 7 March 2027: the calendar of March with the Moon and the nights M8 is visible, the day from noon to noon and Back to now; the bar at the top of the map behind it." loading="lazy" decoding="async"><figcaption>The sky then, and the Time panel</figcaption></figure></div>
+    <p>An object that can’t be seen tonight says when it can: in every list (Find target, the observing list, the programmes) instead of “not well placed tonight”, for example <b>visible from Thu 12 Nov, mornings, low · well placed from 25 Nov</b>; more than six weeks ahead just the month (“visible from March”).</p>
+    <ul>
+      <li><b>Visible</b> means at least 10° high and within <a href="#reach">your telescope’s reach</a> (if it only points higher, from there), not behind <a href="#locations">your own horizon</a>, for at least half an hour while it is dark (the Sun 12° below the horizon; for planets and the Moon 6° is enough). <b>Well placed</b> is the same as for the green part of the night bar: higher than 20°. The Moon’s light doesn’t count: the details say how much it is lit that night.</li>
+      <li><b>Never</b>: “never visible here: always below the horizon” (too far south), “never visible here: at most 7° high”, “never in your telescope’s reach here” or “never well placed here” for objects that only ever get low at your latitude.</li>
+      <li>In the <b>details</b>, the Tonight box then says “not visible tonight” and below it <b>Visible again</b>: the first night with its times, direction, how high it gets and the Moon, that night’s bar, when it is well placed (or that it never is, with the months in which it can be seen), and <b>Show the sky then</b>, which sets the <a href="#time">time</a> to its best moment that night and shows it on the map.</li>
+      <li>Objects that are visible tonight but only low say when they are well placed: “low tonight · well placed from 4 Jan”.</li>
+      <li><a href="#tonight">Tonight</a> lists under <b>Coming back</b> what becomes visible again within four weeks: Messier, your planned and starred objects and the planets, those your telescope shows, by date.</li>
+      <li>It depends on the place, your telescope’s reach and your horizon, and is worked out again when any of them changes; from the night shown, so with another <a href="#time">time</a> from that night on.</li>
+    </ul>
+
+    <h2 id="time">Time: the sky at another time</h2>
+    <p>To plan, look at the sky at another time: <b>Menu → Time</b>.</p>
+    <ul>
+      <li>The <b>calendar</b> shows a month: tap a night to go there at the same time of night. A dot under each date shows the Moon that night (light: bright Moon, outlined: dark), and with a target a red dot the nights it is <a href="#visible-again">visible</a>.</li>
+      <li>The <b>slider</b> covers that day from noon to noon: daylight, twilight and darkness, and in red when the target is visible.</li>
+      <li>The buttons: <b>±1 day</b>, <b>±1 h</b>, <b>Dark</b>, <b>Midnight</b>, <b>End of darkness</b>, and with a target its best moment that night (or the next night it is visible). Or type any date and time. <b>Back to now</b> returns to the current time.</li>
+    </ul>
+    <p>The map, the directions at the top, the target search, the object details, <a href="#tonight">Tonight</a> (then “Night of …”), the lists and their night bars then show that time, and the time keeps running from there. So that you don’t forget it, a <b>bar at the top of the map</b> shows the date and time with <b>Now</b>, the panels show the same at the top, and the target pill adds the date when it is another day; tap the bar to change the time.</p>
+    <p>With Align on, the map shows what will be in the direction of the phone at that time. <b>Locate</b>, the <b>eyepiece point</b> and aligning on a star need the sky as it is now, so they switch back to the current time. Logbook entries always get the real time: <b>Seen</b> while another time is shown asks first.</p>
 
     <h2 id="satellites">ISS and satellites <a class="ptag pro" href="/pro/">Pro</a></h2>
     <p>Switched on in the <a href="#filter">Filter</a> (they are off at first), the map shows the ISS, the Chinese space station Tiangong and about 150 other bright satellites. Bright cyan dots are lit by the Sun and can be seen, with a short tail showing where they came from; grey rings are in Earth’s shadow and invisible. The ISS is always labelled, other satellites when you zoom in. Tap one for its height, distance and a link to Heavens-Above, or make it your target: the directions at the top then follow it.</p>
