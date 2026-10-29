@@ -67,7 +67,7 @@ let browser, base;
 const ZLicence = require('../src/licence.js'), PRO_TEST = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'pro-test-key.json'), 'utf8'));
 const proKey = (s, e, extra = {}) => ZLicence.sign({ v: 1, id: 'test' + Math.random().toString(36).slice(2, 8), o: 'txn_01test', p: s.slice(0, 10), s, e, ...extra }, PRO_TEST.priv);
 let PRO_KEY = null;
-async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init, pro = true } = {}) {
+async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init, pro = true, route } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 2,
     timezoneId: 'Europe/Berlin', acceptDownloads: true, permissions: perms });
   const p = await ctx.newPage(); p.errors = [];
@@ -75,6 +75,7 @@ async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [],
   if (time) await p.clock.install({ time });
   if (pro) await p.addInitScript(k => { try { if (!localStorage.getItem('zenigo-pro')) localStorage.setItem('zenigo-pro', JSON.stringify([k])); } catch (e) {} }, PRO_KEY);
   if (init) await p.addInitScript(init);
+  if (route) await route(p);
   await p.goto(base + '/app/'); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
   await p.evaluate(() => hint(null));
   return p;
@@ -1649,6 +1650,64 @@ const TESTS = {
 
   // Your own horizon (Pro): what it hides is not free now (Good now, Free now, the pill), the night bar shows it,
   // Tonight skips it; recorded with the camera crosshair; after Pro ends it stays stored without effect
+  // ISS transits (Pro): an ISS-like orbit that crosses the Moon over Balzheim at 20:47:20 local time on 17 Oct 2026
+  async transits() {
+    const TLE = [{ name: 'ISS (ZARYA)', l1: '1 25544U 98067A   26290.50000000  .00016717  00000-0  10270-3 0  9001', l2: '2 25544  51.6400 276.0000 0003000  90.0000 180.0000 15.50000000 10001' }];
+    let tleOk = true;
+    const route = p => p.route('**/api/tle', r => tleOk ? r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sats: TLE }) }) : r.fulfill({ status: 503, body: '{}' }));
+    const time = new Date('2026-10-17T20:39:20+02:00');
+    let p = await page({ time, route });
+    await p.waitForFunction(() => !!trData() && !TR.busy, null, { timeout: 20000 }).catch(() => {});
+    const e = await ev(p, () => { const x = trUpcoming().find(q => q.body === 'Moon'); return x && { t1: x.t1, t2: x.t2, inDisc: x.inDisc, edge: x.edge, dur: x.dur }; });
+    ok(e && e.inDisc && e.edge < 0 && e.dur > 1 && e.dur < 6, 'computed on the device: the ISS in front of the Moon, here', e);
+    ok(e && Math.abs(e.t1 - Date.parse('2026-10-17T18:47:20.6Z')) < 1500, 'at about 20:47:20 local time', e && new Date(e.t1).toISOString());
+    ok(await ev(p, () => { const d = JSON.parse(localStorage.getItem('zenigo-transits')); return d && d.key === trKey() && d.events.length > 0 && d.epoch > 0; }), 'the results are kept (with the place and the orbits’ time)');
+    // Tonight › ISS transits
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 300);
+    const row = await ev(p, () => { const sec = $('tnTr'), r = sec && sec.querySelector('.tn-item'); return sec && { h: sec.querySelector('h3').textContent, title: r && r.querySelector('.tn-row b').textContent, tag: r && r.querySelector('.trtag').textContent, sub: r && r.querySelector('small').textContent, btns: r ? r.querySelectorAll('.racts .ostar').length : 0, note: sec.querySelector('.tn-note:last-child').textContent }; });
+    ok(row && row.h === 'ISS transits' && row.title === 'ISS in front of the Moon' && row.tag === 'here' && /(20|0?8):47:2\d/.test(row.sub) && /Moon \d+° high/.test(row.sub) && row.btns === 3, 'Tonight: a section with the row, “here”, the time and the buttons', row);
+    ok(row && /next 3 days at .*orbit data of today/.test(row.note), 'it says for where, how far ahead and from which orbits', row && row.note);
+    await shot(p, 'transit-tonight');
+    // the row opens the details in the same panel, ← back
+    await p.tap('#tnTr .tn-row'); await wait(p, 400);
+    const d = await ev(p, () => ({ open: !$('transitSheet').hidden, tonight: !$('tonightSheet').hidden, title: $('trName').textContent, when: $('trBody').querySelector('.trwhen').textContent, svg: !!$('trBody').querySelector('svg.trdisc path[stroke="#ff8a3c"]'), strip: !!$('trBody').querySelector('svg.trstrip'), inS: /In the strip/.test($('trBody').textContent), warn: !!$('trBody').querySelector('.warn'), tgt: $('trTargetTxt').textContent, back: !NAVBACK.transitSheet.hidden }));
+    ok(d.open && !d.tonight && d.title === 'ISS in front of the Moon' && /^(20|0?8):47:2\d\.\d(\s?PM)? to 2\d\.\d · \d\.\d s$/.test(d.when) && d.svg && d.strip && d.inS && !d.warn && d.tgt === 'Moon as target', 'details: when, the disc with the way, in the strip, “Moon as target”', d);
+    ok(d.back, '← back to Tonight');
+    await shot(p, 'transit-details');
+    // calendar
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.tap('#trCal')]);
+    const ics = dl ? fs.readFileSync(await dl.path(), 'utf8') : '';
+    ok(dl && /\.ics$/.test(dl.suggestedFilename()) && /BEGIN:VEVENT/.test(ics) && /DTSTART:20261017T184/.test(ics) && /SUMMARY:ISS in front of the Moon/.test(ics), 'Calendar: an .ics file with the time', dl && dl.suggestedFilename());
+    await ev(p, () => navBack()); await wait(p, 300);
+    ok(await ev(p, () => !$('tonightSheet').hidden && $('transitSheet').hidden), '← goes back to Tonight');
+    // as target: the countdown under the boxes and in the target pill
+    await p.tap('#tnTr .tn-row'); await wait(p, 300);
+    await p.tap('#trTarget'); await wait(p, 500);
+    const c = await ev(p, () => ({ tgt: cfg.target, closed: !$('transitSheet')._shown, cell: !$('hudTr').hidden, v: $('trV').textContent, w: $('trW').textContent, pill: $('tgtChipState').textContent }));
+    ok(c.tgt === 'Moon' && c.closed && c.cell && /^0[78]:\d\d\.\d$/.test(c.v) && /ISS in front of the Moon · \d\.\d s, from the/.test(c.w) && /ISS in [78] min/.test(c.pill), 'Moon as target: the countdown under the boxes and in the target pill', c);
+    await shot(p, 'transit-countdown');
+    await p.clock.fastForward(Math.round(await ev(p, () => trNext('Moon').t1 - skyDate().getTime() - 5000)));
+    await wait(p, 300);
+    ok(/^00:0\d\.\d$/.test(await ev(p, () => $('trV').textContent)) && /ISS in \d s/.test(await ev(p, () => $('tgtChipState').textContent)), 'seconds before: 00:0x.x and “ISS in x s”', await ev(p, () => [$('trV').textContent, $('tgtChipState').textContent]));
+    await p.clock.fastForward(Math.round(await ev(p, () => trNext('Moon').t1 - skyDate().getTime() + 800))); await wait(p, 200);
+    ok(await ev(p, () => $('trV').textContent === 'now' && $('hudTr').classList.contains('now')), 'in front of the Moon: “now”', await ev(p, () => $('trV').textContent));
+    await p.clock.fastForward(15000); await wait(p, 300);
+    ok(await ev(p, () => $('hudTr').hidden && !/ISS/.test($('tgtChipState').textContent)), 'afterwards the countdown goes');
+    // offline at the telescope: the kept results; another place: not used
+    tleOk = false;
+    await p.reload(); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 }); await wait(p, 600);
+    ok(await ev(p, () => !SAT.ok && !!trData() && trUpcoming().some(x => x.body === 'Moon')), 'offline: the kept results are used', await ev(p, () => [SAT.ok, !!TR.data, TR.data && TR.data.key, trKey(), skyDate().toISOString()]));
+    await ev(p, () => { cfg.lat = 50.1; cfg.lon = 8.7; save(); }); await wait(p, 200);
+    ok(await ev(p, () => !trData() && trUpcoming().length === 0), 'for another place they don’t count');
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 200);
+    ok(await ev(p, () => /fresh orbit data/.test($('tnTr').textContent)), 'and Tonight asks for fresh orbit data');
+    await done(p);
+    // without Pro: what it is, and the way to Pro
+    p = await page({ time, route, pro: false });
+    await ev(p, () => { showTonight(); openSheet('tonightSheet'); }); await wait(p, 200);
+    ok(await ev(p, () => { const s = $('tnTr'); return s && !!s.querySelector('h3 .protag') && /part of Zenigo Pro/.test(s.textContent) && !s.querySelector('.tn-item') && !localStorage.getItem('zenigo-transits'); }), 'without Pro: a Pro tag, what it does, nothing calculated');
+    await done(p);
+  },
   async horizon() {
     const p = await page();
     // a wall in the east: 40° from azimuth 40° to 140°
@@ -1937,7 +1996,7 @@ const TESTS = {
 
 // Shards for running in parallel (test/ui-par.cjs): --shard=i/n takes about 1/n of the time, by the seconds each test
 // took (tests not listed count 5 s); the longest go first so that the shards end together.
-const SECONDS = { live: 28, horizon: 21, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
+const SECONDS = { live: 28, horizon: 21, transits: 14, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
   sound: 10, photo: 10, compassflip: 10, logstats: 9, milkyway: 9, sites: 9, programs: 8, assistant: 8, proapp: 8, diagnostics: 7, panels: 7, camera: 6 };
 function shardOf(names, i, n) {
   const load = Array(n).fill(0), pick = Array.from({ length: n }, () => []);

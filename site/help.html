@@ -50,6 +50,7 @@
     <a class="sub" href="#night-bar">Reading the night bar</a>
     <a href="#time">Time: the sky later</a>
     <a href="#satellites">ISS and satellites</a>
+    <a class="sub" href="#transits">ISS transits</a>
     <span class="grp">Reference</span>
     <a href="#settings">Settings</a>
     <a class="sub" href="#settings-general">General</a>
@@ -137,6 +138,7 @@
           <li><b>Turn first:</b> clicks. A high “tick” means turn right, a low “tock” turn left.</li>
           <li><b>Then tilt:</b> once the direction is right within about a degree, chirps. Rising means tilt up, falling tilt down.</li>
           <li>The closer you get, the faster they repeat. When the target is in the eyepiece field a soft chord sounds, then it is quiet until the target drifts out again.</li>
+          <li>With an <a href="#transits">ISS transit</a> coming up for the target: beeps 10, 3, 2 and 1 seconds before, and a long one when it comes in front of the disc.</li>
         </ul>
         Tap the button again to switch it off. While the sound is on, the screen stays on; on an iPhone it also plays with the silent switch on, where iOS allows it.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg>List</dt>
@@ -426,6 +428,7 @@
       <li><b>Darkness:</b> sunset, start and end of astronomical darkness (Sun 18° below the horizon), sunrise, and a timeline showing when the Moon is up. Below it: how long it is dark and moonless tonight. In summer, when it never gets fully dark, the darkest phase is shown instead.</li>
       <li><b>Moon:</b> phase, how much is lit, rise and set.</li>
       <li><b>Planets</b> that are well placed tonight, with their highest point after dusk.</li>
+      <li><b>ISS transits</b> (<a href="/pro/">Pro</a>): when the ISS or Tiangong crosses the Moon or the Sun near you in the next 3 days, see <a href="#transits">ISS transits</a>.</li>
       <li><b>Best deep-sky objects for you:</b> objects that climb above 30° in darkness (or as high as <a href="#reach">your telescope reaches</a>), with the best time within its reach, from Messier, Caldwell and the popular objects (with <a href="/pro/">Zenigo Pro</a> also the Herschel 400). Without an aperture the bright ones; with it those your telescope shows, the best first. What you haven’t seen yet comes first (“new for you”, or “not found yet: try again”), then objects of programmes you have started, how high they get, the Moon at their best moment and tonight’s air; and the list is mixed, not ten objects of one kind. Tap any of them for details or to make it your target.</li>
     </ul>
     <p>For what the app can’t calculate, one good website per topic, opened for your location:</p>
@@ -469,6 +472,17 @@
     <p>Switched on in the <a href="#filter">Filter</a> (they are off at first), the map shows the ISS, the Chinese space station Tiangong and about 150 other bright satellites. Bright cyan dots are lit by the Sun and can be seen, with a short tail showing where they came from; grey rings are in Earth’s shadow and invisible. The ISS is always labelled, other satellites when you zoom in. Tap one for its height, distance and a link to Heavens-Above, or make it your target: the directions at the top then follow it.</p>
     <p>A satellite you choose as target, whose details are open or that you jumped to with <b>Show on map</b> is always drawn, also below the horizon (dimmed, “below the horizon”) and with satellites switched off in the filter. While it is below the horizon, the target pill at the bottom left gives the time of the next pass, and the target panel says when it next comes up (within 24 hours), from which direction, how high it gets and whether you can see it then: only when it is lit by the Sun while your sky is dark. The ISS passes over a place in groups, so the next pass can be many hours away.</p>
     <p>Orbits change quickly, so the app loads them fresh from the internet (from CelesTrak, through our server) and doesn’t keep them: offline, satellites are not shown. Even while they are switched off, they can be found in the search and chosen as a target. With the <a href="#time">time</a> set to later, the map shows where they will be, for example to catch the next ISS pass. Satellites move up to about a degree per second, too fast to follow by pushing a Dobson; it is easier to wait at a point of their path.</p>
+
+    <h3 id="transits">ISS transits <a class="ptag pro" href="/pro/">Pro</a></h3>
+    <div class="shots"><figure class="ph"><img src="/img/screens/pro-transit-details-780.webp" srcset="/img/screens/pro-transit-details-390.webp 390w, /img/screens/pro-transit-details-780.webp 780w" sizes="230px" width="390" height="844" alt="ISS in front of the Moon: 20:47:20.6 to 23.6, 3.0 s, the Moon's disc with the ISS's way across it, and where you stand: in the strip, its centre line 4.2 km to the north-west." loading="lazy" decoding="async"><figcaption>The details</figcaption></figure><figure class="ph"><img src="/img/screens/pro-transit-countdown-780.webp" srcset="/img/screens/pro-transit-countdown-390.webp 390w, /img/screens/pro-transit-countdown-780.webp 780w" sizes="230px" width="390" height="844" alt="The map zoomed in on the Moon as the target, the ISS's way across it, and under the direction boxes the countdown 07:56.1." loading="lazy" decoding="async"><figcaption>The countdown at the telescope</figcaption></figure></div>
+    <p>Seen from one place, the ISS or Tiangong sometimes crosses the Moon or the Sun: a dark silhouette for a second or less. You see it only from a strip a few kilometres wide on the ground, so it pays to know where it runs. <b>Tonight › ISS transits</b> lists them for the next 3 days at the position in use, calculated on the phone from the same orbits as the satellites on the map:</p>
+    <ul>
+      <li>The <b>Moon</b> and the <b>Sun</b> when the strip comes within 25 km of you, and the planets when one is crossed or passed within half a degree. On the right: <b>here</b> when you are in the strip, otherwise how far it is and in which direction (“2.8 km SW”).</li>
+      <li>A row, or ⓘ, opens the details: the time to a tenth of a second and how long it takes, the disc with the way across it (upside down or mirrored like your eyepiece, from the <a href="#optics">eyepiece view</a> setting; for the Moon its lit part, since against the dark part nothing can be seen), and <b>Where you stand</b>: in or outside the strip, how far to its centre line and in which direction, and how wide it is. Along the strip the time is the same to about a second; on the centre line the satellite crosses the middle of the disc and takes longest. <b>Calendar</b> saves it as a calendar entry with a reminder half an hour before.</li>
+      <li>◎ or <b>Moon as target</b> makes the body the target. From half an hour before, a <b>countdown</b> appears under the direction boxes (also without a position), the target pill says “ISS in 8 min”, and the map shows the satellite’s way across the disc with the times it comes in and goes out. With <a href="#sound">sound</a> on, beeps count down the last seconds. Keep the body in the eyepiece and watch; it doesn’t move noticeably in those minutes.</li>
+      <li><b>In front of the Sun</b> only with a certified solar filter over the front of the telescope and the finder covered: see <a href="#sun">Observing the Sun</a>.</li>
+    </ul>
+    <p>How good it is: when the orbits are fresh, the times are good to a few tenths of a second and the strip to a few hundred metres. The ISS raises its orbit now and then or dodges debris, which can move the strip by kilometres, so Zenigo calculates again whenever it gets new orbits (online, every few hours) and when you change the place. Check once more on the day. The results are kept for the place, so the list and the countdown also work offline at the telescope; when the orbits are older than about two days, Tonight says so. A different place (another location, or none) needs fresh orbits first.</p>
 
     <p class="part" id="reference">Reference</p>
 
@@ -649,7 +663,7 @@
     </dl>
 
     <h2 id="offline">Offline and updates</h2>
-    <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects, and the extended catalogue once downloaded), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
+    <p>Once added to the home screen and opened online, Zenigo works completely offline: star catalogue (including the deeper one with stars to magnitude 9 and the NGC/IC objects, and the extended catalogue once downloaded), calculations, solving, observing list and logbook all run on the phone. Only the <a href="#satellites">satellites</a> need a connection; <a href="#transits">ISS transits</a> calculated online stay available offline for the same place. When a new version is available, a message “A new version of Zenigo is available” appears with an <b>Update</b> button. You can ignore it; the current version keeps working until you update. If no message appears, close the app completely and open it again.</p>
 
     <h2 id="permissions">Camera and sensor access</h2>
     <p>Zenigo asks for the camera (for Locate) and, on iPhone, for motion and orientation access (for Align). If you declined once, the browser remembers it and won’t ask again; a web page can’t open the settings for you either. When this happens, the app shows the steps for your device and a button to reload. Here they are in full:</p>

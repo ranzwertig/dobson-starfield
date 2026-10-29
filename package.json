@@ -12,6 +12,7 @@
     "test:pro": "node test/pro-config.mjs && node --no-warnings test/licence.mjs",
     "test:ui": "PRO_TEST_KEY=1 SKY_DRAFTS=1 node scripts/build.mjs && node test/ui-par.cjs",
     "test:sky": "node --no-warnings test/sky.mjs",
+    "test:transit": "node test/transit.mjs",
     "sky:validate": "node scripts/sky.mjs validate",
     "sky:candidates": "node scripts/sky.mjs candidates",
     "dev": "wrangler dev",

@@ -70,13 +70,14 @@ function fakeCamera() {
   };
 }
 
-async function page(dev = PHONE, { time = NIGHT, cam = false } = {}) {
+async function page(dev = PHONE, { time = NIGHT, cam = false, tle = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: dev.w, height: dev.h }, isMobile: dev.mobile, hasTouch: dev.mobile, deviceScaleFactor: 2,
     timezoneId: 'Europe/Berlin', locale: 'en-GB', permissions: cam ? ['camera'] : [] });
   const p = await ctx.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
   await p.clock.install({ time });
   await p.addInitScript(k => { try { if (!localStorage.getItem('zenigo-pro')) localStorage.setItem('zenigo-pro', JSON.stringify([k])); } catch (e) {} }, PRO_KEY);
   if (cam) await p.addInitScript(fakeCamera);
+  if (tle) await p.route('**/api/tle', r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ sats: tle }) }));
   await p.goto(base + '/app/');
   await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 20000 });
   // a set-up telescope: 8" Dobson f/6, three eyepieces, a 9×50 finder, pointing down to 12°
@@ -180,6 +181,10 @@ const seedLog = p => ev(p, () => {
     { id: 'r4', name: 'Refractor 102', type: 'refr', mount: 'altaz', o: { ...cfg.optics, scope: 660, ap: 102, eps: [{ f: 24, a: 68 }, { f: 8, a: 60 }], finder: 0, finderType: 'none' }, u: 1 }];
   cfg.instrumentId = 'd8'; save(); afterSyncedSettings();
 });
+// ISS transits: an ISS-like orbit made so that it crosses the Moon over Balzheim at 20:47 on the screenshot evening
+const TRANSIT_TLE = [{ name: 'ISS (ZARYA)', l1: '1 25544U 98067A   26290.50000000  .00016717  00000-0  10270-3 0  9001', l2: '2 25544  51.6400 276.0000 0003000  90.0000 180.0000 15.50000000 10001' }];
+const TRANSIT_EVE = new Date('2026-10-17T20:39:20+02:00');
+const transits = async (p) => { await p.waitForFunction(() => !!trData() && !TR.busy, null, { timeout: 30000 }); };
 const SHOTS = {
   // Help: the screen, with numbered parts
   async screen() {
@@ -390,6 +395,22 @@ const SHOTS = {
     await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('scope'); });
     await wait(p, 600);
     await snap(p, 'pro-instruments', [780, 390]);
+    await p.context().close();
+  },
+  async protransit() {
+    const p = await page(PHONE, { time: TRANSIT_EVE, tle: TRANSIT_TLE });
+    await extReady(p); await transits(p);
+    await ev(p, () => { const e = trUpcoming().find(x => x.body === 'Moon'); if (e) showTransit(e); });
+    await wait(p, 700);
+    await snap(p, 'pro-transit-details', [780, 390]);
+    await p.context().close();
+  },
+  async protransitcount() {
+    const p = await located(PHONE, 'Moon', 0.05, -0.03, { time: TRANSIT_EVE, tle: TRANSIT_TLE });
+    await extReady(p); await transits(p);
+    await ev(p, () => { cfg.fabLabels = false; save(); syncSettings(); selectTarget('Moon', true); zoom.z = 16; lastSig = []; hint(null); });
+    await wait(p, 900);
+    await snap(p, 'pro-transit-countdown', [780, 390]);
     await p.context().close();
   },
   async prostats() {

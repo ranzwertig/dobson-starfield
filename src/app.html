@@ -109,6 +109,12 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .hud.hit .hcell { border-color: var(--ok); }
 .hud.stale { opacity: .55; }
 .hud.idle .hcell { display: none; }
+/* ISS transit coming up for the target: a countdown under the boxes, also without a position */
+.hud .htr { grid-column: 1 / -1; border-color: #ff8a3c; }
+.hud .htr svg { color: #ff8a3c; }
+.hud .htr[hidden], .hud.idle .htr[hidden] { display: none; }
+.hud.idle .htr { display: flex; }
+.hud .htr.now { background: rgba(255,138,60,.25); }
 .hud.tog .hcell { pointer-events: auto; cursor: pointer; }
 .hud.abs .hcell svg { display: none; }
 .hud.abs .hcell .v { color: var(--sky, #9fb6ff); }
@@ -435,6 +441,16 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .ttonight .obar i { position: absolute; top: -2px; width: 2px; height: 10px; background: var(--target); }
 .ttonight .warn2 { color: #ff9a8f; }
 .ttonight .course { color: var(--muted); font-size: 13px; }
+/* ISS transits: the tag on each row, the time, the disc and the strip */
+.trtag { grid-row: 1 / span 2; grid-column: 2; font-size: 12.5px; border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; white-space: nowrap; color: var(--fg); }
+.trtag.here { border-color: var(--accent); color: var(--accent); }
+.trtag.far { color: var(--muted); }
+.trwhen { font-family: var(--font-num); font-size: 22px; font-weight: 500; }
+.trwhen small { font-size: 14px; color: var(--muted); font-weight: 400; }
+.trdisc { width: 100%; height: auto; display: block; background: #05070d; border-radius: 10px; }
+.trstrip { width: 100%; height: auto; display: block; }
+.tr-ok { color: var(--ok); font-weight: 600; } .tr-out { color: var(--accent); font-weight: 600; }
+.tn-note.trold { color: #ff9a8f; }
 /* the bigger night bar in the details: green times below, reach marks above, a small legend */
 .obarw.odetail { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 6px 0 0; }
 .obarw.odetail.hasmarks { margin-top: 22px; }
@@ -1035,6 +1051,10 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
         <svg id="altArrow" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 33V8"/><path d="M12 15l8-8 8 8"/><path d="M8 34h24" stroke-width="1.4" opacity=".55"/></svg>
         <div><div class="v" id="altV">–</div><div class="w" id="altW">Altitude</div></div>
       </div>
+      <div class="hcell htr" id="hudTr" role="timer" hidden>
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="20" cy="22" r="13"/><path d="M20 22v-8M16 4h8"/></svg>
+        <div><div class="v" id="trV"></div><div class="w" id="trW"></div></div>
+      </div>
     </div>
     <div class="maprd" id="readout" hidden>
       <button class="rdhead" id="rdHead" aria-expanded="false"><span id="rdShort"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -1323,6 +1343,18 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
   <div class="inner" role="dialog" aria-modal="true" aria-labelledby="tonightTitle">
     <div class="grab"><h2 id="tonightTitle"><span>Tonight</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div id="tonightBody"></div>
+  </div>
+</div>
+
+<div class="sheet" id="transitSheet" hidden>
+  <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="trTitle">
+    <div class="grab"><h2 id="trTitle"><span id="trName" style="flex:1"></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div class="sbody" id="trBody"></div>
+    <div class="actions iconbar bar">
+      <button class="btn primary" id="trTarget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg><span id="trTargetTxt">As target</span></button>
+      <button class="btn" id="trMap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5l5-2 7 2.5 5-2v13l-5 2-7-2.5-5 2z"/><path d="M8.5 4.5v13M15.5 7v13"/></svg><span>Show on map</span></button>
+      <button class="btn" id="trCal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span>Calendar</span></button>
+    </div>
   </div>
 </div>
 
@@ -2955,6 +2987,8 @@ function belowTxt(T) {
   return "below the horizon";
 }
 function tgtPill(txt, cls) {
+  tgtPill.base = [txt, cls];
+  const tr = trPill(); if (tr) txt = txt ? txt + " · " + tr : tr;   // an ISS transit coming up for the target
   const k = txt + "|" + (cls || ""); if (tgtPill.k === k) return; tgtPill.k = k;
   $("tgtChipState").textContent = txt ? "· " + txt : ""; const c = $("tgtChip"); c.classList.toggle("hit", cls === "hit"); c.classList.toggle("warn", cls === "warn");
 }
@@ -3020,6 +3054,8 @@ function tone(kind, arg) {
   } else if (kind === "chirp") {   // up: rising, down: falling
     o.type = "sine"; const [a, b] = arg > 0 ? [520, 1100] : [1100, 520];
     o.frequency.setValueAtTime(a, t0); o.frequency.exponentialRampToValueAtTime(b, t0 + 0.12); env(0.45, 0.14);
+  } else if (kind === "beep" || kind === "beepLong") {   // the countdown to an ISS transit
+    o.type = "sine"; o.frequency.setValueAtTime(kind === "beep" ? 880 : 1320, t0); env(0.5, kind === "beep" ? 0.08 : 0.5);
   } else if (kind === "chord") {   // found: a soft major chord, its notes slightly after each other
     o.disconnect(); [523.3, 659.3, 784, 1046.5].forEach((f, i) => { const oo = c.createOscillator(), gg = c.createGain(), ts = t0 + i * 0.06;
       oo.type = "sine"; oo.frequency.value = f; oo.connect(gg); gg.connect(sound.gain);
@@ -3498,6 +3534,7 @@ async function loadSats(force) {
     list.forEach(x => { if (!TARGETS.some(T => T.id === "SAT" + x.norad)) TARGETS.push({ id: "SAT" + x.norad, name: x.name, sub: "Satellite" + (x.name !== x.full ? " · " + x.full : "") + " · moves fast", kind: "sat", vec: t => satVec(x, t.date) }); });
   } catch (e) { SAT.ok = false; }
   SAT.loading = false; syncSatState(); st.filterVer++; lastSig = []; updateGuide();
+  if (SAT.ok) computeTransits(false);
 }
 function syncSatState() {
   const el = $("satState"); if (!el) return;
@@ -3564,6 +3601,265 @@ function satsNow() {
 addEventListener("online", () => loadSats(true));
 addEventListener("offline", () => { syncSatState(); st.filterVer++; lastSig = []; updateGuide(); });
 setInterval(() => loadSats(false), 30 * 60e3);
+/* ---------------- ISS transits (Pro): the ISS and Tiangong in front of the Sun, the Moon and the planets ---------------- */
+// Worked out on the device (src/transit.js) for the next 3 days at the position in use, when new orbits come in or the
+// place changes. Only the results are kept, with the time of the orbits they come from, so the list and the countdown
+// also work offline at the telescope. Tonight › ISS transits lists them, a row opens their details; with the body as
+// the target, the last half hour before one brings a countdown under the boxes, beeps (with sound on) and the
+// satellite's way across the disc on the map.
+const TR = { data: null, busy: false, shown: null, beep: null };
+const TR_KEY = "zenigo-transits", TR_SATS = ["ISS", "Tiangong"];
+try { TR.data = JSON.parse(localStorage.getItem(TR_KEY) || "null"); } catch (e) {}
+const trKey = () => (+cfg.lat).toFixed(3) + "," + (+cfg.lon).toFixed(3);
+const satEpoch = x => Math.round(((x.rec.jdsatepoch || 0) + (x.rec.jdsatepochF || 0) - 2440587.5) * 864e5);
+const trData = () => (TR.data && TR.data.key === trKey() && Array.isArray(TR.data.events) ? TR.data : null);   // for the position in use
+const trOld = d => Date.now() - d.epoch > 2.5 * 864e5;   // orbits that old can be off by seconds and kilometres
+async function computeTransits(force) {
+  if (!pro.on || TR.busy || typeof ZTransit === "undefined" || typeof satellite === "undefined") return;
+  const sats = SAT.ok ? SAT.list.filter(x => TR_SATS.includes(x.name)) : []; if (!sats.length) return;
+  const key = trKey(), epoch = Math.max(...sats.map(satEpoch)), d = trData();
+  if (!force && d && d.epoch === epoch && Date.now() - d.at < 3 * 3600e3) return;
+  TR.busy = true; trChanged();
+  try {
+    const r = await ZTransit.searchAsync(A, satellite, { sats: sats.map(x => ({ name: x.name, rec: x.rec })), lat: +cfg.lat, lon: +cfg.lon, height: 0.3, from: Date.now() - 120e3, days: 3 });
+    if (trKey() === key) { TR.data = { key, at: Date.now(), epoch, events: r.events, closest: r.closest }; try { localStorage.setItem(TR_KEY, JSON.stringify(TR.data)); } catch (e) {} }
+  } catch (e) {}
+  TR.busy = false; trChanged();
+}
+setInterval(() => computeTransits(false), 60 * 60e3);
+// worth showing: the Sun and the Moon when the strip comes within 25 km, planets when it crosses them or passes within half a degree
+const trShow = e => e.inDisc || ((e.body === "Sun" || e.body === "Moon") ? e.edge <= 25 : e.sep < 0.5);
+function trUpcoming() {
+  const d = pro.on && trData(); if (!d) return [];
+  const now = skyDate().getTime(); return d.events.filter(e => (e.t2 || e.t) + 60e3 > now && trShow(e));
+}
+// the next one for a body within the next half hour (and a few seconds after it)
+function trNext(id) {
+  if (!id || !pro.on) return null;
+  const now = skyDate().getTime();
+  return trUpcoming().find(e => e.body === id && (e.t2 || e.t) + 5000 > now && (e.t1 || e.t) - now < 30 * 60e3) || null;
+}
+const trBody = b => (b === "Sun" || b === "Moon" ? "the " + b : b);
+const trUp = s => s.charAt(0).toUpperCase() + s.slice(1);
+const trTitle = e => e.sat + (e.inDisc || e.body === "Sun" || e.body === "Moon" ? " in front of " : " close to ") + trBody(e.body);
+const ABBR8 = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"], abbr8 = az => ABBR8[Math.round(((az % 360) + 360) % 360 / 45) % 8];
+const fmtKm = km => (km < 9.95 ? km.toFixed(1) : Math.round(km)) + " km";
+const fmtSec = s => (s < 0.095 ? s.toFixed(2) : s < 9.95 ? s.toFixed(1) : Math.round(s)) + " s";
+const HMS = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+function fmtHMS(ms, tenth) {   // 20:47:20.6 (or 8:47:20.6 PM): the clock with seconds, and tenths after them
+  const d = new Date(ms); return HMS.formatToParts(d).map(q => q.value + (tenth && q.type === "second" ? "." + Math.floor(d.getMilliseconds() / 100) : "")).join("");
+}
+const fmtSecs = ms => { const d = new Date(ms); return pad2(d.getSeconds()) + "." + Math.floor(d.getMilliseconds() / 100); };   // "23.6": the seconds of a time close by
+// the satellite's way relative to the body, in the sky's east-north plane (degrees), for the disc, the map and words
+function trGeo(e) {
+  if (e._g) return e._g;
+  const t = A.MakeTime(new Date(e.t)), b = targetById(e.body).vec(t), M = horToEqj(t);
+  const pts = e.path.map(([dt, x, y, z]) => [dt, Solver.mul(M, [y, -x, z])]);   // east, north, up → north, west, zenith → sky
+  const ea = (() => { const v = [-b[1], b[0], 0], n = Math.hypot(...v) || 1; return v.map(q => q / n); })();
+  const no = [b[1] * ea[2] - b[2] * ea[1], b[2] * ea[0] - b[0] * ea[2], b[0] * ea[1] - b[1] * ea[0]];
+  const off = v => [(v[0] * ea[0] + v[1] * ea[1] + v[2] * ea[2]) * R2D, (v[0] * no[0] + v[1] * no[1] + v[2] * no[2]) * R2D];
+  const s = targetById("Sun").vec(t);
+  e._g = { b, pts, ea, no, off, xy: pts.map(([dt, v]) => [dt, ...off(v)]), sun: off(s) };
+  Object.defineProperty(e, "_g", { enumerable: false });
+  return e._g;
+}
+// where it passes, in the eyepiece's directions: "a little above the middle", "from the right"
+function trWords(e) {
+  const g = trGeo(e), f = eyepieceFlip(), first = g.xy[0], last = g.xy[g.xy.length - 1], mid = g.xy.reduce((a, q) => Math.abs(q[0]) < Math.abs(a[0]) ? q : a);
+  const sx = q => -q[1] * f.sx, sy = q => -q[2] * f.sy;   // screen: x right, y down
+  const dx = sx(last) - sx(first), dy = sy(last) - sy(first);
+  const from = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "from the left" : "from the right") : (dy > 0 ? "from the top" : "from the bottom");
+  const r = e.sep / e.rho, ox = sx(mid), oy = sy(mid), side = Math.abs(oy) > Math.abs(ox) ? (oy < 0 ? "above" : "below") : (ox < 0 ? "left of" : "right of");
+  const where = r < 0.15 ? "through the middle" : r < 0.6 ? "a little " + side.replace(" of", "") + " the middle" : r < 1 ? "near the " + (side === "above" ? "top" : side === "below" ? "bottom" : side === "left of" ? "left" : "right") + " edge" : fmtDeg(e.sep, e.sep < 1 ? 2 : 1) + " " + side + " it";
+  const sky = (() => { const q = mid; return Math.abs(q[2]) > Math.abs(q[1]) ? (q[2] > 0 ? "north of" : "south of") : (q[1] > 0 ? "east of" : "west of"); })();
+  return { from, where, sky };
+}
+// the disc with the satellite's way, oriented as in the eyepiece (eyepiece view setting)
+function transitSvg(e) {
+  const g = trGeo(e), f = eyepieceFlip(), W = 330, H = 150, cx = W / 2, cy = H / 2, R = 52, sc = R / e.rho;
+  const X = q => cx - q[1] * sc * f.sx, Y = q => cy - q[2] * sc * f.sy;
+  let s = `<svg class="trdisc" viewBox="0 0 ${W} ${H}" role="img" aria-label="${trEsc(trUp(trBody(e.body)))} with the ${trEsc(e.sat)}'s way across it, ${trEsc(f.note)}">`;
+  s += `<defs><clipPath id="trclip"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#trclip)">`;
+  if (e.body === "Moon") {
+    const k = A.Illumination(A.Body.Moon, A.MakeTime(new Date(e.t))).phase_fraction, ex = Math.abs(1 - 2 * k) * R;
+    const ang = Math.atan2(-g.sun[1] * f.sy, -g.sun[0] * f.sx) * R2D;   // the lit side, towards the Sun
+    s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#2a3048"/><path transform="rotate(${ang.toFixed(1)} ${cx} ${cy})" fill="#e8e3c8" d="M${cx} ${cy - R}A${R} ${R} 0 0 1 ${cx} ${cy + R}A${ex.toFixed(1)} ${R} 0 0 ${k > 0.5 ? 1 : 0} ${cx} ${cy - R}Z"/>`;
+  } else s += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${e.body === "Sun" ? "#ffd34d" : "#d9c7a3"}"/>`;
+  const pts = g.xy.map(q => [X(q), Y(q)]);
+  s += `<path d="M${pts.map(p => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}" fill="none" stroke="#ff8a3c" stroke-width="2" stroke-dasharray="6 5"/>`;
+  const a = pts[pts.length - 2], b = pts[pts.length - 1], an = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const tip = [cx + (b[0] - cx) * 0.97, cy + (b[1] - cy) * 0.97];
+  s += `<path d="M${(tip[0] - 9 * Math.cos(an - 0.5)).toFixed(1)} ${(tip[1] - 9 * Math.sin(an - 0.5)).toFixed(1)}L${tip[0].toFixed(1)} ${tip[1].toFixed(1)}L${(tip[0] - 9 * Math.cos(an + 0.5)).toFixed(1)} ${(tip[1] - 9 * Math.sin(an + 0.5)).toFixed(1)}" fill="none" stroke="#ff8a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if (e.inDisc) {
+    const at = ms => { const dt = (ms - e.t) / 1000, i = Math.max(0, g.xy.findIndex(q => q[0] >= dt) - 1), q0 = g.xy[i], q1 = g.xy[i + 1] || q0, fr = q1[0] === q0[0] ? 0 : (dt - q0[0]) / (q1[0] - q0[0]); return [X([0, q0[1] + (q1[1] - q0[1]) * fr, q0[2] + (q1[2] - q0[2]) * fr]), Y([0, q0[1] + (q1[1] - q0[1]) * fr, q0[2] + (q1[2] - q0[2]) * fr])]; };
+    [[e.t1, fmtSecs(e.t1)], [e.t2, fmtSecs(e.t2)]].forEach(([ms, lab]) => { const [x, y] = at(ms);
+      s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="#ff8a3c"/><text x="${x.toFixed(1)}" y="${(y + (y > cy ? 18 : -9)).toFixed(1)}" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="#ffb27a">${lab}</text>`; });
+  }
+  const p0 = pts[0]; s += `<text x="${Math.max(6, Math.min(W - 30, p0[0])).toFixed(1)}" y="${Math.max(14, Math.min(H - 6, p0[1] - 8)).toFixed(1)}" font-size="13" font-weight="600" fill="#ffb27a">${trEsc(e.sat)}</text>`;
+  return s + "</g></svg>";
+}
+// across the strip: where it is, its centre line and you
+function stripSvg(e) {
+  const W = 330, H = 40, l = 40, r = 290, span = Math.max(e.D + e.W, 2 * e.W) * 1.05, sc = (r - l) / span;
+  const cX = e.D + e.W <= 2 * e.W ? (l + r) / 2 : r - e.W * sc, you = cX - e.D * sc, back = abbr8(e.bear + 180), to = abbr8(e.bear);
+  return `<svg class="trstrip" viewBox="0 0 ${W} ${H}" role="img" aria-label="Across the strip: ${fmtKm(2 * e.W)} wide; its centre line ${fmtKm(e.D)} to the ${compass(e.bear)} of you">`
+    + `<rect x="${(cX - e.W * sc).toFixed(1)}" y="6" width="${(2 * e.W * sc).toFixed(1)}" height="14" rx="3" fill="rgba(240,168,69,.16)" stroke="rgba(240,168,69,.55)"/>`
+    + `<path d="M${cX.toFixed(1)} 1V25" stroke="#f0a845" stroke-width="2"/>`
+    + (e.edge > 0 ? `<path d="M${you.toFixed(1)} 13H${(cX - e.W * sc).toFixed(1)}" stroke="#d9dee4" stroke-width="1.3" stroke-dasharray="3 3"/>` : "")
+    + `<circle cx="${you.toFixed(1)}" cy="13" r="5.5" fill="#d9dee4" stroke="#181d24" stroke-width="2"/>`
+    + `<text x="${l - 34}" y="17" font-size="11" font-family="IBM Plex Mono, monospace" fill="#8693a1">${back}</text><text x="${W - 2}" y="17" text-anchor="end" font-size="11" font-family="IBM Plex Mono, monospace" fill="#8693a1">${to}</text>`
+    + `<text x="${cX.toFixed(1)}" y="36" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="#f0a845">centre</text>`
+    + (Math.abs(you - cX) > 30 ? `<text x="${you.toFixed(1)}" y="36" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="#d9dee4">you</text>` : "") + "</svg>";
+}
+const trEsc = x => String(x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function trWhenRel(ms) {
+  const d = ms - skyDate().getTime();
+  if (d < 0) return "now";
+  if (d < 90 * 60e3) return "in " + Math.max(1, Math.round(d / 60e3)) + " min";
+  const day = (x => { const q = new Date(x); q.setHours(0, 0, 0, 0); return q.getTime(); });
+  const days = Math.round((day(ms) - day(skyDate().getTime())) / 864e5);
+  return days === 0 ? "today" : days === 1 ? "tomorrow" : "in " + days + " days";
+}
+const trPlace = () => (curSite() ? curSite().name : "your position");
+function trOrbitTxt(d) { const ep = new Date(d.epoch), today = ep.toDateString() === new Date().toDateString(); return (today ? "today " : fmtDay(ep) + ", ") + fmtClock(ep); }
+// a row's second line
+function trSub(e) {
+  const p = [fmtDay(new Date(e.t)) + ", " + fmtHMS(e.t1 || e.t)], w = trWords(e);
+  if (e.inDisc) p.push(fmtSec(e.dur));
+  else if (e.body === "Sun" || e.body === "Moon") p.push(fmtSec(e.durC) + " in the strip");
+  else p.push("passes " + fmtDeg(e.sep, 1) + " " + w.sky + " it");
+  p.push(trUp(trBody(e.body)) + " " + Math.round(e.alt) + "° high, " + compass(e.az));
+  if (e.body === "Sun") p.push("only with a solar filter");
+  else if (e.body === "Moon" && e.lit < 0.5) p.push(e.lit === 0 ? "across the dark part" : "partly across the dark part");
+  if (e.body !== "Sun" && hzBlocked(e.az, e.alt)) p.push("behind your horizon");
+  return p.join(" · ");
+}
+function trTag(e) { return e.edge <= 0 ? ["here", "here"] : [fmtKm(e.edge) + " " + abbr8(e.bear), e.body === "Sun" || e.body === "Moon" ? "" : "far"]; }
+function trRow(e, sec) {
+  const [tag, cls] = trTag(e), it = document.createElement("div"); it.className = "tn-item";
+  const b = document.createElement("div"); b.className = "tn-row";
+  b.innerHTML = "<b>" + trEsc(trTitle(e)) + '</b><span class="trtag ' + cls + '">' + trEsc(tag) + "</span><small>" + trEsc(trSub(e)) + "</small>";
+  const open = () => { tonightState.scroll = scroller($("tonightSheet")).scrollTop; showTransit(e); };
+  const acts = rowActs(e.body, () => { const p = PLANETS.find(([, en]) => en === e.body); return p && planetObj(p[0], p[1]); }, open);
+  acts.querySelector(".oinfo").setAttribute("aria-label", "Details of " + trTitle(e));
+  it.append(b, acts); sec.append(it);
+}
+// Tonight › ISS transits
+function fillTransits(sec) {
+  sec.textContent = ""; sec.id = "tnTr";
+  const h = document.createElement("h3"); h.innerHTML = "ISS transits" + (pro.on ? "" : '<i class="protag">Pro</i>'); sec.append(h);
+  const note = (txt, cls) => { const p = document.createElement("p"); p.className = "tn-note" + (cls ? " " + cls : ""); p.textContent = txt; sec.append(p); return p; };
+  if (!pro.on) {
+    note("When the ISS or Tiangong crosses the Moon or the Sun near you, to the tenth of a second, and how far to go to see it: part of Zenigo Pro.");
+    const b = document.createElement("button"); b.className = "lnk"; b.textContent = "About Zenigo Pro →"; b.onclick = () => proNeed("ISS transits are part of Zenigo Pro."); sec.append(b); return;
+  }
+  const d = trData();
+  if (!d) { note(TR.busy ? "Calculating …" : "They need fresh orbit data from the internet. Once online, Zenigo checks the next 3 days."); return; }
+  const list = trUpcoming();
+  if (!list.length) {
+    note("None near " + trPlace() + " in the next 3 days.");
+    const c = d.closest && d.closest.t > skyDate().getTime() ? d.closest : null;
+    if (c) { trRow(c, sec); sec.lastChild.querySelector(".tn-row b").textContent = "Closest: " + trTitle(c); }
+  } else list.forEach(e => trRow(e, sec));
+  note("The next 3 days at " + trPlace() + ", from orbit data of " + trOrbitTxt(d) + (TR.busy ? ". Calculating again …" : ". The ISS changes its orbit now and then: Zenigo checks again whenever it is online."));
+  if (trOld(d)) note("These orbits are " + Math.round((Date.now() - d.epoch) / 864e5) + " days old: the times can be off by seconds, the strip by kilometres. Go online once to update them.", "trold");
+}
+function trChanged() {
+  const sec = $("tnTr"); if (sec && !$("tonightSheet").hidden) fillTransits(sec);
+  if (TR.shown && !$("transitSheet").hidden) { const d = trData(), e = d && d.events.find(x => x.sat === TR.shown.sat && x.body === TR.shown.body && Math.abs(x.t - TR.shown.t) < 120e3); if (e) showTransit(e); }
+}
+// the details of one
+function showTransit(e) {
+  TR.shown = e;
+  const d = trData(), w = trWords(e), body = trUp(trBody(e.body)), sun = e.body === "Sun", disc = e.body === "Sun" || e.body === "Moon";
+  $("trName").textContent = trTitle(e);
+  let h = '<div class="info-sub">' + trEsc(fmtDay(new Date(e.t)) + " · " + trWhenRel(e.t1 || e.t) + " · at " + trPlace()) + "</div>";
+  if (sun) h += '<p class="warn">Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>';
+  h += '<div class="ttonight"><div class="k">When</div>';
+  h += e.inDisc ? '<div class="trwhen">' + fmtHMS(e.t1, true) + " <small>to " + fmtSecs(e.t2) + " · " + fmtSec(e.dur) + "</small></div>"
+    : '<div class="trwhen">' + fmtHMS(e.t, true) + " <small>· " + (disc ? fmtSec(e.durC) + " in the strip" : "closest") + "</small></div>";
+  h += transitSvg(e);
+  const lit = e.body === "Moon" && e.lit < 1 ? (e.lit === 0 ? " Only across the dark part of the Moon: there the " + e.sat + " can’t be seen." : " Partly across the dark part of the Moon, where it can’t be seen.") : "";
+  h += '<div class="course">' + trEsc(e.inDisc ? "A dark silhouette, " + w.where + ", " + w.from + ". " + trUp(eyepieceFlip().note) + " (eyepiece view setting)." + lit
+    : "From here it passes " + fmtDeg(e.sep, e.sep < 1 ? 2 : 1) + " " + w.sky + " " + trBody(e.body) + ".") + "</div></div>";
+  h += '<div class="ttonight"><div class="k">Where you stand</div>';
+  h += e.edge <= 0 ? '<div><span class="tr-ok">✓ In the strip.</span> ' + trEsc(e.D < 0.15 ? "You are on its centre line." : "Its centre line is " + fmtKm(e.D) + " to the " + compass(e.bear) + ".") + "</div>"
+    : '<div><span class="tr-out">Outside the strip.</span> ' + trEsc("It begins " + fmtKm(e.edge) + " to the " + compass(e.bear) + (e.W > 0.2 ? ", its centre line is " + fmtKm(e.D) + " away." : ".")) + "</div>";
+  h += stripSvg(e);
+  const runA = compass(e.runs % 180 + 180), runB = compass(e.runs % 180);
+  h += '<div class="course">' + trEsc("The strip is " + fmtKm(2 * e.W) + " wide and runs " + runA + " to " + runB + "; along it the time is the same to about a second. On the centre line it crosses the middle, for " + fmtSec(e.durC) + ".") + "</div></div>";
+  h += '<div class="facts"><div class="fact"><div class="k">' + trEsc(body.replace(/^The /, "")) + '</div><div class="v">' + Math.round(e.alt) + "° · " + abbr8(e.az) + "</div></div>"
+    + '<div class="fact"><div class="k">' + trEsc(e.sat) + ' distance</div><div class="v">' + Math.round(e.range) + " km</div></div></div>";
+  if (!sun && hzBlocked(e.az, e.alt)) h += '<p class="tn-note trold">' + trEsc(body + " is behind your horizon then.") + "</p>";
+  if (d) h += '<p class="tn-note' + (trOld(d) ? " trold" : "") + '">' + trEsc("Orbit data of " + trOrbitTxt(d) + ": good to about ±0.3 s and a few hundred metres when fresh. An orbit change of the " + e.sat + " can move the strip by kilometres; Zenigo checks again whenever it is online.") + "</p>";
+  $("trBody").innerHTML = h;
+  $("trTargetTxt").textContent = body.replace(/^The /, "") + " as target";
+  $("trTarget").setAttribute("aria-pressed", String(cfg.target === e.body));
+  $("trMap").hidden = !canShowOnMap();
+  openSheet("transitSheet");
+}
+$("trTarget").onclick = () => {
+  const e = TR.shown; if (!e) return;
+  selectTarget(e.body);
+  if (cfg.target !== e.body) return;   // the Sun: first the solar filter question
+  navToMap("transitSheet"); hint(trUp(trBody(e.body)) + " is the target. The countdown starts half an hour before.", 3500);
+};
+$("trMap").onclick = () => { const e = TR.shown, p = e && PLANETS.find(([, en]) => en === e.body); if (p) { showOnMap(planetObj(p[0], p[1])); navToMap("transitSheet"); } };
+$("trCal").onclick = () => {
+  const e = TR.shown; if (!e) return;
+  const z = ms => new Date(ms).toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const desc = (e.inDisc ? fmtHMS(e.t1, true) + " to " + fmtHMS(e.t2, true) + " (" + fmtSec(e.dur) + ") at " + trPlace() : fmtHMS(e.t, true) + ", the strip " + fmtKm(e.edge) + " to the " + compass(e.bear) + " of " + trPlace())
+    + ". " + trUp(trBody(e.body)) + " " + Math.round(e.alt) + "° high, " + compass(e.az) + "." + (e.body === "Sun" ? " Only with a certified solar filter!" : "") + " Check again on the day in Zenigo: orbits change.";
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Zenigo//ISS transit//EN", "BEGIN:VEVENT", "UID:" + e.t + "-" + e.sat + "-" + e.body + "@zenigo.app", "DTSTAMP:" + z(Date.now()),
+    "DTSTART:" + z(e.t - 120e3), "DTEND:" + z(e.t + 120e3), "SUMMARY:" + trTitle(e), "DESCRIPTION:" + desc.replace(/[,;]/g, m => "\\" + m), "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:" + trTitle(e), "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  download("zenigo-" + e.sat.toLowerCase() + "-" + e.body.toLowerCase() + "-" + new Date(e.t).toISOString().slice(0, 10) + ".ics", ics, "text/calendar");
+};
+// the countdown under the boxes, the target pill and the beeps, ten times a second while one is coming up
+function trPill() {
+  const e = trNext(cfg.target); if (!e) return "";
+  const rem = (e.t1 || e.t) - skyDate().getTime();
+  return e.sat + (rem > 60e3 ? " in " + Math.round(rem / 60e3) + " min" : rem > 0 ? " in " + Math.ceil(rem / 1000) + " s" : (e.t2 || e.t) > skyDate().getTime() - 1000 ? " now" : " passed");
+}
+function trTick() {
+  const cell = $("hudTr"), e = trNext(cfg.target);
+  if (!e) { if (!cell.hidden) { cell.hidden = true; TR.beep = null; if (tgtPill.base) tgtPill(...tgtPill.base); } return; }
+  const now = skyDate().getTime(), t1 = e.t1 || e.t, t2 = e.t2 || e.t, rem = t1 - now, w = trWords(e);
+  cell.hidden = false;
+  const v = rem > 0 ? pad2(Math.floor(rem / 60e3)) + ":" + pad2(Math.floor(rem / 1000) % 60) + "." + Math.floor(rem / 100) % 10 : now <= t2 + 300 ? "now" : "passed";
+  if ($("trV").textContent !== v) $("trV").textContent = v;
+  const wt = e.inDisc ? trTitle(e) + " · " + fmtSec(e.dur) + ", " + w.from : e.sat + " passes " + fmtDeg(e.sep, e.sep < 1 ? 2 : 1) + " " + w.sky + " it · in front of it " + fmtKm(e.edge) + " " + abbr8(e.bear);
+  if ($("trW").textContent !== wt) $("trW").textContent = wt;
+  cell.classList.toggle("now", rem <= 0 && now <= t2 + 300);
+  if (tgtPill.base) tgtPill(...tgtPill.base);
+  // beeps (with sound on): 10, 3, 2 and 1 seconds before, a long one when it comes in front of the disc
+  if (sound.on && sound.ctx) {
+    const id = e.sat + e.t, prev = TR.beep && TR.beep.id === id ? TR.beep.rem : null;
+    if (prev != null) [10000, 3000, 2000, 1000, 0].forEach(m => { if (prev > m && rem <= m && rem > m - 1500) tone(m ? "beep" : "beepLong"); });
+    TR.beep = { id, rem };
+  }
+}
+setInterval(trTick, 100);
+// on the map: the satellite's way across the target body, moved along with the body (it moves on in the sky meanwhile)
+function drawTransitPath(c, sol, dpr, col) {
+  const e = trNext(cfg.target); if (!e) return;
+  const T = targetById(e.body); if (!T) return;
+  const g = trGeo(e), now = T.vec(skyNow().t), sh = [now[0] - g.b[0], now[1] - g.b[1], now[2] - g.b[2]];
+  const at = v => { const q = [v[0] + sh[0], v[1] + sh[1], v[2] + sh[2]], n = Math.hypot(...q); const p = Solver.skyToPix(sol, [q[0] / n, q[1] / n, q[2] / n]); return p && p.z > 0.05 ? P(p.x, p.y) : null; };
+  const pts = g.pts.map(([, v]) => at(v)).filter(Boolean); if (pts.length < 2) return;
+  c.save(); c.strokeStyle = "#ff8a3c"; c.fillStyle = "#ffb27a"; c.lineWidth = 2 * dpr; c.setLineDash([6 * dpr, 5 * dpr]);
+  c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.stroke(); c.setLineDash([]);
+  c.font = `600 ${12 * dpr}px ${col("--font-ui")}`; c.fillText(e.sat, pts[0][0] + 4 * dpr, pts[0][1] - 8 * dpr);
+  if (e.inDisc) {
+    c.font = `${11 * dpr}px ${col("--font-num") || "monospace"}`;
+    [e.t1, e.t2].forEach(ms => {
+      const dt = (ms - e.t) / 1000, i = Math.max(0, g.pts.findIndex(q => q[0] >= dt) - 1), q0 = g.pts[i], q1 = g.pts[i + 1] || q0, f = q1[0] === q0[0] ? 0 : (dt - q0[0]) / (q1[0] - q0[0]);
+      const p = at([0, 1, 2].map(k => q0[1][k] + (q1[1][k] - q0[1][k]) * f)); if (!p) return;
+      c.fillStyle = "#ff8a3c"; c.beginPath(); c.arc(p[0], p[1], 3.5 * dpr, 0, 7); c.fill();
+      c.fillStyle = "#ffb27a"; c.textAlign = "center"; c.fillText(fmtSecs(ms), p[0], p[1] + 18 * dpr); c.textAlign = "start";
+    });
+  }
+  c.restore();
+}
 // Milky Way outlines (Milky Way Outline Catalog, J. R. Vieira, via d3-celestial): five levels, rings of RA/Dec in 0.1°.
 // Loaded the first time it is switched on; each ring becomes unit vectors plus a bounding cone for quick culling.
 const MW = { rings: null, loading: false };
@@ -5278,6 +5574,7 @@ function drawOverlay(dpr) {
     }
     c.fillStyle = col("--fg");
   }
+  drawTransitPath(c, sol, dpr, col);
   // Telescope crosshair
   // Horizon and cardinal directions
   drawHorizon(c, sol, dpr, t, col);
@@ -6922,6 +7219,7 @@ async function proCheck() {
 function proChanged(was) {
   st.opticsVer = (st.opticsVer || 0) + 1; st.filterVer = (st.filterVer || 0) + 1; nextCache.key = ""; lastSig = [];
   if (pro.on) loadSats(true);   // at start they load before the keys are checked
+  if (pro.on) computeTransits(false); trChanged();
   syncOptics(); syncFilter(); syncSatState(); renderSync(); updateGuide(); renderChips(); syncHudNext();
   if (!$("listSheet").hidden) renderList();
   if (pro.on && syncS.code) syncSoon(500);
@@ -8698,6 +8996,7 @@ function siteDist(a, b) {
 const SITE_NEAR = 300;   // GPS within this many metres of a location: you are there
 // Everything that depends on the place, after switching, an edit or a change from another device
 function siteChanged() {
+  setTimeout(() => computeTransits(true), 50);
   hzCache.k = null; hzFreeCache.clear(); st.opticsVer = (st.opticsVer || 0) + 1; planCache.t = null; nextCache.key = ""; fitCache.nk = ""; evCache.key = ""; lastSig = [];
   updateGuide(); renderChips(); renderReadout();
   if (!$("sheet").hidden) syncSettings(); if (!$("quickSheet").hidden) syncQuick();
@@ -9334,6 +9633,7 @@ const SCREEN = {
   searchSheet: { save: () => ({ q: $("q").value }), restore: x => { $("q").value = x.q; renderChips(); showResults(); } },
   listSheet: { restore: () => { renderList(); if (st.fromList) { st.fromList = false; revealNew(); return true; } } },
   tonightSheet: { restore: () => showTonight() },
+  transitSheet: { save: () => ({ e: TR.shown }), restore: x => { if (x.e) showTransit(x.e); } },
   progSheet: { restore: () => renderProgs() },
   logSheet: { restore: () => renderLog() },
   infoSheet: { save: () => ({ o: st.picked }), restore: x => { if (x.o) showInfo(x.o); } },
@@ -10024,6 +10324,8 @@ function showTonight() {
     const it = el("div", "tn-item"); it.append(b, rowActs(id, () => objById(id), () => { const o = objById(id); if (o) infoFromTonight(o); }, toggleButton("plan", id, () => ({ id, name: obsName(id, TT.name) })), toggleButton("star", id, () => ({ id, name: obsName(id, TT.name) })))); s4.append(it);
   });
   box.append(s4);
+  // ISS transits (Pro)
+  const sTr = el("section", "tn-sec"); fillTransits(sTr); box.append(sTr);
   // coming up: computed after the sheet is shown (takes a moment once a day)
   const s5 = el("section", "tn-sec"); s5.append(el("h3", "", "Coming up" + (pro.on ? "" : '<i class="protag">Pro</i>')));
   if (pro.on) {

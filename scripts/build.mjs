@@ -55,8 +55,10 @@ const satjs = `/*! satellite.js ${satPkg.version} (c) Shashwat Kandadai and cont
 const data = read('src/data.js');
 // the sky events (src/events.js) go with it: Coming up in the app, and the website's night sky this week
 const eventsJs = read('src/events.js').replace('if (typeof module !== "undefined") module.exports = ZEvents;', '');
+// satellite transits in front of the Sun, the Moon and the planets (src/transit.js): Tonight › ISS transits, the countdown
+const transitJs = read('src/transit.js').replace('if (typeof module !== "undefined") module.exports = ZTransit;', '');
 const core = ('/* Star catalogue: d3-celestial data (c) Olaf Frohn, BSD-3-Clause */\n' + data + read('src/solver.js'))
-  .replace("if (typeof module !== 'undefined') module.exports = Solver;", '') + '\n' + eventsJs;
+  .replace("if (typeof module !== 'undefined') module.exports = Solver;", '') + '\n' + eventsJs + '\n' + transitJs;
 // Sync between devices: QR code generator (qrcode-generator, MIT) and the sync core (data model, merge, encryption)
 const qrDir = path.dirname(require.resolve('qrcode-generator'));
 const qrPkg = JSON.parse(readFileSync(path.join(qrDir, '..', 'package.json'), 'utf8'));
