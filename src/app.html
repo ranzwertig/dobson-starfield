@@ -767,6 +767,7 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .sheet h2 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-width: 0; }
 .sheet h2 > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheet fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0; padding: 10px 12px 12px; display: grid; gap: 10px; }
+.sheet fieldset[hidden] { display: none; }
 .sheet legend, .label { padding: 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .label { padding: 0; }
 .menu-list { display: grid; gap: 2px; }
@@ -2035,8 +2036,8 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
         <label>Frames to stack: <span id="stackV"></span><input type="range" id="stack" min="1" max="90" step="1"></label>
         <label>Sensitivity: <span id="sigV"></span><input type="range" id="sigma" min="3" max="10" step="0.5"></label>
       </div>
-      <label class="check"><input type="checkbox" id="optDiag"> Diagnostics</label>
-      <p class="note">Tap the status at the bottom left to see the image Locate worked with, its numbers, and a live star count while the camera runs.</p>
+      <label class="check"><input type="checkbox" id="optRestLocate"> Locate by itself when the telescope stops</label>
+      <p class="note">With the camera and Align on, after a first Locate: when you have turned the telescope and it stands still near the target, Locate checks the position by itself, quickly. Between two Locates a dashed ring around the crosshair shows how far off the position may be by now.</p>
       <div class="row camctl" id="camctl"></div>
     </fieldset>
     <fieldset data-stab="cam">
@@ -2044,6 +2045,16 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       <p class="note" id="compassCalInfo"></p>
       <div class="row"><button class="btn" id="btnCompassReset">Reset compass correction</button></div>
       <p class="note">After a camera solve with the motion sensor on, the app compares the compass with the exact solved direction and offers to correct it. The correction is used in compass mode and shown at the bottom left while active.</p>
+    </fieldset>
+    <fieldset data-stab="general" id="debugBox" hidden>
+      <legend>Debug</legend>
+      <label class="check"><input type="checkbox" id="optDiag"> Image diagnostics</label>
+      <p class="note">Tap the status at the bottom left to see the image Locate worked with, its numbers, and a live star count while the camera runs.</p>
+      <label class="check"><input type="checkbox" id="optDrift"> Drift log</label>
+      <p class="note">Each Locate with Align on records how far the position carried by the motion sensor was off since the previous Locate (azimuth, altitude, roll), after how long and how much turning, how much of it the sky’s turning would have been, and how far the compass was off. It stays on this device.</p>
+      <p class="note" id="driftState" role="status"></p>
+      <div class="row"><button class="btn" id="driftExport">Export CSV</button><button class="btn" id="driftClear">Clear</button></div>
+      <p class="note">Shown because Zenigo was opened with <b>?debug</b>. Without it, these stay off.</p>
     </fieldset>
     <p class="note" data-stab="general">Stars to magnitude 9 (Hipparcos) and deep-sky objects from d3-celestial (BSD); with the extended catalogue, NGC and IC objects from OpenNGC (Mattia Verga, CC BY-SA 4.0) and stars to magnitude 11 from AT-HYG (David Nash, CC BY-SA 4.0); Locate matches the stars to magnitude 6. Sun, Moon and planets: Astronomy Engine (MIT). Everything runs locally in the browser.</p>
   </div>
@@ -2334,7 +2345,7 @@ async function captureVideo(n) {
     }
     drawCam(ctx, video, 0, 0, w, h);
     toGray(ctx, w, h, acc); k++;
-    if (k === 1 && cfg.diag) single = acc.slice();   // diagnostics: one frame alone, to compare with the stack
+    if (k === 1 && diagOn()) single = acc.slice();   // diagnostics: one frame alone, to compare with the stack
     if (k % 6 === 0) setStatus("Capturing " + k + " / " + n + " frames …", "busy");
   }
   if (!k) return null;
@@ -2565,9 +2576,11 @@ async function solveNow() {
   try {
     let fr;
     const devAtCapture = st.source === "video" && sens.rel && !st.extCam ? sens.rel.map(r => r.slice()) : null;
+    const capAt = Date.now(), pathAtCapture = st.path || 0, prevBase = st.base, rest = !!st.restSolve;
+    const offAtCapture = sens.off && sens.offN > 5 ? Math.atan2(sens.off[1], sens.off[0]) : null;   // the compass then (drift log)
     if (st.source === "video" && st.stream) {
       // a full search needs many frames; following a known position (Continuous) gets by with a third of them
-      const following = st.auto && st.base && Date.now() - st.base.at < 15000, n = following ? Math.max(4, Math.round(cfg.stack / 3)) : Math.max(1, cfg.stack | 0);
+      const following = (st.auto || rest) && st.base && Date.now() - st.base.at < 15000, n = following ? Math.max(4, Math.round(cfg.stack / 3)) : Math.max(1, cfg.stack | 0);
       setStatus("Capturing " + n + " frames …", "busy"); fr = await captureVideo(n); if (!fr) { stoppedSolve(); return; }
     }
     else if (st.frame) fr = { gray: st.frame.gray.slice(), w: st.frame.w, h: st.frame.h, canvas: st.frame.canvas, noiseFloor: st.frame.noiseFloor, frames: st.frame.frames, single: st.frame.single };
@@ -2583,8 +2596,8 @@ async function solveNow() {
       // Fast path: predict the orientation from the last solve (plus the gyroscope since then) and only verify it
       const b = st.base, age = b ? Date.now() - b.at : Infinity;
       if (b && b.sol.w === fr.w && b.sol.h === fr.h && age < (b.dev && devAtCapture ? 180000 : 15000)) {
-        let R = b.sol.R;
-        if (b.dev && devAtCapture && camK()) { const C = camK(); R = mm3(mm3(mm3(mm3(b.sol.R, tr3(b.K || C)), tr3(b.dev)), devAtCapture), C); }
+        let R = mm3(baseTurn(b, capAt), b.sol.R);
+        if (b.dev && devAtCapture && camK()) { const C = camK(); R = mm3(baseTurn(b, capAt), mm3(mm3(mm3(mm3(b.sol.R, tr3(b.K || C)), tr3(b.dev)), devAtCapture), C)); }
         const s0 = b.sol;
         opts.near = { R, f: s0.f, k1: s0.k1, poly: s0.poly, w: s0.w, h: s0.h, cx: s0.cx, cy: s0.cy, fov: s0.fov, fovV: s0.fovV };
       }
@@ -2606,13 +2619,15 @@ async function solveNow() {
     st.frame = fr;
     st.stars = res.stars;
     const sol = res.sol;
-    if (cfg.diag) recordDiag(fr, res, isPhoto, known);
+    if (diagOn()) recordDiag(fr, res, isPhoto, known);
     if (sol && sol.ok) {
+      if (driftOn() && !isPhoto) driftRecord(prevBase, sol, devAtCapture, capAt, offAtCapture, pathAtCapture, rest ? "at rest" : sol.near ? "tracked" : "solved");
+      rest && (restLoc.fails = 0);
       st.sol = sol; st.solAt = Date.now(); st.solFrame = fr; st.moved = false; st.solMode = "solve";
       // a solved photo: keep its solution, the view (st.sol) can then be turned and zoomed around it
       st.photoSol = isPhoto ? sol : null; st.photoMoved = false;
       if (isPhoto) { st.sol = Object.assign({}, sol, { R: sol.R.map(r => r.slice()) }); zoom.z = 1; zoom.x = 0; zoom.y = 0; }
-      st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now() } : null;
+      st.base = st.source === "video" ? { sol, dev: devAtCapture, at: Date.now(), t0: capAt, path: pathAtCapture } : null;
       if (st.base && devAtCapture && (mirrored() || topMode())) learnMirrorK(sol, devAtCapture);
       if (st.base) st.base.K = camK();
       if (st.base && devAtCapture) calibrateCompass(sol, devAtCapture);
@@ -2624,6 +2639,8 @@ async function solveNow() {
       setStatus("Solved · " + sol.nMatch + " stars · " + (sol.ms / 1000).toFixed(1) + " s", "ok");
       if (isPhoto && ph.on) photoSolved();
     } else {
+      // Locate when the telescope stopped (by itself): a failed one changes nothing, the motion sensor carries on
+      if (rest) { restLoc.fails++; setStatus("Following by the motion sensor (no stars found)", ""); updateGuide(); return; }
       if (st.source !== "video" || !st.auto) { st.sol = null; st.base = null; }
       const n = res.stars.length;
       setStatus(n < 6 ? "Only " + n + " stars detected" : (sol?.reason || "Not solved"), "bad");
@@ -2633,7 +2650,7 @@ async function solveNow() {
     }
     updateGuide(); renderReadout();
   } finally {
-    st.busy = false;
+    st.busy = false; st.restSolve = false;
     if (ph.on) photoUi();
     if (st.auto && st.stream && !st.abort) setTimeout(solveNow, st.sol && st.sol.near ? 150 : 400);
   }
@@ -3521,6 +3538,21 @@ function approxCamera() {
   const fl = cfg.fov.video || 66, L = Math.max(w, h), f = (L / 2) / Math.tan(fl / 2 * D2R);
   return { w, h, cx: w / 2, cy: h / 2, f, k1: 0, poly: null, matches: [], fov: 2 * Math.atan(w / 2 / f) * R2D, fovV: 2 * Math.atan(h / 2 / f) * R2D, rms: 0, nMatch: 0 };
 }
+// The phone stands on the ground while the sky turns (0.25° a minute): a direction solved from the stars at t0 is,
+// later, the same direction on the ground, not on the sky. The rotation that carries it along (horizon → sky now,
+// after sky at t0 → horizon); ms: the time to carry it to (default: the time shown).
+function baseTurn(b, ms) {
+  if (!b.M0) b.M0 = horToEqj(A.MakeTime(new Date(b.t0 || b.at)));
+  return mm3(ms == null ? skyNow().M : horToEqj(A.MakeTime(new Date(ms))), tr3(b.M0));
+}
+// How far the telescope has been turned (on the ground, from the gyroscope; 0.2° steps, so sensor noise doesn't add
+// up) and since when it stands still: for Locate when it stops, the uncertainty ring and the drift log
+function trackMotion() {
+  const C = viewK(); if (!sens.rel || !C) return;
+  const g = Solver.mul(sens.rel, Solver.mul(C, [0, 0, 1]));
+  if (!st.pathDir) st.pathDir = g;
+  else { const d = Solver.angDeg(st.pathDir, g); if (d > 0.2) { st.path = (st.path || 0) + d; st.pathDir = g; } }
+}
 function sensorUpdate() {
   if (!st.sensor) return;
   if (st.source === "photo") return;   // a photo being shown or solved stays as it is
@@ -3534,7 +3566,7 @@ function sensorUpdate() {
     // R = R0 · C0ᵀ · D0ᵀ · D · C   (apply the phone's rotation since capture to the solved orientation; C0 = axes of the
     // solved image, C = axes of the current view, which differ in top edge mode once the camera is off)
     const C0 = st.base.K || camK() || C;
-    const R = mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C0)), tr3(st.base.dev)), sens.rel), C);
+    const R = mm3(baseTurn(st.base), mm3(mm3(mm3(mm3(st.base.sol.R, tr3(C0)), tr3(st.base.dev)), sens.rel), C));
     const z0 = Solver.mul(st.base.sol.R, [0, 0, 1]), z1 = Solver.mul(R, [0, 0, 1]);
     st.moved = Solver.angDeg(z0, z1) > 0.3;
     st.sol = Object.assign({}, st.base.sol, { R }); st.solMode = "track"; st.solAt = Date.now();
@@ -3544,6 +3576,7 @@ function sensorUpdate() {
     st.sol = Object.assign(approxCamera(), { R, approx: true }); st.solMode = "compass"; st.moved = true; st.solAt = Date.now();
     if (!/Compass/.test($("statusText").textContent) && !st.busy) setStatus("Compass (approximate)", "");
   }
+  trackMotion();
   const now = performance.now();
   if (now - sens.lastGuide > 200) { sens.lastGuide = now; updateGuide(); }
 }
@@ -5273,7 +5306,7 @@ function frameSig(W, H) {
   // orientation quantized to ~1/3 pixel: sensor noise below that would only cost a redraw without visible change
   const s = st.sol, q = s ? s.f * (fit.sc || 1) * 3 : 1, R = s && s.R && s.R.map(r => r.map(v => Math.round(v * q)));
   return [W, H, viewCx(), zoom.z, zoom.x, zoom.y, timeSig(), gestFast(), st.source, st.moved, st.stars, st.frame, st.picked, st.focus, st.teleMode, st.solMode,
-    st.filterVer, st.opticsVer, st.obsVer, ph.ver, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
+    st.filterVer, st.opticsVer, st.obsVer, Math.round(trackUnc() * 20), ph.ver, st.photoMoved || st.pin ? meshSize()[0] : 0, st.pin, satsOn() && satsNow().length ? SAT.posAt : 0, cfg.det, cfg.fill, cfg.target, curTele().x, curTele().y, cfg.compassCal,
     s && s.f, s && s.w, s && s.h, s && s.matches && s.matches.length, s && s.approx,
     R && R[0][0], R && R[0][1], R && R[0][2], R && R[1][0], R && R[1][1], R && R[1][2], R && R[2][0], R && R[2][1], R && R[2][2]];
 }
@@ -5716,6 +5749,7 @@ function drawOverlay(dpr) {
     c.beginPath(); c.arc(tx, ty, 16 * dpr, 0, 7);
     [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => { c.moveTo(tx + a * 10 * dpr, ty + b * 10 * dpr); c.lineTo(tx + a * 24 * dpr, ty + b * 24 * dpr); });
     c.stroke(); c.globalAlpha = 1;
+    drawUnc(c, sol, tx, ty, dpr, col);
   }
   drawRings(c, sol, tx, ty, dpr, col);
   // Target + arrow
@@ -10067,6 +10101,105 @@ $("hzRecClose").onclick = () => {
 // at the start: the working copy from the record
 loadSite(curSite());
 
+/* ---------------- Following between two Locates: Locate at rest, the uncertainty ring ---------------- */
+// After a Locate the gyroscope carries the position; its error grows with time and with how far the telescope is
+// turned (only the azimuth: the altitude is held by gravity). Two helps:
+//  - Locate at rest: with the camera on, when the telescope has been turned since the last Locate and stands still for
+//    a moment near the target (or without one), Locate runs by itself, the quick way (only checking the predicted
+//    orientation). One that finds no stars changes nothing and waits before trying again.
+//  - The uncertainty ring around the crosshair: how far off the position may be by now, estimated from the time and the
+//    turning since the last Locate (UNC; to be tuned with the drift log). Larger than the eyepiece field: it says Locate.
+var restLoc = { since: 0, lastTry: 0, fails: 0 };
+const UNC = { base: 0.1, perMin: 0.1, perDeg: 0.02 };   // °, ° per minute, ° per degree turned
+function trackUnc() {
+  const b = st.base; if (!b || st.solMode !== "track") return 0;
+  const min = Math.max(0, Date.now() - (b.t0 || b.at)) / 60000, deg = Math.max(0, (st.path || 0) - (b.path || 0));
+  return UNC.base + UNC.perMin * min + UNC.perDeg * deg;
+}
+function restLocate() {
+  const now = Date.now();
+  if ((sens.speed || 0) > 0.4 || !sens.rel) { restLoc.since = 0; return; }   // moving
+  if (!restLoc.since) restLoc.since = now;
+  if (cfg.restLocate === false || !st.stream || st.source !== "video" || !st.sensor || st.auto || st.busy || st.teleMode || ph.on || document.hidden) return;
+  if (!st.base || st.solMode !== "track" || now - restLoc.since < 1200) return;
+  if ((st.path || 0) - (st.base.path || 0) < 2) return;   // not turned since the last Locate
+  if (now - restLoc.lastTry < (restLoc.fails ? Math.min(60000, 15000 * restLoc.fails) : 3000)) return;
+  const T = targetById(cfg.target), tv = teleVec();
+  if (T && T.kind !== "sat" && tv && Solver.angDeg(tv, vecNow(T)) > 20) return;   // on the way: only near the target
+  restLoc.lastTry = now; st.restSolve = true; solveNow();
+}
+setInterval(restLocate, 300);
+// the ring, drawn around the crosshair while the gyroscope carries the position
+function drawUnc(c, sol, tx, ty, dpr, col) {
+  const u = trackUnc(); if (u < 0.15) return;
+  const r = Math.tan(u * D2R) * sol.f * fit.sc; if (r < 22 * dpr || r > Math.hypot(view.width, view.height)) return;
+  const e = curEp(), over = e && u > epData(e).fov / 2;
+  c.save(); c.strokeStyle = c.fillStyle = col(over ? "--target" : "--accent"); c.globalAlpha = 0.7; c.lineWidth = 1.4 * dpr; c.setLineDash([3 * dpr, 4 * dpr]);
+  c.beginPath(); c.arc(tx, ty, r, 0, 7); c.stroke(); c.setLineDash([]);
+  c.font = `600 ${11 * dpr}px ${col("--font-ui")}`; c.textAlign = "center"; c.globalAlpha = 0.95;
+  c.fillText((over ? "Locate · " : "") + "±" + (u < 1 ? u.toFixed(1) : Math.round(u)) + "°", tx, ty + r + 14 * dpr);
+  c.restore();
+}
+
+/* ---------------- Debug: image diagnostics and the drift log ---------------- */
+// Only when the app is opened with ?debug (or #debug): then Settings › General ends with a Debug section to switch
+// them on. Without it both stay off, whatever was switched on before.
+var DEBUG = /[?&]debug(=1|=true)?(&|$)/.test(location.search) || /[#&]debug(&|$)/.test(location.hash);
+function diagOn() { return DEBUG && !!cfg.diag; }
+function driftOn() { return DEBUG && !!cfg.driftLog; }
+// The drift log: for each Locate with Align on and a Locate before it, how far the position carried by the gyroscope
+// was off (azimuth, altitude, roll), after how long and how much turning, how much of it the sky's turning would have
+// been, and how far the compass was off. Kept on the device (DRIFT_KEY), exported as CSV.
+const DRIFT_KEY = "zenigo-drift", DRIFT_MAX = 3000;
+function driftLoad() { try { const a = JSON.parse(localStorage.getItem(DRIFT_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function driftSave(a) { try { localStorage.setItem(DRIFT_KEY, JSON.stringify(a.slice(-DRIFT_MAX))); } catch (e) {} }
+const wrap180 = d => ((d + 540) % 360) - 180;
+function driftRecord(b, sol, dev, capAt, off, path, kind) {
+  const C = camK(); if (!b || !b.dev || !dev || !C || !sol || !sol.R) return null;
+  const Rg = mm3(mm3(mm3(mm3(b.sol.R, tr3(b.K || C)), tr3(b.dev)), dev), C), Rp = mm3(baseTurn(b, capAt), Rg);
+  const tc = teleCam(), t = A.MakeTime(new Date(capAt)), t0 = A.MakeTime(new Date(b.t0 || b.at));
+  const vp = Solver.mul(Rp, tc), vs = Solver.mul(sol.R, tc), vg = Solver.mul(Rg, tc), v0 = Solver.mul(b.sol.R, tc);
+  const hp = horiz(vp, t), hs = horiz(vs, t), h0 = horiz(v0, t0);
+  // roll: the image's "up" predicted and solved, turned about the view direction
+  const proj = u => { const d = u[0] * vs[0] + u[1] * vs[1] + u[2] * vs[2], w = [u[0] - d * vs[0], u[1] - d * vs[1], u[2] - d * vs[2]], n = Math.hypot(...w) || 1; return w.map(x => x / n); };
+  const up = [0, -1, 0], a = proj(Solver.mul(Rp, up)), bb = proj(Solver.mul(sol.R, up));
+  const cr = [a[1] * bb[2] - a[2] * bb[1], a[2] * bb[0] - a[0] * bb[2], a[0] * bb[1] - a[1] * bb[0]];
+  const roll = Math.atan2(cr[0] * vs[0] + cr[1] * vs[1] + cr[2] * vs[2], a[0] * bb[0] + a[1] * bb[1] + a[2] * bb[2]) * R2D;
+  // the compass: its heading (without the correction) against the solved one, as calibrateCompass works it out
+  let cErr = null;
+  if (off != null) {
+    const E2H = [[0, 1, 0], [-1, 0, 0], [0, 0, 1]], rot = A.Rotation_HOR_EQJ(t, observer()).rot;
+    const M = mm3(mm3(mm3(tr3(E2H), rot), mm3(sol.R, tr3(C))), tr3(dev));
+    cErr = wrap180((off - Math.atan2(M[1][0], M[0][0])) * R2D);
+  }
+  const r2 = x => x == null ? null : Math.round(x * 100) / 100;
+  const e = { t: new Date(capAt).toISOString(), kind, since_s: Math.round((capAt - (b.t0 || b.at)) / 100) / 10, turned_deg: r2(path - (b.path || 0)),
+    moved_az_deg: r2(wrap180(hs.az - h0.az)), moved_alt_deg: r2(hs.alt - h0.alt), az_deg: r2(hs.az), alt_deg: r2(hs.alt),
+    err_deg: r2(Solver.angDeg(vp, vs)), err_az_deg: r2(wrap180(hs.az - hp.az) * Math.cos(hs.alt * D2R)), err_alt_deg: r2(hs.alt - hp.alt), err_roll_deg: r2(roll),
+    sky_turn_deg: r2(Solver.angDeg(vg, vp)), unc_deg: r2(UNC.base + UNC.perMin * (capAt - (b.t0 || b.at)) / 60000 + UNC.perDeg * Math.max(0, path - (b.path || 0))),
+    compass_err_deg: r2(cErr), compass_cal_deg: r2(+cfg.compassCal || 0), stars: sol.nMatch || 0, fov_deg: r2(longFromSol(sol)), instrument: (curInst() || {}).name || "" };
+  const all = driftLoad(); all.push(e); driftSave(all); syncDebug();
+  return e;
+}
+const DRIFT_COLS = ["t", "kind", "since_s", "turned_deg", "moved_az_deg", "moved_alt_deg", "az_deg", "alt_deg", "err_deg", "err_az_deg", "err_alt_deg", "err_roll_deg", "sky_turn_deg", "unc_deg", "compass_err_deg", "compass_cal_deg", "stars", "fov_deg", "instrument"];
+function driftCsv() {
+  const q = v => { const x = v == null ? "" : String(v); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+  return [DRIFT_COLS.join(","), ...driftLoad().map(e => DRIFT_COLS.map(k => q(e[k])).join(","))].join("\r\n") + "\r\n";
+}
+const median = a => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+function syncDebug() {
+  $("debugBox").hidden = !DEBUG; if (!DEBUG) return;
+  $("optDiag").checked = !!cfg.diag; $("optDrift").checked = !!cfg.driftLog;
+  const a = driftLoad(), last = a[a.length - 1];
+  $("driftState").textContent = !a.length ? "No entries yet: turn on Align and the camera, Locate, turn the telescope, Locate again."
+    : a.length + (a.length === 1 ? " entry" : " entries") + " · median error " + median(a.map(e => e.err_deg)).toFixed(2) + "° · last: " + last.err_deg.toFixed(2) + "° after " + last.turned_deg.toFixed(0) + "° turned in " + (last.since_s / 60).toFixed(1) + " min"
+      + (last.compass_err_deg != null ? ", compass " + fmtSigned(last.compass_err_deg) : "") + ".";
+  $("driftExport").disabled = $("driftClear").disabled = !a.length;
+}
+$("optDrift").onchange = () => { cfg.driftLog = $("optDrift").checked; save(); syncDebug(); if (cfg.driftLog) hint("Drift log on: each Locate with Align on records how far the motion sensor had drifted since the previous one.", 5000); };
+$("driftExport").onclick = () => download("zenigo-drift-" + stamp() + ".csv", driftCsv(), "text/csv;charset=utf-8");
+$("driftClear").onclick = () => armDelete($("driftClear"), "Clear the log", "Tap again to delete all " + driftLoad().length + " entries of the drift log.", () => { driftSave([]); syncDebug(); });
+
 /* ---------------- Tap telescope point ---------------- */
 // The phone is never exactly parallel to the tube. Workflow: centre a star in the eyepiece by hand, tap "Eyepiece point",
 // then tap that star on screen. The app stores where that star lies relative to the camera's view direction; from then
@@ -10331,7 +10464,7 @@ function syncSettings() {
   $("fabs").classList.toggle("labels", !!cfg.fabLabels);
   $("optDet").checked = cfg.det; $("optMirror").checked = !!cfg.mirror;
   document.querySelectorAll('input[name="pointer"]').forEach(r => r.checked = r.value === (topMode() ? "top" : "camera")); $("optRed").checked = cfg.red; $("optLabels").checked = !!cfg.fabLabels; $("optInfoHints").checked = cfg.infoHints !== false;
-  $("optDiag").checked = !!cfg.diag; $("statusBox").classList.toggle("tappable", !!cfg.diag); $("optObjLabels").checked = cfg.objLabels !== false; $("optFigures").checked = figOn(); $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
+  syncDebug(); $("optRestLocate").checked = cfg.restLocate !== false; $("statusBox").classList.toggle("tappable", diagOn()); $("optObjLabels").checked = cfg.objLabels !== false; $("optFigures").checked = figOn(); $("optConLines").checked = cfg.conLines !== false; $("optStarNames").checked = cfg.starNames !== false; $("optConNames").checked = !!cfg.conNames; $("optListMarks").checked = cfg.listMarks !== false; $("optReadout").checked = !!cfg.readout; $("readout").hidden = !cfg.readout; $("rdBody").hidden = !cfg.readoutOpen; $("rdHead").setAttribute("aria-expanded", String(!!cfg.readoutOpen));
   document.documentElement.classList.toggle("red", cfg.red);
   if (typeof syncQuick === "function" && !$("quickSheet").hidden) syncQuick();
   if (typeof syncOptics === "function") syncOptics();
@@ -11279,10 +11412,10 @@ $("diagCanvas").onclick = e => {
 $("diagSave").onclick = diagSave;
 $("diagCopy").onclick = async () => { const r = diagReport(); if (!r) return; try { await navigator.clipboard.writeText(JSON.stringify(r, null, 1)); hint("Report copied.", 2000); } catch (e) { hint("Could not copy: the browser didn’t allow it.", 3000); } };
 // the status opens diagnostics while they are on
-$("statusBox").addEventListener("click", () => { if (cfg.diag) openDiag(); });
+$("statusBox").addEventListener("click", () => { if (diagOn()) openDiag(); });
 // live look while the camera runs: points of light and star size in a small frame, every 1.5 s (not while locating)
 setInterval(() => {
-  const el = $("diagLive"), on = cfg.diag && st.stream && video.videoWidth && !st.busy && !document.hidden;
+  const el = $("diagLive"), on = diagOn() && st.stream && video.videoWidth && !st.busy && !document.hidden;
   if (!on) { if (!el.hidden) el.hidden = true; return; }
   try {
     const [w, h] = sizeFor(video.videoWidth, video.videoHeight, 480), c = diag.lc || (diag.lc = document.createElement("canvas")); c.width = w; c.height = h;
@@ -11391,6 +11524,7 @@ if ("serviceWorker" in navigator && /^https:|^http:\/\/localhost/.test(location.
   }).catch(() => {}));
 }
 $("optDiag").onchange = () => { cfg.diag = $("optDiag").checked; save(); syncSettings(); if (cfg.diag) hint("Diagnostics on: after a Locate, tap the status at the bottom left.", 4000); };
+$("optRestLocate").onchange = () => { cfg.restLocate = $("optRestLocate").checked; save(); };
 $("stack").oninput = () => { cfg.stack = +$("stack").value; $("stackV").textContent = cfg.stack; save(); };
 $("sigma").oninput = () => { cfg.sigma = +$("sigma").value; syncSettings(); save(); };
 $("optInfoHints").onchange = () => { cfg.infoHints = $("optInfoHints").checked; save(); if (!cfg.infoHints) hint(null); };
@@ -11424,7 +11558,7 @@ $("qGallery").onclick = () => { if (!sidePanels()) closeSheet("quickSheet"); gal
 // pinned to its stars); otherwise turning Align on does it. The compass is compared with the solve as well.
 function afterNightPhoto(sol) {
   const pn = st.photoNight; st.photoNight = null;
-  st.nightBase = { sol, dev: pn.dev, K: pn.K, at: Date.now() };
+  st.nightBase = { sol, dev: pn.dev, K: pn.K, at: Date.now(), t0: pn.at, path: st.path || 0 };
   if (pn.dev) calibrateCompass(sol, pn.dev);
   if (st.sensor) {
     pinPhoto(); st.base = st.nightBase; st.source = "map"; st.frame = null; st.solMode = "track"; sensorUpdate(); updateGuide(); renderReadout();

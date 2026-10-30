@@ -171,7 +171,9 @@
       <dt>Located</dt>
       <dd>After a successful Locate the position comes from the stars themselves and is accurate to a fraction of a degree.</dd>
       <dt>Motion sensor</dt>
-      <dd>With Align on after a locate, the gyroscope carries the exact position along while you push. It stays accurate for minutes; tap Locate again now and then, or use Continuous.</dd>
+      <dd>With Align on after a locate, the gyroscope carries the exact position along while you push; the sky’s turning is taken into account, so a telescope left standing keeps its crosshair on the same spot. The gyroscope drifts slowly in azimuth (the altitude is held by gravity), more the longer and the further you push. A dashed ring around the crosshair shows how far off the position may be by now; when it is larger than the eyepiece field it turns red and says Locate.</dd>
+      <dt id="locate-at-rest">Locate at rest</dt>
+      <dd>With the camera and Align on, after a first Locate: when you have turned the telescope and stop near the target (or anywhere, without a target), Locate checks the position by itself after about a second, in a moment. If it finds no stars (clouds, a tree), nothing changes and the gyroscope carries on. Off in <a href="#settings-capture">Settings › Camera › Capture</a>; Continuous does the same all the time.</dd>
     </dl>
     <p>Pointing more than about 50° up, the compass is unreliable, so the app keeps its last good value and relies on the gyroscope. Near the zenith a Dobson needs large azimuth turns for small movements on the sky; the <a href="#short-route">short route</a> takes this into account.</p>
 
@@ -549,6 +551,8 @@
           <li><b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar.</li>
         </ul>
       </dd>
+      <dt id="settings-debug">Debug</dt>
+      <dd>Only when Zenigo is opened with <code>?debug</code>: <a href="#diagnostics">image diagnostics</a> and the <b>drift log</b>. The drift log records, for each Locate with Align on, how far the position carried by the gyroscope was off since the Locate before (in azimuth, altitude and roll), after how many minutes and how many degrees of turning, how much of it the sky’s turning would have been, and how far the compass was off. It stays on the device; <b>Export CSV</b> and <b>Clear</b>.</dd>
     </dl>
 
     <h3 id="settings-location">Location</h3>
@@ -634,11 +638,12 @@
           <li><b>Frames to stack</b> (1–90, 24 by default): how many video frames are averaged per locate. Every four times as many frames halve the noise, so fainter stars appear: 24 frames take about a second, 60 frames two to four seconds. Continuous locating uses a third of the frames.</li>
           <li>While stacking, the motion sensor watches the telescope with a tolerance of about two pixels. Frames taken while it moves (a bump, a gust of wind) are skipped, and stacking goes on once it is still (“Hold the telescope still”). If it then points somewhere else, stacking starts again, or, when most frames are already in, the frames so far are used.</li>
           <li><b>Sensitivity</b>: how faint a point of light may be to count as a star. Higher finds more stars but also more noise.</li>
+          <li><b>Locate by itself when the telescope stops</b> (on by default): <a href="#locate-at-rest">Locate at rest</a>.</li>
           <li>If your phone supports it, controls for exposure, ISO, focus and zoom appear here as well.</li>
         </ul>
       </dd>
       <dt id="diagnostics">Diagnostics</dt>
-      <dd>A switch under Capture. When it is on, a tap on the status at the bottom left shows the image the last Locate worked with. Tap the image to zoom in.
+      <dd>For finding problems, in a <b>Debug</b> section at the end of Settings › General that appears only when Zenigo is opened with <code>?debug</code> at the end of its address (zenigo.app/app/?debug); without it, image diagnostics and the drift log stay off. With <b>Image diagnostics</b> on, a tap on the status at the bottom left shows the image the last Locate worked with. Tap the image to zoom in.
         <ul>
           <li><b>Stack</b> (for a photo: <b>Image</b>): the image Locate used. The local sky background is subtracted before it is stretched, so a brightness gradient from light pollution or the lens no longer shows as a bright disc.</li>
           <li><b>Raw</b>: the averaged frames as they came. <b>Sky removed</b>: what is brighter than the sky light, what is darker blue. <b>Detection</b>: the pixels above the threshold.</li>

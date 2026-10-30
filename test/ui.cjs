@@ -67,7 +67,7 @@ let browser, base;
 const ZLicence = require('../src/licence.js'), PRO_TEST = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'pro-test-key.json'), 'utf8'));
 const proKey = (s, e, extra = {}) => ZLicence.sign({ v: 1, id: 'test' + Math.random().toString(36).slice(2, 8), o: 'txn_01test', p: s.slice(0, 10), s, e, ...extra }, PRO_TEST.priv);
 let PRO_KEY = null;
-async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init, pro = true, route } = {}) {
+async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [], init, pro = true, route, query = '' } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 2,
     timezoneId: 'Europe/Berlin', acceptDownloads: true, permissions: perms });
   const p = await ctx.newPage(); p.errors = [];
@@ -76,7 +76,7 @@ async function page({ w = 390, h = 844, mobile = true, time = NIGHT, perms = [],
   if (pro) await p.addInitScript(k => { try { if (!localStorage.getItem('zenigo-pro')) localStorage.setItem('zenigo-pro', JSON.stringify([k])); } catch (e) {} }, PRO_KEY);
   if (init) await p.addInitScript(init);
   if (route) await route(p);
-  await p.goto(base + '/app/'); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
+  await p.goto(base + '/app/' + query); await p.waitForFunction(() => !document.getElementById('splash') && typeof st !== 'undefined' && !!st.sol, null, { timeout: 15000 });
   await p.evaluate(() => hint(null));
   return p;
 }
@@ -401,7 +401,7 @@ const TESTS = {
 
   // locate with a fake camera of a star field, diagnostics
   async diagnostics() {
-    const p = await page({ perms: ['camera'], init: () => {
+    const p = await page({ perms: ['camera'], query: '?debug', init: () => {
       navigator.mediaDevices.getUserMedia = async () => {
         const W = 960, H = 540, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
         const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7), stars = [];
@@ -1804,6 +1804,51 @@ const TESTS = {
     ok(await ev(p, () => [...$('lsBody').querySelectorAll('.lsrow[data-list]')].filter(r => !r.classList.contains('off')).map(r => r.dataset.list).join() === 'starred' && /part of Zenigo Pro/.test($('lsBody').textContent) && !$('lsNew')), 'without Pro: Starred, your lists greyed, a word about Pro');
     await done(p);
   },
+  // following between two Locates: the sky's turning, the uncertainty ring, Locate at rest; the Debug section (?debug)
+  // with the drift log
+  async drift() {
+    const q = await page();
+    ok(await ev(q, () => { cfg.diag = true; cfg.driftLog = true; syncSettings(); return $('debugBox').hidden && !diagOn() && !driftOn() && !$('statusBox').classList.contains('tappable'); }), 'without ?debug: no Debug section, diagnostics and drift log stay off');
+    await q.context().close();
+    const p = await page({ query: '?debug' });
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(p, 400);
+    ok(await ev(p, () => !$('debugBox').hidden && !$('debugBox').classList.contains('off') && $('debugBox').nextElementSibling.dataset.stab === 'general' && /No entries yet/.test($('driftState').textContent)), 'with ?debug: Debug at the end of General');
+    await p.tap('#optDrift'); await p.tap('#optDiag'); await wait(p, 200);
+    ok(await ev(p, () => driftOn() && diagOn() && $('statusBox').classList.contains('tappable')), 'drift log and image diagnostics switched on there');
+    await ev(p, () => closeSheet('sheet'));
+    // a phone held still: compass mode, then a "solved" base from it; ten minutes later the telescope still points the same way on the ground
+    const feed = () => ev(p, () => { for (let i = 0; i < 6; i++) onOrientation({ alpha: 70, beta: 60, gamma: 0, webkitCompassHeading: 40, webkitCompassAccuracy: 10 }, false); st.sensor = true; sensorUpdate(); });
+    await feed(); await feed();
+    const h0 = await ev(p, () => {
+      st.base = { sol: Object.assign({}, st.sol, { R: st.sol.R.map(r => r.slice()) }), dev: sens.rel.map(r => r.slice()), K: camK(), at: Date.now(), t0: Date.now(), path: st.path || 0 };
+      sensorUpdate(); const h = horiz(teleVec(), skyNow().t); return { az: h.az, alt: h.alt, mode: st.solMode };
+    });
+    await p.clock.fastForward(10 * 60e3); await feed(); await feed();
+    const h1 = await ev(p, () => { const h = horiz(teleVec(), skyNow().t); return { az: h.az, alt: h.alt, mode: st.solMode, unc: trackUnc() }; });
+    ok(h0.mode === 'track' && h1.mode === 'track' && Math.abs(h1.az - h0.az) < 0.05 && Math.abs(h1.alt - h0.alt) < 0.05, 'the phone held still for 10 minutes: the crosshair stays where it is on the ground (the sky turned 2.5°)', [h0, h1]);
+    ok(h1.unc > 1 && h1.unc < 1.3, 'the uncertainty grows with time (about 1.1° after 10 minutes)', h1.unc);
+    // Locate at rest: only after turning, standing still, near the target
+    const tryRest = (o) => ev(p, (o) => { let n = 0; const keep = solveNow; solveNow = () => { n++; };
+      st.stream = {}; st.source = 'video'; st.auto = false; st.busy = false; sens.speed = o.speed; restLoc.since = Date.now() - 2000; restLoc.lastTry = 0; restLoc.fails = 0;
+      st.path = (st.base.path || 0) + o.turned; cfg.target = o.target; restLocate(); solveNow = keep; st.stream = null; st.source = 'map'; return n; }, o);
+    const T = await ev(p, () => { const v = teleVec(), near = TARGETS.filter(t => t.kind === 'dso').sort((a, b) => Solver.angDeg(v, vecNow(a)) - Solver.angDeg(v, vecNow(b))); return [near[0].id, near[near.length - 1].id]; });
+    const r = [await tryRest({ speed: 0, turned: 30, target: T[0] }), await tryRest({ speed: 3, turned: 30, target: T[0] }), await tryRest({ speed: 0, turned: 0.5, target: T[0] }), await tryRest({ speed: 0, turned: 30, target: T[1] })];
+    ok(r.join() === '1,0,0,0', 'Locate at rest: still near the target after turning; not while moving, not without turning, not far from the target', r);
+    // the drift log: a Locate that finds the telescope 0.5° further in azimuth than predicted
+    const e = await ev(p, () => {
+      const b = st.base, now = Date.now(), Rp = mm3(baseTurn(b, now), mm3(mm3(mm3(mm3(b.sol.R, tr3(b.K)), tr3(b.dev)), sens.rel), camK()));
+      const M = skyNow().M, a = 0.5 * Math.PI / 180, Z = [[Math.cos(a), -Math.sin(a), 0], [Math.sin(a), Math.cos(a), 0], [0, 0, 1]];   // a turn about the zenith
+      const sol = Object.assign({}, b.sol, { R: mm3(mm3(M, mm3(Z, tr3(M))), Rp), nMatch: 40 });
+      return driftRecord(b, sol, sens.rel.map(r => r.slice()), now, Math.atan2(sens.off[1], sens.off[0]), (b.path || 0) + 30, 'solved');
+    });
+    ok(e && Math.abs(Math.abs(e.err_az_deg) - 0.5 * Math.cos(e.alt_deg * Math.PI / 180)) < 0.03 && Math.abs(e.err_alt_deg) < 0.03 && e.since_s >= 600 && e.turned_deg === 30 && e.sky_turn_deg > 1 && e.compass_err_deg != null, 'drift log: azimuth error, time, turning, the sky’s share and the compass', e);
+    await ev(p, () => { syncSettings(); openSheet('sheet'); setSetTab('general'); }); await wait(p, 300);
+    ok(await ev(p, () => /^1 entry · median error 0\.\d+°/.test($('driftState').textContent)), 'the Debug section sums it up', await ev(p, () => $('driftState').textContent));
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.tap('#driftExport')]);
+    const csv = dl ? fs.readFileSync(await dl.path(), 'utf8') : '';
+    ok(/^t,kind,since_s,turned_deg,.*err_az_deg.*compass_err_deg/.test(csv) && csv.trim().split('\n').length === 2, 'export as CSV', csv.slice(0, 200));
+    await done(p);
+  },
   // ISS transits (Pro): an ISS-like orbit that crosses the Moon over Balzheim at 20:47:20 local time on 17 Oct 2026
   async transits() {
     const TLE = [{ name: 'ISS (ZARYA)', l1: '1 25544U 98067A   26290.50000000  .00016717  00000-0  10270-3 0  9001', l2: '2 25544  51.6400 276.0000 0003000  90.0000 180.0000 15.50000000 10001' }];
@@ -2150,7 +2195,7 @@ const TESTS = {
 
 // Shards for running in parallel (test/ui-par.cjs): --shard=i/n takes about 1/n of the time, by the seconds each test
 // took (tests not listed count 5 s); the longest go first so that the shards end together.
-const SECONDS = { live: 28, lists: 14, horizon: 21, transits: 14, visible: 10, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
+const SECONDS = { live: 28, lists: 14, drift: 8, horizon: 21, transits: 14, visible: 10, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
   sound: 10, photo: 10, compassflip: 10, logstats: 9, milkyway: 9, sites: 9, programs: 8, assistant: 8, proapp: 8, diagnostics: 7, panels: 7, camera: 6 };
 function shardOf(names, i, n) {
   const load = Array(n).fill(0), pick = Array.from({ length: n }, () => []);
