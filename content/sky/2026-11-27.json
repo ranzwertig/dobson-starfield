@@ -1,0 +1,127 @@
+{
+  "week": "2026-11-27",
+  "status": "published",
+  "generatedAt": "2026-10-30T17:50:00Z",
+  "intro": {
+    "en": "A week for early risers: Venus is at its brightest before dawn, and on Monday morning the waning Moon joins Jupiter, Regulus and Mars in Leo. On Saturday night it crosses the Beehive Cluster, and once it has passed last quarter the evenings turn dark again.",
+    "de": "Eine Woche für Frühaufsteher: Venus erreicht vor der Dämmerung ihren größten Glanz, und am Montagmorgen gesellt sich der abnehmende Mond im Löwen zu Jupiter, Regulus und Mars. In der Nacht auf Sonntag zieht er durch die Krippe, und nach dem letzten Viertel werden die Abende wieder dunkel."
+  },
+  "events": [
+    {
+      "id": "2026-11-30-moon-jupiter-regulus-mars",
+      "type": "conjunction",
+      "peak": "2026-11-30T08:25:00Z",
+      "window": { "from": "2026-11-30", "to": "2026-11-30" },
+      "bodies": ["Moon", "Jupiter", "Mars"],
+      "target": { "id": "Jupiter" },
+      "magnitude": -2.2,
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "The Moon with Jupiter, Regulus and Mars",
+        "de": "Der Mond bei Jupiter, Regulus und Mars"
+      },
+      "text": {
+        "en": "Before dawn on Monday the Moon, a little more than half lit, stands only about 2° from Jupiter as seen from Europe and North America. Regulus, the brightest star of Leo, and reddish Mars are just a few degrees further on, so four bright points share a small patch of sky. On Sunday morning the Moon is still well to the west of the group; by Tuesday it has moved on past Mars.",
+        "de": "Vor der Dämmerung am Montag steht der etwas mehr als halb beleuchtete Mond von Europa und Nordamerika aus nur etwa 2° neben Jupiter. Regulus, der hellste Stern im Löwen, und der rötliche Mars folgen ein paar Grad weiter, vier helle Lichtpunkte auf engem Raum. Am Sonntagmorgen steht der Mond noch deutlich westlich der Gruppe, am Dienstag ist er schon an Mars vorbeigezogen."
+      },
+      "tip": {
+        "en": "Binoculars hold the Moon and Jupiter in one field, and Jupiter’s four large moons show as tiny points in a row. Look high in the south in the morning darkness.",
+        "de": "Im Fernglas passen Mond und Jupiter in ein Gesichtsfeld, und Jupiters vier große Monde zeigen sich als winzige Pünktchen in einer Reihe. Schau am Morgen, solange es noch dunkel ist, hoch in den Süden."
+      }
+    },
+    {
+      "id": "2026-11-27-venus-brightest",
+      "type": "other",
+      "peak": "2026-11-27T01:47:00Z",
+      "window": { "from": "2026-11-27", "to": "2026-12-03" },
+      "bodies": ["Venus", "Mercury"],
+      "target": { "id": "Venus" },
+      "magnitude": -4.9,
+      "equipment": "naked-eye",
+      "hemisphere": "both",
+      "highlight": true,
+      "title": {
+        "en": "Venus at its brightest in the morning sky",
+        "de": "Venus am Morgenhimmel so hell wie nie in dieser Sichtbarkeit"
+      },
+      "text": {
+        "en": "On Friday Venus reaches its greatest brilliancy of this morning appearance, magnitude −4.9, and hardly fades all week. It shines in Virgo, 4 to 6° from Spica, which looks pale beside it. Lower down in the twilight Mercury is still visible from the northern hemisphere, but it sinks a little closer to the horizon each morning.",
+        "de": "Am Freitag erreicht Venus ihren größten Glanz dieser Morgensichtbarkeit, −4,9 mag, und verliert die ganze Woche kaum etwas davon. Sie steht in der Jungfrau, 4 bis 6° von Spica entfernt, die daneben blass wirkt. Tiefer in der Dämmerung ist von der Nordhalbkugel aus noch Merkur zu sehen, doch er sinkt jeden Morgen etwas näher an den Horizont."
+      },
+      "tip": {
+        "en": "In a telescope, or even steadily held binoculars, Venus is a crescent, only about a quarter lit. Its glare is easier to tame in the dawn twilight than against a dark sky.",
+        "de": "Im Teleskop, sogar schon in einem ruhig gehaltenen Fernglas, ist Venus eine Sichel, nur etwa zu einem Viertel beleuchtet. In der Morgendämmerung blendet sie weniger als vor dunklem Himmel."
+      }
+    },
+    {
+      "id": "2026-11-28-moon-beehive",
+      "type": "conjunction",
+      "peak": "2026-11-28T22:30:00Z",
+      "bodies": ["Moon"],
+      "target": { "id": "M44" },
+      "equipment": "binoculars",
+      "hemisphere": "north",
+      "title": {
+        "en": "The Moon crosses the Beehive Cluster",
+        "de": "Der Mond zieht durch die Krippe"
+      },
+      "text": {
+        "en": "Late on Saturday evening the waning gibbous Moon passes right through the Beehive Cluster (M44) in Cancer. From Europe it covers some of the cluster’s stars, which disappear at the Moon’s bright limb and reappear at its dark edge.",
+        "de": "Am späten Samstagabend zieht der abnehmende, noch fast volle Mond mitten durch die Krippe (M44) im Krebs. Von Europa aus bedeckt er einige Sterne des Haufens, die am hellen Mondrand verschwinden und am dunklen Rand wieder auftauchen."
+      },
+      "tip": {
+        "en": "The Moon is bright, so the cluster is hard to see with the naked eye; binoculars or a small telescope at low power show its stars around the Moon.",
+        "de": "Der Mond ist hell, mit bloßem Auge siehst du die Krippe kaum; ein Fernglas oder ein kleines Teleskop mit geringer Vergrößerung zeigt ihre Sterne rund um den Mond."
+      }
+    },
+    {
+      "id": "2026-12-01-last-quarter",
+      "type": "moon-phase",
+      "peak": "2026-12-01T06:09:00Z",
+      "bodies": ["Moon"],
+      "target": { "id": "Moon" },
+      "equipment": "telescope",
+      "hemisphere": "both",
+      "title": {
+        "en": "Last quarter: craters in the morning sky",
+        "de": "Letztes Viertel: Krater am Morgenhimmel"
+      },
+      "text": {
+        "en": "On Tuesday the Moon reaches last quarter and stands in the morning sky. Along the line between day and night the low Sun throws long shadows: look for the large walled plains Ptolemaeus, Alphonsus and Arzachel in a row, and nearby the Straight Wall, which now shows as a thin bright line.",
+        "de": "Am Dienstag ist letztes Viertel, und der Mond steht am Morgenhimmel. Entlang der Grenze zwischen Tag und Nacht wirft die tief stehende Sonne lange Schatten: Such die großen Wallebenen Ptolemaeus, Alphonsus und Arzachel in einer Reihe und gleich daneben die Rupes Recta, die Gerade Wand, die sich jetzt als feine helle Linie zeigt."
+      },
+      "tip": {
+        "en": "Start at low power to find the row of craters, then go up to 150× or more on a steady night.",
+        "de": "Fang mit geringer Vergrößerung an, um die Kraterreihe zu finden, und geh in einer ruhigen Nacht auf 150-fach oder mehr."
+      }
+    },
+    {
+      "id": "double-cluster-dark-evenings",
+      "type": "deep-sky",
+      "peak": "2026-12-02T20:00:00Z",
+      "window": { "from": "2026-12-02", "to": "2026-12-03" },
+      "target": { "id": "NGC 869" },
+      "magnitude": 3.8,
+      "equipment": "binoculars",
+      "hemisphere": "north",
+      "title": {
+        "en": "Dark evenings again: the Double Cluster in Perseus",
+        "de": "Wieder dunkle Abende: der Doppelsternhaufen im Perseus"
+      },
+      "text": {
+        "en": "After last quarter the Moon rises only late at night, and the evenings are dark again. A fine target is the Double Cluster in Perseus, high in the north-east and later almost overhead: two rich star clusters side by side, already a hazy patch to the naked eye under a dark sky. Saturn in the south is worth a look on the same evenings; its rings are still narrow, tilted only about 6° towards us.",
+        "de": "Nach dem letzten Viertel geht der Mond erst spät in der Nacht auf, und die Abende sind wieder dunkel. Ein schönes Ziel ist der Doppelsternhaufen im Perseus, hoch im Nordosten und später fast im Zenit: zwei reiche Sternhaufen nebeneinander, unter dunklem Himmel schon mit bloßem Auge ein Nebelfleck. An denselben Abenden lohnt auch Saturn im Süden einen Blick; seine Ringe sind noch schmal, nur etwa 6° zu uns geneigt."
+      },
+      "tip": {
+        "en": "Binoculars show both clusters in one field; a telescope at low power fills the view with stars, including a few orange giants among the blue-white ones.",
+        "de": "Im Fernglas passen beide Haufen in ein Gesichtsfeld; ein Teleskop mit geringer Vergrößerung füllt das Bild mit Sternen, darunter ein paar orange Riesen zwischen den blauweißen."
+      }
+    }
+  ],
+  "sources": [
+    "https://cometchasing.skyhound.com/index.html",
+    "https://people.ast.cam.ac.uk/~jds/future.htm"
+  ]
+}
