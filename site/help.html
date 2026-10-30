@@ -42,6 +42,7 @@
     <a href="#filter">Filter</a>
     <a class="sub" href="#extended">Extended catalogue</a>
     <a href="#list">Observing list</a>
+    <a class="sub" href="#own-lists">Your own lists</a>
     <a class="sub" href="#logbook">Logbook</a>
     <a class="sub" href="#statistics">Logbook statistics</a>
     <a class="sub" href="#programmes">Observing programmes</a>
@@ -143,7 +144,7 @@
         </ul>
         Tap the button again to switch it off. While the sound is on, the screen stays on; on an iPhone it also plays with the silent switch on, where iOS allows it.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><circle cx="5" cy="18" r="1.1"/></svg>List</dt>
-      <dd>Your <a href="#list">observing list</a>: planned for tonight, seen tonight and starred; the number shows how many planned objects are still to do.</dd>
+      <dd>Your <a href="#list">observing list</a>: planned for tonight, seen tonight, and your lists with Starred; the number shows how many planned objects are still to do.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>Find target</dt>
       <dd>Choose what you want to look at: a list of what is well placed now (higher than 15° and within <a href="#reach">your telescope’s reach</a>), categories, or search by name, Messier number or star name; the search field is ready to type as soon as it opens. See <a href="#categories">Categories</a>. A result in the list opens its details (with tonight’s bar), where <b>Set as target</b> makes it the target and ← goes back to the search. The current target is also shown as a pill at the bottom left: tap it for the target panel, ✕ clears the target.</dd>
       <dt><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 5h17l-6.5 8v5.5l-4 2V13z"/></svg>Filter</dt>
@@ -302,7 +303,7 @@
       <dt>Free tonight <a class="ptag pro" href="/pro/">Pro</a></dt><dd>Objects that are free at some time of the night ahead: above 20°, in reach, in darkness and not behind your horizon. The <a href="#night-bar">night bar</a> shows when: grey while it is behind your horizon.</dd>
     </dl>
     <p>Only <b>Good now</b> and <b>Free now</b> depend on the time: the other categories list objects whether they are up or not, and the altitude on the right says where each one is now (“too low” or “too high” when it is out of <a href="#reach">your telescope’s reach</a>).</p>
-    <p><b>Below each result:</b> ⓘ its details, ◎ makes it your target, the map icon shows it on the map, then plan and star (<a href="#list">the same in all lists</a>).</p>
+    <p><b>Below each result:</b> ⓘ its details, ◎ makes it your target, the map icon shows it on the map, then plan and star (<a href="#list">the same in all lists</a>). Under the results of the categories, <b>Save as a list</b> keeps them as <a href="#own-lists">a list of your own</a> (Pro).</p>
     <p><b>Combining:</b> My telescope, In reach, Good now, Free now, Free tonight and Popular all have to apply (My telescope and In reach together: everything your telescope shows well and can point at from here), so together they show the popular objects that suit your telescope and are well placed now. Among the lists and among the kinds one is enough: Messier and Caldwell show both lists; add Galaxies to see only their galaxies. The best matches come first. With the <a href="#extended">extended catalogue</a> a combination can take a moment the first time (“Searching …”, the chips react at once); it is then kept for five minutes, so tapping back and forth is instant.</p>
     <p>Why an object suits you or not is in its details, under <b>Suits you?</b>: the lists it is on, how bright it is for your telescope and which eyepiece frames it, and where it stands at the shown time.</p>
 
@@ -351,8 +352,8 @@
     <h2 id="list">Observing list</h2>
     <p>Objects can be <b>starred</b>, <b>planned</b> and <b>seen</b>:</p>
     <dl class="ref">
-      <dt>Starred</dt><dd>You want to see it some day: a wish list. The star in an object’s details or in Find target. When you log an object as seen, its star is removed.</dd>
-      <dt>Planned</dt><dd>You want to see it tonight. <b>Plan</b> in the details, or the list icon in Find target and in the Starred tab. A planned object shows the icon as a solid amber tile (“Planned”), not yet planned as an outline with a plus.</dd>
+      <dt>Starred</dt><dd>You want to see it some day: a wish list. The star in an object’s details or in Find target, one tap. When you log an object as seen, its star is removed.</dd>
+      <dt>Planned</dt><dd>You want to see it tonight. <b>Plan</b> in the details, or the list icon in Find target and in every list. A planned object shows the icon as a solid amber tile (“Planned”), not yet planned as an outline with a plus.</dd>
       <dt>Seen</dt><dd>In your <a href="#logbook">logbook</a>, logged with <b>Seen</b> in the details.</dd>
     </dl>
     <div class="shots"><figure class="ph"><img src="/img/screens/list-780.webp" srcset="/img/screens/list-390.webp 390w, /img/screens/list-780.webp 780w" sizes="230px" width="390" height="844" alt="The observing list, Planned tab, in Short route order with a night bar for each object and the Next button." loading="lazy" decoding="async"><figcaption>Planned, in Short route order</figcaption></figure></div>
@@ -377,14 +378,33 @@
       </dd>
       <dt>Seen tonight</dt>
       <dd>What you logged tonight. Marked one by mistake? Its ✕ removes it: tonight’s logbook entry for it is deleted, and it goes back to Planned.</dd>
-      <dt>Starred</dt>
-      <dd>Your wish list. <b>When visible</b> (the order at first): the objects that are well placed tonight first, then the others by the night they can be seen again (<a href="#visible-again">Visible again</a>); or <b>By name</b>. The list icon plans one for tonight.</dd>
+      <dt>Lists</dt>
+      <dd><b>Starred</b> first, then <a href="#own-lists">your own lists</a> (Pro), each as a card: how many objects, how many are visible tonight, and how many you have seen (from the logbook). Tap a card to open the list.</dd>
     </dl>
+    <p>A list (Starred too) opens in its own panel; ← goes back to the Lists tab.</p>
+    <ul>
+      <li><b>When visible</b> (the order at first): the objects that are visible tonight first, in the order they get low, then the others by the night they can be seen again (<a href="#visible-again">Visible again</a>); or <b>By name</b>.</li>
+      <li><b>Plan the … visible tonight</b> puts everything in the list that can be seen tonight on tonight’s plan, in one tap. The list icon of a row plans one.</li>
+      <li><b>Select</b>: tick objects (or <b>Select all</b>) and <b>Move to …</b> or <b>Copy to …</b> another list or a new one, <b>Plan tonight</b>, or <b>Remove</b> them (asks once more). Moving from Starred to another list takes the star away; copying to Starred stars them. An object that is in the list already stays there once.</li>
+      <li><b>Add</b> opens Find target with the list’s bookmark (Starred: the star) beside each result: tap it to add the object, ← and you are back in the list.</li>
+      <li><b>⋯</b>: <b>Rename</b>, <b>Duplicate</b>, <b>Export as CSV</b> (name, type, brightness, position, constellation, how often seen) and <b>Delete the list</b>. Starred can be exported.</li>
+    </ul>
     <ul>
       <li>Every list (Find target, the observing list, Tonight, the programmes) has the same buttons below each row, on the right; a tap anywhere else on the row opens the details too: <b>ⓘ</b> opens the object’s details in the same panel, and ← brings you back to the list where you were (<a href="#panels">how panels work</a>); <b>◎</b> makes it your target (filled red on the current target; tap it again to clear the target), the <b>map</b> icon turns the map to it without making it the target (not while Align or the camera follow the telescope), then the list icon (plan) and the star, both showing their state; in Seen tonight also ✕. ◎ and the map icon close the list on a phone.</li>
       <li>While a target is set, it is shown at the top of the list; tap it to open its panel.</li>
       <li>Newly added objects are marked “New”, and the list scrolls to the newest one. With <b>Add</b>, Find target opens; tap the list icon or the star next to objects, then ←, and you are back in the list.</li>
       <li>On the map, planned objects have a small amber flag, starred ones an amber star outline and seen ones a green tick.</li>
+    </ul>
+
+    <h3 id="own-lists">Your own lists <a class="ptag pro" href="/pro/">Pro</a></h3>
+    <p>Lists for a season, a club night, the kids or a book you are working through, as many as you like, next to Starred.</p>
+    <div class="shots"><figure class="ph"><img src="/img/screens/pro-lists-780.webp" srcset="/img/screens/pro-lists-390.webp 390w, /img/screens/pro-lists-780.webp 780w" sizes="230px" width="390" height="844" alt="The Lists tab of the observing list: Starred and four lists of your own, each with how many objects are visible tonight and how many you have seen." loading="lazy" decoding="async"><figcaption>The Lists tab</figcaption></figure><figure class="ph"><img src="/img/screens/pro-list-780.webp" srcset="/img/screens/pro-list-390.webp 390w, /img/screens/pro-list-780.webp 780w" sizes="230px" width="390" height="844" alt="The list Autumn galaxies in its panel: progress, the objects visible tonight first with their night bars, and Plan the 12 visible tonight." loading="lazy" decoding="async"><figcaption>A list, visible tonight first</figcaption></figure></div>
+    <ul>
+      <li><b>Save to a list:</b> the bookmark beside the star in an object’s details (and in the target panel) shows the lists it is in (filled when it is in one). Tick or untick lists, or type a name for a new one. The star stays what it was: one tap for Starred.</li>
+      <li><b>New list</b> and <b>Import a list …</b> are in the Lists tab. Import reads a text file with one object per line (M51, NGC 4565, IC 434, Whirlpool, Jupiter, Vega …) or a CSV with the objects in the first columns, for example a list exported from Zenigo or a planetarium program; the list gets the file’s name, and what isn’t found is listed.</li>
+      <li><b>Save as a list:</b> under the results of the categories in <a href="#categories">Find target</a> (for example Messier and Galaxies), up to 500 objects, named after the categories.</li>
+      <li>Lists <a href="#settings-sync">sync</a> between your devices object by object: one device can add while another renames or moves. They are in your <a href="#backup">backups</a> too.</li>
+      <li><b>After Pro ends</b> your lists stay: you can open, plan, export, remove from and delete them. Adding, moving or copying into them, renaming and new lists need Pro again. Starred is always free.</li>
     </ul>
 
     <h3 id="logbook">Logbook</h3>
@@ -474,7 +494,7 @@
       <li><b>Never</b>: “never visible here: always below the horizon” (too far south), “never visible here: at most 7° high”, “never in your telescope’s reach here” or “never well placed here” for objects that only ever get low at your latitude.</li>
       <li>In the <b>details</b>, the Tonight box then says “not visible tonight” and below it <b>Visible again</b>: the first night with its times, direction, how high it gets and the Moon, that night’s bar, when it is well placed (or that it never is, with the months in which it can be seen), and <b>Show the sky then</b>, which sets the <a href="#time">time</a> to its best moment that night and shows it on the map.</li>
       <li>Objects that are visible tonight but only low say when they are well placed: “low tonight · well placed from 4 Jan”.</li>
-      <li><a href="#tonight">Tonight</a> lists under <b>Coming back</b> what becomes visible again within four weeks: Messier, your planned and starred objects and the planets, those your telescope shows, by date.</li>
+      <li><a href="#tonight">Tonight</a> lists under <b>Coming back</b> what becomes visible again within four weeks: Messier, the objects in your lists (planned, starred and your own) and the planets, those your telescope shows, by date.</li>
       <li>It depends on the place, your telescope’s reach and your horizon, and is worked out again when any of them changes; from the night shown, so with another <a href="#time">time</a> from that night on.</li>
     </ul>
 
@@ -523,7 +543,7 @@
       <dt id="backup">Backup and restore</dt>
       <dd>Everything is stored on your device (and in your sync group if sync is on); clearing the browser’s website data deletes it from the device. Zenigo asks the browser to keep its data even when the device runs low on space (persistent storage; Firefox asks you once). In Safari on iPhone and iPad, data of a website you haven’t opened for 7 days can be cleared: add Zenigo to the Home Screen, where this doesn’t apply. Back up now and then, and use a backup to move to a new phone.
         <ul>
-          <li><b>Back up lists</b> saves the observing list, starred objects and logbook as a file.</li>
+          <li><b>Back up lists</b> saves the observing list, Starred and your own lists and the logbook as a file.</li>
           <li><b>Back up lists and settings</b> adds all settings (telescope and eyepieces, location, pointing, camera, display).</li>
           <li><b>Restore from a backup</b> adds the list entries missing here (also ones deleted since) and never deletes any. Backups from all earlier versions of Zenigo can be restored. If the file holds settings, the app asks before replacing yours.</li>
           <li><b>Logbook for a spreadsheet (CSV)</b> opens in Excel, Numbers or similar.</li>
@@ -637,13 +657,13 @@
     <h3 id="settings-sync">Sync <a class="ptag pro" href="/pro/">Pro</a></h3>
     <dl>
       <dt id="sync">Sync between devices</dt>
-      <dd>Keeps the observing list, starred objects, logbook and the telescope settings the same on your phone, tablet and computer. End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server, so only your devices can read it.
+      <dd>Keeps the observing list, Starred and your own lists, the logbook and the telescope settings the same on your phone, tablet and computer. End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server, so only your devices can read it.
         <ul>
           <li>Menu → <b>Sync with other devices</b> opens this tab while sync isn’t set up; once it is, the menu entry syncs at once and shows when it last did.</li>
           <li><b>Set up sync</b> on the first device. It shows a QR code.</li>
           <li>On the next device: Menu → Sync with other devices → <b>Join with a code</b> → <b>Scan code</b>, and hold it up to the QR code. Or send the link (<b>Copy link</b>) to the device and open it there, or paste it into “Or paste the link”. If the telescope settings of the two devices differ, Zenigo asks which ones to use; lists and logbook are always combined.</li>
           <li><b>iPhone and iPad:</b> Zenigo from the Home Screen keeps its data apart from Safari. Scan the code inside the app, not with the Camera app (that would open Safari).</li>
-          <li><b>What syncs:</b> list, starred, logbook (including deletions), your locations (name, position, sky and horizon; which one a device uses stays with it), mount, map filter, focal length, aperture, lowest and highest altitude, eyepieces, Barlow, finder, the rings on the map, eyepiece view orientation and turn. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
+          <li><b>What syncs:</b> list, starred, your own lists, logbook (including deletions), your locations (name, position, sky and horizon; which one a device uses stays with it), mount, map filter, focal length, aperture, lowest and highest altitude, eyepieces, Barlow, finder, the rings on the map, eyepiece view orientation and turn. <b>What stays on each device:</b> eyepiece point and pointing (they depend on how that phone sits on the telescope), camera and field of view, compass correction, red light, display and layout.</li>
           <li><b>When:</b> at start, when the app comes back to the front, a few seconds after a change, every few minutes while open, and with <b>Sync now</b>. Offline everything works as before; changes are sent once the device is online.</li>
           <li><b>Changed on two devices before they synced:</b> different entries and settings are simply combined. A logbook entry edited on both keeps both edits, field by field (note on one, seeing on the other); only a field changed on both takes the later edit. Eyepieces added or removed on each device are combined too, and so are locations and instruments added on different devices; a location changed on both takes the later change. Deleted on one device and changed on the other: the later of the two counts.</li>
           <li><b>Add a device</b> shows the QR code again. <b>Turn off here</b> stops sync on this device and keeps its data. <b>New sync code</b> (after losing a device) moves the group to a new code: add your other devices again. <b>Delete from the server</b> removes the synced copy; your devices keep their data.</li>
@@ -655,7 +675,7 @@
       <dd>All you need is the saved code or link.
         <ul>
           <li><b>On a new device:</b> open the link, or open Zenigo and go to Menu → Sync with other devices → Join with a code, and scan the saved image or paste the link. The lists, the logbook and the telescope settings come back.</li>
-          <li><b>Without Zenigo:</b> the small script <a href="/help/sync-recover.py" download>sync-recover.py</a> (Python 3, needs <code>pip install cryptography</code>) fetches the encrypted copy and decrypts it on your computer: <code>python3 sync-recover.py "&lt;link&gt;" &gt; zenigo-data.json</code>. The result is plain JSON with the observing list, starred objects, logbook entries and settings. The script also describes the encryption, so the data can be read with any other tool too.</li>
+          <li><b>Without Zenigo:</b> the small script <a href="/help/sync-recover.py" download>sync-recover.py</a> (Python 3, needs <code>pip install cryptography</code>) fetches the encrypted copy and decrypts it on your computer: <code>python3 sync-recover.py "&lt;link&gt;" &gt; zenigo-data.json</code>. The result is plain JSON with the observing list, starred objects, your own lists, logbook entries and settings. The script also describes the encryption, so the data can be read with any other tool too.</li>
         </ul>
       </dd>
     </dl>
@@ -737,7 +757,7 @@
     </dl>
 
     <h2 id="pro">Zenigo Pro</h2>
-    <p>Zenigo is free. Parts marked <a class="ptag pro" href="/pro/">Pro</a> in this help need <a href="/pro/">Zenigo Pro</a>: sync between devices, the live connection (only on the device at the telescope; following it is free), Coming up, satellites, the eyepiece view and best eyepiece, the short route, the extended catalogue, observing programmes beyond Messier, more than one <a href="#instruments">instrument</a>, and the <a href="#statistics">logbook statistics</a>. Labelling night photos is free. Tapping a Pro feature without Pro opens <b>Menu › Zenigo Pro</b>, which says what Pro adds and how long yours runs.</p>
+    <p>Zenigo is free. Parts marked <a class="ptag pro" href="/pro/">Pro</a> in this help need <a href="/pro/">Zenigo Pro</a>: sync between devices, the live connection (only on the device at the telescope; following it is free), Coming up, satellites and <a href="#transits">ISS transits</a>, the eyepiece view and best eyepiece, the short route, <a href="#own-lists">your own lists</a>, the extended catalogue, observing programmes beyond Messier, more than one <a href="#instruments">instrument</a>, your own horizon, and the <a href="#statistics">logbook statistics</a>. Labelling night photos is free. Tapping a Pro feature without Pro opens <b>Menu › Zenigo Pro</b>, which says what Pro adds and how long yours runs.</p>
     <dl class="ref">
       <dt id="pro-key">Licence key</dt>
       <dd>After buying, the thank-you page shows your key (it starts with <b>ZP1.</b>) and gives it to Zenigo in the same browser. On other devices, and in Zenigo from the Home Screen on an iPhone or iPad (it keeps its data apart from Safari), open Menu › Zenigo Pro › <b>Enter licence key</b> and paste it, or open the link <b>Open Zenigo with Pro</b> there. The key works on all devices you use yourself and is checked on the device, without a connection. For sync, each device needs the key.</dd>

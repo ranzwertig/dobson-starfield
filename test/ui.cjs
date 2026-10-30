@@ -107,21 +107,24 @@ const TESTS = {
     const p = await page();
     await ev(p, () => { obs.starred = ['M1', 'M2', 'M3', 'M5', 'M10', 'M11', 'M12', 'M13', 'M15', 'M27', 'M31', 'M33', 'M57', 'M92'].map(id => ({ id, name: id, added: 0 }));
       obs.log = [{ uid: 'a', obj: 'M45', name: 'M45', t: new Date().toISOString(), result: 'easy' }]; saveObs(); });
-    await p.tap('#fabList'); await wait(p); await p.tap('[data-ltab="starred"]'); await wait(p, 300);
-    await ev(p, () => { scroller($('listSheet')).scrollTop = 300; }); await wait(p, 100);
-    const id = await ev(p, () => [...document.querySelectorAll('#listBody .orow')][6].dataset.id);
-    await p.tap(`#listBody .orow[data-id="${id}"] .oinfo`); await wait(p, 500);
+    await p.tap('#fabList'); await wait(p); await p.tap('[data-ltab="lists"]'); await wait(p, 300);
+    await p.tap('#listBody .lcard[data-list="starred"]'); await wait(p, 500);
+    await ev(p, () => { scroller($('collSheet')).scrollTop = 300; }); await wait(p, 100);
+    const id = await ev(p, () => [...document.querySelectorAll('#collBody .orow')][6].dataset.id);
+    await p.tap(`#collBody .orow[data-id="${id}"] .oinfo`); await wait(p, 500);
     ok(await ev(p, () => !$('infoBack').hidden), 'details from the list have a back arrow');
     await p.tap('#infoBack'); await wait(p, 600);
-    const back = await ev(p, () => [!$('listSheet').hidden, listTab.v, scroller($('listSheet')).scrollTop]);
-    ok(back[0] && back[1] === 'starred' && back[2] > 100, 'back returns to the same tab and scroll position', back);
+    const back = await ev(p, () => [!$('collSheet').hidden, coll.id, scroller($('collSheet')).scrollTop]);
+    ok(back[0] && back[1] === 'starred' && back[2] > 100, 'back returns to the same list and scroll position', back);
+    await p.tap('#collSheet .navback'); await wait(p, 500);
+    ok(await ev(p, () => !$('listSheet').hidden && listTab.v === 'lists'), '← from Starred: the Lists tab');
     await p.tap('[data-ltab="seen"]'); await wait(p, 300); await p.tap('#listBody .orow .oinfo'); await wait(p, 500);
     await p.tap('#infoSheet [data-close]'); await wait(p, 600);
     ok(await ev(p, () => $('listSheet').hidden && $('infoSheet').hidden), '✕ on details opened from the list closes them (back is the arrow)');
     await p.tap('#fabList'); await wait(p, 500);
-    await p.tap('[data-ltab="starred"]'); await wait(p, 300); await p.tap('#listBody .orow .oinfo'); await wait(p, 500);
+    await p.tap('[data-ltab="lists"]'); await wait(p, 300); await p.tap('#listBody .lcard[data-list="starred"]'); await wait(p, 500); await p.tap('#collBody .orow .oinfo'); await wait(p, 500);
     const tid = await ev(p, () => st.picked.id); await p.tap('#infoTarget'); await wait(p, 600);
-    ok(await ev(p, t => cfg.target === t && $('infoSheet').hidden && $('listSheet').hidden, tid), 'Set as target on a phone closes and shows the map');
+    ok(await ev(p, t => cfg.target === t && $('infoSheet').hidden && $('listSheet').hidden && $('collSheet').hidden, tid), 'Set as target on a phone closes and shows the map');
     await ev(p, () => showInfo(objById('M42'))); await wait(p);
     ok(await ev(p, () => $('infoBack').hidden), 'details opened from the map have no back arrow');
     await ev(p, () => closeSheet('infoSheet')); await wait(p);
@@ -1020,7 +1023,7 @@ const TESTS = {
     ok(await ev(B, () => obs.log.some(e => e.uid === 'mgx1a2b3')), 'restored entries reach the other device');
     // a backup made now has the old shape plus change times (older app versions can import it)
     const dl = A.waitForEvent('download'); await A.tap('#bkAll'); const f = await (await dl).path(); const bk = JSON.parse(fs.readFileSync(f, 'utf8'));
-    ok(bk.version === 4 && Array.isArray(bk.log) && Array.isArray(bk.list) && Array.isArray(bk.starred) && typeof bk.settings === 'object' && bk.log.every(e => e.u > 0 || e.uid === 'mgx1a2b3'), 'backup version 4 keeps the shape of version 3', bk.version);
+    ok(bk.version === 5 && Array.isArray(bk.lists) && Array.isArray(bk.log) && Array.isArray(bk.list) && Array.isArray(bk.starred) && typeof bk.settings === 'object' && bk.log.every(e => e.u > 0 || e.uid === 'mgx1a2b3'), 'backup version 5 keeps the shape of version 3, with your lists', bk.version);
     // another device with a newer app (major version 2) wrote the group: this app stops writing instead of breaking it
     const before = [...syncStore.values()][0].version;
     await ev(B, async () => { const k = await syncKeys(); const g = await syncGet(k); const d = { ...g.data, schema: { major: 2, minor: 0 } }; await syncPut(k, g.ver, d); });
@@ -1693,12 +1696,112 @@ const TESTS = {
     await p.tap('#timeBarNow'); await wait(p, 300);
     ok(await ev(p, () => st.tOff === 0 && $('timeBar').hidden && !document.querySelector('.app').classList.contains('tshift') && !/Mar/.test($('tgtChipState').textContent)), 'Now: back to the current time, the bar goes');
     // starred: when visible or by name
-    await ev(p, () => { listTab.v = 'starred'; renderList(); openSheet('listSheet'); }); await wait(p, 300);
-    const order = () => ev(p, () => [...$('listBody').querySelectorAll('.orow')].map(r => r.dataset.id).join(','));
+    await ev(p, () => openColl(STARRED)); await wait(p, 300);
+    const order = () => ev(p, () => [...$('collBody').querySelectorAll('.orow')].map(r => r.dataset.id).join(','));
     const o1 = await order();
     await p.tap('[data-sorder="name"]'); await wait(p, 200);
     const o2 = await order();
     ok(/^M(31|42),M(31|42),M104,M8$/.test(o1) && o2 === 'M8,M31,M42,M104', 'Starred: when visible (tonight first, then by the date), or by name', [o1, o2]);
+    await done(p);
+  },
+  // your own lists (Pro): save from the details, the Lists tab, a list in its panel, select → move, copy, plan,
+  // remove; rename, duplicate, export, delete; import; Find target → save as a list, Add; after Pro ended
+  async lists() {
+    const p = await page();
+    await ev(p, () => { obs.starred = ['M42', 'M104'].map(id => ({ id, name: id, added: 1 })); obs.list = []; saveObs(); });
+    // details: the bookmark opens "Save …"; a new list with the object in it
+    await ev(p, () => showInfo(objById('M31'))); await wait(p, 400);
+    ok(await ev(p, () => !$('infoLists').hidden && $('infoLists').getAttribute('aria-pressed') === 'false' && !$('infoStar').hidden), 'details: bookmark beside the star');
+    await p.tap('#infoLists'); await wait(p, 400);
+    ok(await ev(p, () => !$('lsSheet').hidden && /Save M31/.test($('lsTitleTxt').textContent) && $('lsBody').querySelectorAll('.lsrow[data-list]').length === 1), 'Save M31: Starred, and a field for a new list');
+    await p.fill('#lsNew', 'Autumn galaxies'); await p.keyboard.press('Enter'); await wait(p, 300);
+    const s1 = await ev(p, () => ({ lists: obs.lists.map(l => l.name), items: obs.items.map(x => x.list + ':' + x.id), rows: $('lsBody').querySelectorAll('.lsrow[data-list] input:checked').length, pressed: $('infoLists').getAttribute('aria-pressed'), label: $('infoLists').getAttribute('aria-label') }));
+    ok(s1.lists.join() === 'Autumn galaxies' && s1.items.length === 1 && s1.rows === 1 && s1.pressed === 'true' && /In Autumn galaxies/.test(s1.label), 'a new list with M31 in it; the bookmark is filled', s1);
+    await p.tap('#lsSheet .lsrow[data-list="starred"]'); await wait(p, 200);
+    ok(await ev(p, () => sets().starred.has('M31') && $('infoStar').getAttribute('aria-pressed') === 'true'), 'a tick on Starred stars it (the star in the details follows)');
+    await p.tap('#lsSheet .lsrow[data-list="starred"]'); await wait(p, 200);
+    await p.tap('#lsSheet .btn.primary'); await wait(p, 400);
+    ok(await ev(p, () => $('lsSheet').hidden && !sets().starred.has('M31')), 'Done closes; unticked again');
+    await ev(p, () => { const l = obs.lists[0]; ['M33', 'M74', 'M104', 'M51'].forEach(id => listAddObj(l.id, { id, name: id })); saveObs(); closeSheet('infoSheet'); });
+    // the Lists tab: Starred first, then your lists
+    await p.tap('#fabList'); await wait(p, 400); await p.tap('[data-ltab="lists"]'); await wait(p, 300);
+    const tab = await ev(p, () => ({ cards: [...document.querySelectorAll('#listBody .lcard')].map(c => c.dataset.list === 'starred' ? 'S' : c.querySelector('b').textContent), sub: document.querySelectorAll('#listBody .lcard .pga')[1].textContent, tabs: [...document.querySelectorAll('[data-ltab]')].map(b => b.textContent).join('|'), pro: !!document.querySelector('#listNew .protag') }));
+    ok(tab.cards.join() === 'S,Autumn galaxies' && tab.tabs === 'Planned · 0|Seen tonight · 0|Lists' && !tab.pro, 'three tabs; Lists: Starred, then your lists', tab);
+    ok(/^5 objects · \d visible tonight$/.test(tab.sub), 'a card: how many, how many visible tonight', tab.sub);
+    await shot(p, 'lists-tab');
+    // a list in its panel, ← back to the tab
+    await p.tap('#listBody .lcard:nth-child(2)'); await wait(p, 500);
+    const c = await ev(p, () => ({ name: $('collName').textContent, rows: [...$('collBody').querySelectorAll('.orow')].map(r => r.dataset.id), back: !document.querySelector('#collSheet .navback').hidden, plan: $('collPlan').hidden ? '' : $('collPlan').textContent, head: $('collBody').querySelector('.pghead').textContent }));
+    ok(c.name === 'Autumn galaxies' && c.rows.length === 5 && c.back && c.rows[c.rows.length - 1] === 'M104', 'the list in its own panel, with ←; not visible tonight last', c);
+    ok(/^Plan the \d visible tonight$/.test(c.plan) && /0 of 5 objects seen · \d visible tonight/.test(c.head), 'progress, and plan the ones visible tonight', c);
+    await shot(p, 'lists-list');
+    await p.tap('#collPlan'); await wait(p, 300);
+    ok(await ev(p, () => obs.list.length >= 3 && !obs.list.some(x => x.id === 'M104') && $('collPlan').hidden), 'planned the ones visible tonight (not M104)', await ev(p, () => obs.list.map(x => x.id)));
+    await p.tap('#collBody .orow .oinfo'); await wait(p, 400); await p.tap('#infoBack'); await wait(p, 400);
+    ok(await ev(p, () => !$('collSheet').hidden && $('collName').textContent === 'Autumn galaxies'), 'details from the list: ← comes back to the list');
+    // select → move two to a new list
+    await p.tap('#collSel'); await wait(p, 300);
+    ok(await ev(p, () => !!coll.sel && $('collName').textContent === '0 selected' && !$('collSelBar').hidden && $('collBar').hidden && $('collMove').disabled), 'Select: checkboxes, the bar with Move, Copy, Plan, Remove');
+    await p.tap('#collBody .orow.osel[data-id="M33"]'); await p.tap('#collBody .orow.osel[data-id="M74"]'); await wait(p, 200);
+    ok(await ev(p, () => $('collName').textContent === '2 selected' && !$('collMove').disabled), 'a tap on a row selects it');
+    await shot(p, 'lists-select');
+    await p.tap('#collMove'); await wait(p, 400);
+    const mv = await ev(p, () => ({ t: $('lsTitleTxt').textContent, off: [...$('lsBody').querySelectorAll('.lsrow.off')].map(r => r.dataset.list ? listById(r.dataset.list).name : 'new') }));
+    ok(mv.t === 'Move 2 objects to …' && mv.off.join() === 'Autumn galaxies', 'Move: the other lists and a new one; this list greyed', mv);
+    await p.fill('#lsNew', 'Club night'); await p.tap('#lsOk'); await wait(p, 400);
+    const m2 = await ev(p, () => { const cn = obs.lists.find(l => l.name === 'Club night'); return { a: listEntries(coll.id).map(x => x.id).sort().join(), b: cn ? listEntries(cn.id).map(x => x.id).sort().join() : '', sel: coll.sel, h: $('hint').textContent }; });
+    ok(m2.a === 'M104,M31,M51' && m2.b === 'M33,M74' && !m2.sel && /2 objects moved to Club night/.test(m2.h), 'moved: gone here, in the new list', m2);
+    // copy to Starred, remove
+    await p.tap('#collSel'); await wait(p, 200); await p.tap('#collBody .orow.osel[data-id="M51"]'); await p.tap('#collCopy'); await wait(p, 300);
+    await p.tap('#lsSheet .lsrow[data-list="starred"]'); await p.tap('#lsOk'); await wait(p, 300);
+    ok(await ev(p, () => sets().starred.has('M51') && listHas(coll.id, 'M51')), 'copied to Starred: there and still here');
+    await p.tap('#collSel'); await wait(p, 200); await p.tap('#collBody .orow.osel[data-id="M51"]'); await p.tap('#collRemove'); await wait(p, 200);
+    ok(await ev(p, () => listHas(coll.id, 'M51') && /Remove 1/.test($('collRemove').textContent)), 'Remove asks once more');
+    await p.tap('#collRemove'); await wait(p, 300);
+    ok(await ev(p, () => !listHas(coll.id, 'M51') && sets().starred.has('M51') && !coll.sel), 'removed from this list only');
+    // ⋯: rename, duplicate, export
+    await p.tap('#collMore'); await wait(p, 300); await p.tap('#lsRename'); await wait(p, 300);
+    await p.fill('#lsName', 'Club night'); await p.tap('#lsOk'); await wait(p, 300);
+    ok(await ev(p, () => $('collName').textContent === 'Club night 2'), 'rename: a name in use gets a number', await ev(p, () => $('collName').textContent));
+    await p.tap('#collMore'); await wait(p, 300);
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 4000 }).catch(() => null), p.tap('#lsExport')]);
+    const csv = dl ? fs.readFileSync(await dl.path(), 'utf8') : '';
+    ok(/^﻿?Object,Name,Type,Magnitude,RA,Dec,Constellation,Seen\r\nM31,Andromeda Galaxy,/.test(csv.replace(/\r\nM104[^\n]*\n/, '\r\n')) || (/Object,Name,Type/.test(csv) && /\nM31,Andromeda Galaxy,/.test(csv)), 'export: a CSV with name, type, position', csv.slice(0, 160));
+    await p.tap('#collMore'); await wait(p, 300); await p.tap('#lsDup'); await wait(p, 300);
+    ok(await ev(p, () => $('collName').textContent === 'Club night 2 copy' && listEntries(coll.id).length === 2), 'duplicate: opens the copy');
+    // delete: back to the Lists tab
+    await p.tap('#collMore'); await wait(p, 300); await p.tap('#lsDelete'); await wait(p, 200); await p.tap('#lsDelete'); await wait(p, 600);
+    ok(await ev(p, () => obs.lists.length === 2 && !obs.lists.some(l => /copy/.test(l.name)) && $('collSheet').hidden && !$('listSheet').hidden && listTab.v === 'lists'), 'delete (asks once more): gone, back to the lists');
+    // import a text file
+    await p.setInputFiles('#listImport', { name: 'winter_targets.txt', mimeType: 'text/plain', buffer: Buffer.from('M 42\nngc2244\nWhirlpool\nJupiter\nBetelgeuse\nNo such thing\n') });
+    await wait(p, 600);
+    const im = await ev(p, () => ({ name: $('collName').textContent, ids: listEntries(coll.id).map(x => x.id), h: $('hint').textContent }));
+    ok(await ev(p, () => !document.querySelector('#collSheet .navback').hidden), 'the imported list opens on top of the Lists tab (with ←)');
+    ok(im.name === 'winter targets' && im.ids.slice(0, 1).join() === 'M42' && im.ids.includes('M51') && im.ids.includes('Jupiter') && im.ids.length === 5 && /Not found \(1\): No such thing/.test(im.h), 'import: names, catalogue numbers and common names; what isn’t found is listed', im);
+    // Find target: Add from a list (the bookmark of that list), and save chips as a list
+    await p.tap('#collAdd'); await wait(p, 400);
+    await p.fill('#q', 'm13'); await wait(p, 300);
+    ok(await ev(p, () => /Adding to winter targets/.test($('results').textContent) && !!$('results').querySelector('.rrow .olist') && !$('results').querySelector('.rrow .oplan')), 'Add: Find target with the bookmark of the list');
+    await p.tap('#results .rrow .olist'); await wait(p, 200);
+    ok(await ev(p, () => listHas(coll.id, 'M13')), 'the bookmark adds M13');
+    await ev(p, () => navBack('R')); await wait(p, 400);
+    ok(await ev(p, () => !$('collSheet').hidden && !st.addTo && [...$('collBody').querySelectorAll('.orow')].some(r => r.dataset.id === 'M13')), '← back in the list, M13 in it');
+    await ev(p, () => { closeSheet('collSheet'); cfg.searchCats = ['messier', 'gal']; save(); openSearch(); }); await wait(p, 600);
+    await ev(p, () => showResults(true)); await wait(p, 200);
+    ok(await ev(p, () => /Save as a list \(\d+\)/.test($('saveAsList')?.textContent || '')), 'Find target: Save as a list under the results of the chips');
+    await p.tap('#saveAsList'); await wait(p, 500);
+    ok(await ev(p, () => $('collName').textContent === 'Messier, Galaxies' && listEntries(coll.id).length > 30 && listEntries(coll.id).every(x => /^M\d+$/.test(x.id))), 'saved as “Messier, Galaxies”', await ev(p, () => [$('collName').textContent, listEntries(coll.id).length]));
+    // sync and backup carry them
+    ok(await ev(p, () => { const d = ZSync.fromLocal(obs, cfg, {}), b = ZSync.makeBackup(obs, cfg); return d.lists.length === 4 && d.items.length === obs.items.length && b.version === 5 && b.lists.length === 4 && d.schema.minor >= 3; }), 'sync copy and backup carry the lists');
+    // after Pro ended: still there, plan and remove work, adding needs Pro
+    await ev(p, () => { pro.on = false; renderColl(); });
+    ok(await ev(p, () => /Zenigo Pro has ended/.test($('collBody').textContent)), 'after Pro ended: the list stays, with a note');
+    await p.tap('#collAdd'); await wait(p, 300);
+    ok(await ev(p, () => !$('proSheet').hidden && /Your own lists are part of Zenigo Pro/.test($('proWhy').textContent)), 'Add: Zenigo Pro');
+    await ev(p, () => { closeSheet('proSheet'); renderList(); listTab.v = 'lists'; renderList(); }); await wait(p, 300);
+    ok(await ev(p, () => !!document.querySelector('#listNew .protag')), 'New list carries the Pro tag');
+    await ev(p, () => { closeSheet('listSheet'); showInfo(objById('M57')); }); await wait(p, 400); await p.tap('#infoLists'); await wait(p, 400);
+    ok(await ev(p, () => [...$('lsBody').querySelectorAll('.lsrow[data-list]')].filter(r => !r.classList.contains('off')).map(r => r.dataset.list).join() === 'starred' && /part of Zenigo Pro/.test($('lsBody').textContent) && !$('lsNew')), 'without Pro: Starred, your lists greyed, a word about Pro');
     await done(p);
   },
   // ISS transits (Pro): an ISS-like orbit that crosses the Moon over Balzheim at 20:47:20 local time on 17 Oct 2026
@@ -1995,7 +2098,7 @@ const TESTS = {
     await ev(p, () => closeSheet('searchSheet')); await wait(p, 400);
     // the observing list, the menu and its screens, Quick settings → All settings
     await ev(p, () => { obs.list = ['M13', 'M31'].map(id => ({ id, name: id, added: 1 })); saveObs(); listTab.v = 'todo'; });
-    await p.tap('#fabList'); await wait(p, 400); await p.tap('[data-ltab="starred"]'); await wait(p, 200); await p.tap('[data-ltab="todo"]'); await wait(p, 200);
+    await p.tap('#fabList'); await wait(p, 400); await p.tap('[data-ltab="lists"]'); await wait(p, 200); await p.tap('[data-ltab="todo"]'); await wait(p, 200);
     await p.tap('#listBody .orow .oinfo'); await wait(p, 300); await p.tap('#infoBack'); await wait(p, 300);
     ok(await shown() === 'listSheet' && await ev(p, () => listTab.v === 'todo'), 'list → details → ←: the list in its tab');
     await ev(p, () => closeSheet('listSheet')); await wait(p, 400);
@@ -2047,7 +2150,7 @@ const TESTS = {
 
 // Shards for running in parallel (test/ui-par.cjs): --shard=i/n takes about 1/n of the time, by the seconds each test
 // took (tests not listed count 5 s); the longest go first so that the shards end together.
-const SECONDS = { live: 28, horizon: 21, transits: 14, visible: 10, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
+const SECONDS = { live: 28, lists: 14, horizon: 21, transits: 14, visible: 10, navstack: 20, sync: 17, instruments: 17, sky: 14, logbook: 12, navigation: 12, livecam: 11, centre: 10, rowacts: 10,
   sound: 10, photo: 10, compassflip: 10, logstats: 9, milkyway: 9, sites: 9, programs: 8, assistant: 8, proapp: 8, diagnostics: 7, panels: 7, camera: 6 };
 function shardOf(names, i, n) {
   const load = Array(n).fill(0), pick = Array.from({ length: n }, () => []);

@@ -11,12 +11,13 @@
 //  - schema major: a real break. An older app that sees a newer major stops writing and asks for an update; on its own
 //    device it keeps working.
 //  - Missing fields always mean their default: an entry without a change time "u" counts as 0 (older than any change).
-//  - Backups keep their old top-level shape (list, starred, log, settings), so older app versions can still import them.
+//  - Backups keep their old top-level shape (list, starred, log, settings), so older app versions can still import them;
+//    your own lists (lists, items) are extra keys that older versions skip.
 const ZSync = (() => {
-  const SCHEMA = { major: 1, minor: 2 };   // 1.1: instruments instead of one telescope; 1.2: named locations (sites) instead of one place
+  const SCHEMA = { major: 1, minor: 3 };   // 1.1: instruments instead of one telescope; 1.2: named locations (sites) instead of one place; 1.3: your own lists
   const ENV_V = 1;                // envelope: [version][compression][12 bytes IV][AES-GCM ciphertext]
   const OBS_V = 2;                // local lists: 1 = no change times, 2 = change times "u" and deletion marks "del"
-  const BACKUP_V = 4;             // backup file: 3 = lists and settings, 4 = adds change times, deletion marks and setting times
+  const BACKUP_V = 5;             // backup file: 3 = lists and settings, 4 = adds change times, deletion marks and setting times, 5 = your own lists
   // Settings that travel between devices (paths into the settings). Everything else belongs to the device: which
   // instrument it uses and its selected eyepiece, the eyepiece point and pointing (they depend on how the phone sits on
   // the telescope), camera and field of view, compass correction, red light, display and layout.
@@ -33,13 +34,17 @@ const ZSync = (() => {
   // of two devices keeps both, one changed on both devices takes the newer change ("u"), one deleted on one device goes unless the other
   // device changed it since
   const IDSETS = ["instruments", "sites"];
-  const KINDS = { list: x => "l:" + x.id, starred: x => "s:" + x.id, log: x => "g:" + x.uid };
-  const KNOWN = new Set(["app", "schema", "list", "starred", "log", "del", "settings", "devices"]);
+  // Your own lists (1.3): a list is a record in "lists" ({id, name, added}), each object in it a record in "items"
+  // ({id: the object, list: the list's id, name, added}). One record per object and list, so two devices that add to,
+  // move between or rename lists merge record by record; renaming changes only the list record.
+  const KINDS = { list: x => "l:" + x.id, starred: x => "s:" + x.id, log: x => "g:" + x.uid, lists: x => "L:" + x.id, items: x => "i:" + x.list + "/" + x.id };
+  const OBS_KEYS = Object.keys(KINDS);
+  const KNOWN = new Set(["app", "schema", "list", "starred", "log", "lists", "items", "del", "settings", "devices"]);
 
   // JSON with sorted keys: equal data gives an equal string, whatever the order the fields were written in
   const stable = v => JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.keys(x).sort().reduce((o, key) => (o[key] = x[key], o), {}) : x);
   const body = r => { const { u, ...rest } = r; return stable(rest); };
-  const valid = (kind, r) => r && typeof r === "object" && (kind === "log" ? r.uid && r.obj && r.t : r.id);
+  const valid = (kind, r) => r && typeof r === "object" && (kind === "log" ? r.uid && r.obj && r.t : kind === "items" ? r.id && r.list : r.id);
   const getP = (o, p) => p.split(".").reduce((x, k) => x == null ? undefined : x[k], o);
   const setP = (o, p, v) => { const ks = p.split("."), last = ks.pop(); let x = o; ks.forEach(k => { if (!x[k] || typeof x[k] !== "object") x[k] = {}; x = x[k]; }); x[last] = v; };
   const clone = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
@@ -47,7 +52,7 @@ const ZSync = (() => {
   /* ---------- local lists: migration, change times, deletion marks ---------- */
   function migrateObs(obs) {
     if (!obs || typeof obs !== "object") obs = {};
-    ["list", "starred", "log"].forEach(k => { if (!Array.isArray(obs[k])) obs[k] = []; });
+    OBS_KEYS.forEach(k => { if (!Array.isArray(obs[k])) obs[k] = []; });
     if (!obs.del || typeof obs.del !== "object") obs.del = {};
     if (!(obs.v >= OBS_V)) obs.v = OBS_V;     // nothing to rewrite: entries without "u" simply count as 0
     return obs;
@@ -85,7 +90,7 @@ const ZSync = (() => {
     const v = {}, t = {};
     SETTINGS.forEach(p => { const x = getP(cfg, p); if (x !== undefined) { v[p] = clone(x); t[p] = (cfg.syncT && cfg.syncT[p]) || 0; } });
     return { app: "Zenigo", schema: { ...SCHEMA }, list: clone(obs.list), starred: clone(obs.starred), log: clone(obs.log),
-      del: { ...obs.del }, settings: { v, t }, devices: clone(devices || {}) };
+      lists: clone(obs.lists || []), items: clone(obs.items || []), del: { ...obs.del }, settings: { v, t }, devices: clone(devices || {}) };
   }
   const newer = s => !!s && s.major > SCHEMA.major;
   const pick = (a, b, ta, tb) => ta !== tb ? (ta > tb ? a : b) : stable(a) >= stable(b) ? a : b;   // same time: the same choice on every device
@@ -215,7 +220,7 @@ const ZSync = (() => {
   }
   // Put a merged copy into the local lists and settings. Returns whether any synced setting changed.
   function apply(payload, obs, cfg) {
-    ["list", "starred", "log"].forEach(k => { obs[k] = clone(payload[k] || []); });
+    OBS_KEYS.forEach(k => { obs[k] = clone(payload[k] || []); });
     obs.del = { ...(payload.del || {}) };
     let changed = false;
     const s = payload.settings || { v: {}, t: {} };
@@ -229,18 +234,19 @@ const ZSync = (() => {
   }
   const same = (a, b) => stable(a) === stable(b);
 
-  /* ---------- backups: every version in, version 4 out ---------- */
+  /* ---------- backups: every version in, version 5 out ---------- */
   function makeBackup(obs, cfg, all) {
     const d = { app: "Zenigo", version: BACKUP_V, kind: all ? "all" : "lists", exportedAt: new Date().toISOString(),
-      list: obs.list, starred: obs.starred, log: obs.log, del: obs.del };
+      list: obs.list, starred: obs.starred, log: obs.log, lists: obs.lists || [], items: obs.items || [], del: obs.del };
     if (all) d.settings = cfg;
     return d;
   }
-  // A backup file (version 1 to 4, or newer: unknown fields are ignored) as a copy for merge(); null if it isn't one.
+  // A backup file (version 1 to 5, or newer: unknown fields are ignored) as a copy for merge(); null if it isn't one.
   function readBackup(d) {
     if (!d || typeof d !== "object" || (!Array.isArray(d.log) && !d.settings)) return null;
     const p = { app: "Zenigo", schema: { ...SCHEMA }, list: Array.isArray(d.list) ? d.list : [], starred: Array.isArray(d.starred) ? d.starred : [],
-      log: Array.isArray(d.log) ? d.log : [], del: d.del && typeof d.del === "object" ? d.del : {}, settings: { v: {}, t: {} }, devices: {} };
+      log: Array.isArray(d.log) ? d.log : [], lists: Array.isArray(d.lists) ? d.lists : [], items: Array.isArray(d.items) ? d.items : [],
+      del: d.del && typeof d.del === "object" ? d.del : {}, settings: { v: {}, t: {} }, devices: {} };
     return p;
   }
 

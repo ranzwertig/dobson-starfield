@@ -232,6 +232,7 @@ const SHOTS = {
   },
   async list() {
     const p = await page();
+    await extReady(p);
     await plan(p, ['M57', 'M27', 'M31', 'NGC 869', 'M15', 'M2', 'Saturn', 'M33'], { listOrder: 'route' });
     await ev(p, () => $('fabList').click());
     await snap(p, 'list', [780, 390]);
@@ -411,6 +412,28 @@ const SHOTS = {
     await ev(p, () => { cfg.fabLabels = false; save(); syncSettings(); selectTarget('Moon', true); zoom.z = 16; lastSig = []; hint(null); });
     await wait(p, 900);
     await snap(p, 'pro-transit-countdown', [780, 390]);
+    await p.context().close();
+  },
+  // your own lists: the Lists tab, and one list in its panel
+  async prolists() {
+    const p = await page();
+    await seedLog(p);
+    await ev(p, () => {
+      obs.starred = ['M1', 'M74', 'NGC 7331', 'M77', 'NGC 891', 'M76', 'NGC 253', 'M33', 'NGC 2392'].filter(id => targetById(id)).map(id => ({ id, name: targetById(id).name, added: 1 }));
+      obs.lists = []; obs.items = [];
+      const mk = (name, ids) => { const l = listCreate(name); ids.forEach(id => targetById(id) && listAddObj(l.id, { id, name: targetById(id).name })); return l; };
+      mk('Autumn galaxies', ['M31', 'M32', 'M110', 'M33', 'M74', 'M77', 'NGC 891', 'NGC 7331', 'NGC 253', 'NGC 7814', 'M81', 'M82']);
+      mk('Club night 7 Nov', ['M31', 'M57', 'M27', 'M13', 'M15', 'NGC 869', 'NGC 884', 'Jupiter', 'Saturn', 'M45']);
+      mk('With the kids', ['Moon', 'Jupiter', 'Saturn', 'M45', 'M31', 'NGC 869', 'M57']);
+      mk('Spring galaxies', ['M51', 'M101', 'M104', 'M106', 'M64', 'M63', 'M94', 'M65', 'M66', 'NGC 4565', 'NGC 3628', 'M49', 'M87', 'M84', 'M86']);
+      obs.lists.forEach(l => { l.added = Date.now() - 20 * 864e5; }); obs.items.forEach(x => { x.added = Date.now() - 20 * 864e5; });
+      obs.list = []; saveObs(); listTab.v = 'lists'; renderList(); openSheet('listSheet');
+    });
+    await wait(p, 700);
+    await snap(p, 'pro-lists', [780, 390]);
+    await ev(p, () => { hint(null); openColl(obs.lists.find(l => l.name === 'Autumn galaxies').id); });
+    await wait(p, 700);
+    await snap(p, 'pro-list', [780, 390]);
     await p.context().close();
   },
   // Visible again: M8 at the end of October (and the time panel at its next visible night)

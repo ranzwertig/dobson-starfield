@@ -394,6 +394,30 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 .pghead .pgn small { font-size: 14px; color: var(--muted); }
 .pgtabs { margin: 6px 0 8px; }
 .pgacts { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+/* your own lists: cards like the programmes, the list panel, the sheet to save, move or copy to a list */
+.lcard b { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lcard b svg { width: 17px; height: 17px; flex: none; color: var(--accent); fill: currentColor; }
+.ihead .tlink { min-height: 36px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: 600 15px var(--font-ui); cursor: pointer; }
+.ihead .tlink[hidden] { display: none; }
+.orow.osel { grid-template-columns: auto 1fr; align-items: center; cursor: pointer; }
+.orow.osel input { width: 22px; height: 22px; margin: 0 4px 0 10px; accent-color: var(--accent); }
+.orow.osel.on { background: rgba(240,168,69,.07); }
+.oselbar { display: flex; gap: 12px; padding: 0 8px 8px; }
+.oselbar .lnk { background: none; border: 0; padding: 6px 0; color: var(--accent); font: 600 14.5px var(--font-ui); }
+#collSelBar .btn:disabled { opacity: .45; }
+.lsbody { display: grid; gap: 10px; }
+.lsrows { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.lsrow { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 12px; border-top: 1px solid var(--line); cursor: pointer; }
+.lsrow:first-child { border-top: 0; }
+.lsrow input[type=checkbox], .lsrow input[type=radio] { width: 20px; height: 20px; flex: none; margin: 0; accent-color: var(--accent); }
+.lsrow > span { flex: 1; display: grid; min-width: 0; }
+.lsrow b { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lsrow small { color: var(--muted); font-size: 13px; }
+.lsrow.off { opacity: .45; cursor: default; }
+.lsrow input[type=text] { flex: 1; min-width: 0; height: 40px; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--fg); font: 15px var(--font-ui); }
+.lsbody > .btn { justify-content: center; padding-block: 12px; }
+.lsbody .lsops { display: grid; gap: 8px; }
+.lsbody .lsops .btn { justify-content: flex-start; }
 .lgrp { display: flex; justify-content: space-between; gap: 8px; padding: 12px 4px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .lrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) 22px; gap: 2px 10px; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 9px 4px; cursor: pointer; }
 .lrow:hover { background: var(--raise); }
@@ -661,7 +685,8 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-text
 }
 .sheet.open { background: rgba(0,0,0,.5); }
 /* questions and offers above the panels */
-#confirmSheet, #sunSheet, #permSheet, #proSheet { z-index: 30; }
+#confirmSheet, #sunSheet, #permSheet, #proSheet, #lsSheet { z-index: 30; }
+#proSheet, #confirmSheet { z-index: 31; }
 /* one screen for another in a panel: no sliding, the new content comes in from the side (← from the other side) */
 .sheet.nav-instant, .sheet.nav-instant .inner { transition: none !important; }
 @keyframes navFwd { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -1314,7 +1339,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 
 <div class="sheet" id="infoSheet" hidden>
   <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-    <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="infoTitle"><button class="iconbtn" id="infoBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="infoName" style="flex:1">–</span> <span class="ihead"><button class="ostar" id="infoLists" aria-pressed="false" aria-label="Save to a list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg></button><button class="ostar" id="infoStar" aria-pressed="false" aria-label="Star: want to see it some day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="sbody">
     <div class="info-sub" id="infoSub"></div>
     <p class="warn" id="infoWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope. It causes instant, permanent eye damage.</p>
@@ -1484,7 +1509,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
 
 <div class="sheet" id="targetSheet" hidden>
   <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="tgtTitle">
-    <div class="grab"><h2 id="tgtTitle"><button class="iconbtn" id="tgtBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1"><small class="tkick">Current target</small><span id="tgtName"></span></span> <span class="ihead"><button class="ostar" id="tgtStar" aria-pressed="false"></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="grab"><h2 id="tgtTitle"><button class="iconbtn" id="tgtBack" hidden aria-label="Back to the list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span style="flex:1"><small class="tkick">Current target</small><span id="tgtName"></span></span> <span class="ihead"><button class="ostar" id="tgtLists" aria-pressed="false" aria-label="Save to a list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg></button><button class="ostar" id="tgtStar" aria-pressed="false"></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
     <div class="sbody">
     <div class="info-sub" id="tgtSub"></div>
     <p class="warn" id="tgtWarn" hidden>Never look at the Sun through the telescope or finder without a certified solar filter covering the <b>front</b> of the telescope.</p>
@@ -1513,12 +1538,36 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
     <div class="grab"><h2 id="listTitle"><span>Observing list</span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
     <div class="sbody">
     <p class="note" id="listSub" style="margin-top:-8px"></p>
-    <div class="segtabs" id="listTabs" role="tablist" aria-label="Lists"><button class="chip" role="tab" data-ltab="todo"></button><button class="chip" role="tab" data-ltab="seen"></button><button class="chip" role="tab" data-ltab="starred"></button></div>
+    <div class="segtabs" id="listTabs" role="tablist" aria-label="Lists"><button class="chip" role="tab" data-ltab="todo"></button><button class="chip" role="tab" data-ltab="seen"></button><button class="chip" role="tab" data-ltab="lists"></button></div>
     <div class="olist" id="listBody"></div>
     </div>
     <div class="lbar bar"><button class="btn primary" id="listNext"></button><button class="btn" id="listAdd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
   </div>
 </div>
+
+<div class="sheet tall" id="collSheet" hidden>
+  <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="collTitle">
+    <div class="grab"><h2 id="collTitle"><span id="collName" style="flex:1"></span> <span class="ihead"><button class="tlink" id="collSel">Select</button><button class="iconbtn" id="collMore" aria-label="Rename, duplicate, export or delete this list"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg></button><button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span></h2></div>
+    <div class="sbody">
+    <div class="olist" id="collBody"></div>
+    </div>
+    <div class="lbar bar" id="collBar"><button class="btn primary" id="collPlan"></button><button class="btn" id="collAdd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add</button></div>
+    <div class="actions iconbar bar" id="collSelBar" hidden>
+      <button class="btn" id="collMove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12M12 7l5 5-5 5"/><path d="M20 5v14"/></svg><span>Move to …</span></button>
+      <button class="btn" id="collCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg><span>Copy to …</span></button>
+      <button class="btn" id="collPlanSel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h5"/><path d="M3.5 6l1.2 1.2L7 4.8M3.5 12l1.2 1.2L7 10.8"/><path d="M19 15.5v5M16.5 18h5"/></svg><span>Plan tonight</span></button>
+      <button class="btn danger" id="collRemove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg><span>Remove</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="lsSheet" hidden>
+  <div class="inner" role="dialog" aria-modal="true" aria-labelledby="lsTitle">
+    <div class="grab"><h2 id="lsTitle"><span id="lsTitleTxt"></span> <button class="iconbtn" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2></div>
+    <div id="lsBody" class="lsbody"></div>
+  </div>
+</div>
+<input type="file" id="listImport" accept=".csv,.txt,.tsv,text/csv,text/plain" hidden>
 
 <div class="sheet" id="seenSheet" hidden>
   <div class="inner split" role="dialog" aria-modal="true" aria-labelledby="seenTitle">
@@ -1832,7 +1881,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
     <fieldset data-stab="sync" id="syncBox" hidden>
       <legend>Sync between devices</legend>
       <div id="syncOff">
-        <p class="note">Keep the observing list, starred objects, logbook and settings (instruments with their eyepieces, location, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
+        <p class="note">Keep the observing list, Starred and your own lists, the logbook and settings (instruments with their eyepieces, location, map filter) the same on your phone, tablet and computer. End-to-end encrypted: only your devices can read them.</p>
         <div class="row"><button class="btn" id="syncSetup">Set up sync</button><button class="btn" id="syncJoin">Join with a code</button></div>
       </div>
       <div id="syncOn" hidden>
@@ -1882,7 +1931,7 @@ html.hzrec-on .stage > :not(video):not(#view), html.hzrec-on .app > :not(.stage)
       <div class="row"><button class="btn" id="bkLists">Back up lists</button><button class="btn" id="bkAll">Back up lists and settings</button></div>
       <div class="row"><button class="btn" id="bkImport">Restore from a backup</button><button class="btn" id="bkCsv">Logbook for a spreadsheet (CSV)</button></div>
       <input type="file" id="bkFile" accept=".json,application/json" hidden>
-      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, starred objects and logbook; <b>settings</b> include instruments and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm. Every backup also holds your Zenigo Pro licence key, so restoring brings Pro back.</p>
+      <p class="note">A backup is a file you keep, for example to move to a new phone. <b>Lists</b> are the observing list, Starred, your own lists and the logbook; <b>settings</b> include instruments and eyepieces, location, pointing, camera and display. Restoring adds the list entries that are missing and never deletes any; settings from the backup replace yours only if you confirm. Every backup also holds your Zenigo Pro licence key, so restoring brings Pro back.</p>
     </fieldset>
     <fieldset data-stab="scope" id="equipBox">
       <legend>Your instruments</legend>
@@ -2757,6 +2806,9 @@ function showResults(sync) {
   box.textContent = ""; box.removeAttribute("aria-busy");
   let list;
   const note = txt => { const g = document.createElement("div"); g.className = "grp"; g.textContent = txt; box.append(g); };
+  const addTo = st.addTo && listById(st.addTo);   // opened with Add in a list
+  if (addTo) note(addTo.id === STARRED ? "Adding to Starred: tap the star" : "Adding to " + addTo.name + ": tap the bookmark");
+  let saveAll = null;
   if (cats.length) {
     // categories: the text narrows them down further
     const nall = T => T._na ?? (T._na = norm(T.name + T.sub)), nid = T => T._ni ?? (T._ni = norm(T.id));
@@ -2784,7 +2836,7 @@ function showResults(sync) {
       all = job.finish(); if (catMemo.size > 40) catMemo.clear(); catMemo.set(key, all); searchJob = { key: null, job: null };
     }
     // in the order of the categories: where an object is right now only counts with "Good now"
-    list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt }));
+    list = all.slice(0, 150).map(T => ({ T, alt: horiz(T.vec(t), t).alt })); saveAll = all;
     note(all.length ? all.length + (all.length === 1 ? " object" : " objects") + (all.length > 150 ? ", the first 150" : "") : "Nothing matches all of these");
     if (pro.on && (cats.includes("free") || cats.includes("tonight"))) note(hzCur() ? "Free: not behind your horizon at " + curSite().name : !curSite() ? "No location chosen: free means above 10°" : "No horizon recorded at " + curSite().name + ": free means above 10° (record one in Settings › Location)");
   } else if (!q) {
@@ -2817,8 +2869,14 @@ function showResults(sync) {
     }
     const row = document.createElement("div"); row.className = "rrow";
     const make = () => ({ id: T.id, name: T.name });
-    row.append(b, rowActs(T.id, getObj, det, T.kind !== "sun" && toggleButton("plan", T.id, make), T.kind !== "sun" && toggleButton("star", T.id, make))); box.append(row);
+    row.append(b, rowActs(T.id, getObj, det, ...(T.kind === "sun" ? [] : addTo ? [listToggle(addTo.id, T.id, make)] : [toggleButton("plan", T.id, make), toggleButton("star", T.id, make)]))); box.append(row);
   });
+  // the results of the chips as a list of your own (Pro)
+  if (saveAll && saveAll.length && !addTo) {
+    const r = document.createElement("div"); r.className = "pgacts"; const b = document.createElement("button"); b.className = "btn"; b.id = "saveAsList";
+    b.textContent = "Save as a list (" + Math.min(500, saveAll.length) + ")"; if (!pro.on) b.insertAdjacentHTML("beforeend", '<i class="protag">Pro</i>');
+    const all = saveAll, cs = cats.slice(); b.onclick = () => saveResultsAsList(all, cs); r.append(b); box.append(r);
+  }
   const step = () => {
     if (gen !== searchBars.gen || $("searchSheet").hidden) return;   // a newer query or the sheet closed
     const t0 = performance.now();
@@ -5711,12 +5769,13 @@ function drawOverlay(dpr) {
 /* ---------------- Observing list and logbook ---------------- */
 // Stored on the device, separately from the settings, and shared with the sync group when sync is on:
 // { v, list: planned for tonight [{id, name, added, u}], starred: wishlist [{id, name, added, u}], log: [entry],
+//   lists: your own lists [{id, name, added, u}], items: what is in them [{id, list, name, added, u}],
 //   del: deletion marks {key: time}, exportedAt }
 // A log entry: { uid, obj, name, t (ISO), lat, lon, alt, ep, moon, result: easy|hard|miss, seeing, transp, note, u }
 // u is the time of the last change; it's set on save for whatever changed (ZSync.stampObs), so sync can tell which
 // copy is newer. Entries are kept whole: fields from newer app versions survive here.
 const OBS_KEY = "zenigo-obs";
-let obs = { list: [], starred: [], log: [], exportedAt: 0 };
+let obs = { list: [], starred: [], log: [], lists: [], items: [], exportedAt: 0 };
 try { const o = JSON.parse(localStorage.getItem(OBS_KEY) || "null"); if (o && Array.isArray(o.log)) obs = Object.assign(obs, o); } catch (e) {}
 obs = ZSync.migrateObs(obs);
 let obsSnap = ZSync.snapObs(obs);
@@ -5737,11 +5796,12 @@ function askPersist() {
 const pad2 = n => String(n).padStart(2, "0");
 // A night runs from noon to noon: entries after midnight belong to the evening before
 function nightKey(d) { const x = new Date(d.getTime() - 12 * 3600e3); return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate()); }
-const obsSets = { v: -1, list: new Set(), starred: new Set(), seen: new Set(), tonight: new Set() };
+const obsSets = { v: -1, list: new Set(), starred: new Set(), seen: new Set(), tonight: new Set(), items: new Set(), listed: new Set() };
 function sets() {
   const k = nightKey(new Date());
   if (obsSets.v === st.obsVer && obsSets.k === k) return obsSets;
   obsSets.v = st.obsVer; obsSets.k = k; obsSets.list = new Set(obs.list.map(x => x.id)); obsSets.starred = new Set(obs.starred.map(x => x.id));
+  obsSets.items = new Set(obs.items.map(x => x.list + "/" + x.id)); obsSets.listed = new Set(obs.items.map(x => x.id));
   obsSets.seen = new Set(obs.log.filter(e => e.result !== "miss").map(e => e.obj));
   obsSets.tonight = new Set(obs.log.filter(e => e.result !== "miss" && nightKey(new Date(e.t)) === k).map(e => e.obj));
   return obsSets;
@@ -5773,6 +5833,7 @@ const ICON = {
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>',
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5l5-2 7 2.5 5-2v13l-5 2-7-2.5-5 2z"/><path d="M8.5 4.5v13M15.5 7v13"/></svg>',
   target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg>',
+  bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>',
 };
 function togglePlan(o) {
   const i = obs.list.findIndex(x => x.id === o.id);
@@ -5787,7 +5848,7 @@ function togglePlan(o) {
 function toggleStar(o) {
   const i = obs.starred.findIndex(x => x.id === o.id);
   if (i >= 0) { obs.starred.splice(i, 1); hint(o.name + " unstarred.", 2500); }
-  else { obs.starred.push({ id: o.id, name: o.name, added: Date.now() }); hint(o.name + " starred: you want to see it some day. Plan it for a night from the Starred tab.", 4000); }
+  else { obs.starred.push({ id: o.id, name: o.name, added: Date.now() }); hint(o.name + " starred: you want to see it some day. Plan it for a night from Observing list › Lists › Starred.", 4000); }
   saveObs();
 }
 // A small toggle button: kind "star" (wishlist) or "plan" (tonight)
@@ -5799,7 +5860,7 @@ function toggleButton(kind, id, make) {
     b.setAttribute("aria-label", kind === "star" ? (on ? "Unstar" : "Star: want to see it some day") : (on ? "Remove from tonight’s plan" : "Plan for tonight"));
   };
   set();
-  b.onclick = e => { e.stopPropagation(); (kind === "star" ? toggleStar : togglePlan)(make()); set(); if (!$("listSheet").hidden) renderList(); };
+  b.onclick = e => { e.stopPropagation(); (kind === "star" ? toggleStar : togglePlan)(make()); set(); if (!$("listSheet").hidden) renderList(); if (!$("collSheet").hidden) renderColl(); };
   return b;
 }
 // The buttons under a list row (Find target, the observing list, Tonight, programmes), right-aligned: details, target,
@@ -5841,7 +5902,9 @@ function syncRowTarget(b) {
 }
 const syncRowTargets = () => document.querySelectorAll(".racts .otgt").forEach(syncRowTarget);
 function syncInfoObs(o) {
-  const can = o.kind !== "sat", star = sets().starred.has(o.id), plan = sets().list.has(o.id);
+  const can = o.kind !== "sat", star = sets().starred.has(o.id), plan = sets().list.has(o.id), inL = obs.lists.filter(l => sets().items.has(l.id + "/" + o.id));
+  $("infoLists").hidden = !can; $("infoLists").setAttribute("aria-pressed", String(!!inL.length));
+  $("infoLists").setAttribute("aria-label", inL.length ? "In " + inL.map(l => l.name).join(", ") + ": change the lists" : "Save to a list");
   $("infoStar").hidden = !can; $("infoStar").setAttribute("aria-pressed", String(star));
   $("infoStar").setAttribute("aria-label", star ? "Unstar" : "Star: want to see it some day");
   $("infoPlan").hidden = !can; $("infoPlan").setAttribute("aria-pressed", String(plan));
@@ -6388,8 +6451,8 @@ function fillTonight(box, p) {
   box.append(nightLegend(p));
   if (p.vis && !p.vis.never) fillVisAgain(box, p.T, p.vis);
 }
-// The list opens on the tab used last (remembered across starts)
-const listTab = { get v() { return ["todo", "seen", "starred"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } }, listState = { scroll: 0 };
+// The list opens on the tab used last (remembered across starts; "Starred" is a list under "Lists" now)
+const listTab = { get v() { return cfg.listTab === "starred" ? "lists" : ["todo", "seen", "lists"].includes(cfg.listTab) ? cfg.listTab : "todo"; }, set v(t) { cfg.listTab = t; save(); } };
 // Back from details or the target panel that were opened from the list: same tab, same place
 function todoItems() {
   const tn = nightPlan(), tonight = sets().tonight;
@@ -6464,65 +6527,70 @@ function syncHudNext() {
   b.hidden = !nx; if (nx) { b.textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; b.onclick = () => goNext(nx); }
 }
 function goNext(nx) { selectTarget(nx.x.id); hint("Next on your list: " + obsName(nx.x.id, nx.x.name) + ".", 3000); }
+// One row of the observing list or of a list: mode "todo" (planned), "seen" (seen tonight), "starred" or "coll" (the
+// list open in its panel, coll.id). The same buttons everywhere: details, target, map, plan and star with their state.
+function obsRow(id, name, p, mode, seenAt) {
+  const lst = mode === "starred" || mode === "coll";
+  const rec = (mode === "starred" ? obs.starred : mode === "coll" ? obs.items.filter(x => x.list === coll.id) : obs.list).find(x => x.id === id);
+  const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && mode !== "seen" ? " later" : ""); row.dataset.id = id;
+  const main = document.createElement("div"); main.className = "omain";
+  const b = document.createElement("b");
+  const tag = (txt, cls) => { const tg = document.createElement("span"); tg.className = "otag" + (cls ? " " + cls : ""); tg.textContent = txt; b.append(tg); };
+  // "New": added in the last minutes (not in a list that is new itself: everything in it would be)
+  const fresh = mode !== "coll" || Date.now() - ((listById(coll.id) || {}).added || 0) > 10 * 60e3;
+  if (id === cfg.target) tag("Target"); else if (fresh && isNew(rec)) tag("New", "new");
+  if (lst && sets().list.has(id)) tag("Planned", "new");
+  b.append(obsName(id, name));
+  const sm = document.createElement("small"), T = p && p.T || targetById(id);
+  const mrow = mesRow(id), nrow = !mrow && ngcRow(id);
+  const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : mrow ? mrow[5] : nrow ? nrow.type : "") : "";
+  const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
+  const lastSeen = lst && sets().seen.has(id) ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort().pop() : null;
+  sm.textContent = [kind, mag, mode === "seen" ? "seen " + seenAt : p ? p.sub : "", lastSeen ? "seen " + new Date(lastSeen).toLocaleDateString([], { day: "numeric", month: "short" }) : ""].filter(Boolean).join(" · ");
+  if (p && p.warn && mode !== "seen") { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
+  main.append(b, sm);
+  if (p && mode !== "seen") main.append(nightBar(p));
+  const det = () => { const o = objById(id); if (o) showInfo(o, true); };
+  const alt = document.createElement("span"); alt.className = "oalt";
+  if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
+  // the same buttons in every tab: plan and star with their state; seen tonight also ✕ (back to "Planned")
+  const mkO = () => ({ id, name: obsName(id, name) });
+  let tail = null;
+  if (mode === "seen") {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "Planned"
+    tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
+    tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name, tail);
+  }
+  row.append(main, alt, rowActs(id, () => objById(id), det, toggleButton("plan", id, mkO), toggleButton("star", id, mkO), tail));
+  return row;
+}
 function renderList() {
   const tn = nightPlan(), body = $("listBody"), k = nightKey(new Date()), fmt = d => d ? HM.format(d) : "–";
   $("listSub").textContent = (tn.dusk ? "Dark " + fmt(tn.dusk) + "–" + fmt(tn.dawn) : "No full darkness tonight") + " · Moon " + (tn.moonSet && tn.moonSet > new Date() ? "sets " + fmt(tn.moonSet) : tn.moonRise && tn.moonRise > new Date() ? "rises " + fmt(tn.moonRise) : Math.round(tn.illum * 100) + " %");
   const todo = todoItems(), seenT = obs.log.filter(e => nightKey(new Date(e.t)) === k && e.result !== "miss");
   const seenIds = [...new Set(seenT.map(e => e.obj))];
-  const counts = { todo: "Planned · " + todo.length, seen: "Seen tonight · " + seenIds.length, starred: "Starred · " + obs.starred.length };
+  const counts = { todo: "Planned · " + todo.length, seen: "Seen tonight · " + seenIds.length, lists: "Lists" };
   document.querySelectorAll("[data-ltab]").forEach(b => { const t = b.dataset.ltab; b.classList.toggle("sel", t === listTab.v); b.setAttribute("aria-selected", String(t === listTab.v)); b.textContent = counts[t]; });
   body.textContent = "";
   const note = html => { const p = document.createElement("p"); p.className = "note"; p.innerHTML = html; body.append(p); };
   // the current target on top, also when it isn't planned: tap opens its panel
   const CT = targetById(cfg.target);
-  const inTab = CT && (listTab.v === "todo" ? todo.some(r => r.x.id === CT.id) : listTab.v === "seen" ? seenIds.includes(CT.id) : obs.starred.some(x => x.id === CT.id));
+  const inTab = CT && (listTab.v === "todo" ? todo.some(r => r.x.id === CT.id) : listTab.v === "seen" ? seenIds.includes(CT.id) : true);
   if (CT && !inTab) {
     const c = document.createElement("button"); c.className = "otarget";
     c.innerHTML = '<span class="ot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke-linecap="round"/></svg><span><small>Current target</small><b></b></span></span><span class="oalt"></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>';
     c.querySelector("b").textContent = obsName(CT.id, CT.name);
     const tt = skyNow().t; c.querySelector(".oalt").textContent = Math.round(horiz(vecNow(CT), tt).alt) + "°";
-    c.onclick = () => { listState.scroll = scroller($("listSheet")).scrollTop; openTargetPanel(true); }; body.append(c);
+    c.onclick = () => openTargetPanel(true); body.append(c);
   }
-  // one row: mode "todo" (planned), "seen" (seen tonight) or "starred"
-  const mk = (id, name, p, mode, seenAt) => {
-    const rec = (mode === "starred" ? obs.starred : obs.list).find(x => x.id === id);
-    const row = document.createElement("div"); row.className = "orow" + (id === cfg.target ? " tgt" : "") + (p && p.later && mode !== "seen" ? " later" : ""); row.dataset.id = id;
-    const main = document.createElement("div"); main.className = "omain";
-    const b = document.createElement("b");
-    const tag = (txt, cls) => { const tg = document.createElement("span"); tg.className = "otag" + (cls ? " " + cls : ""); tg.textContent = txt; b.append(tg); };
-    if (id === cfg.target) tag("Target"); else if (isNew(rec)) tag("New", "new");
-    if (mode === "starred" && sets().list.has(id)) tag("Planned", "new");
-    b.append(obsName(id, name));
-    const sm = document.createElement("small"), T = p && p.T || targetById(id);
-    const mrow = mesRow(id), nrow = !mrow && ngcRow(id);
-    const kind = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : mrow ? mrow[5] : nrow ? nrow.type : "") : "";
-    const mag = T && T.mag != null ? (+T.mag).toFixed(1) + " mag" : "";
-    const lastSeen = mode === "starred" && sets().seen.has(id) ? obs.log.filter(e => e.obj === id && e.result !== "miss").map(e => e.t).sort().pop() : null;
-    sm.textContent = [kind, mag, mode === "seen" ? "seen " + seenAt : p ? p.sub : "", lastSeen ? "seen " + new Date(lastSeen).toLocaleDateString([], { day: "numeric", month: "short" }) : ""].filter(Boolean).join(" · ");
-    if (p && p.warn && mode !== "seen") { sm.append(" · "); const w = document.createElement("span"); w.className = "warn2"; w.textContent = p.warn; sm.append(w); }
-    main.append(b, sm);
-    if (p && mode !== "seen") main.append(nightBar(p));
-    const det = () => { const o = objById(id); if (o) { listState.scroll = scroller($("listSheet")).scrollTop; showInfo(o, true); } };
-    const alt = document.createElement("span"); alt.className = "oalt";
-    if (mode === "seen") alt.innerHTML = '<svg width="18" height="18" style="color:var(--ok)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-    else if (p) { if (p.later) { alt.classList.add("dim"); alt.textContent = "later"; } else alt.textContent = Math.round(p.altNow) + "°"; }
-    // the same buttons in every tab: plan and star with their state; seen tonight also ✕ (back to "Planned")
-    const mkO = () => ({ id, name: obsName(id, name) });
-    let tail = null;
-    if (mode === "seen") {   // seen tonight: remove = delete tonight's log entries for it, so it goes back to "Planned"
-      tail = document.createElement("button"); tail.className = "ostar"; tail.style.color = "var(--muted)"; tail.innerHTML = ICON.x;
-      tail.setAttribute("aria-label", "Remove " + obsName(id, name) + " from seen tonight"); tail.onclick = () => unseeTonight(id, name, tail);
-    }
-    row.append(main, alt, rowActs(id, () => objById(id), det, toggleButton("plan", id, mkO), toggleButton("star", id, mkO), tail));
-    return row;
-  };
+  const mk = obsRow;
   if (listTab.v === "todo") {
     if (!obs.list.length) {
       const e = document.createElement("div"); e.className = "oempty";
       e.innerHTML = '<p class="note">Nothing planned for tonight. Plan objects with <b>Plan</b> in their details or the list icon in Find target, plan from your starred objects, or start with the best objects for tonight.</p>';
       const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "Plan tonight’s best objects";
       b.onclick = () => { const n = addTonightsBest(); hint(n ? n + " objects planned." : "Nothing new to plan tonight.", 3000); renderList(); }; e.append(b);
-      if (obs.starred.length) { const s2 = document.createElement("button"); s2.className = "btn"; s2.textContent = "Plan from starred (" + obs.starred.length + ")"; s2.onclick = () => { listTab.v = "starred"; renderList(); }; e.append(s2); }
+      if (obs.starred.length) { const s2 = document.createElement("button"); s2.className = "btn"; s2.textContent = "Plan from starred (" + obs.starred.length + ")"; s2.onclick = () => openColl(STARRED); e.append(s2); }
       body.append(e);
     } else if (!todo.length) note("Everything planned is seen tonight. Well done!");
     if (todo.length > 2) {   // order: by when objects get low, or the shortest way for the telescope
@@ -6543,24 +6611,350 @@ function renderList() {
     if (!seenIds.length) note("Nothing logged tonight yet. Tap “Seen” in an object’s details.");
     seenIds.forEach(id => { const e = seenT.filter(x => x.obj === id).pop(); body.append(mk(id, e.name, null, "seen", HM.format(new Date(e.t)))); });
     if (seenIds.some(id => sets().list.has(id))) { const b = document.createElement("button"); b.className = "btn"; b.style.marginTop = "10px"; b.textContent = "Remove seen objects from the plan"; b.onclick = () => { obs.list = obs.list.filter(x => !seenIds.includes(x.id)); saveObs(); renderList(); }; body.append(b); }
-  } else {
-    if (!obs.starred.length) note("Star objects you want to see some day: the star in their details or in Find target. Then plan them for a night here with the list icon.");
-    // when visible: well placed tonight first (in the order they get low), then by the night they are visible again; or by name
-    const byName = cfg.starOrder === "name";
-    if (obs.starred.length > 2) {
-      const ob = document.createElement("div"); ob.className = "oorder";
-      ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the starred objects"><button role="radio" data-sorder="visible">When visible</button><button role="radio" data-sorder="name">By name</button></div>';
-      ob.querySelectorAll("[data-sorder]").forEach(b => { const on = (b.dataset.sorder === "name") === byName; b.setAttribute("aria-checked", on); b.classList.toggle("on", on);
-        b.onclick = () => { cfg.starOrder = b.dataset.sorder; save(); renderList(); }; });
-      body.append(ob);
-    }
-    const nm = id => obsName(id, (obs.starred.find(x => x.id === id) || {}).name || id);
-    obs.starred.map(x => ({ x, p: rowPlan(x.id, tn) }))
-      .sort(byName ? (a, b) => nm(a.x.id).localeCompare(nm(b.x.id), undefined, { numeric: true }) : (a, b) => (a.p ? a.p.sort : 2e15) - (b.p ? b.p.sort : 2e15))
-      .forEach(r => body.append(mk(r.x.id, r.x.name, r.p, "starred")));
-  }
+  } else renderListsTab(body, note);
+  document.querySelector("#listSheet .lbar").hidden = listTab.v === "lists";   // the lists have their own buttons
   const nx = nextItem(); $("listNext").hidden = !nx;
   if (nx) { $("listNext").textContent = "Next: " + (targetById(nx.x.id)?.name || nx.x.name) + " →"; $("listNext").onclick = () => { goNext(nx); if (sidePanels()) renderList(); else closeSheet("listSheet"); }; }
+}
+/* ---------------- Your own lists (Pro) ---------------- */
+// Starred is the first list: always there, free, filled with the star. Your own lists (a season, a club night, the
+// kids) are part of Zenigo Pro: obs.lists [{id, name, added, u}] and one record per object and list in obs.items
+// [{id, list, name, added, u}], so sync merges them record by record (ZSync). After Pro ended they stay: you can open,
+// plan, export, remove from and delete them; adding, copying or moving into them, renaming and new lists need Pro.
+// Lists live in the observing list (tab "Lists"); each opens in a panel of its own (collSheet), with a selection mode
+// to move, copy, plan or remove several objects at once. Names, rename, move and copy go through a small sheet above
+// the panel (lsSheet).
+const STARRED = "starred";
+const LISTS_PRO = "Your own lists are part of Zenigo Pro: collect objects for a season, a club night or the kids, plan the ones visible tonight in one tap, and move or copy them between lists.";
+const coll = { id: null, sel: null };   // the list in its panel; sel: the objects selected (a Set) in selection mode
+const byName = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+const ownLists = () => obs.lists.filter(l => l && l.id).slice().sort((a, b) => byName(a.name, b.name));
+function listById(id) { return id === STARRED ? { id: STARRED, name: "Starred", fixed: true } : obs.lists.find(l => l.id === id) || null; }
+function listEntries(id) { return id === STARRED ? obs.starred : obs.items.filter(x => x.list === id); }
+function listHas(id, oid) { return id === STARRED ? sets().starred.has(oid) : sets().items.has(id + "/" + oid); }
+// adds without saving (the caller saves once); false when it is there already
+function listAddObj(id, o) {
+  if (listEntries(id).some(x => x.id === o.id)) return false;
+  const r = { id: o.id, name: o.name || obsName(o.id), added: Date.now() };
+  if (id === STARRED) obs.starred.push(r); else obs.items.push({ ...r, list: id });
+  return true;
+}
+function listRemoveIds(id, ids) {
+  const s = new Set(ids);
+  if (id === STARRED) obs.starred = obs.starred.filter(x => !s.has(x.id)); else obs.items = obs.items.filter(x => x.list !== id || !s.has(x.id));
+}
+function uniqueListName(name, except) {
+  const base = String(name || "").replace(/\s+/g, " ").trim().slice(0, 60) || "My list";
+  const taken = n => n.toLowerCase() === "starred" || obs.lists.some(l => l.id !== except && String(l.name).toLowerCase() === n.toLowerCase());
+  let n = base, i = 2; while (taken(n)) n = base + " " + i++;
+  return n;
+}
+function listCreate(name) { const l = { id: "l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: uniqueListName(name), added: Date.now() }; obs.lists.push(l); return l; }
+function listDelete(id) { obs.lists = obs.lists.filter(l => l.id !== id); obs.items = obs.items.filter(x => x.list !== id); }
+// objects of a list that is gone (deleted on another device while one was added here): they go too
+function pruneItems() { const ids = new Set(obs.lists.map(l => l.id)), n = obs.items.length; obs.items = obs.items.filter(x => ids.has(x.list)); return obs.items.length !== n; }
+const listEdit = () => pro.on || proNeed(LISTS_PRO);   // false (and the Pro sheet) without Pro
+const nObj = n => n + (n === 1 ? " object" : " objects");
+// a list with tonight's plan for each object: visible tonight (some time in the dark, in reach), seen (ever, logbook)
+function planOf(id) { const T = targetById(id); return T && T.kind !== "sat" ? memoPlan(T) : null; }
+function listStats(id) {
+  const S = sets(), es = listEntries(id), rows = es.map(x => ({ x, p: planOf(x.id) }));
+  return { n: es.length, rows, vis: rows.filter(r => r.p && !r.p.vis), seen: es.filter(x => S.seen.has(x.id)).length };
+}
+// after a change from a sheet above: what is open shows it
+function listsChanged() {
+  if (!$("listSheet").hidden) renderList();
+  if (!$("collSheet").hidden) renderColl();
+  if (!$("infoSheet").hidden && st.picked) syncInfoObs(st.picked);
+  if (!$("targetSheet").hidden) syncTargetPanel(true);
+  if (!$("searchSheet").hidden) showResults();
+}
+
+// Observing list › Lists: Starred and your own lists as cards, then New list and Import
+function listCard(L) {
+  const s = listStats(L.id), c = document.createElement("button"); c.className = "pgcard lcard"; c.dataset.list = L.id;
+  c.innerHTML = '<b></b><span class="pgn"></span><span class="pgbar"><i></i></span><small class="pga"></small>';
+  const b = c.querySelector("b"); if (L.id === STARRED) b.innerHTML = ICON.star; b.append(L.name);
+  c.querySelector(".pgn").innerHTML = s.seen + "<small> / " + s.n + " seen</small>";
+  c.querySelector(".pgbar i").style.width = (s.n ? s.seen / s.n * 100 : 0).toFixed(1) + "%";
+  c.querySelector(".pga").textContent = !s.n ? (L.id === STARRED ? "Empty: star what you want to see some day" : "Empty: add objects with the bookmark in their details")
+    : nObj(s.n) + " · " + (s.vis.length ? s.vis.length + " visible tonight" : "none visible tonight");
+  c.setAttribute("aria-label", L.name + ": " + c.querySelector(".pga").textContent + ", " + s.seen + " seen");
+  c.onclick = () => openColl(L.id);
+  return c;
+}
+function renderListsTab(body, note) {
+  const box = document.createElement("div"); box.className = "pgcards";
+  [listById(STARRED), ...ownLists()].forEach(L => box.append(listCard(L)));
+  body.append(box);
+  const acts = document.createElement("div"); acts.className = "pgacts";
+  const btn = (txt, run) => { const b = document.createElement("button"); b.className = "btn"; b.textContent = txt; if (!pro.on) b.insertAdjacentHTML("beforeend", '<i class="protag">Pro</i>'); b.onclick = run; acts.append(b); return b; };
+  btn("New list", () => listEdit() && askListName("New list", "", "Create", name => { const l = listCreate(name); saveObs(); renderList(); openColl(l.id); })).id = "listNew";
+  btn("Import a list …", () => listEdit() && $("listImport").click()).id = "listImportBtn";
+  body.append(acts);
+  note(pro.on ? "Save an object to a list with the bookmark in its details, or a search from Find target with “Save as a list”. Starred is what you want to see some day: the star."
+    : "Starred is what you want to see some day: the star in an object’s details. " + LISTS_PRO);
+}
+
+// One list in its panel
+function openColl(id, how) { coll.id = id; coll.sel = null; renderColl(); openSheet("collSheet", how); scroller($("collSheet")).scrollTop = 0; }
+function renderColl() {
+  const L = listById(coll.id), body = $("collBody"); body.textContent = "";
+  const note = txt => { const p = document.createElement("p"); p.className = "note"; p.textContent = txt; body.append(p); return p; };
+  if (!L) { $("collName").textContent = "List"; ["collSel", "collMore", "collBar", "collSelBar"].forEach(i => $(i).hidden = true); note("This list was deleted (maybe on another device)."); return; }
+  const own = L.id !== STARRED, s = listStats(L.id), S = sets();
+  let sel = coll.sel;
+  if (sel) { const have = new Set(s.rows.map(r => r.x.id)); sel.forEach(id => { if (!have.has(id)) sel.delete(id); }); }
+  $("collName").textContent = sel ? sel.size + " selected" : L.name;
+  $("collSel").hidden = !s.n && !sel; $("collSel").textContent = sel ? "Done" : "Select";
+  $("collSel").setAttribute("aria-label", sel ? "Done selecting" : "Select objects to move, copy, plan or remove");
+  $("collMore").hidden = !!sel;
+  $("collBar").hidden = !!sel; $("collSelBar").hidden = !sel;
+  if (!sel) {
+    const head = document.createElement("div"); head.className = "pghead";
+    head.innerHTML = '<span class="pgn"></span><span class="pgbar"><i></i></span>';
+    head.querySelector(".pgn").innerHTML = s.seen + "<small> of " + nObj(s.n) + " seen · " + s.vis.length + " visible tonight</small>";
+    head.querySelector(".pgbar i").style.width = (s.n ? s.seen / s.n * 100 : 0).toFixed(1) + "%";
+    if (s.n) body.append(head);
+    if (!s.n) note(own ? "Empty. Add objects with Add below, the bookmark in an object’s details, or save a search from Find target as a list." : "Star objects you want to see some day: the star in their details or in Find target. Then plan them for a night here.");
+    else if (!own) note("What you want to see some day. Seeing an object takes its star away.");
+    if (own && !pro.on) note("Zenigo Pro has ended: this list stays, and you can plan, export and remove from it. Adding and renaming need Pro.");
+  } else {
+    const bar = document.createElement("div"); bar.className = "oselbar";
+    const all = document.createElement("button"); all.className = "lnk"; all.textContent = "Select all"; all.onclick = () => { s.rows.forEach(r => sel.add(r.x.id)); renderColl(); };
+    const none = document.createElement("button"); none.className = "lnk"; none.textContent = "Select none"; none.onclick = () => { sel.clear(); renderColl(); };
+    bar.append(all, none); body.append(bar);
+  }
+  // order: when visible (well placed tonight first, in the order they get low, then by the night they are visible again) or by name
+  const byNm = cfg.starOrder === "name", nm = x => obsName(x.id, x.name);
+  if (s.n > 2 && !sel) {
+    const ob = document.createElement("div"); ob.className = "oorder";
+    ob.innerHTML = '<span>Order</span><div class="seg" role="radiogroup" aria-label="Order of the list"><button role="radio" data-sorder="visible">When visible</button><button role="radio" data-sorder="name">By name</button></div>';
+    ob.querySelectorAll("[data-sorder]").forEach(b => { const on = (b.dataset.sorder === "name") === byNm; b.setAttribute("aria-checked", on); b.classList.toggle("on", on);
+      b.onclick = () => { cfg.starOrder = b.dataset.sorder; save(); renderColl(); }; });
+    body.append(ob);
+  }
+  const rows = s.rows.slice().sort(byNm ? (a, b) => byName(nm(a.x), nm(b.x)) : (a, b) => (a.p ? a.p.sort : 2e15) - (b.p ? b.p.sort : 2e15) || byName(nm(a.x), nm(b.x)));
+  const wrap = document.createElement("div"); wrap.className = "olist"; body.append(wrap);
+  rows.forEach(r => {
+    if (!sel) return wrap.append(obsRow(r.x.id, r.x.name, r.p, own ? "coll" : "starred"));
+    // selection: a checkbox per row, the whole row toggles it
+    const row = document.createElement("label"); row.className = "orow osel" + (sel.has(r.x.id) ? " on" : ""); row.dataset.id = r.x.id;
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = sel.has(r.x.id); cb.setAttribute("aria-label", "Select " + nm(r.x));
+    cb.onchange = () => { cb.checked ? sel.add(r.x.id) : sel.delete(r.x.id); row.classList.toggle("on", cb.checked); syncCollSel(); };
+    const main = document.createElement("div"); main.className = "omain";
+    const b = document.createElement("b"); b.textContent = nm(r.x);
+    const sm = document.createElement("small"); sm.textContent = r.p ? (r.p.vis && !r.p.vis.never ? "not visible tonight" : r.p.sub) : "";
+    main.append(b, sm); row.append(cb, main); wrap.append(row);
+  });
+  // plan what is visible tonight (not planned yet, not seen tonight)
+  const toPlan = s.vis.filter(r => !S.list.has(r.x.id) && !S.tonight.has(r.x.id));
+  $("collPlan").hidden = !toPlan.length;
+  $("collPlan").textContent = "Plan the " + (toPlan.length === 1 ? "one" : toPlan.length) + " visible tonight";
+  $("collPlan").onclick = () => {
+    toPlan.forEach(r => obs.list.push({ id: r.x.id, name: obsName(r.x.id, r.x.name), added: Date.now() })); saveObs();
+    hint(nObj(toPlan.length) + " of " + L.name + " planned for tonight.", 3000); renderColl();
+  };
+  $("collAdd").onclick = () => {
+    if (own && !listEdit()) return;
+    openSearch(); st.addTo = L.id; showResults();
+    hint(own ? "Tap the bookmark of an object to add it to " + L.name + "." : "Tap the star of an object to keep it for some day.", 4000);
+  };
+  if (sel) syncCollSel();
+}
+function syncCollSel() {
+  const sel = coll.sel; if (!sel) return;
+  $("collName").textContent = sel.size + " selected";
+  ["collMove", "collCopy", "collPlanSel", "collRemove"].forEach(i => { $(i).disabled = !sel.size; });
+}
+$("collSel").onclick = () => { coll.sel = coll.sel ? null : new Set(); renderColl(); };
+$("collMore").onclick = () => openListOps(coll.id);
+$("collMove").onclick = () => coll.sel && coll.sel.size && openMoveTo(coll.id, [...coll.sel], false);
+$("collCopy").onclick = () => coll.sel && coll.sel.size && openMoveTo(coll.id, [...coll.sel], true);
+$("collPlanSel").onclick = () => {
+  const ids = [...(coll.sel || [])], have = sets().list; let n = 0;
+  ids.forEach(id => { if (!have.has(id)) { const x = listEntries(coll.id).find(e => e.id === id); obs.list.push({ id, name: obsName(id, x && x.name), added: Date.now() }); n++; } });
+  if (n) saveObs();
+  hint(n ? nObj(n) + " planned for tonight." : "They are all planned already.", 3000);
+  coll.sel = null; renderColl();
+};
+$("collRemove").onclick = () => {
+  const ids = [...(coll.sel || [])], L = listById(coll.id); if (!ids.length || !L) return;
+  armDelete($("collRemove"), "Remove " + ids.length, (L.id === STARRED ? "Tap again to take the star away from " : "Tap again to remove ") + nObj(ids.length) + (L.id === STARRED ? "." : " from " + L.name + "."), () => {
+    listRemoveIds(L.id, ids); saveObs(); hint(nObj(ids.length) + " removed from " + L.name + ".", 3000); coll.sel = null; renderColl();
+  });
+};
+
+// The sheet above: one function per use
+function lsOpen(title) { $("lsTitleTxt").textContent = title; const b = $("lsBody"); b.textContent = ""; openSheet("lsSheet"); return b; }
+const lsEl = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+function lsRow(type, name, sub, on, off) {
+  const r = lsEl("label", "lsrow" + (off ? " off" : "")), i = lsEl("input"); i.type = type; i.name = "lsPick"; i.checked = !!on; i.disabled = !!off;
+  const t = lsEl("span"); t.append(lsEl("b", "", name)); if (sub) t.append(lsEl("small", "", sub)); r.append(i, t);
+  return { r, i };
+}
+// a name for a new list, or a new name
+function askListName(title, value, okLabel, done) {
+  const b = lsOpen(title), row = lsEl("div", "row"), inp = lsEl("input"); inp.type = "text"; inp.id = "lsName"; inp.maxLength = 60; inp.value = value; inp.placeholder = "Spring galaxies, Club night, With the kids …";
+  inp.setAttribute("aria-label", "Name of the list"); row.append(inp);
+  const ok = lsEl("button", "btn primary", okLabel); ok.id = "lsOk";
+  const go = () => { const v = inp.value.trim(); if (!v) { inp.focus(); return; } closeSheet("lsSheet"); done(v); };
+  ok.onclick = go; inp.onkeydown = e => { if (e.key === "Enter") go(); };
+  b.append(row, ok); setTimeout(() => { try { inp.focus(); inp.select(); } catch (e) {} }, 350);
+}
+// Details › bookmark: in which lists the object is. A tick adds or removes at once.
+function openSaveTo(o) {
+  const b = lsOpen("Save " + o.name), rows = lsEl("div", "lsrows"), mine = ownLists();
+  const add = L => {
+    const has = listHas(L.id, o.id), n = listEntries(L.id).length, { r, i } = lsRow("checkbox", L.name, L.id === STARRED ? "want to see it some day · " + n : nObj(n), has, L.id !== STARRED && !pro.on && !has);
+    r.dataset.list = L.id;
+    i.onchange = () => {
+      if (i.checked) { if (L.id !== STARRED && !listEdit()) { i.checked = false; return; } listAddObj(L.id, o); }
+      else listRemoveIds(L.id, [o.id]);
+      saveObs(); listsChanged();
+    };
+    rows.append(r);
+  };
+  [listById(STARRED), ...mine].forEach(add); b.append(rows);
+  if (pro.on) {
+    const nr = lsEl("div", "lsrow"), inp = lsEl("input"), ab = lsEl("button", "btn", "Add"); inp.type = "text"; inp.id = "lsNew"; inp.maxLength = 60; inp.placeholder = "A new list …"; inp.setAttribute("aria-label", "Name of a new list");
+    const go = () => { const v = inp.value.trim(); if (!v) return inp.focus(); const l = listCreate(v); listAddObj(l.id, o); saveObs(); listsChanged(); openSaveTo(o); hint(o.name + " saved to " + l.name + ".", 2500); };
+    ab.onclick = go; inp.onkeydown = e => { if (e.key === "Enter") go(); };
+    nr.style.cursor = "default"; nr.append(inp, ab); rows.append(nr);
+  } else {
+    const p = lsEl("p", "note", LISTS_PRO + " "), l = lsEl("button", "lnk", "About Zenigo Pro"); l.onclick = () => proNeed(LISTS_PRO); p.append(l); b.append(p);
+  }
+  const done = lsEl("button", "btn primary", "Done"); done.onclick = () => closeSheet("lsSheet"); b.append(done);
+}
+// Move or copy the selected objects to another list (or a new one). Objects already there stay there once.
+function openMoveTo(fromId, ids, copy) {
+  const from = listById(fromId); if (!from) return;
+  if (!pro.on && fromId === STARRED) return proNeed(LISTS_PRO);
+  const verb = copy ? "Copy" : "Move", b = lsOpen(verb + " " + nObj(ids.length) + " to …"), rows = lsEl("div", "lsrows");
+  let dest = null;
+  [listById(STARRED), ...ownLists()].forEach(L => {
+    const off = L.id === fromId || (!pro.on && L.id !== STARRED), { r, i } = lsRow("radio", L.name, L.id === fromId ? "this list" : nObj(listEntries(L.id).length), false, off);
+    r.dataset.list = L.id; i.onchange = () => { dest = L.id; }; rows.append(r);
+  });
+  const nr = lsEl("label", "lsrow" + (pro.on ? "" : " off")), ni = lsEl("input"), inp = lsEl("input"); ni.type = "radio"; ni.name = "lsPick"; ni.disabled = !pro.on;
+  inp.type = "text"; inp.id = "lsNew"; inp.maxLength = 60; inp.placeholder = "A new list …"; inp.disabled = !pro.on; inp.setAttribute("aria-label", "Name of a new list");
+  ni.onchange = () => { dest = "new"; }; inp.oninput = () => { if (inp.value.trim()) { ni.checked = true; dest = "new"; } };
+  nr.append(ni, inp); rows.append(nr); b.append(rows);
+  b.append(lsEl("p", "note", (copy ? "" : "Moved objects leave " + from.name + ". ") + "Objects already in the list stay there once." + (pro.on ? "" : " Your own lists are part of Zenigo Pro.")));
+  const ok = lsEl("button", "btn primary", verb + " " + nObj(ids.length)); ok.id = "lsOk";
+  ok.onclick = () => {
+    if (!dest) return hint("Choose a list.", 2500);
+    let to = dest === "new" ? null : listById(dest);
+    if (dest === "new") { if (!inp.value.trim()) return inp.focus(); if (!listEdit()) return; to = listCreate(inp.value); }
+    if (!to || (to.id !== STARRED && !listEdit())) return;
+    const src = listEntries(fromId); let n = 0;
+    ids.forEach(id => { const x = src.find(e => e.id === id); if (listAddObj(to.id, { id, name: x ? x.name : obsName(id) })) n++; });
+    if (!copy) listRemoveIds(fromId, ids);
+    saveObs(); closeSheet("lsSheet"); coll.sel = null; renderColl();
+    hint(nObj(ids.length) + (copy ? " copied" : " moved") + " to " + to.name + (n < ids.length ? " (" + (ids.length - n) + " already there)" : "") + ".", 3500);
+  };
+  b.append(ok);
+}
+// ⋯ of a list: rename, duplicate, export, delete (Starred: export)
+function openListOps(id) {
+  const L = listById(id); if (!L) return;
+  const b = lsOpen(L.name), ops = lsEl("div", "lsops"), own = id !== STARRED;
+  const op = (txt, run, cls) => { const x = lsEl("button", "btn" + (cls ? " " + cls : ""), txt); x.onclick = () => run(x); ops.append(x); return x; };
+  if (own) {
+    op("Rename …", () => { if (!listEdit()) return; askListName("Rename " + L.name, L.name, "Rename", v => { L.name = uniqueListName(v, L.id); saveObs(); renderColl(); hint("Renamed to " + L.name + ".", 2500); }); }).id = "lsRename";
+    op("Duplicate", () => {
+      if (!listEdit()) return;
+      const c = listCreate(L.name + " copy"); listEntries(id).forEach(x => listAddObj(c.id, x)); saveObs(); closeSheet("lsSheet");
+      coll.id = c.id; coll.sel = null; renderColl(); hint("Duplicated as " + c.name + ".", 3000);
+    }).id = "lsDup";
+  }
+  op("Export as CSV", () => { exportListCsv(id); closeSheet("lsSheet"); }).id = "lsExport";
+  if (own) op("Delete the list", x => armDelete(x, "Delete " + L.name, "The list and its " + nObj(listEntries(id).length) + " go, on all your devices. The objects themselves, your logbook and Starred stay.", () => {
+    listDelete(id); saveObs(); closeSheet("lsSheet"); hint(L.name + " deleted.", 3000);
+    if (navCurrent(navSideOf("collSheet")) === $("collSheet") && NAV[navSideOf("collSheet")].length) navBack(navSideOf("collSheet")); else { closeSheet("collSheet"); listTab.v = "lists"; renderList(); openSheet("listSheet"); }
+  }), "danger").id = "lsDelete";
+  b.append(ops);
+  if (own) b.append(lsEl("p", "note", nObj(listEntries(id).length) + " · created " + new Date(L.added || Date.now()).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" }) + ". Lists sync with your other devices and are in your backups."));
+}
+
+// CSV: one object per line; Zenigo reads the first column back (or the name), as do most planetarium programs
+const csvCell = v => { const x = v == null ? "" : String(v); return /[",\n;]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+function exportListCsv(id) {
+  const L = listById(id); if (!L) return;
+  const t = skyNow().t, lines = [["Object", "Name", "Type", "Magnitude", "RA", "Dec", "Constellation", "Seen"].join(",")];
+  listEntries(id).forEach(x => {
+    const T = targetById(x.id), m = mesRow(x.id), n = !m && ngcRow(x.id);
+    let ra = "", dec = "", con = "";
+    if (T) { try { const rd = Solver.v2radec(T.vec(t)); ra = fmtRA(rd.ra); dec = fmtDec(rd.dec); con = A.Constellation(rd.ra / 15, rd.dec).name; } catch (e) {} }
+    const nm = (obsName(x.id, x.name).split(" · ")[1]) || (T && T.name !== x.id ? T.name : "");
+    const type = T ? (T.kind === "planet" ? "Planet" : T.kind === "star" ? "Star" : m ? m[5] : n ? n.type : "") : "";
+    const seen = obs.log.filter(e => e.obj === x.id && e.result !== "miss").length;
+    lines.push([x.id, nm, type, T && T.mag != null ? (+T.mag).toFixed(1) : "", ra, dec, con, seen ? seen + "×" : ""].map(csvCell).join(","));
+  });
+  download("zenigo-" + L.name.replace(/[^\w-]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase() + "-" + stamp() + ".csv", "﻿" + lines.join("\r\n") + "\r\n", "text/csv;charset=utf-8");
+  hint(L.name + " exported: " + nObj(lines.length - 1) + ".", 3000);
+}
+// A name from a file or a search as an object: "M51", "m 51", "NGC4565", "IC 434", "Whirlpool", "Jupiter", "Vega"
+function commonName(T) { const m = mesRow(T.id); if (m) return m[4] || ""; const n = ngcRow(T.id); return n ? n.name || "" : ""; }
+function resolveObj(str) {
+  const s = String(str || "").trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, "").trim(); if (!s || s.length > 60) return null;
+  const m = s.match(/^(m|messier|ngc|ic)\s*-?\s*(\d{1,4})\s*([a-z]?)$/i);
+  if (m) { const k = m[1].toLowerCase(), id = k === "m" || k === "messier" ? "M" + +m[2] : (k === "ngc" ? "NGC " : "IC ") + +m[2] + m[3].toUpperCase(); if (targetById(id) || objById(id)) return id; }
+  const q = norm(s); if (!q) return null;
+  const ok = T => T.kind === "dso" || T.kind === "planet" || T.kind === "star";
+  let T = TARGETS.find(T => ok(T) && (norm(T.id) === q || norm(T.name) === q));
+  if (!T) T = TARGETS.find(T => T.kind === "dso" && norm(commonName(T)) === q);
+  if (!T && q.length >= 4) T = TARGETS.find(T => T.kind === "dso" && norm(commonName(T)).startsWith(q));
+  return T ? T.id : null;
+}
+// one name per line, or a CSV (the first column, or the first that is an object); a header line is skipped
+function parseListText(text) {
+  const ids = [], unknown = [], seen = new Set();
+  String(text || "").replace(/^﻿/, "").split(/\r?\n/).forEach((line, i) => {
+    if (!line.trim() || /^\s*#/.test(line)) return;
+    const cells = []; let cur = "", q = false;
+    for (const ch of line) { if (ch === '"') q = !q; else if (!q && (ch === "," || ch === ";" || ch === "\t")) { cells.push(cur); cur = ""; } else cur += ch; }
+    cells.push(cur);
+    const id = cells.slice(0, 3).map(resolveObj).find(Boolean) || resolveObj(line);
+    if (id) { if (!seen.has(id)) { seen.add(id); ids.push(id); } }
+    else if (i > 0 || cells.length < 2) unknown.push(cells[0].trim() || line.trim());
+  });
+  return { ids, unknown };
+}
+function importListText(text, name) {
+  const { ids, unknown } = parseListText(text);
+  if (!ids.length) { hint("No objects found in that file: one name per line (M51, NGC 4565, Whirlpool …) or a CSV with the names in the first column.", 6000); return null; }
+  const l = listCreate(name || "Imported list"); ids.forEach(id => listAddObj(l.id, { id, name: obsName(id) })); saveObs();
+  hint(nObj(ids.length) + " imported into " + l.name + "." + (unknown.length ? " Not found (" + unknown.length + "): " + unknown.slice(0, 6).join(", ") + (unknown.length > 6 ? " …" : "") + "." : ""), unknown.length ? 9000 : 4000);
+  return l;
+}
+$("listImport").onchange = async () => {
+  const f = $("listImport").files && $("listImport").files[0]; $("listImport").value = ""; if (!f) return;
+  if (!listEdit()) return;
+  if (f.size > 2e6) return hint("That file is too large for a list.", 4000);
+  const l = importListText(await f.text(), f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim());
+  if (l) { renderList(); openColl(l.id, $("listSheet")._shown ? "push" : undefined); }   // the file picker took a while: still on top of the list
+};
+// Find target: the results of the chips as a list (up to 500)
+function saveResultsAsList(all, cats) {
+  if (!listEdit()) return;
+  const name = cats.map(c => (CATS.find(x => x.id === c) || {}).label).filter(Boolean).join(", ");
+  const l = listCreate(name || "Search"); all.slice(0, 500).forEach(T => listAddObj(l.id, { id: T.id, name: T.name })); saveObs();
+  hint(nObj(Math.min(500, all.length)) + " saved as " + l.name + ". Rename it with ⋯.", 4000);
+  openColl(l.id);
+}
+// Find target opened with Add in a list: each result gets that list's bookmark (or the star) instead of plan and star
+function listToggle(lid, id, make) {
+  const b = document.createElement("button"); b.className = "ostar olist";
+  const set = () => { const L = listById(lid), on = listHas(lid, id); b.setAttribute("aria-pressed", String(on)); b.innerHTML = lid === STARRED ? ICON.star : ICON.bookmark; b.setAttribute("aria-label", (on ? "Remove from " : "Add to ") + (L ? L.name : "the list")); };
+  set();
+  b.onclick = e => {
+    e.stopPropagation(); const L = listById(lid), o = make(); if (!L) return;
+    if (listHas(lid, id)) { listRemoveIds(lid, [id]); hint(o.name + " removed from " + L.name + ".", 2500); }
+    else { if (lid !== STARRED && !listEdit()) return; listAddObj(lid, o); hint(o.name + " added to " + L.name + ".", 2500); }
+    saveObs(); set();
+  };
+  return b;
 }
 // Current target panel (Target button): where it is, how to get there, tonight's visibility, and what to do with it
 const tgtPanel = { at: 0 };
@@ -6607,6 +7001,8 @@ function syncTargetPanel(force) {
   if (stt.childElementCount) box.append(stt);
   // buttons
   const can = T.kind !== "sat", plan = S.list.has(T.id), star = S.starred.has(T.id);
+  const inL = obs.lists.filter(l => S.items.has(l.id + "/" + T.id));
+  $("tgtLists").hidden = !can; $("tgtLists").setAttribute("aria-pressed", String(!!inL.length)); $("tgtLists").setAttribute("aria-label", inL.length ? "In " + inL.map(l => l.name).join(", ") + ": change the lists" : "Save to a list");
   $("tgtStar").hidden = !can; $("tgtStar").innerHTML = ICON.star; $("tgtStar").setAttribute("aria-pressed", String(star)); $("tgtStar").setAttribute("aria-label", star ? "Unstar" : "Star: want to see it some day");
   $("tgtPlan").hidden = !can; $("tgtPlan").setAttribute("aria-pressed", String(plan)); $("tgtPlan").innerHTML = (plan ? ICON.planned : ICON.plan) + "<span>" + (plan ? "Planned" : "Plan") + "</span>";
   $("tgtPlan").setAttribute("aria-label", plan ? "Planned for tonight: remove from the plan" : "Plan for tonight");
@@ -6616,6 +7012,7 @@ function syncTargetPanel(force) {
   const nx = nextItem(); $("tgtNext").hidden = !nx;
   if (nx) { const nn = targetById(nx.x.id)?.name || nx.x.name; $("tgtNext").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg><span></span>'; $("tgtNext").querySelector("span").textContent = "Next: " + nn; $("tgtNext").setAttribute("aria-label", "Next on the plan: " + nn); }
   $("tgtStar").onclick = () => { toggleStar(o); syncTargetPanel(true); };
+  $("tgtLists").onclick = () => openSaveTo(o);
   $("tgtPlan").onclick = () => { togglePlan(o); syncTargetPanel(true); };
   $("tgtSeen").onclick = () => openSeen(o);
   $("tgtNext").onclick = () => { if (nx) { goNext(nx); syncTargetPanel(true); } };
@@ -6688,8 +7085,7 @@ $("fabList").onclick = () => { planCache.t = null; renderList(); openSheet("list
 // Newly added objects (last 10 minutes) are marked "New"; the newest one is scrolled into view
 const isNew = x => x && Date.now() - (x.added || 0) < 10 * 60e3;
 function revealNew() {
-  const np = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0], ns = obs.starred.filter(isNew).sort((a, b) => b.added - a.added)[0];
-  const newest = np && (!ns || np.added >= ns.added) ? np : ns; if (!newest) return;
+  const newest = obs.list.filter(isNew).sort((a, b) => b.added - a.added)[0]; if (!newest) return;
   // stays on the last used tab; scrolls to the new object when it is in this tab
   setTimeout(() => { const row = [...document.querySelectorAll("#listBody .orow")].find(r => r.dataset.id === newest.id); row && row.scrollIntoView({ block: "center", behavior: "smooth" }); }, 380);
 }
@@ -7431,8 +7827,11 @@ $("bkFile").onchange = async () => {
   (d.log || []).forEach(e => { if (e && e.uid && e.obj && e.t && !have.has(e.uid)) { obs.log.push(e); have.add(e.uid); n++; } });
   const lh = new Set(obs.list.map(x => x.id)); (d.list || []).forEach(x => { if (x && x.id && !lh.has(x.id)) { obs.list.push(x); lh.add(x.id); m++; } });
   const sh = new Set(obs.starred.map(x => x.id)); (d.starred || []).forEach(x => { if (x && x.id && !sh.has(x.id)) { obs.starred.push(x); sh.add(x.id); m++; } });
+  // your own lists (backup version 5): the lists that are missing and what is missing in them
+  const lh2 = new Set(obs.lists.map(l => l.id)); (Array.isArray(d.lists) ? d.lists : []).forEach(l => { if (l && l.id && l.name && !lh2.has(l.id)) { obs.lists.push(l); lh2.add(l.id); } });
+  const ih = new Set(obs.items.map(x => x.list + "/" + x.id)); (Array.isArray(d.items) ? d.items : []).forEach(x => { if (x && x.id && x.list && lh2.has(x.list) && !ih.has(x.list + "/" + x.id)) { obs.items.push(x); ih.add(x.list + "/" + x.id); m++; } });
   saveObs(); syncBackup(); if (!$("logSheet").hidden) renderLog();
-  const lists = (!n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " planned or starred object." : " planned or starred objects.")) + proMsg;
+  const lists = (!n && !m ? "No new list entries: everything in the backup is already here." : "Imported " + n + (n === 1 ? " logbook entry" : " logbook entries") + " and " + m + (m === 1 ? " object for your lists." : " objects for your lists.")) + proMsg;
   if (d.settings && typeof d.settings === "object") {
     const r = await askConfirm("Restore the settings too?", lists + " The backup also holds settings: instruments and eyepieces, location, pointing, camera and display. Restoring them replaces the current ones and restarts the app.", "Restore settings", "Keep my settings");
     if (r === true) {
@@ -7588,7 +7987,7 @@ function saveSyncS() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(syncS
 const SYNC_BASE = "zenigo-sync-base";
 function syncBase() { try { const b = JSON.parse(localStorage.getItem(SYNC_BASE) || "null"); return b && b.code === syncS.code ? b.data : null; } catch (e) { return null; } }
 function saveSyncBase(p) {
-  try { localStorage.setItem(SYNC_BASE, JSON.stringify({ code: syncS.code, data: { list: p.list, starred: p.starred, log: p.log, settings: { v: (p.settings || {}).v || {} } } })); }
+  try { localStorage.setItem(SYNC_BASE, JSON.stringify({ code: syncS.code, data: { list: p.list, starred: p.starred, log: p.log, lists: p.lists || [], items: p.items || [], settings: { v: (p.settings || {}).v || {} } } })); }
   catch (e) { try { localStorage.removeItem(SYNC_BASE); } catch (x) {} }   // storage full: sync works on without it
 }
 function deviceName() {
@@ -7641,7 +8040,10 @@ function syncLocal(base) {
 }
 function applySynced(m) {
   const changed = ZSync.apply(m, obs, cfg);
-  obsSnap = ZSync.snapObs(obs); saveObs(true);
+  obsSnap = ZSync.snapObs(obs);
+  // objects added here to a list that another device deleted: they go too (saved as a change, so the group learns it)
+  saveObs(!pruneItems());
+  if (!$("collSheet").hidden) renderColl();
   if (!$("logSheet").hidden) renderLog();
   if (!$("listSheet").hidden) renderList();
   if (changed) { setSnap = ZSync.snapSettings(cfg); try { localStorage.setItem("dobson-lotse", JSON.stringify(cfg)); } catch (e) {} afterSyncedSettings(); }
@@ -7754,7 +8156,7 @@ async function joinSync(code, fromLink) {
   if (syncS.code === code) { hint("This device already syncs with this group.", 3000); return true; }
   const iosSafari = fromLink && platform() === "ios" && !installedApp();
   const a = await askConfirm("Join this sync group?",
-    "The observing list, starred objects, logbook and telescope settings of this device will be shared with every device in the group. Only join a group of your own devices."
+    "The observing list, Starred and your own lists, the logbook and telescope settings of this device will be shared with every device in the group. Only join a group of your own devices."
     + (syncS.code ? " This device leaves the group it syncs with now." : "")
     + (iosSafari ? " This link opened Zenigo in Safari. If you use Zenigo from the Home Screen, cancel and scan the code in that app instead (Menu › Sync with other devices › Join with a code): it keeps its own data." : ""),
     "Join", "Cancel");
@@ -8382,6 +8784,7 @@ function refreshTimeViews() {
     const keep = id => { const sc = scroller($(id)); return sc ? sc.scrollTop : 0; }, back = (id, y) => { const sc = scroller($(id)); if (sc) sc.scrollTop = y; };
     if (!$("tonightSheet").hidden) { const y = keep("tonightSheet"); showTonight(); back("tonightSheet", y); }
     if (!$("listSheet").hidden) { const y = keep("listSheet"); renderList(); back("listSheet", y); }
+    if (!$("collSheet").hidden) { const y = keep("collSheet"); renderColl(); back("collSheet", y); }
     if (!$("progSheet").hidden) { const y = keep("progSheet"); renderProgs(); back("progSheet", y); }
     if (!$("infoSheet").hidden && st.picked) reshowInfo(st.picked);
     if (!$("targetSheet").hidden) syncTargetPanel(true);
@@ -8389,7 +8792,7 @@ function refreshTimeViews() {
 }
 const timeNow = () => setTimeOffset(0);
 // a strip at the top of the panels that show the sky at a time: which time, and back to now
-const TSTRIP = ["searchSheet", "infoSheet", "tonightSheet", "listSheet", "progSheet", "targetSheet", "transitSheet"].map(id => {
+const TSTRIP = ["searchSheet", "infoSheet", "tonightSheet", "listSheet", "collSheet", "progSheet", "targetSheet", "transitSheet"].map(id => {
   const g = $(id) && $(id).querySelector(".grab"); if (!g) return null;
   const d = document.createElement("div"); d.className = "tstrip"; d.hidden = true; d.setAttribute("role", "status");
   d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span></span><button class="btn primary">Now</button>';
@@ -9947,7 +10350,7 @@ const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matche
 // down or Esc on the first screen close the panel with its stack. Opened from the map, a map button or the other side's
 // panel: a new stack. Questions and offers (OVERLAY) open above the panel and leave it as it is. Phones and narrower
 // tablets have one panel; wide screens one on each side (LEFT), each with its own stack.
-const OVERLAY = new Set(["confirmSheet", "sunSheet", "permSheet", "proSheet"]);
+const OVERLAY = new Set(["confirmSheet", "sunSheet", "permSheet", "proSheet", "lsSheet"]);
 const NAV = { L: [], R: [], last: "R", resume: null, rt: 0 };
 const navSideOf = id => (bothPanels() ? sheetSide(id) : "R");
 let navTap = { sheet: null, t: 0 };   // the panel of the last tap (a click, also from the keyboard)
@@ -9957,6 +10360,7 @@ const navCurrent = side => SHEETS.find(x => x._shown && !OVERLAY.has(x.id) && na
 function screenTitle(id) {
   if (id === "menu") return "Menu";
   if (id === "infoSheet") return $("infoName").textContent || "Details";
+  if (id === "collSheet") return (listById(coll.id) || {}).name || "List";
   const h = $(id).querySelector(".grab h2"); if (!h) return "";
   return [...h.childNodes].filter(n => n.nodeType === 3 || (n.tagName !== "BUTTON" && !n.classList.contains("navback"))).map(n => n.textContent).join("").trim();
 }
@@ -9964,6 +10368,7 @@ function screenTitle(id) {
 const SCREEN = {
   searchSheet: { save: () => ({ q: $("q").value }), restore: x => { $("q").value = x.q; renderChips(); showResults(); } },
   listSheet: { restore: () => { renderList(); if (st.fromList) { st.fromList = false; revealNew(); return true; } } },
+  collSheet: { save: () => ({ id: coll.id }), restore: x => { coll.id = x.id; coll.sel = null; st.addTo = null; renderColl(); } },
   tonightSheet: { restore: () => showTonight() },
   transitSheet: { save: () => ({ e: TR.shown }), restore: x => { if (x.e) showTransit(x.e); } },
   progSheet: { restore: () => renderProgs() },
@@ -10211,7 +10616,7 @@ function askConfirm(title, text, okLabel, altLabel) {
 function closeSheet(id, final) {
   const sh = $(id); if (sh.hidden) return;
   if (!OVERLAY.has(id)) { const side = navSideOf(id); if (navCurrent(side) === sh) NAV[side] = []; }
-  if (id === "searchSheet") st.fromList = false;
+  if (id === "searchSheet") { st.fromList = false; st.addTo = null; }
   hideSheet(id); navSync();
 }
 // the element that scrolls: a body of its own (details: title and buttons stay put) or the whole panel
@@ -10433,6 +10838,7 @@ function showInfo(o, fromList) {
   };
   syncInfoObs(o);
   $("infoStar").onclick = () => { toggleStar(o); syncInfoObs(o); };
+  $("infoLists").onclick = () => openSaveTo(o);
   $("infoPlan").onclick = () => { togglePlan(o); syncInfoObs(o); };
   $("infoSeen").onclick = () => openSeen(o);
   $("infoTarget").onclick = () => {
@@ -10448,7 +10854,7 @@ function showInfo(o, fromList) {
 $("btnMenu").onclick = () => { renderReadout(); syncSettings(); syncWeatherLinks(); renderProgMenu(); openSheet("menu"); };
 $("btnSettings").onclick = () => { syncSettings(); listCameras(); openSheet("sheet"); };
 // the search field gets the focus right away (within the tap, so phones also open the keyboard)
-const openSearch = () => { $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); try { $("q").focus({ preventScroll: true }); } catch (e) {} };
+const openSearch = () => { st.addTo = null; $("q").value = ""; renderChips(); showResults(); openSheet("searchSheet"); try { $("q").focus({ preventScroll: true }); } catch (e) {} };
 $("fabSearch").onclick = openSearch;
 $("searchClear").onclick = () => { clearTarget(); if (!sidePanels()) closeSheet("searchSheet"); };
 $("fov").onchange = () => { const v = parseFloat($("fov").value); cfg.fov[fovKey()] = v > 1 ? v : null; save(); };
@@ -10610,12 +11016,12 @@ function fillComingUp(sec, el, esc) {
 // Details opened from Tonight: ← (or closing them) goes back to Tonight, at the same place
 const tonightState = { scroll: 0 };
 function infoFromTonight(o) { tonightState.scroll = scroller($("tonightSheet")).scrollTop; showInfo(o, "tonight"); }
-// Tonight › Coming back: Messier, your planned and starred objects and the planets (for your telescope) that can't be
+// Tonight › Coming back: Messier, your planned, starred and listed objects and the planets (for your telescope) that can't be
 // seen the night before the one shown and are visible again within four weeks, by date
 function fillComingBack(sec, el) {
   sec.append(el("h3", "", "Coming back"));
   const base = nightNoon(skyDate().getTime()), prev = addNights(base, -1), ids = new Set();
-  MESSIER.forEach(r => ids.add(r[0])); obs.list.forEach(x => ids.add(x.id)); obs.starred.forEach(x => ids.add(x.id));
+  MESSIER.forEach(r => ids.add(r[0])); obs.list.forEach(x => ids.add(x.id)); obs.starred.forEach(x => ids.add(x.id)); obs.items.forEach(x => ids.add(x.id));
   ["Mercury", "Venus", "Mars", "Jupiter", "Saturn"].forEach(id => ids.add(id));
   const D = aperture(), rows = [];
   ids.forEach(id => {
@@ -10627,8 +11033,8 @@ function fillComingBack(sec, el) {
   });
   rows.sort((a, b) => a.f.s - b.f.s);
   if (!rows.length) return;
-  sec.append(el("p", "tn-note", "Visible again in the next four weeks: Messier, your planned and starred objects and the planets, for your telescope."));
-  const mine = new Set([...obs.list, ...obs.starred].map(x => x.id));
+  sec.append(el("p", "tn-note", "Visible again in the next four weeks: Messier, the objects in your lists and the planets, for your telescope."));
+  const mine = new Set([...obs.list, ...obs.starred, ...obs.items].map(x => x.id));
   rows.slice(0, 10).forEach(({ T, f }) => {
     const when = f.n === 0 ? "this night" : visShort(f.s);
     const b = el("div", "tn-row", "<b>" + H(obsName(T.id, T.name)) + '</b><span class="tn-alt">' + H(when) + "</span><small>" + H([VIS_PARTS[visPart(f)] + (f.alt < 20 ? ", low" : ""), mine.has(T.id) ? "in your list" : ""].filter(Boolean).join(" · ")) + "</small>");

@@ -6,14 +6,14 @@
   "features": [
     {
       "title": "Sync between devices",
-      "text": "Your observing list, logbook and telescope settings on your phone, tablet and computer, end-to-end encrypted.",
+      "text": "Your observing list, your lists, logbook and telescope settings on your phone, tablet and computer, end-to-end encrypted.",
       "href": "/features/#sync",
       "show": {
         "id": "sync",
         "kicker": "Sync",
         "heading": "Plan on the sofa, observe in the garden",
         "text": [
-          "Pick targets on the tablet in the afternoon, and they are on the phone at the telescope in the evening. The observing list, starred objects, the logbook and the telescope settings stay the same on your phone, tablet and computer."
+          "Pick targets on the tablet in the afternoon, and they are on the phone at the telescope in the evening. The observing list, Starred and your own lists, the logbook and the telescope settings stay the same on your phone, tablet and computer."
         ],
         "points": [
           "End-to-end encrypted: the data is encrypted on the device with a sync code that never reaches the server.",
@@ -171,6 +171,36 @@
           {
             "img": "list",
             "alt": "The planned list in Short route order, with the night bars and the total way for the telescope."
+          }
+        ]
+      }
+    },
+    {
+      "title": "Your own lists",
+      "text": "As many lists as you like next to Starred, for a season, a club night or the kids: visible tonight first, planned in one tap, moved and copied between lists, imported and exported.",
+      "href": "/help/#own-lists",
+      "show": {
+        "id": "lists",
+        "kicker": "Your own lists",
+        "heading": "A list for every season, club night and child",
+        "text": [
+          "Starred stays your wish list, one tap on the star. Next to it, keep as many lists as you like: spring galaxies, the objects for the club night on Friday, the bright things for the kids. Each list knows what is visible tonight and plans it with one tap."
+        ],
+        "points": [
+          "The bookmark beside the star in an object’s details saves it to any of your lists, or to a new one.",
+          "Visible tonight first, then by the night each object comes back; your progress from the logbook.",
+          "Select several objects to move or copy them to another list, plan them or remove them.",
+          "Save a search from Find target as a list, import a text or CSV list, export one as CSV.",
+          "Synced object by object between your devices; after Pro ends your lists stay readable and plannable."
+        ],
+        "shots": [
+          {
+            "img": "pro-lists",
+            "alt": "The Lists tab of the observing list: Starred and four lists of your own with how many objects are visible tonight and how many you have seen."
+          },
+          {
+            "img": "pro-list",
+            "alt": "The list Autumn galaxies: progress, the objects visible tonight first with their night bars, and a button to plan the 12 visible tonight."
           }
         ]
       }

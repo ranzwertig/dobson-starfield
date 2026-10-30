@@ -160,7 +160,7 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
     const remote = Z.fromLocal(freshObs(), cfgOf()); remote.schema = { major: 1, minor: 1 };
     Object.assign(remote.settings.v, { lat: 52.5, lon: 13.4, loc: { src: "manual" }, sky: "city" }); remote.settings.t.lat = 99;
     const m = Z.merge(remote, Z.fromLocal(freshObs(), cfgOf()));
-    assert.equal(m.settings.v.lat, 52.5); assert.equal(m.settings.v.sky, "city"); assert.deepEqual(m.schema, { major: 1, minor: 2 });
+    assert.equal(m.settings.v.lat, 52.5); assert.equal(m.settings.v.sky, "city"); assert.deepEqual(m.schema, Z.SCHEMA);
     const c = cfgOf(); Z.apply(m, freshObs(), c);
     assert.equal(c.lat, 48.18); assert.equal(c.sky, undefined, "not applied: the locations carry the place now");
   });
@@ -208,14 +208,41 @@ const entry = (uid, obj, t, extra = {}) => ({ uid, obj, name: obj, t, result: "e
     }
     assert.equal(Z.readBackup({ foo: 1 }), null);
   });
-  await t("backups: version 4 keeps the old shape, so the import of older app versions still reads it", () => {
+  await t("backups: version 5 keeps the old shape, so the import of older app versions still reads it", () => {
     const o = freshObs(); o.log = [entry("a", "M31", "2025-01-01T20:00:00Z", { u: 3 })]; o.del = { "g:x": 2 };
+    o.lists = [{ id: "l1", name: "Spring galaxies", added: 1, u: 2 }]; o.items = [{ id: "M51", list: "l1", name: "M51", added: 1, u: 2 }];
     const d = JSON.parse(JSON.stringify(Z.makeBackup(o, cfgOf(), true)));
-    assert.equal(d.version, 4); assert.equal(d.app, "Zenigo");
+    assert.equal(d.version, 5); assert.equal(d.app, "Zenigo");
+    assert.equal(Z.readBackup(d).lists[0].name, "Spring galaxies"); assert.equal(Z.readBackup(d).items[0].list, "l1");
     // the import of version 3 apps: an array "log" or an object "settings"; entries need uid, obj and t; lists need id
     assert.ok(Array.isArray(d.log) && Array.isArray(d.list) && Array.isArray(d.starred) && typeof d.settings === "object");
     assert.ok(d.log.every(e => e.uid && e.obj && e.t));
     assert.deepEqual(Z.readBackup(d).del, { "g:x": 2 });
+  });
+  await t("own lists: added to, renamed and moved between on two devices, merged record by record", () => {
+    const A = freshObs(); A.lists = [{ id: "l1", name: "Spring", added: 1 }, { id: "l2", name: "Club night", added: 2 }];
+    A.items = [{ id: "M51", list: "l1", name: "M51", added: 1 }, { id: "M101", list: "l1", name: "M101", added: 1 }];
+    Z.stampObs(A, new Map(), 10);
+    const base = Z.fromLocal(A, cfgOf()), B = JSON.parse(JSON.stringify(A));
+    // A renames the list and moves M51 to the club night; B adds M104 to the first list
+    let sa = Z.snapObs(A); A.lists[0].name = "Spring galaxies"; A.items = A.items.filter(x => x.id !== "M51"); A.items.push({ id: "M51", list: "l2", name: "M51", added: 20 }); Z.stampObs(A, sa, 20);
+    let sb = Z.snapObs(B); B.items.push({ id: "M104", list: "l1", name: "M104", added: 21 }); Z.stampObs(B, sb, 21);
+    const m = Z.merge(Z.fromLocal(A, cfgOf()), Z.fromLocal(B, cfgOf()), { base });
+    assert.equal(m.lists.find(l => l.id === "l1").name, "Spring galaxies");
+    const where = id => m.items.filter(x => x.id === id).map(x => x.list).sort().join(",");
+    assert.equal(where("M51"), "l2", "moved: gone from the first list, in the second"); assert.equal(where("M104"), "l1"); assert.equal(where("M101"), "l1");
+    // a list deleted on one device (with its objects) goes everywhere
+    sa = Z.snapObs(A); A.lists = A.lists.filter(l => l.id !== "l2"); A.items = A.items.filter(x => x.list !== "l2"); Z.stampObs(A, sa, 30);
+    const m2 = Z.merge(m, Z.fromLocal(A, cfgOf()));
+    assert.deepEqual(m2.lists.map(l => l.id), ["l1"]); assert.ok(!m2.items.some(x => x.list === "l2"));
+    const o = freshObs(); Z.apply(m2, o, cfgOf()); assert.equal(o.lists.length, 1); assert.equal(o.items.length, 2);
+  });
+  await t("own lists: a copy without them (an older app) keeps them when merged", () => {
+    const A = freshObs(); A.lists = [{ id: "l1", name: "Kids", added: 1, u: 5 }]; A.items = [{ id: "M42", list: "l1", name: "M42", added: 1, u: 5 }];
+    const old = Z.fromLocal(freshObs(), cfgOf()); delete old.lists; delete old.items; old.schema = { major: 1, minor: 2 };
+    const m = Z.merge(old, Z.fromLocal(A, cfgOf()));
+    assert.equal(m.lists.length, 1); assert.equal(m.items.length, 1); assert.deepEqual(m.schema, Z.SCHEMA);
+    assert.ok(Z.KNOWN.has("lists") && Z.KNOWN.has("items"));
   });
   await t("encryption: round trip, address and password come from the code, the server learns nothing", async () => {
     const code = Z.newCode(); assert.match(code, /^[A-Za-z0-9_-]{43}$/);
