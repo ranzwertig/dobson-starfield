@@ -338,7 +338,7 @@ footer a:hover { color: var(--amber); }
 .tier + .feat { padding-top: 28px; }
 .tier-h { font-size: clamp(28px, 3.2vw, 38px); margin: 8px 0 28px; }
 .tier-h.small { font-size: clamp(24px, 2.6vw, 30px); }
-.feat-page .feat + .feat { border-top: 1px solid var(--line); }
+.feat-page .feat { border-top: 1px solid var(--line); }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
 .card { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .02); scroll-margin-top: 20px; }
 .card svg { width: 26px; height: 26px; fill: none; stroke: var(--amber); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
@@ -361,10 +361,9 @@ footer a:hover { color: var(--amber); }
 .plan .price { font: 500 18px var(--num); color: var(--amber); }
 .plan ul { margin: 12px 0 0; padding-left: 20px; color: #c9d0dc; font-size: 16px; }
 .plan .more { margin: 20px 0 0; }
-/* the filter: the other kind fades */
-.feat-page .is-free, .feat-page .is-pro { transition: opacity .25s; }
-html[data-show="pro"] .feat-page .is-free, html[data-show="free"] .feat-page .is-pro { opacity: .25; }
-@media (prefers-reduced-motion: reduce) { .feat-page .is-free, .feat-page .is-pro { transition: none; } }
+/* the filter: the other kind is hidden, and so is a small-things group left with nothing in it */
+html[data-show="pro"] .feat-page .is-free, html[data-show="free"] .feat-page .is-pro { display: none; }
+html[data-show="pro"] .smalls > div:not(:has(.is-pro)), html[data-show="free"] .smalls > div:not(:has(.is-free)) { display: none; }
 
 /* Help: screenshots of the app */
 .shots { display: flex; flex-wrap: wrap; gap: 18px; justify-content: flex-start; margin: 20px 0 24px; }
