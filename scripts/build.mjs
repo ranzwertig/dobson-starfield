@@ -234,7 +234,8 @@ const proHtml = html => html.replaceAll('<!--PRO-NAME-->', esc(PRO.name)).replac
   .replace('<!--PRO-COMING-NOTE-->', () => proSoon.length ? '    <p class="muted">Features marked “coming” are planned and not part of what you buy today. If they arrive during your 12 months, they are included.</p>' : '')
   .replace('<!--PRO-FEATURES-->', PRO.features.map(f => { const h = f.show ? '#pro-' + f.show.id : f.href; return `      <dt${f.coming ? ' class="coming"' : ''}>${h ? `<a href="${esc(h)}">${esc(f.title)}</a>` : esc(f.title)}${f.coming ? ' <span class="ptag soon">coming</span>' : ''}</dt>\n      <dd>${esc(f.text)}</dd>`; }).join('\n'))
   .replace('<!--PRO-TOUR-->', () => proTour)
-  .replace('<!--PRO-FREE-->', PRO.freeFeatures.map(f => `      <li>${esc(f)}</li>`).join('\n'));
+  .replace('<!--PRO-FREE-->', PRO.freeFeatures.map(f => `      <li>${esc(f)}</li>`).join('\n'))
+  .replace('<!--PRO-LIST-->', PRO.features.filter(f => !f.coming).map(f => `      <li>${esc(f.title)}</li>`).join('\n'));
 const proLd = JSON.stringify([{ '@type': 'Offer', name: 'Zenigo', price: '0', priceCurrency: 'EUR' },
   { '@type': 'Offer', name: PRO.name + ' – ' + PRO.terms, price: PRO.structuredData.price, priceCurrency: PRO.structuredData.currency, url: SITE + '/pro/' }]);
 for (const [src, dst] of Object.entries(pages)) {

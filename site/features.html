@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Features – Zenigo</title>
-<meta name="description" content="What Zenigo does at the telescope: plate solving from the phone camera, directions to the target, objects that suit your telescope, night planning, a tablet that follows the phone on the tube, encrypted sync.">
+<meta name="description" content="What Zenigo does at the telescope: plate solving from the phone camera, directions to the target, objects that suit your telescope, night planning, labelled night photos, and with Zenigo Pro a second device that follows the telescope, sync, satellites and more.">
 <meta name="theme-color" content="#0c1124">
 <link rel="icon" href="/app/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/app/icons/apple-touch-icon.png">
@@ -25,7 +25,18 @@
     <p class="lead">A phone on a telescope you move by hand can tell where its camera points to a fraction of a degree, and from there where the telescope points, without encoders. Zenigo builds the rest around that: what to look at tonight, how to get there, and what you saw. Without a telescope, the same app is a <a href="/star-finder/">star finder</a>.</p>
   </header>
 
-  <section class="feat" id="locate">
+  <div class="fbar">
+    <p>Free: everything you need to find objects. <a class="ptag pro" href="/pro/">Pro</a> adds planning, a second device and sync, for 12 months, paid once. <a href="/pro/">About Pro</a></p>
+    <div class="seg" role="group" aria-label="Show features" hidden>
+      <button type="button" data-show="all" aria-pressed="true">All</button>
+      <button type="button" data-show="free" aria-pressed="false">Free</button>
+      <button type="button" data-show="pro" aria-pressed="false">Pro</button>
+    </div>
+  </div>
+
+  <p class="tier">01 — The core</p>
+
+  <section class="feat is-free" id="locate">
     <div class="feat-text">
       <p class="kicker">Plate solving</p>
       <h2>The position comes from the stars</h2>
@@ -34,27 +45,25 @@
         <li>After the first solve, the gyroscope carries the position while you push. <b>Continuous</b> keeps checking it against the stars about twice a second; with the last position known, the match itself takes milliseconds.</li>
         <li>The phone never sits exactly parallel to the tube. Centre a star in the eyepiece, tap Locate, then tap that star on the screen: from then on the crosshair marks where the telescope points, not the camera, until the holder moves.</li>
         <li>For fainter stars than the video stream can show, take a <b>night photo</b> with the phone’s camera app. In night mode it can expose for several seconds, and Zenigo solves the photo just the same.</li>
-        <li>The camera can also look through a 90° mirror or periscope, or be a USB webcam on the tube. Without any camera, the top edge of the phone serves as a pointer.</li>
       </ul>
     </div>
     <figure class="feat-fig"><img src="/img/screens/locate-780.webp" srcset="/img/screens/locate-390.webp 390w, /img/screens/locate-780.webp 780w" sizes="280px" width="390" height="844" alt="Zenigo on a phone: the camera image of Cassiopeia with recognised stars circled in green, the telescope’s crosshair, a red arrow to M31 and the directions 14° turn right, 9° tilt down." loading="lazy" decoding="async"></figure>
   </section>
 
-  <section class="feat rev" id="directions">
+  <section class="feat rev is-free" id="directions">
     <div class="feat-text">
       <p class="kicker">Push-to</p>
       <h2>Directions you can push by</h2>
       <p>The two numbers at the top tell you how far to turn and tilt the telescope. A Dobson or any alt-az mount moves along exactly these two axes. They count down while you push, and the target pill turns green when the target is in the eyepiece.</p>
       <ul>
-        <li>Rings around the crosshair show your finder and the true field of the eyepiece in use. They are calculated from the telescope and eyepieces you entered, Barlow lens included. Telrad rings are there too, if you use one.</li>
-        <li>The round <b>eyepiece view</b> shows the stars down to magnitude 9 (11 with the <a href="/pro/">extended catalogue</a>) around where the telescope points, with the target, or an arrow towards it. It is turned and mirrored the way your Newtonian or star diagonal shows them, so the pattern matches what you see.</li>
-        <li>Or don’t look at the screen at all: clicks tell you which way to turn, chirps which way to tilt, and a chord sounds when the target is in the field.</li>
+        <li>Rings around the crosshair show your finder and the true field of the eyepiece in use, calculated from the telescope and eyepieces you entered.</li>
+        <li>The round <b>eyepiece view</b> <a class="ptag pro" href="/pro/#pro-eyepiece">Pro</a> shows the stars around where the telescope points, with the target, or an arrow towards it. It is turned and mirrored the way your Newtonian or star diagonal shows them, so the pattern matches what you see.</li>
       </ul>
     </div>
     <figure class="feat-fig"><img src="/img/screens/eyepiece-780.webp" srcset="/img/screens/eyepiece-390.webp 390w, /img/screens/eyepiece-780.webp 780w" sizes="280px" width="390" height="844" alt="M31 in the eyepiece: 0.1° to go, the finder and eyepiece rings around the crosshair, and a round eyepiece view with M32 and M110." loading="lazy" decoding="async"></figure>
   </section>
 
-  <section class="feat" id="targets">
+  <section class="feat is-free" id="targets">
     <div class="feat-text">
       <p class="kicker">Choosing targets</p>
       <h2>Objects for your telescope, not for any telescope</h2>
@@ -62,76 +71,34 @@
       <ul>
         <li><b>My telescope</b> keeps objects that are bright enough for your aperture and not far larger than the field of your widest eyepiece. For galaxies and nebulae it judges the surface brightness, which is what makes a large galaxy of magnitude 9 harder than a small one.</li>
         <li><b>Good now</b> lists what is high enough and in reach of your mount right now, and leaves out galaxies and nebulae next to a bright Moon. <b>In reach</b> leaves out what never comes into your mount’s range from your site.</li>
-        <li>Messier, Caldwell and Herschel 400 can be combined with these. There are about 2,000 deep-sky objects in total, and stars down to magnitude 9 appear as you zoom in. The <a href="/help/#extended">extended catalogue</a> <a class="ptag pro" href="/pro/">Pro</a> adds the rest of the NGC and IC catalogues, about 10,000 objects, and stars to magnitude 11.</li>
+        <li>Messier, Caldwell and Herschel 400 can be combined with these. There are about 2,000 deep-sky objects in total, and stars down to magnitude 9 appear as you zoom in.</li>
       </ul>
     </div>
     <figure class="feat-fig"><img src="/img/screens/find-780.webp" srcset="/img/screens/find-390.webp 390w, /img/screens/find-780.webp 780w" sizes="280px" width="390" height="844" alt="Choose target with the categories My telescope and Good now selected: the North America Nebula, NGC 7331, the Dragonfly Cluster and more, each with a bar for the night." loading="lazy" decoding="async"></figure>
   </section>
 
-  <section class="feat rev" id="details">
-    <div class="feat-text">
-      <p class="kicker">Object details</p>
-      <h2>Is it worth it tonight, and with which eyepiece?</h2>
-      <p>The bar runs from sunset to sunrise. It is green while the object is high, the sky is dark and your mount can reach it. Marks show when it comes into reach or leaves it.</p>
-      <p>Below the bar, <b>Suits you?</b> says why the object fits your telescope or not. <b>Which eyepiece</b> <a class="ptag pro" href="/pro/">Pro</a> picks one of yours and explains the choice. For a galaxy that means the exit pupil, for a globular cluster the magnification, for a planet what the air usually allows.</p>
-      <ul>
-        <li>The Moon’s details list the craters along the terminator tonight.</li>
-        <li>Jupiter’s show where its four big moons are, as you see them in the eyepiece, and when a moon or its shadow crosses the disc. Saturn’s show the tilt of its rings.</li>
-      </ul>
-    </div>
-    <div class="feat-fig two">
-      <figure><img src="/img/screens/details-780.webp" srcset="/img/screens/details-390.webp 390w, /img/screens/details-780.webp 780w" sizes="240px" width="390" height="844" alt="Details of M57: tonight’s bar with the well-placed time and when it leaves the telescope’s reach, why it suits the telescope, and the 9 mm eyepiece as the best one." loading="lazy" decoding="async"></figure>
-      <figure><img src="/img/screens/jupiter-780.webp" srcset="/img/screens/jupiter-390.webp 390w, /img/screens/jupiter-780.webp 780w" sizes="240px" width="390" height="844" alt="Jupiter’s details: its disc size in the eyepiece, the four big moons as seen in a Newtonian, and the shadow transits of the next 24 hours." loading="lazy" decoding="async"></figure>
-    </div>
-  </section>
-
-  <section class="feat" id="planning">
+  <section class="feat rev is-free" id="planning">
     <div class="feat-text">
       <p class="kicker">Planning</p>
       <h2>Tonight, the plan and the logbook</h2>
       <ul>
-        <li><b>Tonight</b> shows when it gets dark, how long it stays dark without the Moon, which planets are up and the best deep-sky objects of the night. <b>Coming up</b> <a class="ptag pro" href="/pro/">Pro</a> lists eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon will disturb them.</li>
-        <li>The planned list puts first what sets first. With <b>Short route</b> <a class="ptag pro" href="/pro/">Pro</a> it sorts the objects instead by the least turning for your mount, starting where the telescope points now; what gets low within the hour stays at the front. <b>Next</b> takes you to the next one that is well placed.</li>
-        <li><b>Starred</b> keeps what you want to see some day, with one tap. <b>Your own lists</b> <a class="ptag pro" href="/pro/">Pro</a>: as many as you like, for a season, a club night or the kids, with what is visible tonight first and <b>Plan the … visible tonight</b> in one tap. Move, copy and plan several objects at once, save a search from Find target as a list, import a text or CSV list and export one as CSV.</li>
-        <li><b>Observing programmes</b>: Messier, and with <a href="/pro/">Pro</a> Binocular Messier, Caldwell, Herschel 400, Herschel II and the 110 Best of the NGC, with your progress, what is well placed tonight and a logbook to print.</li>
-        <li><b>Your own horizon</b> <a class="ptag pro" href="/pro/">Pro</a>: record the roofs and trees around your spot once, holding the phone where the telescope stands. Find target then offers <b>Free now</b> and <b>Free tonight</b>, the map shows the silhouette, and the night bars and the target line say when an object comes out from behind the house. Several named locations, each with its own sky and horizon.</li>
-        <li><b>Several instruments</b> <a class="ptag pro" href="/pro/">Pro</a>: each telescope with its own eyepieces, finder and eyepiece point, and binoculars with their own field. Switch with one tap; the logbook notes what you used.</li>
-        <li>Mark an object <b>Seen</b> and the logbook fills in time, instrument, eyepiece, altitude and Moon. You add seeing, transparency and a note. The logbook exports to CSV.</li>
-        <li><b>Logbook statistics</b> <a class="ptag pro" href="/pro/">Pro</a>: what you have seen by month, kind of object, instrument and constellation, records, seeing and the Moon, and what you haven’t found yet. A tap shows those entries. Export as OpenAstronomyLog for other observing software, and your year in review as an image.</li>
-        <li><b>Visible again</b>: an object that can’t be seen tonight says from which night it can (“visible from Thu 12 Nov, mornings · well placed from 25 Nov”), or that it never gets high enough where you are. Tonight lists what is <b>coming back</b> in the next weeks.</li>
-        <li>Menu → Time shows the sky at any date and hour: a calendar with the Moon and the nights your target is visible, and a slider from noon to noon. Tonight, the lists and the map then show that night, with a bar at the top so you don’t forget. On a tablet or computer, details, lists and settings open beside the map.</li>
+        <li><b>Tonight</b> shows when it gets dark, how long it stays dark without the Moon, which planets are up and the best deep-sky objects of the night.</li>
+        <li>The planned list puts first what sets first, and <b>Next</b> takes you to the next one that is well placed. <b>Starred</b> keeps what you want to see some day, with one tap.</li>
+        <li>Mark an object <b>Seen</b> and the logbook fills in time, instrument, eyepiece, altitude and Moon. You add seeing, transparency and a note.</li>
       </ul>
     </div>
     <div class="feat-fig two">
-      <figure><img src="/img/screens/list-780.webp" srcset="/img/screens/list-390.webp 390w, /img/screens/list-780.webp 780w" sizes="240px" width="390" height="844" alt="The observing list in Short route order: M57, M27, M15 and M2 with their altitude now and a night bar each, and a Next button." loading="lazy" decoding="async"></figure>
+      <figure><img src="/img/screens/list-780.webp" srcset="/img/screens/list-390.webp 390w, /img/screens/list-780.webp 780w" sizes="240px" width="390" height="844" alt="The observing list: M57, M27, M15 and M2 with their altitude now and a night bar each, and a Next button." loading="lazy" decoding="async"></figure>
       <figure><img src="/img/screens/tonight-780.webp" srcset="/img/screens/tonight-390.webp 390w, /img/screens/tonight-780.webp 780w" sizes="240px" width="390" height="844" alt="Tonight: sunset, astronomical darkness and sunrise, a timeline with the Moon, 7 h 20 min dark and moonless, the Moon’s phase and the planets." loading="lazy" decoding="async"></figure>
     </div>
   </section>
 
-  <section class="feat rev" id="transits">
+  <section class="feat wide is-pro" id="live">
     <div class="feat-text">
-      <p class="kicker">ISS transits <a class="ptag pro" href="/pro/">Pro</a></p>
-      <h2>A second in front of the Moon</h2>
-      <p>Now and then the ISS or the Chinese space station Tiangong crosses the Moon or the Sun: a dark silhouette for a second or less, seen only from a strip a few kilometres wide. Zenigo works out the next 3 days for where you are and lists them in <b>Tonight</b>.</p>
-      <ul>
-        <li>The <b>Moon</b> and the <b>Sun</b> when the strip comes within 25 km of you; <b>Mercury, Venus, Mars, Jupiter and Saturn</b> when one is crossed or passed within half a degree.</li>
-        <li>The time to a tenth of a second, the way across the disc as in your eyepiece, and whether you are in the strip, or how far and in which direction to go.</li>
-        <li>Make the Moon the target: half an hour before, a <b>countdown</b> under the direction boxes and the way across the disc on the map; with sound on, beeps for the last seconds.</li>
-        <li>The results are kept, so the countdown also works offline at the telescope. Sun transits only with a certified solar filter.</li>
-      </ul>
-    </div>
-    <div class="feat-fig two">
-      <figure><img src="/img/screens/pro-transit-details-780.webp" srcset="/img/screens/pro-transit-details-390.webp 390w, /img/screens/pro-transit-details-780.webp 780w" sizes="240px" width="390" height="844" alt="ISS in front of the Moon: 20:47:20.6 to 23.6, 3.0 s, the Moon’s disc with the ISS’s way across it, and where you stand: in the strip, its centre line 4.2 km to the north-west." loading="lazy" decoding="async"><figcaption>The details</figcaption></figure>
-      <figure><img src="/img/screens/pro-transit-countdown-780.webp" srcset="/img/screens/pro-transit-countdown-390.webp 390w, /img/screens/pro-transit-countdown-780.webp 780w" sizes="240px" width="390" height="844" alt="The map zoomed in on the Moon as the target, the ISS’s way across it, and under the direction boxes the countdown 07:56.1." loading="lazy" decoding="async"><figcaption>The countdown</figcaption></figure>
-    </div>
-  </section>
-
-  <section class="feat wide" id="live">
-    <div class="feat-text">
-      <p class="kicker">Live connection <a class="ptag pro" href="/pro/">Pro</a></p>
+      <p class="kicker">Live connection <a class="ptag pro" href="/pro/#pro-live">Pro</a></p>
       <h2>Phone on the tube, tablet in your hand</h2>
       <p>A phone in its holder near the top of the tube is hard to read. Connect a second phone or tablet and it shows where the telescope points: the crosshair, the arrow and the directions. A target you choose on either device becomes the target on both. If you like, the tablet also shows the telescope’s camera image, with the stars and rings drawn on it.</p>
-      <p>The two devices pair by scanning each other’s QR code and then talk directly over your Wi-Fi or a phone’s hotspot. No server and no internet are involved, so it works at a dark site too, as long as one of the phones can open a hotspot.</p>
+      <p>The two devices pair by scanning each other’s QR code and then talk directly over your Wi-Fi or a phone’s hotspot. No server and no internet are involved, so it works at a dark site too. Only the device on the telescope needs Pro; anyone can follow it.</p>
     </div>
     <div class="feat-pair">
       <figure class="ph"><img src="/img/screens/live-scope-780.webp" srcset="/img/screens/live-scope-390.webp 390w, /img/screens/live-scope-780.webp 780w" sizes="(max-width: 760px) 32vw, 220px" width="390" height="844" alt="The phone on the telescope, located, with the pill “Live · another device follows”." loading="lazy" decoding="async"><figcaption>On the telescope</figcaption></figure>
@@ -139,17 +106,7 @@
     </div>
   </section>
 
-  <section class="feat rev" id="sync">
-    <div class="feat-text">
-      <p class="kicker">Sync <a class="ptag pro" href="/pro/">Pro</a></p>
-      <h2>Planned on the computer, ticked off at the telescope</h2>
-      <p>With sync turned on, the observing list, your lists, the logbook and the telescope settings are the same on all your devices. Everything is encrypted on the device with a key from the sync code, and the code never reaches the server. If the same logbook entry was changed on two devices before they synced, the edits are combined field by field; only a field changed on both keeps the later edit.</p>
-      <p>The settings that depend on how a phone sits on the telescope, such as the eyepiece point, stay on that phone. Without sync, nothing goes to a server. If you ever lose all your devices, the sync code is enough to get the data back, even without Zenigo: a short <a href="/help/#sync-recovery">Python script</a> decrypts it.</p>
-    </div>
-    <figure class="feat-fig"><img src="/img/screens/tablet-1600.webp" srcset="/img/screens/tablet-800.webp 800w, /img/screens/tablet-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 560px" width="1180" height="820" alt="Zenigo on a tablet: the sky map with M27 in the middle and its details panel beside it, with tonight’s bar and the eyepiece advice." loading="lazy" decoding="async"></figure>
-  </section>
-
-  <section class="feat" id="photos">
+  <section class="feat is-free" id="photos">
     <div class="feat-text">
       <p class="kicker">Your own photos</p>
       <h2>What is in that photo, labelled</h2>
@@ -163,22 +120,166 @@
     <figure class="feat-fig"><img src="/img/screens/photo-780.webp" srcset="/img/screens/photo-390.webp 390w, /img/screens/photo-780.webp 780w" sizes="280px" width="390" height="844" alt="A night photo labelled by Zenigo: Cassiopeia, Andromeda and Perseus with their lines, the Andromeda Galaxy outlined as an ellipse, M33, M34, M52 and M103, and star names." loading="lazy" decoding="async"></figure>
   </section>
 
-  <section class="feat rev" id="night">
-    <div class="feat-text">
-      <p class="kicker">At a dark site</p>
-      <h2>Red light, no signal needed</h2>
+  <p class="tier">02 — More in Zenigo</p>
+  <h2 class="tier-h">For planning, more sky, and more devices</h2>
+
+  <div class="cards">
+    <article class="card is-free" id="star-finder">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="2"/></svg>
+      <h3><a href="/star-finder/">Star finder</a></h3>
+      <p>Hold the phone up and see what is there, with or without the camera. No telescope needed.</p>
+    </article>
+    <article class="card is-free" id="sound">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+      <h3>Sound guidance</h3>
+      <p>Don’t look at the screen: clicks for turning, chirps for tilting, a chord when the target is in the field.</p>
+    </article>
+    <article class="card is-free" id="night">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      <h3>At a dark site</h3>
+      <p>Red light for the whole app. Added to the home screen it needs no signal: catalogue, solver, planning and logbook run on the phone.</p>
+    </article>
+    <article class="card" id="details">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg>
+      <h3><a href="/help/#optics">Object details</a> <span class="plus">+ Pro</span></h3>
+      <p>The night bar, why an object suits your telescope, the Moon’s craters on the terminator, Jupiter’s moons. Pro picks the best of your eyepieces.</p>
+    </article>
+    <article class="card" id="programmes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7l2 2 3-3M5 15l2 2 3-3M13 8h6M13 16h6"/></svg>
+      <h3><a href="/pro/#pro-programmes">Observing programmes</a> <span class="plus">+ Pro</span></h3>
+      <p>Messier with your progress. Pro adds Caldwell, Herschel 400 and II, Binocular Messier and the 110 Best of the NGC.</p>
+    </article>
+    <article class="card is-pro" id="sync">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
+      <h3><a href="/pro/#pro-sync">Sync</a> <span class="ptag pro">Pro</span></h3>
+      <p>Lists, logbook and telescope settings on phone, tablet and computer, end-to-end encrypted. No account.</p>
+    </article>
+    <article class="card is-pro" id="coming-up">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+      <h3><a href="/pro/#pro-coming-up">Coming up</a> <span class="ptag pro">Pro</span></h3>
+      <p>Eclipses, close pairs of the Moon and planets, oppositions, and meteor showers with how much the Moon disturbs them.</p>
+    </article>
+    <article class="card is-pro" id="transits">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M3 16L21 8"/></svg>
+      <h3><a href="/pro/#pro-transits">ISS transits</a> <span class="ptag pro">Pro</span></h3>
+      <p>When the ISS or Tiangong crosses the Moon or the Sun near you, to a tenth of a second, with a countdown at the telescope.</p>
+    </article>
+    <article class="card is-pro" id="satellites">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M3 9l3-3 5 5M13 13l5 5 3-3"/></svg>
+      <h3><a href="/pro/#pro-satellites">Satellites</a> <span class="ptag pro">Pro</span></h3>
+      <p>The ISS and bright satellites on the map, and their next visible passes.</p>
+    </article>
+    <article class="card is-pro" id="horizon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 19h20M4 19v-6l4-3 4 3v6M14 19v-4l3-5 3 5v4"/></svg>
+      <h3><a href="/pro/#pro-horizon">Your own horizon</a> <span class="ptag pro">Pro</span></h3>
+      <p>Record the roofs and trees around your spot once; Zenigo shows what is really free and when it comes out. Several locations.</p>
+    </article>
+    <article class="card is-pro" id="short-route">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.5 16.5L10.5 9.5M13.8 9.2l3.6 4.4"/></svg>
+      <h3><a href="/pro/#pro-short-route">Short route</a> <span class="ptag pro">Pro</span></h3>
+      <p>Your plan in the order with the least turning for your mount, from where the telescope points now.</p>
+    </article>
+    <article class="card is-pro" id="lists">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+      <h3><a href="/pro/#pro-lists">Your own lists</a> <span class="ptag pro">Pro</span></h3>
+      <p>As many as you like, for a season, a club night or the kids, with what is visible tonight first.</p>
+    </article>
+    <article class="card is-pro" id="instruments">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15l13-7 2 3.5-13 7z"/><path d="M9 16.5L7 21M11 15.5l2 5.5"/></svg>
+      <h3><a href="/pro/#pro-instruments">Several instruments</a> <span class="ptag pro">Pro</span></h3>
+      <p>Each telescope with its own eyepieces, finder and eyepiece point, and binoculars. One tap to switch.</p>
+    </article>
+    <article class="card is-pro" id="extended">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M19 12h.01M5 19h.01M12 19h.01M19 19h.01"/><circle cx="12" cy="12" r="2"/></svg>
+      <h3><a href="/pro/#pro-extended">Extended catalogue</a> <span class="ptag pro">Pro</span></h3>
+      <p>All of NGC and IC, about 10,000 more objects, and stars to magnitude 11. Downloaded once, then offline.</p>
+    </article>
+    <article class="card is-pro" id="statistics">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 20v-6M12 20V6M17 20v-9"/></svg>
+      <h3><a href="/pro/#pro-statistics">Logbook statistics</a> <span class="ptag pro">Pro</span></h3>
+      <p>What you have seen by month, kind of object and constellation, and your year in review to share.</p>
+    </article>
+  </div>
+
+  <p class="tier">03 — And the small things</p>
+  <h2 class="tier-h small">Details that make a night easier</h2>
+
+  <div class="smalls">
+    <div>
+      <h3>At the telescope</h3>
       <ul>
-        <li><b>Red light</b> turns the whole app red, buttons and panels included, and keeps the map dark.</li>
-        <li>Added to the home screen, Zenigo needs no signal. The star catalogue, the solver, the planning and the logbook all run on the phone. Only satellites <a class="ptag pro" href="/pro/">Pro</a> need a connection; ISS transits worked out online stay available.</li>
-        <li>No account, no ads, no tracking. Zenigo is free; <a href="/pro/">Zenigo Pro</a> is optional and adds sync, the live connection and more for 12 months.</li>
+        <li class="is-free">Telrad and finder rings around the crosshair</li>
+        <li class="is-free">Barlow lens counted in the field rings</li>
+        <li class="is-free">Eyepiece point: the crosshair marks the telescope</li>
+        <li class="is-free">Camera via 90° mirror, periscope or USB webcam</li>
+        <li class="is-free">No camera: the phone’s top edge as pointer</li>
+        <li class="is-free">Compass correction</li>
+        <li class="is-free">Setup guide on first start</li>
+        <li class="is-free">Sun warning</li>
       </ul>
-      <p class="more"><a class="open" href="/app/">Open Zenigo</a></p>
-      <p class="muted">Every button and setting is explained in the <a href="/help/">help</a>. For your first night, follow <a href="/getting-started/">Getting started</a>.</p>
     </div>
-    <figure class="feat-fig"><img src="/img/screens/red-780.webp" srcset="/img/screens/red-390.webp 390w, /img/screens/red-780.webp 780w" sizes="280px" width="390" height="844" alt="Zenigo in red light: the located camera image, map and buttons all in dim red." loading="lazy" decoding="async"></figure>
-  </section>
+    <div>
+      <h3>Sky and objects</h3>
+      <ul>
+        <li class="is-free">Night bar from sunset to sunrise</li>
+        <li class="is-free">Visible again: from which night an object returns</li>
+        <li class="is-free">Time: the sky at any date and hour</li>
+        <li class="is-free">Moon: craters on the terminator tonight</li>
+        <li class="is-free">Jupiter’s moons and their shadows on the disc</li>
+        <li class="is-free">Saturn’s ring tilt</li>
+        <li class="is-free">Constellation figures on the map</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Your data and devices</h3>
+      <ul>
+        <li class="is-free">Logbook export as CSV</li>
+        <li class="is-pro">OpenAstronomyLog export <span class="mini">Pro</span></li>
+        <li class="is-pro">Import lists from text or CSV <span class="mini">Pro</span></li>
+        <li class="is-free">Backup and restore</li>
+        <li class="is-free">Side panels on tablet and computer</li>
+        <li class="is-free">iPhone, iPad, Android and computer</li>
+        <li class="is-free">No account, no ads, no tracking</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted">Every button and setting is explained in the <a href="/help/">help</a>. For your first night, follow <a href="/getting-started/">Getting started</a>.</p>
+
+  <div class="plans">
+    <div class="plan is-free">
+      <h2>Free</h2>
+      <p class="muted">No account, no ads, no tracking.</p>
+      <ul>
+<!--PRO-FREE-->
+      </ul>
+      <p class="more"><a class="open ghost" href="/app/">Open Zenigo</a></p>
+    </div>
+    <div class="plan pro is-pro">
+      <h2>Pro <span class="price"><!--PRO-PRICE--> · 12 months</span></h2>
+      <p class="muted">Paid once, no automatic renewal, 30 days to change your mind.</p>
+      <ul>
+<!--PRO-LIST-->
+      </ul>
+      <p class="more"><a class="open" href="/pro/">Get Pro</a></p>
+    </div>
+  </div>
 </main>
 
 <!--FOOTER-->
+<script>
+  // Free / Pro filter: dims the features of the other kind (html[data-show]); without JS the buttons stay hidden.
+  (() => {
+    const seg = document.querySelector('.fbar .seg');
+    if (!seg) return;
+    seg.hidden = false;
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('button[data-show]');
+      if (!b) return;
+      const v = b.dataset.show;
+      if (v === 'all') delete document.documentElement.dataset.show; else document.documentElement.dataset.show = v;
+      for (const x of seg.querySelectorAll('button')) x.setAttribute('aria-pressed', String(x === b));
+    });
+  })();
+</script>
 </body>
 </html>

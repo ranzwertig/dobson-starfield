@@ -325,6 +325,47 @@ footer a:hover { color: var(--amber); }
   .feat-fig.two img, .feat-fig > img { border-radius: 18px; }
 }
 
+/* Features page: three tiers. 01 big sections with screenshots, 02 cards with an icon, 03 a plain list. The weight
+   shows in the medium (screenshot, icon, text), and the Pro mark gets quieter with it (pill, pill, small word). */
+.fbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding: 16px 20px; margin: 18px 0 0; border: 1px solid var(--line); border-radius: 16px; background: rgba(12, 17, 36, .7); }
+.fbar p { margin: 0; color: #c9d0dc; font-size: 17px; flex: 1 1 420px; }
+.seg { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 99px; }
+.seg[hidden] { display: none; }
+.seg button { min-height: 40px; padding: 0 18px; border: 0; border-radius: 99px; font: 600 15px var(--ui); color: #c9d0dc; background: none; cursor: pointer; }
+.seg button[aria-pressed="true"] { color: var(--deep); background: var(--star); }
+.seg button[data-show="pro"][aria-pressed="true"] { color: #1b1206; background: var(--amber); }
+.tier { margin: 64px 0 0; font: 500 13px/1.4 var(--num); letter-spacing: .04em; color: var(--mist); }
+.tier + .feat { padding-top: 28px; }
+.tier-h { font-size: clamp(28px, 3.2vw, 38px); margin: 8px 0 28px; }
+.tier-h.small { font-size: clamp(24px, 2.6vw, 30px); }
+.feat-page .feat + .feat { border-top: 1px solid var(--line); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+.card { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .02); scroll-margin-top: 20px; }
+.card svg { width: 26px; height: 26px; fill: none; stroke: var(--amber); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.card h3 { font-size: 21px; margin: 12px 0 6px; }
+.card h3 a { color: var(--star); text-decoration: none; }
+.card h3 a:hover { color: var(--amber); }
+.card p { margin: 0; color: var(--mist); font-size: 16px; }
+.card .ptag { margin-left: 4px; }
+.plus { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--amber); white-space: nowrap; }
+.smalls { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px 40px; }
+.smalls h3 { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--mist); }
+.smalls ul { list-style: none; margin: 0 0 28px; padding: 0; }
+.smalls li { position: relative; padding: 5px 0 5px 16px; font-size: 16px; color: #c9d0dc; }
+.smalls li::before { content: ""; position: absolute; left: 1px; top: 15px; width: 5px; height: 5px; border-radius: 50%; background: #5a6683; }
+.mini { margin-left: 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); }
+.plans { display: flex; flex-wrap: wrap; gap: 16px; margin: 64px 0 24px; }
+.plan { flex: 1 1 380px; padding: 28px; border: 1px solid var(--line); border-radius: 20px; }
+.plan.pro { border-color: var(--amber); background: rgba(240, 168, 69, .06); }
+.plan h2 { font-size: 28px; margin: 0 0 6px; }
+.plan .price { font: 500 18px var(--num); color: var(--amber); }
+.plan ul { margin: 12px 0 0; padding-left: 20px; color: #c9d0dc; font-size: 16px; }
+.plan .more { margin: 20px 0 0; }
+/* the filter: the other kind fades */
+.feat-page .is-free, .feat-page .is-pro { transition: opacity .25s; }
+html[data-show="pro"] .feat-page .is-free, html[data-show="free"] .feat-page .is-pro { opacity: .25; }
+@media (prefers-reduced-motion: reduce) { .feat-page .is-free, .feat-page .is-pro { transition: none; } }
+
 /* Help: screenshots of the app */
 .shots { display: flex; flex-wrap: wrap; gap: 18px; justify-content: flex-start; margin: 20px 0 24px; }
 .shots figure { margin: 0; }
